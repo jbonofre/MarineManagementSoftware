@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="https://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>net.nanthrax.shipyardso</groupId>
+    <artifactId>shipyardso</artifactId>
+    <version>0.9-SNAPSHOT</version>
+    <name>ShipYardSo</name>
+    <description>
+        ShipYardSo est une platforme logicielle de gestion de chantier naval.
+    </description>
+    <inceptionYear>2025</inceptionYear>
+    <packaging>pom</packaging>
+
+    <modules>
+        <!-- <module>persistence</module> -->
+        <!-- <module>service</module> -->
+        <!-- <module>rest</module> -->
+        <!-- <module>frontend</module> -->
+    </modules>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>io.quarkus</groupId>
+                <artifactId>quarkus-bom</artifactId>
+                <version>3.21.0</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+</project>
