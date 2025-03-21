@@ -15,7 +15,7 @@
     <packaging>pom</packaging>
 
     <modules>
-        <!-- <module>persistence</module> -->
+        <module>persistence</module>
         <!-- <module>service</module> -->
         <!-- <module>rest</module> -->
         <!-- <module>frontend</module> -->
