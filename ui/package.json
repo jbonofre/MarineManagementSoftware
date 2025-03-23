@@ -1,6 +1,7 @@
 {
   "name": "shipyardso-ui",
   "version": "0.9-SNAPSHOT",
+  "main": "/index.tsx",
   "dependencies": {
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
