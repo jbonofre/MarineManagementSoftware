@@ -18,7 +18,7 @@
         <module>persistence</module>
         <!-- <module>service</module> -->
         <!-- <module>rest</module> -->
-        <!-- <module>frontend</module> -->
+        <!-- <module>ui</module> -->
     </modules>
 
     <dependencyManagement>
