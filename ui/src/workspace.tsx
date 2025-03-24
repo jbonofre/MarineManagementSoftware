@@ -19,41 +19,53 @@ function SideMenu(props) {
         { key: 'equipe', label: 'Equipe' },
         { key: 'entretien', label: 'Programme Entretien' },
         { key: 'planning', label: 'Planning' }
-      ] },
-      { key: 'user', label: props.user, icon: <UserOutlined />, children: [
-        { key: 'preferences', label: 'Préférences' },
-        { key: 'deconnexion', label: 'Déconnexion' }
-      ]}
+      ] }
     ];
 
 
     return(
         <Layout.Sider collapsible={true} collapsed={collapsed} onCollapse={newValue => setCollapsed(newValue)}>
-            <div className="logo" align="center">
-                <Image width={75} src="./logo.png" preview={false}/>
-            </div>
             <Menu items={menuItems} mode="inline" />
         </Layout.Sider>
     );
 
 }
 
-export default function Workspace(props) {
+function Header(props) {
 
     const { Search } = Input;
 
+    const menuUser = [
+              { key: 'user', label: props.user, icon: <UserOutlined />, children: [
+                { key: 'preferences', label: 'Préférences' },
+                { key: 'deconnexion', label: 'Déconnexion' }
+              ]}
+    ];
+
     return(
-        <Layout className="layout" hasSider={true}>
+        <Layout.Header style={{ height: "80px", background: "#fff", padding: "5px", margin: "10px" }}>
+            <Space>
+            <Image src="./logo.png" preview={false} width={75}/>
+            <Search />
+            <Menu items={menuUser} />
+            </Space>
+        </Layout.Header>
+    );
+
+}
+
+export default function Workspace(props) {
+
+    return(
+        <Layout style={{ height: "100vh" }}>
+          <Header user={props.user} />
+          <Layout hasSider={true}>
             <SideMenu user={props.user} />
-            <Layout className="site-layout">
-                <Layout.Header style={{ background: '#ffffff', width: '100%' }}>
-                    <div align="right">
-                        <Search onSearch={() => console.log("search")} style={{ width: 400 }} />
-                    </div>
-                </Layout.Header>
-                <div>Test</div>
-                <Layout.Footer>©2025 - Jean-Baptiste Onofré</Layout.Footer>
-            </Layout>
+            <Layout.Content>
+                Content
+            </Layout.Content>
+          </Layout>
+          <Layout.Footer>Copyright © 2025 - Jean-Baptiste Onofré - Tous droits réservés</Layout.Footer>
         </Layout>
     );
 
