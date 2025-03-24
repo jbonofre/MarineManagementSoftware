@@ -22,6 +22,9 @@
 .site-layout {
     padding: 0 50px !important;
 }
+.ant-layout-header {
+    padding: 10px;
+}
 .ant-layout-sider {
     background: #fff;
 }
