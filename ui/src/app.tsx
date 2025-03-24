@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { Modal, Button, Form, Input, Space, Checkbox, message } from 'antd';
 import Login from './login.tsx';
+import Workspace from './workspace.tsx';
+
+import './app.css';
 
 export default function App() {
 
@@ -8,11 +11,11 @@ export default function App() {
 
     if (user) {
         return(
-            <Space>Hello</Space>
+            <Workspace user={user} setUser={setUser} />
         );
     } else {
         return(
-            <Login />
+            <Login user={user} setUser={setUser} />
         );
     }
 
