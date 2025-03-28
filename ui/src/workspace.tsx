@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Layout, Input, Col, Row, Image, Menu } from 'antd';
 import { UserOutlined, TeamOutlined } from '@ant-design/icons';
+import Icon from '@ant-design/icons';
+import { ReactComponent as BoatOutlined } from './boat.svg';
 
 function SideMenu(props) {
 
@@ -8,7 +10,7 @@ function SideMenu(props) {
 
     const menuItems = [
       { key: 'clients', label: 'Clients', icon: <TeamOutlined /> },
-      { key: 'bateaux', label: 'Bateaux' },
+      { key: 'bateaux', label: 'Bateaux', icon: <Icon component={ BoatOutlined } /> },
       { key: 'partenaires', label: 'Partenaires', children: [
         { key: 'fournisseurs', label: 'Fournisseurs' },
         { key: 'loueurs', label: 'Loueurs' },
