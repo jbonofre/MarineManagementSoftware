@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Layout, Input, Space, Image, Menu } from 'antd';
+import { Layout, Input, Col, Row, Image, Menu } from 'antd';
 import { UserOutlined, TeamOutlined } from '@ant-design/icons';
 
 function SideMenu(props) {
@@ -44,11 +44,11 @@ function Header(props) {
 
     return(
         <Layout.Header style={{ height: "80px", background: "#fff", padding: "5px", margin: "10px" }}>
-            <Space>
-            <Image src="./logo.png" preview={false} width={75}/>
-            <Search />
-            <Menu items={menuUser} />
-            </Space>
+            <Row align="middle" justify="center" wrap="false">
+                <Col span={3}><Image src="./logo.png" preview={false} width={75}/></Col>
+                <Col span={19}><Search /></Col>
+                <Col span={2}><Menu items={menuUser} /></Col>
+            </Row>
         </Layout.Header>
     );
 
