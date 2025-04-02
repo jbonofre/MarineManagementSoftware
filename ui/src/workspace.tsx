@@ -60,7 +60,7 @@ function Header(props) {
 export default function Workspace(props) {
 
     return(
-        <Layout style={{ height: "100vh" }}>
+        <Layout style={{ height: "105vh" }}>
           <Header user={props.user} />
           <Layout hasSider={true}>
             <SideMenu user={props.user} />
