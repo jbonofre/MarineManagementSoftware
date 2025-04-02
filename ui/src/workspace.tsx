@@ -3,6 +3,7 @@ import { Layout, Input, Col, Row, Image, Menu } from 'antd';
 import { UserOutlined, TeamOutlined } from '@ant-design/icons';
 import Icon from '@ant-design/icons';
 import { ReactComponent as BoatOutlined } from './boat.svg';
+import Home from './home.tsx';
 
 function SideMenu(props) {
 
@@ -63,8 +64,8 @@ export default function Workspace(props) {
           <Header user={props.user} />
           <Layout hasSider={true}>
             <SideMenu user={props.user} />
-            <Layout.Content>
-                Content
+            <Layout.Content style={{ margin: "15px" }}>
+                <Home/>
             </Layout.Content>
           </Layout>
           <Layout.Footer>Copyright © 2025 - Jean-Baptiste Onofré - Tous droits réservés</Layout.Footer>
