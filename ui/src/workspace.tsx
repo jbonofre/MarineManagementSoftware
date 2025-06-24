@@ -45,12 +45,16 @@ function Header(props) {
               ]}
     ];
 
+    const onClick : MenuProps['onClick'] = (e) => {
+        console.log('click', e);
+    };
+
     return(
         <Layout.Header style={{ height: "80px", background: "#fff", padding: "5px", margin: "10px" }}>
             <Row align="middle" justify="center" wrap="false">
                 <Col span={3}><Image src="./logo.png" preview={false} width={75}/></Col>
                 <Col span={19}><Search /></Col>
-                <Col span={2}><Menu items={menuUser} /></Col>
+                <Col span={2}><Menu items={menuUser} onClick={onClick} /></Col>
             </Row>
         </Layout.Header>
     );
