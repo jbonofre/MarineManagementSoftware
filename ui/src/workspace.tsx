@@ -3,7 +3,7 @@ import { Layout, Input, Col, Row, Image, Menu } from 'antd';
 import { Route, Switch } from 'react-router';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { Link } from 'react-router-dom';
-import { UserOutlined, TeamOutlined, HomeOutlined, ContactsOutlined } from '@ant-design/icons';
+import { UserOutlined, TeamOutlined, HomeOutlined, AmazonOutlined, SettingOutlined, ToolOutlined } from '@ant-design/icons';
 import Icon from '@ant-design/icons';
 import { ReactComponent as BoatOutlined } from './boat.svg';
 import Home from './home.tsx';
@@ -16,18 +16,20 @@ function SideMenu(props) {
     const menuItems = [
       { key: 'home', label: <Link to="/">Accueil</Link>, icon: <HomeOutlined/> },
       { key: 'clients', label: <Link to="/clients">Clients</Link>, icon: <TeamOutlined /> },
-      { key: 'bateaux', label: 'Bateaux', icon: <Icon component={ BoatOutlined } /> },
-      { key: 'partenaires', label: 'Partenaires', icon: <ContactsOutlined/>, children: [
-        { key: 'fournisseurs', label: 'Fournisseurs' },
-        { key: 'loueurs', label: 'Loueurs' },
-        { key: 'annonceurs', label: 'Annonceurs' }
+      { key: 'parc', label: 'Parc', icon: <Icon component={ BoatOutlined } /> },
+      { key: 'market', label: 'Market', icon: <AmazonOutlined/>, children: [
+        { key: 'marchands', label: 'Marchands' },
+        { key: 'site', label: 'Site ecommerce' },
+        { key: 'marketing', label: 'Marketing' }
       ] },
-      { key: 'atelier', label: 'Atelier', children: [
+      { key: 'atelier', label: 'Atelier', icon: <ToolOutlined/>, children: [
         { key: 'pieces', label: 'Piéces et Accessoires' },
         { key: 'equipe', label: 'Equipe' },
+        { key: 'intervention', label: 'Intervention' },
         { key: 'entretien', label: 'Programme Entretien' },
         { key: 'planning', label: 'Planning' }
-      ] }
+      ] },
+      { key: 'parametrage', label: 'Paramétrage', icon: <SettingOutlined/> }
     ];
 
     return(
