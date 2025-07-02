@@ -7,7 +7,7 @@ export default function Login(props) {
     const [ checked, setChecked ] = useState(true);
 
     return (
-        <Modal centered={true} mask={false} title={<Space>Bienvenue sur ShipyardSo <Image width={50} src="./logo.png" preview={false}/></Space>} open={true} okText="Se connecter" cancelText="Effacer" closable={false} onOk={() => loginForm.submit()} onCancel={() => loginForm.resetFields()}>
+        <Modal centered={true} mask={false} title={<Space>Bienvenue sur Marine Management Software <Image width={50} src="./logo.png" preview={false}/></Space>} open={true} okText="Se connecter" cancelText="Effacer" closable={false} onOk={() => loginForm.submit()} onCancel={() => loginForm.resetFields()}>
             <Form name="login" form={loginForm} labelCol={{ span: 8 }} wrapperCol={{ span: 16 }} autoComplete="off" onFinish={(values) => {
                 if (values.username !== 'admin' && values.username !== 'msplaisance' && values.username !== 'franck') {
                     message.error("L'utilisateur ou le mot de passe ne sont pas correct.");

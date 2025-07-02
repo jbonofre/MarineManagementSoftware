@@ -1,5 +1,5 @@
 {
-  "name": "shipyardso-ui",
+  "name": "mms-ui",
   "version": "0.9-SNAPSHOT",
   "main": "/index.tsx",
   "dependencies": {

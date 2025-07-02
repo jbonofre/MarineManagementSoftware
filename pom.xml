@@ -4,12 +4,12 @@
 
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>net.nanthrax.shipyardso</groupId>
-    <artifactId>shipyardso</artifactId>
+    <groupId>net.nanthrax.mms</groupId>
+    <artifactId>mms</artifactId>
     <version>0.9-SNAPSHOT</version>
-    <name>ShipYardSo</name>
+    <name>MarineManagementSoftware</name>
     <description>
-        ShipYardSo est une platforme logicielle de gestion de chantier naval.
+        MarineManagementSoftware (MMS) est une plateforme logicielle de gestion de chantier naval.
     </description>
     <inceptionYear>2025</inceptionYear>
     <packaging>pom</packaging>
