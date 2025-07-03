@@ -5,6 +5,8 @@ import type { TableProps } from 'antd';
 interface ReferenceType {
     key: string,
     nom: string,
+    marque: string,
+    imageUrl: string,
     reference: string,
     stock: number,
     categorie: string
@@ -15,7 +17,12 @@ const columns: TableProps<ReferenceType>['columns'] = [
         title: 'Nom',
         dataIndex: 'nom',
         key: 'nom',
-        render: (text) => <a>{text}</a>,
+        render: (text,record) => <a><img width='30px' src={record.imageUrl}/>  {text}</a>,
+    },
+    {
+        title: 'Marque',
+        dataIndex: 'marque',
+        key: 'marque'
     },
     {
         title: 'Référence',
@@ -47,10 +54,21 @@ const columns: TableProps<ReferenceType>['columns'] = [
 const data: ReferenceType[] = [
     {
         key: '1',
-        nom: 'Bougie NGK XX4',
-        reference: 'N3317DSA8DSD7F',
+        nom: 'Bougie LKAR7C-9 pour MERCURY V6, V8, V10',
+        reference: 'LKAR7C-9--8M0176616',
+        marque: 'NGK',
         categorie: 'Mécanique',
+        imageUrl: 'https://www.piecesbateaux.com/9338-medium_default/bougie-lkar7c-9-pour-mercury-v6-v8-v10.jpg',
         stock: 24
+    },
+    {
+        key: '2',
+        nom: 'Filtre à Huile MERCURY 75 à 150Cv 4Temps EFI',
+        reference: '877761Q01--877761K01',
+        marque: 'QUICKSILVER',
+        categorie: 'Mécanique',
+        imageUrl: 'https://www.piecesbateaux.com/3879-medium_default/filtre-a-huile-mercury-75-a-150cv-4t-efi.jpg',
+        stock: 12
     }
 ]
 

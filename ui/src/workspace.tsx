@@ -10,6 +10,7 @@ import Home from './home.tsx';
 import Clients from './clients.tsx';
 import Parc from './parc.tsx';
 import Magasin from './magasin.tsx';
+import Interventions from './interventions.tsx';
 
 function SideMenu(props) {
 
@@ -27,7 +28,7 @@ function SideMenu(props) {
       { key: 'atelier', label: 'Atelier', icon: <ToolOutlined/>, children: [
         { key: 'magasin', label: <Link to="/magasin">Magasin</Link> },
         { key: 'equipe', label: 'Equipe' },
-        { key: 'intervention', label: 'Intervention' },
+        { key: 'interventions', label: <Link to="/interventions">Interventions</Link> },
         { key: 'entretien', label: 'Programme Entretien' },
         { key: 'planning', label: 'Planning' }
       ] },
@@ -90,6 +91,9 @@ export default function Workspace(props) {
                     </Route>
                     <Route path="/magasin" key="magasin">
                         <Magasin />
+                    </Route>
+                    <Route path="/interventions" key="interventions">
+                        <Interventions />
                     </Route>
                 </Switch>
             </Layout.Content>
