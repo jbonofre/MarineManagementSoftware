@@ -8,6 +8,7 @@ import Icon from '@ant-design/icons';
 import { ReactComponent as BoatOutlined } from './boat.svg';
 import Home from './home.tsx';
 import Clients from './clients.tsx';
+import Parc from './parc.tsx';
 
 function SideMenu(props) {
 
@@ -16,7 +17,7 @@ function SideMenu(props) {
     const menuItems = [
       { key: 'home', label: <Link to="/">Accueil</Link>, icon: <HomeOutlined/> },
       { key: 'clients', label: <Link to="/clients">Clients</Link>, icon: <TeamOutlined /> },
-      { key: 'parc', label: 'Parc', icon: <Icon component={ BoatOutlined } /> },
+      { key: 'parc', label: <Link to="/parc">Parc</Link>, icon: <Icon component={ BoatOutlined } /> },
       { key: 'market', label: 'Market', icon: <AmazonOutlined/>, children: [
         { key: 'marchands', label: 'Marchands' },
         { key: 'site', label: 'Site ecommerce' },
@@ -82,6 +83,9 @@ export default function Workspace(props) {
                     </Route>
                     <Route path="/clients" key="clients">
                         <Clients/>
+                    </Route>
+                    <Route path="/parc" key="parc">
+                        <Parc/>
                     </Route>
                 </Switch>
             </Layout.Content>

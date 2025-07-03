@@ -1,6 +1,7 @@
 import { Card, Avatar, Col, Row, Space, Input, Select, Button, Form, Tabs, Empty, Pagination } from 'antd';
 import type { TabsProps } from 'antd';
 import { UserOutlined, PlusCircleOutlined } from '@ant-design/icons';
+import { ReactComponent as BoatOutlined } from './boat.svg';
 
 function Documents() {
     return(
@@ -8,8 +9,8 @@ function Documents() {
     );
 }
 
-function Parc() {
-    return (
+function Photos() {
+    return(
         <Empty/>
     );
 }
@@ -20,13 +21,7 @@ function Interventions() {
     );
 }
 
-function Paiements() {
-    return (
-        <Empty/>
-    );
-}
-
-export default function Clients() {
+export default function Parc() {
 
     const style: React.CSSProperties = { padding: '8px 0' };
     const { Search } = Input;
@@ -34,24 +29,19 @@ export default function Clients() {
 
     const tabItems: TabsProps['items'] = [
         {
+            key: 'photos',
+            label: 'Photos',
+            children: <Photos/>
+        },
+        {
             key: 'documents',
             label: 'Documents',
             children: <Documents/>
         },
         {
-            key: 'parc',
-            label: 'Parc',
-            children: <Parc/>
-        },
-        {
             key: 'interventions',
             label: 'Interventions',
             children: <Interventions/>
-        },
-        {
-            key: 'paiements',
-            label: 'Moyens de Paiement',
-            children: <Paiements/>
         }
     ];
 
@@ -61,13 +51,15 @@ export default function Clients() {
             <Col span={24}>
                 <div style={style}>
                     <Space>
-                        <Search placeholder="Recherche client" enterButton style={{ width: 350 }}/>
-                        <Select mode="tags" placeholder="Type de client" style={{ width: 350 }} options={[
+                        <Search placeholder="Recherche" enterButton style={{ width: 350 }}/>
+                        <Select mode="tags" placeholder="Type" style={{ width: 350 }} options={[
                               { value: '', label: ''},
-                              { value: 'particulier', label: 'Particulier' },
-                              { value: 'professionnel', label: 'Professionnel'}
+                              { value: 'bateaumoteur', label: 'Bateau Moteur' },
+                              { value: 'voilier', label: 'Voilier' },
+                              { value: 'moteur', label: 'Moteur' },
+                              { value: 'remorque', label: 'Remorque' }
                             ]}/>
-                        <Button type="primary" icon={<PlusCircleOutlined/>}>Nouveau Client</Button>
+                        <Button type="primary" icon={<PlusCircleOutlined/>}>Nouveau</Button>
                     </Space>
                 </div>
             </Col>
@@ -75,29 +67,28 @@ export default function Clients() {
         <Row gutter={[16,16]}>
             <Col span={24}>
             <div style={style}>
-                <Card title={<Space><Avatar size="large" icon={<UserOutlined/>}/>Jean-Baptiste Onofré</Space>} style={{ width: '100%' }}>
+                <Card title={<Space><Avatar size="large" icon={<BoatOutlined/>}/>Rosco</Space>} style={{ width: '100%' }}>
                     <Form name="client" labelCol={{ span: 8 }}
                         wrapperCol={{ span: 16 }}
                         style={{ width: '80%' }}
                         initialValues={{ remember: true }}>
-                        <Form.Item label="Prénom" name="prenom" rules={[{ required: true, message: 'Le prénom est requis' }]}>
-                            <Input allowClear={true} defaultValue="Jean-Baptiste" />
+                        <Form.Item label="Identifiant" name="identifiant" rules={[{ required: true, message: 'Identifiant requis' }]}>
+                            <Input allowClear={true} defaultValue="Rosko" />
                         </Form.Item>
-                        <Form.Item label="Nom" name="nom" rules={[{ required: true, message: 'Le nom est requis' }]}>
-                            <Input allowClear={true} defaultValue="Onofré" />
+                        <Form.Item label="Numéro" name="numero" rules={[{ required: true, message: 'Le numéro est requis' }]}>
+                            <Input allowClear={true} defaultValue="MXDSQDSQ" />
                         </Form.Item>
                         <Form.Item label={null} name="type">
-                            <Select defaultValue="particulier"
+                            <Select defaultValue="bateaumoteur"
                                 options={[
-                                    { value: 'particulier', label: 'Particulier' },
-                                    { value: 'professionnel', label: 'Professionnel' }
+                                    { value: 'bateaumoteur', label: 'Bateau Moteur' },
+                                    { value: 'voilier', label: 'Voilier' },
+                                    { value: 'moteur', label: 'Moteur' },
+                                    { value: 'remorque', label: 'Remorque' }
                                 ]}/>
                         </Form.Item>
-                        <Form.Item label="E-mail" name="email">
-                            <Input allowClear={true} defaultValue="jb@nanthrax.net" />
-                        </Form.Item>
-                        <Form.Item label="Adresse" name="adress">
-                            <TextArea rows={6}>Lieu dit Coatalec, 29670 Henvic</TextArea>
+                        <Form.Item label="Propriétaire" name="proprietaire">
+                            <Input allowClear={true} defaultValue="Jean-Baptiste Onofré" />
                         </Form.Item>
                         <Form.Item label={null}>
                             <Space>
