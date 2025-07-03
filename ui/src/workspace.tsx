@@ -9,6 +9,7 @@ import { ReactComponent as BoatOutlined } from './boat.svg';
 import Home from './home.tsx';
 import Clients from './clients.tsx';
 import Parc from './parc.tsx';
+import Magasin from './magasin.tsx';
 
 function SideMenu(props) {
 
@@ -24,7 +25,7 @@ function SideMenu(props) {
         { key: 'marketing', label: 'Marketing' }
       ] },
       { key: 'atelier', label: 'Atelier', icon: <ToolOutlined/>, children: [
-        { key: 'pieces', label: 'Piéces et Accessoires' },
+        { key: 'magasin', label: <Link to="/magasin">Magasin</Link> },
         { key: 'equipe', label: 'Equipe' },
         { key: 'intervention', label: 'Intervention' },
         { key: 'entretien', label: 'Programme Entretien' },
@@ -86,6 +87,9 @@ export default function Workspace(props) {
                     </Route>
                     <Route path="/parc" key="parc">
                         <Parc/>
+                    </Route>
+                    <Route path="/magasin" key="magasin">
+                        <Magasin />
                     </Route>
                 </Switch>
             </Layout.Content>

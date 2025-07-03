@@ -1,4 +1,4 @@
-import { Card, Avatar, Col, Row, Space, Input, Select, Button, Form, Tabs, Empty, Pagination } from 'antd';
+import { Card, Avatar, Col, Row, Space, Input, Select, Button, Form, Tabs, Empty, Pagination, DatePicker } from 'antd';
 import type { TabsProps } from 'antd';
 import { UserOutlined, PlusCircleOutlined } from '@ant-design/icons';
 
@@ -21,6 +21,12 @@ function Interventions() {
 }
 
 function Paiements() {
+    return (
+        <Empty/>
+    );
+}
+
+function Messagerie() {
     return (
         <Empty/>
     );
@@ -52,6 +58,11 @@ export default function Clients() {
             key: 'paiements',
             label: 'Moyens de Paiement',
             children: <Paiements/>
+        },
+        {
+            key: 'messagerie',
+            label: 'Messagerie',
+            children: <Messagerie/>
         }
     ];
 
@@ -96,8 +107,11 @@ export default function Clients() {
                         <Form.Item label="E-mail" name="email">
                             <Input allowClear={true} defaultValue="jb@nanthrax.net" />
                         </Form.Item>
-                        <Form.Item label="Adresse" name="adress">
+                        <Form.Item label="Adresse" name="adresse">
                             <TextArea rows={6}>Lieu dit Coatalec, 29670 Henvic</TextArea>
+                        </Form.Item>
+                        <Form.Item label="Client depuis " name="date">
+                            <DatePicker />
                         </Form.Item>
                         <Form.Item label={null}>
                             <Space>

@@ -1,4 +1,4 @@
-import { Card, Avatar, Col, Row, Space, Input, Select, Button, Form, Tabs, Empty, Pagination } from 'antd';
+import { Card, Avatar, Col, Row, Space, Input, Select, Button, Form, Tabs, Empty, Pagination, DatePicker } from 'antd';
 import type { TabsProps } from 'antd';
 import { UserOutlined, PlusCircleOutlined } from '@ant-design/icons';
 import { ReactComponent as BoatOutlined } from './boat.svg';
@@ -18,6 +18,18 @@ function Photos() {
 function Interventions() {
     return (
         <Empty/>
+    );
+}
+
+function Entretien() {
+    return (
+        <Empty/>
+    );
+}
+
+function Vente() {
+    return (
+      <Empty/>
     );
 }
 
@@ -42,6 +54,16 @@ export default function Parc() {
             key: 'interventions',
             label: 'Interventions',
             children: <Interventions/>
+        },
+        {
+            key: 'programme',
+            label: 'Programme Entretien',
+            children: <Entretien/>
+        },
+        {
+            key: 'vente',
+            label: 'Vente',
+            children: <Vente/>
         }
     ];
 
@@ -86,6 +108,15 @@ export default function Parc() {
                                     { value: 'moteur', label: 'Moteur' },
                                     { value: 'remorque', label: 'Remorque' }
                                 ]}/>
+                        </Form.Item>
+                        <Form.Item label="Date de Mise en Service" name="datemes">
+                            <DatePicker/>
+                        </Form.Item>
+                        <Form.Item label="Date d'Achat" name="dateachat">
+                            <DatePicker/>
+                        </Form.Item>
+                        <Form.Item label="Description" name="description">
+                            <TextArea rows={6}/>
                         </Form.Item>
                         <Form.Item label="Propriétaire" name="proprietaire">
                             <Input allowClear={true} defaultValue="Jean-Baptiste Onofré" />
