@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Row, Col, Space, Select, Button, Input, Table } from 'antd';
-import type { TableProps } from 'antd';
+import { Row, Col, Space, Select, Button, Input, Table, Card, QRCode, Form, DatePicker, Tabs } from 'antd';
+import type { TableProps, TabsProps } from 'antd';
 import { PlusCircleOutlined, LeftCircleOutlined } from '@ant-design/icons';
 
-const { Search } = Input;
+const { Search, TextArea } = Input;
 const style: React.CSSProperties = { padding: '8px 0' };
 
 interface InterventionType {
@@ -14,11 +14,71 @@ interface InterventionType {
     status: string
 }
 
+const status = [
+    { value: '', label: ''},
+    { value: 'devis', label: 'Devis' },
+    { value: 'reception', label: 'Réception' },
+    { value: 'encours', label: 'En cours' },
+    { value: 'paiement', label: 'Paiement' },
+    { value: 'terminee', label: 'Terminée' }
+];
+
+const tabItems: TabsProps['items'] = [
+    {
+        key: 'pieces',
+        label: 'Pièces et Accessoires',
+        children: 'Piéces'
+    },
+    {
+        key: 'photos',
+        label: 'Photos',
+        children: 'Photos'
+    },
+    {
+        key: 'documents',
+        label: 'Documents',
+        children: 'Documents'
+    },
+    {
+        key: 'fiche',
+        label: 'Fiche',
+        children: 'Fiche'
+    }
+];
+
 function Detail(props) {
+    const descriptionValue = "Installation d'un compas, vérification";
     return(
         <>
         <a onClick={ () => props.setIntervention(null) }><LeftCircleOutlined/> Retour à la liste des intervention</a>
-        <p>Detail {props.intervention}</p>
+        <Card title={
+                <Space>
+                    <QRCode size={80} value="dqdqsdqd"/>
+                    Intervention YB3E2DSDA | Jean-Baptiste Onofré
+                </Space>
+            } style={{ width: '100%' }}>
+            <Form name="intervention" labelCol={{ span: 8 }}
+                wrapperCol={{ span: 16 }}
+                style={{ width: '80%' }}
+                initialValue={{ remember: true }}>
+                <Form.Item label="Numéro" name="numero">
+                    <Input defaultValue="YB3E2DSDA" disabled={true}/>
+                </Form.Item>
+                <Form.Item label="Client" name="client">
+                    <Search defaultValue="Jean-Baptiste Onofré" enterButton />
+                </Form.Item>
+                <Form.Item label="Status" name="status">
+                    <Space>
+                        <Select options={status} defaultValue="paiement" style={{ width: 200 }} />
+                        <DatePicker />
+                    </Space>
+                </Form.Item>
+                <Form.Item label="Description" name="description">
+                    <TextArea defaultValue={descriptionValue} rows={4}>Détail</TextArea>
+                </Form.Item>
+            </Form>
+            <Tabs items={tabItems} />
+        </Card>
         </>
     );
 }
@@ -81,14 +141,7 @@ function List(props) {
                        <div style={style}>
                            <Space>
                                <Search placeholder="Recherche" enterButton style={{ width: 350 }}/>
-                               <Select mode="tags" placeholder="Status" style={{ width: 350 }} options={[
-                                       { value: '', label: ''},
-                                       { value: 'devis', label: 'Devis' },
-                                       { value: 'reception', label: 'Réception' },
-                                       { value: 'encours', label: 'En cours' },
-                                       { value: 'paiement', label: 'Paiement' },
-                                       { value: 'terminee', label: 'Terminée' }
-                                   ]}/>
+                               <Select mode="tags" placeholder="Status" style={{ width: 350 }} options={status}/>
                                <Button type="primary" icon={<PlusCircleOutlined/>}>Créer une intervention</Button>
                            </Space>
                        </div>
