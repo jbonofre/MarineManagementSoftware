@@ -3,7 +3,7 @@ import { Layout, Input, Col, Row, Image, Menu } from 'antd';
 import { Route, Switch } from 'react-router';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { Link } from 'react-router-dom';
-import { UserOutlined, TeamOutlined, HomeOutlined, AmazonOutlined, SettingOutlined, ToolOutlined } from '@ant-design/icons';
+import { UserOutlined, TeamOutlined, HomeOutlined, AmazonOutlined, SettingOutlined, ToolOutlined, StockOutlined, FileProtectOutlined } from '@ant-design/icons';
 import Icon from '@ant-design/icons';
 import { ReactComponent as BoatOutlined } from './boat.svg';
 import Home from './home.tsx';
@@ -20,17 +20,20 @@ function SideMenu(props) {
       { key: 'home', label: <Link to="/">Accueil</Link>, icon: <HomeOutlined/> },
       { key: 'clients', label: <Link to="/clients">Clients</Link>, icon: <TeamOutlined /> },
       { key: 'parc', label: <Link to="/parc">Parc</Link>, icon: <Icon component={ BoatOutlined } /> },
+      { key: 'magasin', label: <Link to="/magasin">Magasin</Link>, icon: <StockOutlined/>, children: [
+        { key: 'caisse', label: 'Caisse'},
+        { key: 'fournisseurs', label: 'Fournisseurs', icon: <FileProtectOutlined/> }
+      ] },
+      { key: 'atelier', label: 'Atelier', icon: <ToolOutlined/>, children: [
+        { key: 'forfaits', label: 'Forfaits' },
+        { key: 'interventions', label: <Link to="/interventions">Interventions</Link> },
+        { key: 'planning', label: 'Planning' },
+        { key: 'equipe', label: 'Equipe' },
+      ] },
       { key: 'market', label: 'Market', icon: <AmazonOutlined/>, children: [
         { key: 'marchands', label: 'Marchands' },
         { key: 'site', label: 'Site ecommerce' },
         { key: 'marketing', label: 'Marketing' }
-      ] },
-      { key: 'atelier', label: 'Atelier', icon: <ToolOutlined/>, children: [
-        { key: 'magasin', label: <Link to="/magasin">Magasin</Link> },
-        { key: 'equipe', label: 'Equipe' },
-        { key: 'interventions', label: <Link to="/interventions">Interventions</Link> },
-        { key: 'entretien', label: 'Programme Entretien' },
-        { key: 'planning', label: 'Planning' }
       ] },
       { key: 'parametrage', label: 'Paramétrage', icon: <SettingOutlined/> }
     ];

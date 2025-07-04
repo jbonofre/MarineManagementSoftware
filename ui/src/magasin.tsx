@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Row, Col, Input, Select, Button, Space, Table, Rate, Card, Form, InputNumber } from 'antd';
-import { PlusCircleOutlined, LeftCircleOutlined, ZoomInOutlined } from '@ant-design/icons';
+import { PlusCircleOutlined, LeftCircleOutlined, ZoomInOutlined, StockOutlined } from '@ant-design/icons';
 import type { TableProps } from 'antd';
 
 interface ReferenceType {
@@ -31,9 +31,6 @@ function Detail(props) {
                 <Form.Item label="Nom">
                     <Input value="Bougie LKAR7C-9 pour MERCURY V6, V8, V10" />
                 </Form.Item>
-                <Form.Item label="Référence">
-                    <Input value="LKAR7C-9--8M0176616"/>
-                </Form.Item>
                 <Form.Item label="Marque">
                     <Input value="NGK" addonAfter={<ZoomInOutlined/>} />
                 </Form.Item>
@@ -50,14 +47,35 @@ function Detail(props) {
                 <Form.Item label="Stock">
                     <InputNumber value={24} addonAfter="Scanner" />
                 </Form.Item>
+                <Form.Item label="Stock Minimal">
+                    <InputNumber value={3} addonAfter="Scanner" />
+                </Form.Item>
+                <Form.Item label="Emplacement">
+                    <Input value="A-26 Bas" />
+                </Form.Item>
                 <Form.Item label="Prix catalogue">
-
+                    <InputNumber value={12} addonAfter="€" />
                 </Form.Item>
                 <Form.Item label="Prix d'achat">
-
+                    <InputNumber value={10} addonAfter="€" />
                 </Form.Item>
-                <Form.Item label="Prix de vente">
-
+                <Form.Item label="Frais">
+                    <Input value="6" addonAfter="%"/>
+                </Form.Item>
+                <Form.Item label="Taux de marge">
+                    <Input value="6" addonAfter="%"/>
+                </Form.Item>
+                <Form.Item label="Taux de Marque">
+                    <Input value="6" addonAfter="%"/>
+                </Form.Item>
+                <Form.Item label="Prix de vente HT">
+                    <InputNumber value={10} addonAfter="€" />
+                </Form.Item>
+                <Form.Item label="TVA">
+                    <InputNumber value={20} addonAfter="%" />
+                </Form.Item>
+                <Form.Item label="Prix de vente TTC">
+                    <InputNumber value={13} addonAfter="€" />
                 </Form.Item>
                </Form>
 
@@ -156,6 +174,7 @@ function List(props) {
                                       { value: 'securite', label: 'Naavigation & Sécurité' },
                                       { value: 'sports', label: 'Pneumatiques & Sports Nautiques'},
                                     ]}/>
+                                <Button type="primary" icon={<StockOutlined/>}>Mise à jour du stock</Button>
                                 <Button type="primary" icon={<PlusCircleOutlined/>}>Ajouter Référence</Button>
                             </Space>
                         </div>
