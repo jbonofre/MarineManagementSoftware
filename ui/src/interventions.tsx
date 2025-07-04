@@ -76,6 +76,11 @@ function Detail(props) {
                 <Form.Item label="Description" name="description">
                     <TextArea defaultValue={descriptionValue} rows={4}>Détail</TextArea>
                 </Form.Item>
+                <Form.Item label={null}>
+                    <Space>
+                    <Button type="primary" htmlType="submit">Enregistrer</Button><Button htmlType="button">Annuler</Button>
+                    </Space>
+                </Form.Item>
             </Form>
             <Tabs items={tabItems} />
         </Card>

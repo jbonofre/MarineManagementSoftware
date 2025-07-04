@@ -57,7 +57,7 @@ const data: ReferenceType[] = [
         nom: 'Bougie LKAR7C-9 pour MERCURY V6, V8, V10',
         reference: 'LKAR7C-9--8M0176616',
         marque: 'NGK',
-        categorie: 'Mécanique',
+        categorie: 'Anodes & Bougies',
         imageUrl: 'https://www.piecesbateaux.com/9338-medium_default/bougie-lkar7c-9-pour-mercury-v6-v8-v10.jpg',
         stock: 24
     },
@@ -66,7 +66,7 @@ const data: ReferenceType[] = [
         nom: 'Filtre à Huile MERCURY 75 à 150Cv 4Temps EFI',
         reference: '877761Q01--877761K01',
         marque: 'QUICKSILVER',
-        categorie: 'Mécanique',
+        categorie: 'Pièces Hors Bord',
         imageUrl: 'https://www.piecesbateaux.com/3879-medium_default/filtre-a-huile-mercury-75-a-150cv-4t-efi.jpg',
         stock: 12
     }
@@ -86,12 +86,18 @@ export default function Magasin() {
                                 <Search placeholder="Recherche" enterButton style={{ width: 350 }}/>
                                 <Select mode="tags" placeholder="Catégories" style={{ width: 350 }} options={[
                                       { value: '', label: ''},
-                                      { value: 'moteur', label: 'Moteur' },
-                                      { value: 'bateau', label: 'Bateau' },
-                                      { value: 'mecanique', label: 'Mécanique' },
-                                      { value: 'eccastillage', label: 'Accastillage' },
-                                      { value: 'electronique', label: 'Electronique' },
-                                      { value: 'securite', label: 'Securité' }
+                                      { value: 'moteurs', label: 'Moteurs' },
+                                      { value: 'bateaux', label: 'Bateaux' },
+                                      { value: 'remoraues', label: 'Remorques' },
+                                      { value: 'piecehb', label: 'Pièces Hors Bord' },
+                                      { value: 'pieceib', label: 'Piècecs Inboard' },
+                                      { value: 'helices', label: 'Hélices' },
+                                      { value: 'entretien', label: 'Entretien' },
+                                      { value: 'anodesbougies', label: 'Anodes & Bougies' },
+                                      { value: 'eccastillage', label: 'Accastillage & Confort à Bord' },
+                                      { value: 'equipement', label: 'Equipement & Accessoires' },
+                                      { value: 'securite', label: 'Naavigation & Sécurité' },
+                                      { value: 'sports', label: 'Pneumatiques & Sports Nautiques'},
                                     ]}/>
                                 <Button type="primary" icon={<PlusCircleOutlined/>}>Ajouter Référence</Button>
                             </Space>

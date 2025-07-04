@@ -1,6 +1,23 @@
-import { Card, Avatar, Col, Row, Space, Input, Select, Button, Form, Tabs, Empty, Pagination, DatePicker } from 'antd';
+import React, { useState } from 'react';
+import { Card, Avatar, Col, Row, Space, Input, Select, Button, Form, Tabs, Empty, Pagination, DatePicker, Table } from 'antd';
 import type { TabsProps } from 'antd';
-import { UserOutlined, PlusCircleOutlined } from '@ant-design/icons';
+import { UserOutlined, PlusCircleOutlined, LeftCircleOutlined } from '@ant-design/icons';
+
+interface ClientType {
+    key: string,
+    name: string,
+    type: string,
+    email: string
+}
+
+const types = [
+  { value: 'particulier', label: 'Particulier' },
+  { value: 'professionnel', label: 'Professionnel' }
+];
+
+const style: React.CSSProperties = { padding: '8px 0' };
+const { Search } = Input;
+const { TextArea } = Input;
 
 function Documents() {
     return(
@@ -32,12 +49,71 @@ function Messagerie() {
     );
 }
 
-export default function Clients() {
+function List(props) {
 
-    const style: React.CSSProperties = { padding: '8px 0' };
-    const { Search } = Input;
-    const { TextArea } = Input;
+    const columns: TableProps<ClientType>['columns'] = [
+        {
+            title: 'Nom',
+            dataIndex: 'nom',
+            key: 'nom',
+            render: (text,record) => (
+                <a onClick={() => props.setClient(record.key)}>{text}</a>
+            )
+        },
+        {
+            title: 'Type',
+            dataIndex: 'type',
+            key: 'type'
+        },
+        {
+            title: 'E-mail',
+            dataIndex: 'email',
+            key: 'email'
+        },
+        {
+            title: '',
+            key: 'action',
+            render: (_,record) => (
+                <Space>
+                    <Button>Voir</Button>
+                    <Button>Supprimer</Button>
+                </Space>
+            )
+        }
+    ];
 
+    const data: ClientType[] = [
+        {
+            key: '1',
+            nom: 'Jean-Baptiste Onofré',
+            type: 'Particulier',
+            email: 'jb@nanthrax.net'
+        }
+    ];
+
+    return(
+      <>
+        <Row gutter={[16,16]}>
+            <Col span={24}>
+                <div style={style}>
+                    <Space>
+                        <Search placeholder="Recherche client" enterButton style={{ width: 350 }}/>
+                        <Select mode="tags" placeholder="Type de client" style={{ width: 350 }} options={types}/>
+                        <Button type="primary" icon={<PlusCircleOutlined/>}>Nouveau Client</Button>
+                    </Space>
+                </div>
+            </Col>
+        </Row>
+        <Row gutter={[16,16]}>
+            <Col span={24}>
+                <Table<ClientType> columns={columns} dataSource={data} />
+            </Col>
+        </Row>
+      </>
+    );
+}
+
+function Detail(props) {
     const tabItems: TabsProps['items'] = [
         {
             key: 'documents',
@@ -68,24 +144,7 @@ export default function Clients() {
 
     return(
         <>
-        <Row gutter={[16,16]}>
-            <Col span={24}>
-                <div style={style}>
-                    <Space>
-                        <Search placeholder="Recherche client" enterButton style={{ width: 350 }}/>
-                        <Select mode="tags" placeholder="Type de client" style={{ width: 350 }} options={[
-                              { value: '', label: ''},
-                              { value: 'particulier', label: 'Particulier' },
-                              { value: 'professionnel', label: 'Professionnel'}
-                            ]}/>
-                        <Button type="primary" icon={<PlusCircleOutlined/>}>Nouveau Client</Button>
-                    </Space>
-                </div>
-            </Col>
-        </Row>
-        <Row gutter={[16,16]}>
-            <Col span={24}>
-            <div style={style}>
+            <a onClick={ () => props.setClient(null) }><LeftCircleOutlined/> Retour à la liste des clients</a>
                 <Card title={<Space><Avatar size="large" icon={<UserOutlined/>}/>Jean-Baptiste Onofré</Space>} style={{ width: '100%' }}>
                     <Form name="client" labelCol={{ span: 8 }}
                         wrapperCol={{ span: 16 }}
@@ -121,13 +180,22 @@ export default function Clients() {
                     </Form>
                     <Tabs items={tabItems}/>
                 </Card>
-            </div>
-            </Col>
-        </Row>
-        <Row gutter={[16,16]} justify="center">
-            <Pagination align="center" total={2} />
-        </Row>
         </>
     );
+}
+
+export default function Clients() {
+
+    const [ client, setClient ] = useState();
+
+    if (client) {
+        return (
+            <Detail client={client} setClient={setClient} />
+        );
+    } else {
+        return (
+            <List setClient={setClient}/>
+        );
+    }
 
 }
