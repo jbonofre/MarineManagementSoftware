@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Card, Avatar, Col, Row, Space, Input, Select, Button, Form, Tabs, Empty, Pagination, DatePicker, Table } from 'antd';
+import { Card, Avatar, Col, Row, Space, Input, Select, Button, Form, Tabs, Empty, Pagination, DatePicker, Table, Checkbox, Rate } from 'antd';
 import type { TabsProps } from 'antd';
 import { UserOutlined, PlusCircleOutlined, LeftCircleOutlined } from '@ant-design/icons';
 
@@ -169,8 +169,17 @@ function Detail(props) {
                         <Form.Item label="Adresse" name="adresse">
                             <TextArea rows={6}>Lieu dit Coatalec, 29670 Henvic</TextArea>
                         </Form.Item>
+                        <Form.Item label="Consentement" name="consentement">
+                            <Checkbox defaultChecked={true}/>
+                        </Form.Item>
                         <Form.Item label="Client depuis " name="date">
                             <DatePicker />
+                        </Form.Item>
+                        <Form.Item label="Evaluation" name="evaluation">
+                            <Rate defaultValue={5}/>
+                        </Form.Item>
+                        <Form.Item label="Notes" name="notes">
+                            <TextArea rows={6}/>
                         </Form.Item>
                         <Form.Item label={null}>
                             <Space>

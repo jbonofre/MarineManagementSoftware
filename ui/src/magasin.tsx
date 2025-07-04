@@ -1,5 +1,6 @@
-import { Row, Col, Input, Select, Button, Space, Table } from 'antd';
-import { PlusCircleOutlined } from '@ant-design/icons';
+import React, { useState } from 'react';
+import { Row, Col, Input, Select, Button, Space, Table, Rate, Card, Form, InputNumber } from 'antd';
+import { PlusCircleOutlined, LeftCircleOutlined, ZoomInOutlined } from '@ant-design/icons';
 import type { TableProps } from 'antd';
 
 interface ReferenceType {
@@ -9,73 +10,129 @@ interface ReferenceType {
     imageUrl: string,
     reference: string,
     stock: number,
-    categorie: string
+    categorie: string,
+    evaluation: number
 }
 
-const columns: TableProps<ReferenceType>['columns'] = [
-    {
-        title: 'Nom',
-        dataIndex: 'nom',
-        key: 'nom',
-        render: (text,record) => <a><img width='30px' src={record.imageUrl}/>  {text}</a>,
-    },
-    {
-        title: 'Marque',
-        dataIndex: 'marque',
-        key: 'marque'
-    },
-    {
-        title: 'Référence',
-        dataIndex: 'reference',
-        key: 'reference'
-    },
-    {
-        title: 'Catégorie',
-        dataIndex: 'categorie',
-        key: 'categorie'
-    },
-    {
-        title: 'Stock',
-        dataIndex: 'stock',
-        key: 'stock'
-    },
-    {
-        title: '',
-        key: 'action',
-        render: (_, record) => (
-            <Space>
-                <Button>Editer</Button>
-                <Button>Supprimer</Button>
-            </Space>
-        )
-    }
-]
+const style: React.CSSProperties = { padding: '8px 0' };
+const { Search, TextArea } = Input;
 
-const data: ReferenceType[] = [
-    {
-        key: '1',
-        nom: 'Bougie LKAR7C-9 pour MERCURY V6, V8, V10',
-        reference: 'LKAR7C-9--8M0176616',
-        marque: 'NGK',
-        categorie: 'Anodes & Bougies',
-        imageUrl: 'https://www.piecesbateaux.com/9338-medium_default/bougie-lkar7c-9-pour-mercury-v6-v8-v10.jpg',
-        stock: 24
-    },
-    {
-        key: '2',
-        nom: 'Filtre à Huile MERCURY 75 à 150Cv 4Temps EFI',
-        reference: '877761Q01--877761K01',
-        marque: 'QUICKSILVER',
-        categorie: 'Pièces Hors Bord',
-        imageUrl: 'https://www.piecesbateaux.com/3879-medium_default/filtre-a-huile-mercury-75-a-150cv-4t-efi.jpg',
-        stock: 12
-    }
-]
+function Detail(props) {
 
-export default function Magasin() {
+    const description = "Bougie LKAR7C-9\n\nRéférences Mercury: 8M0135348, 8M0204737, 8M0176616\n\nMercury 175, 200, 225Cv 3.4L V6\n\nMercury 225, 250, 300Cv 4.6L V8\n\nMercury 350 et 400Cv 5.7L V10\n";
 
-    const style: React.CSSProperties = { padding: '8px 0' };
-    const { Search } = Input;
+    return(
+        <>
+            <a onClick={ () => props.setDetail(null) }><LeftCircleOutlined/> Retour au magasin</a>
+            <Card title={ <Space><img width='30px' src='https://www.piecesbateaux.com/9338-medium_default/bougie-lkar7c-9-pour-mercury-v6-v8-v10.jpg'/> Bougie LKAR7C-9 pour MERCURY V6, V8, V10</Space> }>
+               <Form name="detail" labelCol={{ span: 8 }}
+                    wrapperCol={{ span: 16 }}
+                    style={{ width: '80%' }}>
+                <Form.Item label="Nom">
+                    <Input value="Bougie LKAR7C-9 pour MERCURY V6, V8, V10" />
+                </Form.Item>
+                <Form.Item label="Référence">
+                    <Input value="LKAR7C-9--8M0176616"/>
+                </Form.Item>
+                <Form.Item label="Marque">
+                    <Input value="NGK" addonAfter={<ZoomInOutlined/>} />
+                </Form.Item>
+                <Form.Item label="Références">
+                    <Select mode="tags" options={[
+                        { value: '8M0135348', label: '8M0135348'},
+                        { value: '8M0204737', label: '8M0204737'},
+                        { value: '8M0176616', label: '8M0176616'}
+                    ]} defaultValue={[ '8M0135348', '8M0204737', '8M0176616']} suffixIcon={<PlusCircleOutlined/>} />
+                </Form.Item>
+                <Form.Item label="Description">
+                    <TextArea rows={6} value={description}/>
+                </Form.Item>
+                <Form.Item label="Stock">
+                    <InputNumber value={24} addonAfter="Scanner" />
+                </Form.Item>
+                <Form.Item label="Prix catalogue">
+
+                </Form.Item>
+                <Form.Item label="Prix d'achat">
+
+                </Form.Item>
+                <Form.Item label="Prix de vente">
+
+                </Form.Item>
+               </Form>
+
+            </Card>
+        </>
+    );
+}
+
+function List(props) {
+
+    const columns: TableProps<ReferenceType>['columns'] = [
+        {
+            title: 'Nom',
+            dataIndex: 'nom',
+            key: 'nom',
+            render: (text,record) => <a onClick={ () => { props.setDetail(record.key) }}><img width='30px' src={record.imageUrl}/>  {text}</a>,
+        },
+        {
+            title: 'Marque',
+            dataIndex: 'marque',
+            key: 'marque'
+        },
+        {
+            title: 'Référence',
+            dataIndex: 'reference',
+            key: 'reference'
+        },
+        {
+            title: 'Catégorie',
+            dataIndex: 'categorie',
+            key: 'categorie'
+        },
+        {
+            title: 'Evaluation',
+            dataIndex: 'evaluation',
+            key: 'evaluation',
+            render: (_,record) => ( <Rate defaultValue={3.5}/> )
+        },
+        {
+            title: 'Stock',
+            dataIndex: 'stock',
+            key: 'stock'
+        },
+        {
+            title: '',
+            key: 'action',
+            render: (_, record) => (
+                <Space>
+                    <Button>Editer</Button>
+                    <Button>Supprimer</Button>
+                </Space>
+            )
+        }
+    ]
+
+    const data: ReferenceType[] = [
+        {
+            key: '1',
+            nom: 'Bougie LKAR7C-9 pour MERCURY V6, V8, V10',
+            reference: 'LKAR7C-9--8M0176616',
+            marque: 'NGK',
+            categorie: 'Anodes & Bougies',
+            imageUrl: 'https://www.piecesbateaux.com/9338-medium_default/bougie-lkar7c-9-pour-mercury-v6-v8-v10.jpg',
+            stock: 24
+        },
+        {
+            key: '2',
+            nom: 'Filtre à Huile MERCURY 75 à 150Cv 4Temps EFI',
+            reference: '877761Q01--877761K01',
+            marque: 'QUICKSILVER',
+            categorie: 'Pièces Hors Bord',
+            imageUrl: 'https://www.piecesbateaux.com/3879-medium_default/filtre-a-huile-mercury-75-a-150cv-4t-efi.jpg',
+            stock: 12
+        }
+    ];
 
     return (
         <>
@@ -111,4 +168,19 @@ export default function Magasin() {
                 </Row>
         </>
     );
+}
+
+export default function Magasin() {
+
+    const [ detail, setDetail ] = useState();
+
+    if (detail) {
+        return (
+            <Detail detail={detail} setDetail={setDetail} />
+        );
+    } else {
+        return (
+            <List setDetail={setDetail} />
+        );
+    }
 }
