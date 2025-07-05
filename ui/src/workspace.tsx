@@ -6,9 +6,12 @@ import { Link } from 'react-router-dom';
 import { UserOutlined, TeamOutlined, HomeOutlined, AmazonOutlined, SettingOutlined, ToolOutlined, StockOutlined, FileProtectOutlined, ReadOutlined, DesktopOutlined } from '@ant-design/icons';
 import Icon from '@ant-design/icons';
 import { ReactComponent as BoatOutlined } from './boat.svg';
+import { ReactComponent as EngineOutlined } from './moteur.svg';
+import { ReactComponent as ParcOutlined } from './parc.svg';
+import { ReactComponent as TailerOutlined } from './remorque.svg';
 import Home from './home.tsx';
 import Clients from './clients.tsx';
-import Parc from './parc.tsx';
+import Bateaux from './bateaux.tsx';
 import Magasin from './magasin.tsx';
 import Interventions from './interventions.tsx';
 
@@ -20,7 +23,7 @@ interface Client {
     email: string
 }
 
-interface Parc {
+interface Bateau {
     key: string,
     nom: string,
     imageUrl: string,
@@ -43,10 +46,12 @@ interface Parc {
     poidsmaxmoteur: number,
     chargemax: number,
     longueurarbre: string,
-    puissancemax: number,
+    puissancemax: string,
     reservoireau: number,
     reservoircarburant: number,
-    categoriece: string
+    nombremaxpassagers: number,
+    categoriece: string,
+    photos: string[]
 }
 
 const clients: Client[] = [
@@ -95,7 +100,7 @@ const clients: Client[] = [
     }
 ];
 
-const parc: Parc[] = [
+const bateaux: Bateau[] = [
     {
         key: '1',
         nom: 'Rosko',
@@ -105,7 +110,9 @@ const parc: Parc[] = [
         marque: 'Quicksilver',
         denomination: 'Activ 605 Open',
         type: 'Bateau à Moteur',
-        date: '04-08-2024',
+        datemes: '01-06-2024',
+        dateachat: '04-08-2024',
+        datefinguarantie: '04-08-2026',
         proprietaire: 'Jean-Baptiste Onofré',
         proprietairekey: '1',
         longueurexterieure: 6.46,
@@ -118,10 +125,15 @@ const parc: Parc[] = [
         poidsmaxmoteur: 211,
         chargemax: 587,
         longueurarbre: 'XL',
-        puissancemax: 150,
+        puissancemax: '150 cv (110 kv)',
         reservoireau: 45,
         reservoircarburant: 160,
-        categoriece: 'C'
+        nombremaxpassagers: 7,
+        categoriece: 'C',
+        photos: [
+            'https://www.quicksilver-boats.com/media/yezdee5q/605-open-details-0455-v2_bow-roller_f.jpg',
+            'https://www.quicksilver-boats.com/media/4vjdv0yg/605-open-details-1490_rod-holders_f.jpg'
+        ]
     },
     {
         key: '2',
@@ -133,11 +145,17 @@ const parc: Parc[] = [
         marque: 'RM Yachts',
         denomination: 'RM 980',
         type: 'Voilier',
-        date: '01-01-2005',
+        dateachat: '02-02-2024',
+        datemes: '01-01-2005',
+        datefinguarantie: '01-01-2007',
         longueurcoque: 9.80,
         largeur: 3.50,
         poidsvide: 3500,
-        notes: 'Version deux cabines'
+        description: 'Version deux cabines',
+        photos: [
+            'https://idata.over-blog.com/0/56/75/49/le-bateau/amenagements-jour.jpg',
+            'https://marclombard.com/wp-content/uploads/2023/01/lesud-e1672741821685.jpg'
+        ]
     }
 ];
 
@@ -152,7 +170,11 @@ function SideMenu(props) {
     const menuItems = [
       { key: 'home', label: <Link to="/">Accueil</Link>, icon: <HomeOutlined/> },
       { key: 'clients', label: <Link to="/clients">Clients</Link>, icon: <TeamOutlined /> },
-      { key: 'parc', label: <Link to="/parc">Parc</Link>, icon: <Icon component={ BoatOutlined } /> },
+      { key: 'parc', label: 'Parc', icon: <Icon component={ ParcOutlined } />, children: [
+        { key: 'bateaux', label: <Link to="/bateaux">Bateaux</Link>, icon: <Icon component={ BoatOutlined } />},
+        { key: 'moteurs', label: 'Moteurs', icon: <Icon component={ EngineOutlined } /> },
+        { key: 'remorques', label: 'Remorques', icon: <Icon component= { TailerOutlined } /> }
+      ] },
       { key: 'magasin', label: 'Magasin', icon: <StockOutlined/>, children: [
         { key: 'catalogue', label: <Link to="/magasin">Catalogue</Link>, icon: <ReadOutlined/> },
         { key: 'caisse', label: 'Caisse', icon: <DesktopOutlined/> },
@@ -223,8 +245,8 @@ export default function Workspace(props) {
                     <Route path="/clients" key="clients">
                         <Clients clients={clients} />
                     </Route>
-                    <Route path="/parc" key="parc">
-                        <Parc parc={parc} />
+                    <Route path="/bateaux" key="bateaux">
+                        <Bateaux bateaux={bateaux} />
                     </Route>
                     <Route path="/magasin" key="magasin">
                         <Magasin />
