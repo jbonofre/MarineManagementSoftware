@@ -133,7 +133,9 @@ const bateaux: Bateau[] = [
         photos: [
             'https://www.quicksilver-boats.com/media/yezdee5q/605-open-details-0455-v2_bow-roller_f.jpg',
             'https://www.quicksilver-boats.com/media/4vjdv0yg/605-open-details-1490_rod-holders_f.jpg'
-        ]
+        ],
+        assureur: 'GMF',
+        numeroassurance: 'DSQDJCCE'
     },
     {
         key: '2',

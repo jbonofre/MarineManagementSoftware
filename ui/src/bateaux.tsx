@@ -145,6 +145,31 @@ function Specifications(props) {
         <Form.Item label="Puissance maximum">
             <Input style={{ width: 200 }} value={props.bateau.puissancemax} />
         </Form.Item>
+        <Form.Item label="Réservoir eau">
+            <InputNumber value={props.bateau.reservoireau} />
+        </Form.Item>
+        <Form.Item label="Réservoir carburant">
+            <InputNumber value={props.bateau.reservoircarburant} />
+        </Form.Item>
+        <Form.Item label="Nombre maximal de passagers">
+            <InputNumber value={props.bateau.nombremaxpassagers} />
+        </Form.Item>
+        <Form.Item label="Catégorie CE">
+            <Input style={{ width: 60 }} value={props.bateau.categoriece} />
+        </Form.Item>
+        </>
+    );
+}
+
+function Assurance(props) {
+    return(
+        <>
+        <Form.Item label="Assureur">
+            <Input value={props.bateau.assureur} />
+        </Form.Item>
+        <Form.Item label="Numéro d'assurance">
+            <Input value={props.bateau.numeroassurance} />
+        </Form.Item>
         </>
     );
 }
@@ -184,7 +209,7 @@ function Bateau(props) {
         {
             key: '2',
             label: 'Assurance',
-            children: <p>Hello</p>
+            children: <Assurance bateau={bateauDetail} />
         },
         {
             key: '3',
