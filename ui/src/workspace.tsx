@@ -20,6 +20,35 @@ interface Client {
     email: string
 }
 
+interface Parc {
+    key: string,
+    nom: string,
+    imageUrl: string,
+    immatriculation: string,
+    proprietaire: string,
+    proprietairekey: string,
+    numeroserie: string,
+    marque: string,
+    denomination: string,
+    type: string,
+    assureur: string,
+    numeroassurance: string,
+    longueurexterieure: number,
+    longueurcoque: number,
+    hauteur: number,
+    largeur: number,
+    tirantair: number,
+    tiranteau: number,
+    poidsvide: number,
+    poidsmaxmoteur: number,
+    chargemax: number,
+    longueurarbre: string,
+    puissancemax: number,
+    reservoireau: number,
+    reservoircarburant: number,
+    categoriece: string
+}
+
 const clients: Client[] = [
     {
         key: '1',
@@ -27,7 +56,10 @@ const clients: Client[] = [
         prenom: 'Jean-Baptiste',
         type: 'Particulier',
         email: 'jb@nanthrax.net',
-        adresse: "Lieu dit Coatalec\n29670 Henvic"
+        adresse: 'Lieu dit Coatalec\n29670 Henvic',
+        consentement: true,
+        date: '25-05-2023',
+        evaluation: 5
     },
     {
         key: '2',
@@ -35,7 +67,11 @@ const clients: Client[] = [
         prenom: null,
         type: 'Professionnel',
         email: 'contact@aventurepechebretagne.com',
-        adresse: "Port de Plaisance du Port du Bloscon\n29680 Roscoff"
+        adresse: 'Port de Plaisance du Port du Bloscon\n29680 Roscoff',
+        consentement: true,
+        date: '02-03-2020',
+        evaluation: 4,
+        notes: 'Partenaire loueur'
     },
     {
         key: '3',
@@ -43,7 +79,65 @@ const clients: Client[] = [
         prenom: null,
         type: 'Professionnel de la Mer',
         email: 'contact@lesviviersdecarantec.fr',
-        adresse: "38 Chem. du Varquez\n29660 Carantec"
+        adresse: '38 Chem. du Varquez\n29660 Carantec',
+        consentement: false,
+        date: '10-01-2025',
+        evaluation: 3
+    },
+    {
+        key: '4',
+        nom: 'Jourdan',
+        prenom: 'Pierre',
+        type: 'Particulier',
+        consentement: true,
+        date: '01-07-2025',
+        evaluation: 4
+    }
+];
+
+const parc: Parc[] = [
+    {
+        key: '1',
+        nom: 'Rosko',
+        imageUrl: 'https://www.quicksilver-boats.com/media/tichx5ki/605-open-running-0362-grey.jpg',
+        immatriculation: 'MX65SEADA',
+        numeroserie: '221309DSAD',
+        marque: 'Quicksilver',
+        denomination: 'Activ 605 Open',
+        type: 'Bateau à Moteur',
+        date: '04-08-2024',
+        proprietaire: 'Jean-Baptiste Onofré',
+        proprietairekey: '1',
+        longueurexterieure: 6.46,
+        longueurcoque: 5.75,
+        hauteur: 2.00,
+        largeur: 2.40,
+        tirantair: 1.55,
+        tiranteau: 0.38,
+        poidsvide: 904,
+        poidsmaxmoteur: 211,
+        chargemax: 587,
+        longueurarbre: 'XL',
+        puissancemax: 150,
+        reservoireau: 45,
+        reservoircarburant: 160,
+        categoriece: 'C'
+    },
+    {
+        key: '2',
+        nom: 'Goupil',
+        imageUrl: 'https://www.hisse-et-oh.com/store/medias/sailing/61c/ea5/363/large/61cea53639819f08ce1bb81b.jpg',
+        immatriculation: 'MX321EZA',
+        proprietaire: 'Pierre Jourdan',
+        proprietairekey: '4',
+        marque: 'RM Yachts',
+        denomination: 'RM 980',
+        type: 'Voilier',
+        date: '01-01-2005',
+        longueurcoque: 9.80,
+        largeur: 3.50,
+        poidsvide: 3500,
+        notes: 'Version deux cabines'
     }
 ];
 
@@ -130,7 +224,7 @@ export default function Workspace(props) {
                         <Clients clients={clients} />
                     </Route>
                     <Route path="/parc" key="parc">
-                        <Parc/>
+                        <Parc parc={parc} />
                     </Route>
                     <Route path="/magasin" key="magasin">
                         <Magasin />

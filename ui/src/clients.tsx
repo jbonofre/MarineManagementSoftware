@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Card, Avatar, Col, Row, Space, Input, Select, Button, Form, Tabs, Empty, Pagination, DatePicker, Table, Checkbox, Rate, message } from 'antd';
+import { Card, Avatar, Col, Row, Space, Input, Select, Button, Form, Tabs, Empty, Pagination, DatePicker, Table, Checkbox, Rate, AutoComplete, message } from 'antd';
 import type { TabsProps } from 'antd';
-import { UserOutlined, PlusCircleOutlined, LeftCircleOutlined } from '@ant-design/icons';
+import { UserOutlined, PlusCircleOutlined, LeftCircleOutlined, DeleteOutlined, EditOutlined, FileAddOutlined } from '@ant-design/icons';
 import { demo } from './workspace.tsx';
+import dayjs from 'dayjs';
 
 interface ClientType {
     key: string,
@@ -23,7 +24,12 @@ const { TextArea } = Input;
 
 function Documents() {
     return(
-        <Empty/>
+        <>
+        <Space>
+            <Button type="primary" icon={<FileAddOutlined/>}>Ajouter un Document</Button>
+        </Space>
+
+        </>
     );
 }
 
@@ -33,7 +39,7 @@ function Parc() {
     );
 }
 
-function Interventions() {
+function Historique() {
     return (
         <Empty/>
     );
@@ -94,12 +100,24 @@ function List(props) {
             key: 'action',
             render: (_,record) => (
                 <Space>
-                    <Button>Voir</Button>
-                    <Button onClick={() => demo() }>Supprimer</Button>
+                    <Button onClick={() => props.setClient(record.key) }><EditOutlined/></Button>
+                    <Button onClick={() => demo() }><DeleteOutlined/></Button>
                 </Space>
             )
         }
     ];
+
+    var researchOptions = [];
+    props.clients.forEach((client) => {
+       var labelValue;
+       if (client.prenom != null) {
+            labelValue = client.prenom + ' ' + client.nom;
+       } else {
+            labelValue = client.nom;
+       }
+       const item = [ { label: labelValue, value: client.key } ];
+       researchOptions = researchOptions.concat(item);
+    });
 
     return(
       <>
@@ -107,7 +125,11 @@ function List(props) {
             <Col span={24}>
                 <div style={style}>
                     <Space>
-                        <Search placeholder="Recherche client" enterButton style={{ width: 350 }}/>
+                        <AutoComplete options={researchOptions} style={{ width: 350 }} placeholder="Recherche client" onSelect={(search) => {
+                            props.setClient(search);
+                        }} onChange={() => {
+
+                        }}/>
                         <Button type="primary" icon={<PlusCircleOutlined/>} onClick={() => demo()}>Nouveau Client</Button>
                     </Space>
                 </div>
@@ -135,9 +157,9 @@ function Detail(props) {
             children: <Parc/>
         },
         {
-            key: 'interventions',
-            label: 'Interventions',
-            children: <Interventions/>
+            key: 'Historique',
+            label: 'Historique',
+            children: <Historique/>
         },
         {
             key: 'paiements',
@@ -177,20 +199,20 @@ function Detail(props) {
                         <Form.Item label="E-mail" name="email">
                             <Input allowClear={true} defaultValue={clientDetail.email} />
                         </Form.Item>
-                        <Form.Item label="Adresse" name="adresse">
+                        <Form.Item label="Adresse">
                             <TextArea rows={6} value={clientDetail.adresse}/>
                         </Form.Item>
                         <Form.Item label="Consentement" name="consentement">
-                            <Checkbox defaultChecked={true}/>
+                            <Checkbox defaultChecked={clientDetail.consentement}/>
                         </Form.Item>
-                        <Form.Item label="Client depuis " name="date">
-                            <DatePicker />
+                        <Form.Item label="Client depuis ">
+                            <DatePicker defaultValue={dayjs(clientDetail.date, 'DD-MM-YYYY')} format='DD-MM-YYYY' />
                         </Form.Item>
                         <Form.Item label="Evaluation" name="evaluation">
-                            <Rate defaultValue={5}/>
+                            <Rate defaultValue={clientDetail.evaluation}/>
                         </Form.Item>
-                        <Form.Item label="Notes" name="notes">
-                            <TextArea rows={6}/>
+                        <Form.Item label="Notes">
+                            <TextArea rows={6} value={clientDetail.notes}/>
                         </Form.Item>
                         <Form.Item label={null}>
                             <Space>

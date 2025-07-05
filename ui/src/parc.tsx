@@ -1,7 +1,88 @@
-import { Card, Avatar, Col, Row, Space, Input, Select, Button, Form, Tabs, Empty, Pagination, DatePicker } from 'antd';
-import type { TabsProps } from 'antd';
-import { UserOutlined, PlusCircleOutlined } from '@ant-design/icons';
+import React, { useState } from 'react';
+import { Card, Avatar, Col, Row, Space, Input, Select, Button, Form, Table, Tabs, Empty, Pagination, DatePicker, AutoComplete } from 'antd';
+import type { TableTabsProps } from 'antd';
+import type { Parc } from './parc.tsx';
+import { UserOutlined, PlusCircleOutlined, LeftCircleOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { ReactComponent as BoatOutlined } from './boat.svg';
+import { demo } from './workspace.tsx';
+
+const style: React.CSSProperties = { padding: '8px 0' };
+const { Search } = Input;
+const { TextArea } = Input;
+
+function List(props) {
+
+    const columns: TablesProps<Parc>['columns'] = [
+        {
+            title: 'Nom',
+            dataIndex: 'nom',
+            key: 'nom',
+            render: (_,record) => (
+                <a onClick={() => props.setDetail(record.key)}><img width='30px' url={record.imageUrl} /> {record.nom}</a>
+            )
+        },
+        {
+            title: 'Marque',
+            dataIndex: 'marque',
+            key: 'marque'
+        },
+        {
+            title: 'Dénomination',
+            dataIndex: 'denomination',
+            key: 'denomination'
+        },
+        {
+            title: 'Type',
+            dataIndex: 'type',
+            key: 'type'
+        },
+        {
+            title: 'Propriétaire',
+            dataIndex: 'proprietaire',
+            key: 'proprietaire',
+            render: (_,record) => (
+                <a>{record.proprietaire}</a>
+            )
+        },
+        {
+            title: '',
+            key: 'action',
+            render: (_,record) => (
+                <Space>
+                    <Button onClick={() => props.setDetail(record.key)}><EditOutlined/></Button>
+                    <Button onClick={() => demo()}><DeleteOutlined/></Button>
+                </Space>
+            )
+        }
+    ];
+
+    var searchOptions = [];
+    props.parc.forEach((parc) => {
+        const item = [ { label: parc.nom, value: parc.key } ];
+        searchOptions = searchOptions.concat(item);
+    });
+
+    return(
+        <>
+            <Row gutter={[16,16]}>
+                <Col span={24}>
+                    <div style={style}>
+                        <Space>
+                            <AutoComplete options={searchOptions} style={{ width: 350 }} placeholder="Recherche" />
+                            <Button type="primary" icon={<PlusCircleOutlined/>} onClick={() => demo()}>Enregistrer</Button>
+                        </Space>
+                    </div>
+                </Col>
+            </Row>
+            <Row guttern={[16,16]}>
+                <Col span={24}>
+                    <Table<Parc> columns={columns} dataSource={props.parc} />
+                </Col>
+            </Row>
+        </>
+    );
+
+}
 
 function Documents() {
     return(
@@ -33,12 +114,7 @@ function Vente() {
     );
 }
 
-export default function Parc() {
-
-    const style: React.CSSProperties = { padding: '8px 0' };
-    const { Search } = Input;
-    const { TextArea } = Input;
-
+function Detail(props) {
     const tabItems: TabsProps['items'] = [
         {
             key: 'photos',
@@ -69,26 +145,7 @@ export default function Parc() {
 
     return(
         <>
-        <Row gutter={[16,16]}>
-            <Col span={24}>
-                <div style={style}>
-                    <Space>
-                        <Search placeholder="Recherche" enterButton style={{ width: 350 }}/>
-                        <Select mode="tags" placeholder="Type" style={{ width: 350 }} options={[
-                              { value: '', label: ''},
-                              { value: 'bateaumoteur', label: 'Bateau Moteur' },
-                              { value: 'voilier', label: 'Voilier' },
-                              { value: 'moteur', label: 'Moteur' },
-                              { value: 'remorque', label: 'Remorque' }
-                            ]}/>
-                        <Button type="primary" icon={<PlusCircleOutlined/>}>Nouveau</Button>
-                    </Space>
-                </div>
-            </Col>
-        </Row>
-        <Row gutter={[16,16]}>
-            <Col span={24}>
-            <div style={style}>
+            <a onClick={() => ( props.setDetail(null) )}><LeftCircleOutlined/> Retour au parc</a>
                 <Card title={<Space><Avatar size="large" icon={<BoatOutlined/>}/>Rosco</Space>} style={{ width: '100%' }}>
                     <Form name="client" labelCol={{ span: 8 }}
                         wrapperCol={{ span: 16 }}
@@ -129,13 +186,22 @@ export default function Parc() {
                     </Form>
                     <Tabs items={tabItems}/>
                 </Card>
-            </div>
-            </Col>
-        </Row>
-        <Row gutter={[16,16]} justify="center">
-            <Pagination align="center" total={2} />
-        </Row>
         </>
     );
+}
+
+export default function Parc(props) {
+
+    const [ detail, setDetail ] = useState();
+
+    if (detail) {
+        return(
+            <Detail setDetail={setDetail} />
+        );
+    } else {
+        return(
+            <List parc={props.parc} setDetail={setDetail} />
+        );
+    }
 
 }
