@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card, Col, Row, Space, Input, InputNumber, Select, Button, Form, Table, Tabs, Empty, Pagination, DatePicker, AutoComplete, Image, Collapse } from 'antd';
 import type { TableTabsProps } from 'antd';
 import type { Bateau } from './workspace.tsx';
-import { UserOutlined, PlusCircleOutlined, LeftCircleOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { UserOutlined, PlusCircleOutlined, LeftCircleOutlined, EditOutlined, DeleteOutlined, PauseCircleOutlined } from '@ant-design/icons';
 import { ReactComponent as BoatOutlined } from './boat.svg';
 import { demo } from './workspace.tsx';
 import dayjs from 'dayjs';
@@ -174,6 +174,86 @@ function Assurance(props) {
     );
 }
 
+function Localisation(props) {
+    return(
+      <>
+      <Form.Item label="Localisation">
+        <TextArea rows={6} value={props.bateau.localisation} />
+      </Form.Item>
+      </>
+    );
+}
+
+function Moteurs(props) {
+    return(props.bateau.moteurs.map((moteur) =>
+        <>
+        <Card title={<Space>{moteur.nom} <Button onClick={() => demo()} icon={<DeleteOutlined/>}/></Space>} style={{ margin: '0 0 20px 0'}} >
+            <Form.Item label="Nom">
+                <Input allowClear={true} value={moteur.nom} />
+            </Form.Item>
+            <Form.Item label="Marque">
+                <Input value={moteur.marque} />
+            </Form.Item>
+            <Form.Item label="Dénomination">
+                <Input value={moteur.denomination} />
+            </Form.Item>
+            <Form.Item label="Numéro de série">
+                <Input value={moteur.numeroserie} />
+            </Form.Item>
+            <Form.Item label="Type">
+                <Select defaultValue={moteur.type} options={[
+                    { value: 'Hors Bord', label: 'Hors Bord' },
+                    { value: 'Inboard', label: 'Inboard'}
+                ]} />
+            </Form.Item>
+            <Form.Item label="Carburant">
+                <Select defaultValue={moteur.carburant} options={[
+                    { value: 'Essence', label: 'Essence'},
+                    { value: 'Diesel', label: 'Diesel' },
+                    { value: 'Electrique', label: 'Electrique' }
+                ]} />
+            </Form.Item>
+            <Form.Item label="Hélice">
+                <Input value={moteur.helice} />
+            </Form.Item>
+            <Form.Item label="Pas d'hélice">
+                <Input value={moteur.pas} />
+            </Form.Item>
+            <Form.Item label="Diamétre hélice">
+                <Input value={moteur.diametre} />
+            </Form.Item>
+            <Form.Item label="Nombre de lames hélice">
+                <InputNumber value={moteur.lame} />
+            </Form.Item>
+        </Card>
+        </>
+        )
+    );
+}
+
+function Electronique(props) {
+    return(
+        props.bateau.electronique.map((electronique) =>
+        <Card title={<Space>{electronique.nom} <Button onClick={() => demo()} icon={<DeleteOutlined/>} /></Space>}>
+            <Form.Item label="Nom">
+                <Input value={electronique.nom} />
+            </Form.Item>
+            <Form.Item label="Type">
+                <Select defaultValue={electronique.type} options={[
+                    { value: 'VHF & Communication', label: 'VHF & Communication' },
+                    { value: 'GPS & Lecteurs de Cartes'},
+                    { value: 'Sondeurs de Pêche', label: 'Sondeurs de Pêche'},
+                    { value: 'Combiné GPS & Sondeur', label: 'Combiné GPS & Sondeur' },
+                    { value: 'Instruments de Navigation', label: 'Instruments de Navigation' },
+                    { value: 'Système Radars', label: 'Système Radars' },
+                    { value: 'Pilotes Automatiques', label: 'Pilotes Automatiques' }
+                ]} />
+            </Form.Item>
+        </Card>
+        )
+    );
+}
+
 function Bateau(props) {
     const tabItems: TabsProps['items'] = [
         {
@@ -214,17 +294,17 @@ function Bateau(props) {
         {
             key: '3',
             label: 'Localisation',
-            children: <p>Hello</p>
+            children: <Localisation bateau={bateauDetail} />
         },
         {
             key: '4',
             label: 'Moteurs',
-            children: <p>Hello</p>
+            children: <><Moteurs bateau={bateauDetail} /><Button type="primary" onClick={() => demo()} icon={<PlusCircleOutlined/>}>Ajouter un moteur</Button></>
         },
         {
             key: '5',
             label: 'Electronique',
-            children: <p>Hello</p>
+            children: <><Electronique bateau={bateauDetail} /><Button type="primary" onClick={() => demo()} icon={<PlusCircleOutlined/>}>Ajouter de l'électronique</Button></>
         },
         {
             key: '6',
@@ -239,7 +319,14 @@ function Bateau(props) {
     ];
 
     if (bateauDetail.type === 'Voilier') {
-        collapseItems[3].label = 'Voile';
+        const collapseVoilier = [
+          {
+              key: '8',
+              label: 'Voiles',
+              children: <p>Voiles</p>
+          }
+        ];
+        collapseItems = collapseItems.concat(collapseVoilier);
     }
 
     return(
@@ -294,7 +381,9 @@ function Bateau(props) {
                         <Collapse style={{ margin: '0 0 24px 0'}} items={collapseItems} />
                         <Form.Item label={null}>
                             <Space>
-                            <Button type="primary" htmlType="submit">Sauvegarder</Button><Button htmlType="button">Annuler</Button>
+                            <Button type="primary" htmlType="submit" icon={<PlusCircleOutlined/>}>Sauvegarder</Button>
+                            <Button type="primary" icon={<DeleteOutlined/>}>Supprimer</Button>
+                            <Button icon={<PauseCircleOutlined/>}>Annuler</Button>
                             </Space>
                         </Form.Item>
                     </Form>

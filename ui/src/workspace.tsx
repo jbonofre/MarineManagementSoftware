@@ -23,6 +23,26 @@ interface Client {
     email: string
 }
 
+interface MoteurBateau {
+    nom: string,
+    marque: string,
+    denomination: string,
+    numeroserie: string,
+    type: string,
+    puissance: string,
+    carburant: string
+    helice: string,
+    diametre: string,
+    pas: string,
+    lames: number,
+    notes: string
+}
+
+interface ElectroniqueBateau {
+    nom: string,
+    type: string
+}
+
 interface Bateau {
     key: string,
     nom: string,
@@ -51,7 +71,11 @@ interface Bateau {
     reservoircarburant: number,
     nombremaxpassagers: number,
     categoriece: string,
-    photos: string[]
+    photos: string[],
+    localisation: string,
+    localisationgps: string,
+    moteurs: MoteurBateau[],
+    electronique: ElectroniqueBateau[]
 }
 
 const clients: Client[] = [
@@ -135,7 +159,30 @@ const bateaux: Bateau[] = [
             'https://www.quicksilver-boats.com/media/4vjdv0yg/605-open-details-1490_rod-holders_f.jpg'
         ],
         assureur: 'GMF',
-        numeroassurance: 'DSQDJCCE'
+        numeroassurance: 'DSQDJCCE',
+        localisation: 'I66\nPort du Bloscon\n29680 Roscoff',
+        localisationgps: '3,57550 48,42541',
+        moteurs: [
+            {
+                nom: 'Moteur 1',
+                marque: 'Mercury',
+                denomination: 'Pro XS 150',
+                type: 'Hors Bord',
+                carburant: 'Essence',
+                puissance: '150cv (110 kw)',
+                numeroserie: 'DSDASX231',
+                helice: 'Solas Lexor4',
+                diametre: '14 1/4',
+                pas: '17R',
+                lame: 4
+            }
+        ],
+        electronique: [
+            {
+                nom: 'Garmin Echomap 92SV UHD',
+                type: 'Combiné GPS & Sondeur'
+            }
+        ]
     },
     {
         key: '2',
@@ -157,7 +204,10 @@ const bateaux: Bateau[] = [
         photos: [
             'https://idata.over-blog.com/0/56/75/49/le-bateau/amenagements-jour.jpg',
             'https://marclombard.com/wp-content/uploads/2023/01/lesud-e1672741821685.jpg'
-        ]
+        ],
+        localisation: 'E55\nPort du Bloscon\n29680 Roscoff',
+        moteurs: [],
+        electronique: []
     }
 ];
 
