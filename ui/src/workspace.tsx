@@ -3,7 +3,7 @@ import { Layout, Input, Col, Row, Image, Menu, message } from 'antd';
 import { Route, Switch } from 'react-router';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { Link } from 'react-router-dom';
-import { UserOutlined, TeamOutlined, HomeOutlined, AmazonOutlined, SettingOutlined, ToolOutlined, StockOutlined, FileProtectOutlined, ReadOutlined, DesktopOutlined } from '@ant-design/icons';
+import { UserOutlined, TeamOutlined, HomeOutlined, AmazonOutlined, SettingOutlined, ToolOutlined, StockOutlined, FileProtectOutlined, ReadOutlined, DesktopOutlined, DeploymentUnitOutlined } from '@ant-design/icons';
 import Icon from '@ant-design/icons';
 import { ReactComponent as BoatOutlined } from './boat.svg';
 import { ReactComponent as EngineOutlined } from './moteur.svg';
@@ -14,6 +14,8 @@ import Clients from './clients.tsx';
 import Bateaux from './bateaux.tsx';
 import Magasin from './magasin.tsx';
 import Interventions from './interventions.tsx';
+import Chantier from './chantier.tsx';
+import Utilisateurs from './utilisateurs.tsx';
 
 interface Client {
     key: string,
@@ -243,7 +245,10 @@ function SideMenu(props) {
         { key: 'site', label: 'Site ecommerce' },
         { key: 'marketing', label: 'Marketing' }
       ] },
-      { key: 'parametrage', label: 'Paramétrage', icon: <SettingOutlined/> }
+      { key: 'parametrage', label: 'Paramétrage', icon: <SettingOutlined/>, children: [
+        { key: 'chantier', label: <Link to="/chantier">Chantier</Link>, icon: <DeploymentUnitOutlined/> },
+        { key: 'utilisateurs', label: <Link to="/utilisateurs">Utilisateurs</Link>, icon: <UserOutlined/> }
+      ] }
     ];
 
     return(
@@ -305,6 +310,12 @@ export default function Workspace(props) {
                     </Route>
                     <Route path="/interventions" key="interventions">
                         <Interventions />
+                    </Route>
+                    <Route path="/chantier" key="chantier">
+                        <Chantier />
+                    </Route>
+                    <Route path="/utilisateurs" key="utilisateurs">
+                        <Utilisateurs />
                     </Route>
                 </Switch>
             </Layout.Content>

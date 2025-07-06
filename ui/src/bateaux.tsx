@@ -381,7 +381,7 @@ function Bateau(props) {
                         <Collapse style={{ margin: '0 0 24px 0'}} items={collapseItems} />
                         <Form.Item label={null}>
                             <Space>
-                            <Button type="primary" htmlType="submit" icon={<PlusCircleOutlined/>}>Sauvegarder</Button>
+                            <Button type="primary" htmlType="submit" icon={<PlusCircleOutlined/>}>Enregistrer</Button>
                             <Button type="primary" icon={<DeleteOutlined/>}>Supprimer</Button>
                             <Button icon={<PauseCircleOutlined/>}>Annuler</Button>
                             </Space>
