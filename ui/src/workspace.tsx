@@ -184,7 +184,14 @@ const bateaux: Bateau[] = [
                 nom: 'Garmin Echomap 92SV UHD',
                 type: 'Combiné GPS & Sondeur'
             }
-        ]
+        ],
+        equipement: [
+            {
+                nom: 'Mat de ski / wakeboard H 1,20m',
+                type: 'Tour de wake, anneau de traction et roll-bar'
+            }
+        ],
+        remorque: []
     },
     {
         key: '2',

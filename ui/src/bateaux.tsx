@@ -254,6 +254,40 @@ function Electronique(props) {
     );
 }
 
+function Equipement(props) {
+    return(
+      props.bateau.equipement.map((equipement) =>
+      <Card title={<Space>{equipement.nom} <Button onClick={() => demo()} icon={<DeleteOutlined/>} /></Space>}>
+        <Form.Item label="Nom">
+            <Input value={equipement.nom} />
+        </Form.Item>
+        <Form.Item label="Type">
+            <Select defaultValue={equipement.type} options={[
+                { value: 'Tour de wake, anneaau de traction et roll-bar', label: 'Tour de wake, anneaau de traction et roll-bar'},
+                { value: 'Mouillage', label: 'Mouillage' },
+                { value: 'Accastillage et Gréement', label: 'Accastillage et Gréement' }
+            ]} />
+        </Form.Item>
+      </Card>
+      )
+    );
+}
+
+function Remorque(props) {
+    return(
+      props.bateau.remorque.map((remorque) =>
+      <Card title={<Space>{remorque.nom} <Button onClick={() => demo()} icon={<DeleteOutlined/>} /></Space>}>
+        <Form.Item label="Nom">
+            <Input value={remorque.nom} />
+        </Form.Item>
+        <Form.Item label="Type">
+            <Input value={remorque.type} />
+        </Form.Item>
+      </Card>
+      )
+    );
+}
+
 function Bateau(props) {
     const tabItems: TabsProps['items'] = [
         {
@@ -309,12 +343,12 @@ function Bateau(props) {
         {
             key: '6',
             label: 'Equipement',
-            children: <p>Hello</p>
+            children: <><Equipement bateau={bateauDetail} /><Button type="primary" onClick={() => demo()} icon={<PlusCircleOutlined/>}>Ajouter un équipement</Button></>
         },
         {
             key: '7',
             label: 'Remorque',
-            children: <p>Hello</p>
+            children: <><Remorque bateau={bateauDetail} /><Button type="primary" onClick={() => demo()} icon={<PlusCircleOutlined/>}>Ajouter une remorque</Button></>
         }
     ];
 
