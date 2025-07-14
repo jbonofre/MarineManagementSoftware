@@ -274,20 +274,23 @@ function Header(props) {
     const menuUser = [
               { key: 'user', label: props.user, icon: <UserOutlined />, children: [
                 { key: 'preferences', label: 'Préférences', icon: <SettingOutlined/> },
-                { key: 'deconnexion', label: <Button type="text" onClick={() => props.setUser(null)}>Déconnexion</Button>, icon: <DisconnectOutlined/> }
+                { key: 'deconnexion', label: 'Déconnexion', icon: <DisconnectOutlined/> }
               ]}
     ];
-
-    const onClick : MenuProps['onClick'] = (e) => {
-        console.log('click', e);
-    };
 
     return(
         <Layout.Header style={{ height: "80px", background: "#fff", padding: "5px", margin: "10px" }}>
             <Row align="middle" justify="center" wrap="false">
                 <Col span={3}><Image src="./logo.png" preview={false} width={75}/></Col>
                 <Col span={19}><Search /></Col>
-                <Col span={2}><Menu items={menuUser} onClick={onClick} /></Col>
+                <Col span={2}><Menu items={menuUser} onClick={(e) => {
+                    if (e.key === 'deconnexion') {
+                        props.setUser(null);
+                    }
+                    if (e.key === 'preferences') {
+                        console.log(e);
+                    }
+                }} /></Col>
             </Row>
         </Layout.Header>
     );
