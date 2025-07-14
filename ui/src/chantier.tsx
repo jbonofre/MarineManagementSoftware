@@ -10,7 +10,7 @@ export default function Chantier(props) {
 
     return(
       <>
-      <Card title={<Space><DeploymentUnitOutlined/> Chantier</Space>}>
+      <Card title={<Space><DeploymentUnitOutlined/> Société</Space>}>
         <Row guttern={[16,16]}>
             <Col span={19}>
                 <Form name="chantier" labelCol={{ span: 8 }}

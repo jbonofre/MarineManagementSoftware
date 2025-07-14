@@ -254,7 +254,7 @@ function SideMenu(props) {
         { key: 'marketing', label: 'Marketing' }
       ] },
       { key: 'parametrage', label: 'Paramétrage', icon: <SettingOutlined/>, children: [
-        { key: 'chantier', label: <Link to="/chantier">Chantier</Link>, icon: <DeploymentUnitOutlined/> },
+        { key: 'chantier', label: <Link to="/chantier">Société</Link>, icon: <DeploymentUnitOutlined/> },
         { key: 'utilisateurs', label: <Link to="/utilisateurs">Utilisateurs</Link>, icon: <UserOutlined/> }
       ] }
     ];
