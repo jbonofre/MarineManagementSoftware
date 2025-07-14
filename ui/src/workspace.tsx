@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Layout, Input, Col, Row, Image, Menu, message } from 'antd';
+import { Layout, Input, Col, Row, Image, Menu, Button, message } from 'antd';
 import { Route, Switch } from 'react-router';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { Link } from 'react-router-dom';
-import { UserOutlined, TeamOutlined, HomeOutlined, AmazonOutlined, SettingOutlined, ToolOutlined, StockOutlined, FileProtectOutlined, ReadOutlined, DesktopOutlined, DeploymentUnitOutlined } from '@ant-design/icons';
+import { UserOutlined, TeamOutlined, HomeOutlined, AmazonOutlined, SettingOutlined, ToolOutlined, StockOutlined, FileProtectOutlined, ReadOutlined, DesktopOutlined, DeploymentUnitOutlined, DisconnectOutlined } from '@ant-design/icons';
 import Icon from '@ant-design/icons';
 import { ReactComponent as BoatOutlined } from './boat.svg';
 import { ReactComponent as EngineOutlined } from './moteur.svg';
@@ -16,6 +16,7 @@ import Magasin from './magasin.tsx';
 import Interventions from './interventions.tsx';
 import Chantier from './chantier.tsx';
 import Utilisateurs from './utilisateurs.tsx';
+import Caisse from './caisse.tsx';
 
 interface Client {
     key: string,
@@ -238,7 +239,7 @@ function SideMenu(props) {
       ] },
       { key: 'magasin', label: 'Magasin', icon: <StockOutlined/>, children: [
         { key: 'catalogue', label: <Link to="/magasin">Catalogue</Link>, icon: <ReadOutlined/> },
-        { key: 'caisse', label: 'Caisse', icon: <DesktopOutlined/> },
+        { key: 'caisse', label: <Link to="/caisse">Caisse</Link>, icon: <DesktopOutlined/> },
         { key: 'fournisseurs', label: 'Fournisseurs', icon: <FileProtectOutlined/> }
       ] },
       { key: 'atelier', label: 'Atelier', icon: <ToolOutlined/>, children: [
@@ -272,8 +273,8 @@ function Header(props) {
 
     const menuUser = [
               { key: 'user', label: props.user, icon: <UserOutlined />, children: [
-                { key: 'preferences', label: 'Préférences' },
-                { key: 'deconnexion', label: 'Déconnexion' }
+                { key: 'preferences', label: 'Préférences', icon: <SettingOutlined/> },
+                { key: 'deconnexion', label: <Button type="text" onClick={() => props.setUser(null)}>Déconnexion</Button>, icon: <DisconnectOutlined/> }
               ]}
     ];
 
@@ -297,10 +298,10 @@ export default function Workspace(props) {
 
     return(
         <Layout style={{ height: "105vh" }}>
-          <Header user={props.user} />
+          <Header user={props.user} setUser={props.setUser} />
           <Layout hasSider={true}>
             <Router>
-            <SideMenu user={props.user} />
+            <SideMenu user={props.user}/>
             <Layout.Content style={{ margin: "15px" }}>
                 <Switch>
                     <Route path="/" key="home" exact={true}>
@@ -323,6 +324,9 @@ export default function Workspace(props) {
                     </Route>
                     <Route path="/utilisateurs" key="utilisateurs">
                         <Utilisateurs />
+                    </Route>
+                    <Route path="/caisse" key="caisse">
+                        <Caisse />
                     </Route>
                 </Switch>
             </Layout.Content>
