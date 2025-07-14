@@ -4,6 +4,7 @@ import { demo } from './workspace.tsx';
 
 const { TextArea } = Input;
 const adresse = 'ZA Le Band\n29670 Henvic';
+const bancaires = 'Banque : CREDIT AGRICOLE CHEQUE\nRIB : 12906000345743433700594\nIBAN : FR7612906000345743433700594\nBIC : AGRIFRPP829';
 
 export default function Chantier(props) {
 
@@ -38,6 +39,9 @@ export default function Chantier(props) {
                     </Form.Item>
                     <Form.Item label="Email">
                         <Input value="contact@msplaisance.com"/>
+                    </Form.Item>
+                    <Form.Item label="Coordonnées bancaires">
+                        <TextArea rows={6} value={bancaires} />
                     </Form.Item>
                     <Form.Item label={null}>
                         <Space>
