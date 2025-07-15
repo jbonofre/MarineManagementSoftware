@@ -77,7 +77,11 @@ function List(props) {
             </Row>
             <Row guttern={[16,16]}>
                 <Col span={24}>
-                    <Table<Bateau> columns={columns} dataSource={props.bateaux} />
+                    <Table<Bateau> columns={columns} dataSource={props.bateaux} onRow={(record, rowIndex) => {
+                        return {
+                            onClick: (event) => { props.setBateau(record.key) }
+                        };
+                    }}/>
                 </Col>
             </Row>
         </>

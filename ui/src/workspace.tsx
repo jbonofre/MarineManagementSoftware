@@ -239,7 +239,7 @@ function SideMenu(props) {
       ] },
       { key: 'magasin', label: 'Magasin', icon: <StockOutlined/>, children: [
         { key: 'catalogue', label: <Link to="/magasin">Catalogue</Link>, icon: <ReadOutlined/> },
-        { key: 'caisse', label: <Link to="/caisse">Caisse</Link>, icon: <DesktopOutlined/> },
+        { key: 'guichet', label: <Link to="/caisse">Guichet</Link>, icon: <DesktopOutlined/> },
         { key: 'fournisseurs', label: 'Fournisseurs', icon: <FileProtectOutlined/> }
       ] },
       { key: 'atelier', label: 'Atelier', icon: <ToolOutlined/>, children: [
