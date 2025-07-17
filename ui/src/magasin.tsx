@@ -11,7 +11,7 @@ interface ReferenceType {
     reference: string,
     stock: number,
     categorie: string,
-    evaluation: number
+    evaluation: number,
 }
 
 const style: React.CSSProperties = { padding: '8px 0' };
@@ -149,6 +149,15 @@ function List(props) {
             categorie: 'Pièces Hors Bord',
             imageUrl: 'https://www.piecesbateaux.com/3879-medium_default/filtre-a-huile-mercury-75-a-150cv-4t-efi.jpg',
             stock: 12
+        },
+        {
+            key: '3',
+            nom: 'Vidange Moteur Mercury EFI 50-150',
+            reference: 'Atelier VMM',
+            marque: 'MS Plaisance',
+            categorie: 'Service',
+            imageUrl: '',
+            stock: 1
         }
     ];
 
@@ -161,6 +170,7 @@ function List(props) {
                                 <Search placeholder="Recherche" enterButton style={{ width: 350 }}/>
                                 <Select mode="tags" placeholder="Catégories" style={{ width: 350 }} options={[
                                       { value: '', label: ''},
+                                      { value: 'service', label: 'Service' },
                                       { value: 'moteurs', label: 'Moteurs' },
                                       { value: 'bateaux', label: 'Bateaux' },
                                       { value: 'remoraues', label: 'Remorques' },
@@ -171,7 +181,7 @@ function List(props) {
                                       { value: 'anodesbougies', label: 'Anodes & Bougies' },
                                       { value: 'eccastillage', label: 'Accastillage & Confort à Bord' },
                                       { value: 'equipement', label: 'Equipement & Accessoires' },
-                                      { value: 'securite', label: 'Naavigation & Sécurité' },
+                                      { value: 'securite', label: 'Navigation & Sécurité' },
                                       { value: 'sports', label: 'Pneumatiques & Sports Nautiques'},
                                     ]}/>
                                 <Button type="primary" icon={<StockOutlined/>}>Mise à jour du stock</Button>
