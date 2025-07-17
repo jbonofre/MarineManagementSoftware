@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Card, Space, Button, Table, Modal, Form, Input, Select, DatePicker, InputNumber, Transfer } from 'antd';
+import { Card, Space, Button, Table, Modal, Form, Input, Select, DatePicker, InputNumber } from 'antd';
 import { DesktopOutlined, PlusCircleOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { demo } from './workspace.tsx';
 
 const types = [
+  { value: 'Ticket de Caisse', label: 'Ticket de Caisse' },
   { value: 'Devis', label: 'Devis' },
   { value: 'Commande', label: 'Commande' },
   { value: 'Facture', label: 'Facture' },
@@ -23,7 +24,7 @@ const { TextArea } = Input;
 
 const transactions = [
   {
-    numero: 1,
+    numero: 'SXZADAX121',
     type: 'Facture payée',
     codeclient: 'CL01797',
     client: 'Jean-Baptiste Onofré',
@@ -43,11 +44,32 @@ const transactions = [
         {
             code: '13311',
             description: 'Bouée de mouillage rigide orange, diam 25cm',
-            qte: 1,
+            quantite: 1,
             remise: 0,
+            prixht: 20.10,
             tva: 20,
-            puttc: 24,
-            montantttc: 24
+            prixttc: 24
+        }
+    ]
+  },
+  {
+    numero: 'DSDXZ21SQ',
+    type: 'Ticket de Caisse',
+    date: '06-06-2024',
+    montantht: 20.10,
+    tauxtva: 20.00,
+    montantttc: 24.00,
+    netapayer: 24,
+    modereglement: 'CB',
+    items: [
+        {
+           code: '13311',
+            description: 'Bouée de mouillage rigide orange, diam 25cm',
+            quantite: 1,
+            remise: 0,
+            prixht: 20.10,
+            tva: 20,
+            prixttc: 24
         }
     ]
   }
@@ -92,7 +114,7 @@ const columns = [
 
 function creernumero(length) {
     var result           = '';
-    var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     var charactersLength = characters.length;
     for ( var i = 0; i < length; i++ ) {
         result += characters.charAt(Math.floor(Math.random() * charactersLength));
@@ -102,20 +124,32 @@ function creernumero(length) {
 
 function NouvelleTransaction(props) {
 
+    const articles = [];
+    const articlesTable = [
+        { title: 'Reference', dataIndex: 'code', key: 'code' },
+        { title: 'Description', dataIndex: 'description', key: 'description' },
+        { title: 'Quantité', dataIndex: 'quantite', key: 'quantite' },
+        { title: 'Prix HT', dataIndex: 'prixht', key: 'prixht' },
+        { title: 'Remise', dataIndex: 'remise', key: 'remise' },
+        { title: 'TVA', dataIndex: 'tva', key: 'tva'},
+        { title: 'Prix TTC', dataIndex: 'prixttc', key: 'prixttc' }
+    ];
+
     const numero = creernumero(10);
 
     return(
         <Modal centered={true} mask={true} title='Nouvelle Transaction' open={props.openNew} okText='Sauvegarder'
-            closable={true} width={800} onCancel={() => props.setOpenNew(false)}>
-            <Form name="client" labelCol={{ span: 8 }}
-                 wrapperCol={{ span: 16 }}
-                 style={{ width: '80%' }}
+            onOk={() => demo()}
+            closable={true} width={1024} onCancel={() => props.setOpenNew(false)}>
+            <Form name="client" labelCol={{ span: 3 }}
+                 wrapperCol={{ span: 21 }}
+                 style={{ width: '100%' }}
                  initialValues={{ remember: true }}>
                 <Form.Item label="Numéro">
                     <Input value={numero} disabled={true} />
                 </Form.Item>
                 <Form.Item label="Type">
-                    <Select options={types} />
+                    <Select options={types} defaultValue='Ticket de Caisse' />
                 </Form.Item>
                 <Form.Item label="Client">
                     <Input.Search />
@@ -145,7 +179,19 @@ function NouvelleTransaction(props) {
                     <InputNumber addonAfter="€" />
                 </Form.Item>
                 <Form.Item label="Articles">
-                    <Transfer showSearch />
+                    <Space direction='vertical'>
+                    <Space>
+                        <Input placeholder='Référence' />
+                        <Input placeholder='Description' />
+                        <InputNumber value={1} style={{ width: 70 }}/>
+                        <InputNumber placeholder='Prix HT' addonAfter='€'/>
+                        <InputNumber value={0} addonAfter='%' style={{ width: 100 }} />
+                        <InputNumber value={20} addonAfter='%' style={{ width: 100 }} />
+                        <InputNumber placeholder='Prix TTC' addonAfter='€' />
+                        <Button type='primary'>Ajouter</Button><Button type='primary'>Scanner</Button>
+                    </Space>
+                    <Table columns={articlesTable} dataSource={articles} />
+                    </Space>
                 </Form.Item>
             </Form>
         </Modal>
@@ -156,6 +202,11 @@ function DetailTransaction(props) {
 
     const transaction = transactions.filter(record => record.numero === props.numeroTransaction)[0];
 
+    if (transaction === null) {
+        message.error('La transaction n\'existe pas');
+        return(<></>);
+    }
+
     var open = false;
     if (props.numeroTransaction !== null) {
         open = true;
@@ -163,6 +214,8 @@ function DetailTransaction(props) {
 
     var transactionType = null;
     var transactionNumero = null;
+
+
     if (transaction != null) {
         transactionType = transaction.type;
         transactionNumero = transaction.numero;
@@ -170,8 +223,8 @@ function DetailTransaction(props) {
 
     return(
       <Modal centered={true} mask={true} title={<Space>{transactionType}{transactionNumero}</Space>}
-            width={800} open={open} closable={true}>
-        <p>Test</p>
+            width={1024} open={open} closable={true} onCancel={() => props.setNumeroTransaction(null)}>
+
       </Modal>
     );
 }
@@ -182,7 +235,7 @@ export default function Caisse(props) {
     return(
       <>
       <NouvelleTransaction openNew={openNew} setOpenNew={setOpenNew} />
-      <DetailTransaction numeroTransaction={numeroTransaction} />
+      <DetailTransaction numeroTransaction={numeroTransaction} setNumeroTransaction={setNumeroTransaction} />
       <Card title={<Space><DesktopOutlined/> Guichet</Space>}>
         <Button type="primary" icon={<PlusCircleOutlined/>} onClick={() => setOpenNew(true) }>Nouvelle transaction</Button>
         <Table columns={columns} dataSource={transactions} onRow={(record, rowIndex) => {
