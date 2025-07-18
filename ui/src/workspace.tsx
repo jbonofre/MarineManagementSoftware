@@ -12,6 +12,8 @@ import { ReactComponent as TailerOutlined } from './remorque.svg';
 import Home from './home.tsx';
 import Clients from './clients.tsx';
 import Bateaux from './bateaux.tsx';
+import Moteurs from './moteurs.tsx';
+import Remorques from './remorques.tsx';
 import Magasin from './magasin.tsx';
 import Interventions from './interventions.tsx';
 import Chantier from './chantier.tsx';
@@ -221,6 +223,32 @@ const bateaux: Bateau[] = [
     }
 ];
 
+const moteurs = [
+  {
+    key: '1',
+    denomination: 'Mercury 20 cv ELPHPT Arbre Long',
+    imageUrl: '',
+    marque: 'Mercury',
+    type: 'Hors-Bord',
+    puissancecv: 20,
+    puissancekw: 14.7,
+    longueurarbre: 'L',
+    arbre: 508,
+    démarrage: 'Electrique',
+    barre: 'Franche',
+    cylindres: 2,
+    cylindree: 333,
+    regime: '5700-6200',
+    huilerecommandee: '10W30',
+    proprietaire: 'Les Viviers de Carantec',
+    proprietairekey: '3',
+    dateachat: '03-05-2025',
+    datemes: '07-05-2025',
+    heures: 30,
+    notes: ''
+  }
+];
+
 export function demo() {
     message.warning("Vous êtes sur une version de démonstration de Marine Management Software. Il n'est pas possible d'ajouter ou supprimer des éléments.")
 }
@@ -234,8 +262,8 @@ function SideMenu(props) {
       { key: 'clients', label: <Link to="/clients">Clients</Link>, icon: <TeamOutlined /> },
       { key: 'parc', label: 'Parc', icon: <Icon component={ ParcOutlined } />, children: [
         { key: 'bateaux', label: <Link to="/bateaux">Bateaux</Link>, icon: <Icon component={ BoatOutlined } />},
-        { key: 'moteurs', label: 'Moteurs', icon: <Icon component={ EngineOutlined } /> },
-        { key: 'remorques', label: 'Remorques', icon: <Icon component= { TailerOutlined } /> }
+        { key: 'moteurs', label: <Link to="/moteurs">Moteurs</Link>, icon: <Icon component={ EngineOutlined } /> },
+        { key: 'remorques', label: <Link to="/remorques">Remorques</Link>, icon: <Icon component= { TailerOutlined } /> }
       ] },
       { key: 'magasin', label: 'Magasin', icon: <StockOutlined/>, children: [
         { key: 'catalogue', label: <Link to="/magasin">Catalogue</Link>, icon: <ReadOutlined/> },
@@ -315,6 +343,12 @@ export default function Workspace(props) {
                     </Route>
                     <Route path="/bateaux" key="bateaux">
                         <Bateaux bateaux={bateaux} />
+                    </Route>
+                    <Route path="/moteurs" key="moteurs">
+                        <Moteurs moteurs={moteurs} />
+                    </Route>
+                    <Route path="/remorques" key="remorques">
+                        <Remorques />
                     </Route>
                     <Route path="/magasin" key="magasin">
                         <Magasin />
