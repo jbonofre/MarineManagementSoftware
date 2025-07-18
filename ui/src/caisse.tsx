@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Card, Space, Button, Table, Modal, Form, Input, Select, DatePicker, InputNumber } from 'antd';
-import { DesktopOutlined, PlusCircleOutlined, EditOutlined, DeleteOutlined, PrinterOutlined, SendOutlined } from '@ant-design/icons';
+import { DesktopOutlined, PlusCircleOutlined, EditOutlined, DeleteOutlined, PrinterOutlined, SendOutlined, CreditCardOutlined } from '@ant-design/icons';
 import { demo } from './workspace.tsx';
 import dayjs from 'dayjs';
 
@@ -196,6 +196,11 @@ function NouvelleTransaction(props) {
                     </Space>
                 </Form.Item>
             </Form>
+            <Space>
+                <Button type="primary" icon={<PrinterOutlined/>}>Imprimer</Button>
+                <Button type="primary" icon={<SendOutlined/>}>Envoyer par e-mail</Button>
+                <Button type="primary" icon={<CreditCardOutlined/>}>Paiement</Button>
+            </Space>
         </Modal>
     );
 }
@@ -291,6 +296,7 @@ function DetailTransaction(props) {
             <Space>
                 <Button type="primary" icon={<PrinterOutlined/>}>Imprimer</Button>
                 <Button type="primary" icon={<SendOutlined/>}>Envoyer par e-mail</Button>
+                <Button type="primary" icon={<CreditCardOutlined/>}>Paiement</Button>
             </Space>
         </Modal>
     );
