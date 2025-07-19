@@ -70,7 +70,7 @@ function List(props) {
                     <div style={style}>
                         <Space>
                             <AutoComplete options={searchOptions} style={{ width: 350 }} placeholder="Recherche" />
-                            <Button type="primary" icon={<PlusCircleOutlined/>} onClick={() => demo()}>Enregistrer</Button>
+                            <Button type="primary" icon={<PlusCircleOutlined/>} onClick={() => demo()}>Nouveau Bateau</Button>
                         </Space>
                     </div>
                 </Col>

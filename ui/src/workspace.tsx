@@ -3,7 +3,7 @@ import { Layout, Input, Col, Row, Image, Menu, Button, message } from 'antd';
 import { Route, Switch } from 'react-router';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { Link } from 'react-router-dom';
-import { UserOutlined, TeamOutlined, HomeOutlined, AmazonOutlined, SettingOutlined, ToolOutlined, StockOutlined, FileProtectOutlined, ReadOutlined, DesktopOutlined, DeploymentUnitOutlined, DisconnectOutlined } from '@ant-design/icons';
+import { UserOutlined, TeamOutlined, HomeOutlined, AmazonOutlined, SettingOutlined, ToolOutlined, StockOutlined, FileOutlined, FileProtectOutlined, ReadOutlined, DesktopOutlined, DeploymentUnitOutlined, DisconnectOutlined } from '@ant-design/icons';
 import Icon from '@ant-design/icons';
 import { ReactComponent as BoatOutlined } from './boat.svg';
 import { ReactComponent as EngineOutlined } from './moteur.svg';
@@ -226,6 +226,7 @@ const bateaux: Bateau[] = [
 const moteurs = [
   {
     key: '1',
+    numeroserie: 'DSDQSD231',
     denomination: 'Mercury 20 cv ELPHPT Arbre Long',
     imageUrl: '',
     marque: 'Mercury',
@@ -266,11 +267,13 @@ function SideMenu(props) {
         { key: 'remorques', label: <Link to="/remorques">Remorques</Link>, icon: <Icon component= { TailerOutlined } /> }
       ] },
       { key: 'magasin', label: 'Magasin', icon: <StockOutlined/>, children: [
+        { key: 'guichet', label: <Link to="/caisse">Comptoir</Link>, icon: <DesktopOutlined/> },
+        { key: 'vente', label: <Link to="/vente">Vente</Link>, icon: <FileOutlined/> },
         { key: 'catalogue', label: <Link to="/magasin">Catalogue</Link>, icon: <ReadOutlined/> },
-        { key: 'guichet', label: <Link to="/caisse">Guichet</Link>, icon: <DesktopOutlined/> },
         { key: 'fournisseurs', label: 'Fournisseurs', icon: <FileProtectOutlined/> }
       ] },
       { key: 'atelier', label: 'Atelier', icon: <ToolOutlined/>, children: [
+        { key: 'prestations', label: 'Prestations' },
         { key: 'forfaits', label: 'Forfaits' },
         { key: 'interventions', label: <Link to="/interventions">Interventions</Link> },
         { key: 'planning', label: 'Planning' },

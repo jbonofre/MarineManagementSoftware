@@ -4,14 +4,6 @@ import { DesktopOutlined, PlusCircleOutlined, EditOutlined, DeleteOutlined, Prin
 import { demo } from './workspace.tsx';
 import dayjs from 'dayjs';
 
-const types = [
-  { value: 'Ticket de Caisse', label: 'Ticket de Caisse' },
-  { value: 'Devis', label: 'Devis' },
-  { value: 'Commande', label: 'Commande' },
-  { value: 'Facture', label: 'Facture' },
-  { value: 'Facture payée', label: 'Facture payée' }
-];
-
 const articlesTable = [
         { title: 'Reference', dataIndex: 'code', key: 'code' },
         { title: 'Description', dataIndex: 'description', key: 'description' },
@@ -35,13 +27,10 @@ const { TextArea } = Input;
 const transactions = [
   {
     numero: 'SXZADAX121',
-    type: 'Facture payée',
     codeclient: 'CL01797',
     client: 'Jean-Baptiste Onofré',
     adresseclient: 'Lieu dit Coatalec\n29670 Henvic',
     date: '08-06-2024',
-    datelivraison: '08-06-2024',
-    dateecheance: '08-06-2024',
     montantht: 20.10,
     tauxtva: 20.00,
     montantttc: 24.00,
@@ -64,7 +53,6 @@ const transactions = [
   },
   {
     numero: 'DSDXZ21SQ',
-    type: 'Ticket de Caisse',
     date: '06-06-2024',
     montantht: 20.10,
     tauxtva: 20.00,
@@ -91,11 +79,6 @@ const columns = [
     dataIndex: 'numero',
     key: 'numero',
     render: (text,record) => <a>{text}</a>
-  },
-  {
-    title: 'Type',
-    dataIndex: 'type',
-    key: 'type'
   },
   {
     title: 'Date',
@@ -150,9 +133,6 @@ function NouvelleTransaction(props) {
                 <Form.Item label="Numéro">
                     <Input value={numero} disabled={true} />
                 </Form.Item>
-                <Form.Item label="Type">
-                    <Select options={types} defaultValue='Ticket de Caisse' />
-                </Form.Item>
                 <Form.Item label="Client">
                     <Input.Search />
                 </Form.Item>
@@ -160,12 +140,6 @@ function NouvelleTransaction(props) {
                     <TextArea rows={6}/>
                 </Form.Item>
                 <Form.Item label="Date">
-                    <DatePicker />
-                </Form.Item>
-                <Form.Item label="Date de livraison">
-                    <DatePicker />
-                </Form.Item>
-                <Form.Item label="Date d'échéance">
                     <DatePicker />
                 </Form.Item>
                 <Form.Item label="Montant HT">
@@ -219,7 +193,6 @@ function DetailTransaction(props) {
         open = true;
     }
 
-    var transactionType = null;
     var transactionNumero = null;
     var transactionType = null;
     var transactionClient = null;
@@ -234,7 +207,6 @@ function DetailTransaction(props) {
     var transactionMontantTtc = null;
 
     if (transaction != null) {
-        transactionType = transaction.type;
         transactionNumero = transaction.numero;
         transactionType = transaction.type;
         transactionClient = transaction.client;
@@ -250,7 +222,7 @@ function DetailTransaction(props) {
     }
 
     return(
-      <Modal centered={true} mask={true} title={<Space>{transactionType}{transactionNumero}</Space>}
+      <Modal centered={true} mask={true} title={<Space>{transactionNumero}</Space>}
             width={1024} open={open} closable={true} onCancel={() => props.setNumeroTransaction(null)}>
             <Form name="client" labelCol={{ span: 3 }}
                  wrapperCol={{ span: 21 }}
@@ -258,9 +230,6 @@ function DetailTransaction(props) {
                  initialValues={{ remember: true }}>
                 <Form.Item label="Numéro">
                     <Input value={transactionNumero} disabled={true} />
-                </Form.Item>
-                <Form.Item label="Type">
-                    <Select options={types} defaultValue={transactionType} disabled={true} />
                 </Form.Item>
                 <Form.Item label="Client">
                     <Input value={transactionClient} disabled={true} />
@@ -294,9 +263,8 @@ function DetailTransaction(props) {
                 </Form.Item>
             </Form>
             <Space>
-                <Button type="primary" icon={<PrinterOutlined/>}>Imprimer</Button>
-                <Button type="primary" icon={<SendOutlined/>}>Envoyer par e-mail</Button>
-                <Button type="primary" icon={<CreditCardOutlined/>}>Paiement</Button>
+                <Button type="primary" icon={<PrinterOutlined/>}>Imprimer Ticket de Caisse</Button>
+                <Button type="primary" icon={<SendOutlined/>}>Envoyer Ticket de Caisse par e-mail</Button>
             </Space>
         </Modal>
     );
@@ -309,8 +277,8 @@ export default function Caisse(props) {
       <>
       <NouvelleTransaction openNew={openNew} setOpenNew={setOpenNew} />
       <DetailTransaction numeroTransaction={numeroTransaction} setNumeroTransaction={setNumeroTransaction} />
-      <Card title={<Space><DesktopOutlined/> Guichet</Space>}>
-        <Button type="primary" icon={<PlusCircleOutlined/>} onClick={() => setOpenNew(true) }>Nouvelle transaction</Button>
+      <Card title={<Space><DesktopOutlined/> Vente au Comptoir</Space>}>
+        <Button type="primary" icon={<PlusCircleOutlined/>} onClick={() => setOpenNew(true) }>Nouvelle vente</Button>
         <Table columns={columns} dataSource={transactions} onRow={(record, rowIndex) => {
             return {
                 onClick: (event) => { setNumeroTransaction(record.numero) }
