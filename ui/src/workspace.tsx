@@ -236,7 +236,7 @@ const moteurs = [
     puissancekw: 14.7,
     longueurarbre: 'L',
     arbre: 508,
-    démarrage: 'Electrique',
+    demarrage: 'Electrique',
     barre: 'Franche',
     cylindres: 2,
     cylindree: 333,
@@ -247,7 +247,11 @@ const moteurs = [
     dateachat: '03-05-2025',
     datemes: '07-05-2025',
     heures: 30,
-    notes: ''
+    notes: '',
+    helice: 'Mercury Standard',
+    diametre: '8',
+    pas: '8R',
+    lame: 4
   }
 ];
 

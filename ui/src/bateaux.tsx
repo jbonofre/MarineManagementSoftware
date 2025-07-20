@@ -419,7 +419,7 @@ function Bateau(props) {
                         <Form.Item label="Propriétaire">
                             <Input allowClear={true} defaultValue={bateauDetail.proprietaire} />
                         </Form.Item>
-                        <Collapse style={{ margin: '0 0 24px 0'}} items={collapseItems} />
+                        <Collapse style={{ margin: '0 0 24px 0' }} items={collapseItems} />
                         <Form.Item label={null}>
                             <Space>
                             <Button type="primary" htmlType="submit" icon={<PlusCircleOutlined/>}>Enregistrer</Button>
