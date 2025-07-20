@@ -40,7 +40,7 @@ function List(props) {
                     </div>
                 </Col>
             </Row>
-            <Row guttern={[16,16]}>
+            <Row gutter={[16,16]}>
                 <Col span={24}>
                     <Table columns={columns} dataSource={props.moteurs} onRow={(record, rowIndex) => {
                         return {

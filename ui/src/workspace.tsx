@@ -255,6 +255,27 @@ const moteurs = [
   }
 ];
 
+const remorques = [
+  {
+    numeroserie: 'DSDASD3213',
+    denomination: 'Porte Bateau Multi-Rouleaux Galaxy - GS13 / G1000',
+    immatriculation: 'XX-344-AA',
+    type: 'Multi-rouleaux',
+    proprietaire: 'Les Viviers de Carantec',
+    proprietairekey: '3',
+    ptac: 1300,
+    massevide: 370,
+    charge: 980,
+    longueur: 703,
+    largeur: 214,
+    longueurbateau: 5.52,
+    fleche: 'Galvanisé à chaud en V',
+    chassis: 'Galvanisé à chaud',
+    roues: '165R14C',
+    equipement: 'Essieu frein à tambour\nFeux LEDs étanches et support de plaque pivotant\nTreuil deux vitesses auto-freiné\nSupport de treuil réglable et butée étrave réglable 3D\nRoue jockey diamètre 60'
+  }
+];
+
 export function demo() {
     message.warning("Vous êtes sur une version de démonstration de Marine Management Software. Il n'est pas possible d'ajouter ou supprimer des éléments.")
 }
@@ -356,7 +377,7 @@ export default function Workspace(props) {
                         <Moteurs moteurs={moteurs} />
                     </Route>
                     <Route path="/remorques" key="remorques">
-                        <Remorques />
+                        <Remorques remorques={remorques} />
                     </Route>
                     <Route path="/magasin" key="magasin">
                         <Magasin />
