@@ -373,7 +373,7 @@ function Bateau(props) {
                 <Card title={<Space><img width='60px' src={bateauDetail.imageUrl}/> {bateauDetail.nom}</Space>} style={{ width: '100%' }}>
                     <Row gutter={[16,16]}>
                     <Col span={19}>
-                    <Form name="client" labelCol={{ span: 8 }}
+                    <Form name="bateau" labelCol={{ span: 8 }}
                         wrapperCol={{ span: 16 }}
                         style={{ width: '80%' }}
                         initialValues={{ remember: true }}>
@@ -391,6 +391,9 @@ function Bateau(props) {
                         </Form.Item>
                         <Form.Item label="Dénomination">
                             <Input allowClear={true} defaultValue={bateauDetail.denomination} />
+                        </Form.Item>
+                        <Form.Item label="Numéro de clef">
+                            <Input allowClear={true} value={bateauDetail.numeroclef} />
                         </Form.Item>
                         <Form.Item label={null}>
                             <Select defaultValue={bateauDetail.type}

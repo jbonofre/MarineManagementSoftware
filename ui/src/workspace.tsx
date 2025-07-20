@@ -56,6 +56,7 @@ interface Bateau {
     proprietaire: string,
     proprietairekey: string,
     numeroserie: string,
+    numeroclef: string,
     marque: string,
     denomination: string,
     type: string,
@@ -136,6 +137,7 @@ const bateaux: Bateau[] = [
         imageUrl: 'https://www.quicksilver-boats.com/media/tichx5ki/605-open-running-0362-grey.jpg',
         immatriculation: 'MX65SEADA',
         numeroserie: '221309DSAD',
+        numeroclef: '19314',
         marque: 'Quicksilver',
         denomination: 'Activ 605 Open',
         type: 'Bateau à Moteur',
@@ -225,7 +227,6 @@ const bateaux: Bateau[] = [
 
 const moteurs = [
   {
-    key: '1',
     numeroserie: 'DSDQSD231',
     denomination: 'Mercury 20 cv ELPHPT Arbre Long',
     imageUrl: '',
