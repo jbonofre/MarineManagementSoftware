@@ -19,6 +19,7 @@ import Interventions from './interventions.tsx';
 import Chantier from './chantier.tsx';
 import Utilisateurs from './utilisateurs.tsx';
 import Caisse from './caisse.tsx';
+import Vente from './vente.tsx';
 
 interface Client {
     key: string,
@@ -294,7 +295,7 @@ function SideMenu(props) {
       ] },
       { key: 'magasin', label: 'Magasin', icon: <StockOutlined/>, children: [
         { key: 'guichet', label: <Link to="/caisse">Comptoir</Link>, icon: <DesktopOutlined/> },
-        { key: 'vente', label: <Link to="/vente">Vente</Link>, icon: <FileOutlined/> },
+        { key: 'documents', label: <Link to="/vente">Documents de Vente</Link>, icon: <FileOutlined/> },
         { key: 'catalogue', label: <Link to="/magasin">Catalogue</Link>, icon: <ReadOutlined/> },
         { key: 'fournisseurs', label: 'Fournisseurs', icon: <FileProtectOutlined/> }
       ] },
@@ -393,6 +394,9 @@ export default function Workspace(props) {
                     </Route>
                     <Route path="/caisse" key="caisse">
                         <Caisse />
+                    </Route>
+                    <Route path="/vente" key="vente">
+                        <Vente />
                     </Route>
                 </Switch>
             </Layout.Content>
