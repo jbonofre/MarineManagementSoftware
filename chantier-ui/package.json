@@ -1,5 +1,5 @@
 {
-  "name": "mms-ui",
+  "name": "mms-chantier-ui",
   "version": "0.9-SNAPSHOT",
   "main": "/index.tsx",
   "dependencies": {

@@ -1,0 +1,15 @@
+html, body {
+  padding: 0;
+  margin: 0;
+  background: #fff;
+  height: 100%;
+}
+
+#root {
+  padding: 0;
+  background-image: url("../public/background.png");
+  height: 100vh;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
