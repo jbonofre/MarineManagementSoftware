@@ -4,6 +4,36 @@ import { PlusCircleOutlined, FileOutlined, DeleteOutlined } from '@ant-design/ic
 
 const { TextArea } = Input;
 
+const ventes = [
+    {
+        numero: 'SDAXZ1SA2',
+        client: 'Jean-Baptiste Onofré',
+        adresseclient: 'Lieu dit Coatalec\n29670 Henvic',
+        status: 'Devis',
+        date: '25-07-2025',
+        montantht: 20.10,
+        tauxtva: 20.00,
+        montantttc: 24.00,
+        monntanttva: 4.02,
+        acompte: 0,
+        netapayer: 24,
+        soldedu: 0,
+        reglement: 'CB',
+        avoir: 0,
+        items: [
+            {
+                code: '13311',
+                description: 'Bouée de mouillage rigide orange, diam 25cm',
+                quantite: 1,
+                remise: 0,
+                prixht: 20.10,
+                tva: 20,
+                prixttc: 24
+            }
+        ]
+    }
+];
+
 const columns = [
     {
         title: 'Numéro', dataIndex: 'numero', key: 'numero',
@@ -22,20 +52,13 @@ const columns = [
     }
 ];
 
-const ventes = [
-    {
-        numero: 'EZAX127',
-        client: 'Jean-Baptiste Onofré',
-        date: '08-07-2025',
-        status: 'Terminé'
-    }
-];
-
 const status = [
   { label: 'Devis', value: 'Devis' },
   { label: 'Commande', value: 'Commande' },
   { label: 'Livrée', value: 'Livrée' },
   { label: 'Payée', value: 'Payée' },
+  { label: 'Avoir', value: 'Avoir' },
+  { label: 'Retour', value: 'Retour' },
   { label: 'Terminée', value: 'Terminée' }
 ];
 
@@ -74,9 +97,6 @@ function NouvelleVente(props) {
                 style={{ width: '100%' }}>
                 <Form.Item label="Numéro">
                     <Input value={numero} disabled={true} />
-                </Form.Item>
-                <Form.Item label="Status">
-                    <Select options={status} />
                 </Form.Item>
                 <Form.Item label="Client">
                     <Input.Search />
@@ -121,11 +141,27 @@ function NouvelleVente(props) {
 
 function DetailVente(props) {
 
-    const transactionNumero = 'SDASD';
+    const vente = ventes.filter(record => record.numero === props.numeroVente)[0];
+
+    if (vente === null) {
+        message.error('La vente n\'existe pas');
+        return (<></>);
+    }
+
+    var open = false;
+    if (props.numeroVente !== null) {
+        open = true;
+    }
+
+    var venteNumero = null;
+
+    if (vente != null) {
+        venteNumero = vente.numero;
+    }
 
     return(
-       <Modal centered={true} mask={true} title={<Space>{transactionNumero}</Space>}
-                   width={1024} open={false} closable={true} onCancel={() => props.setNumeroVente(null)}>
+       <Modal centered={true} mask={true} title={<Space>{venteNumero}</Space>}
+                   width={1024} open={open} closable={true} onCancel={() => props.setNumeroVente(null)}>
             <p>Détail vente</p>
        </Modal>
     );

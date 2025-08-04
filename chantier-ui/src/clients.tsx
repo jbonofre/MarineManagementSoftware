@@ -33,6 +33,14 @@ function Documents() {
     );
 }
 
+function Avoirs() {
+    return(
+      <>
+      <p>Liste des avoirs</p>
+      </>
+    );
+}
+
 function Parc() {
     return (
         <Empty/>
@@ -164,6 +172,11 @@ function Detail(props) {
             key: 'Historique',
             label: 'Historique',
             children: <Historique/>
+        },
+        {
+            key: 'avoirs',
+            label: 'Avoirs',
+            children: <Avoirs/>
         },
         {
             key: 'paiements',
