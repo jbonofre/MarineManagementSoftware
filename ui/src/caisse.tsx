@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Card, Space, Button, Table, Modal, Form, Input, Select, DatePicker, InputNumber } from 'antd';
+import { Card, Space, Button, Table, Modal, Form, Input, DatePicker, InputNumber } from 'antd';
 import { DesktopOutlined, PlusCircleOutlined, EditOutlined, DeleteOutlined, PrinterOutlined, SendOutlined, CreditCardOutlined } from '@ant-design/icons';
 import { demo } from './workspace.tsx';
 import dayjs from 'dayjs';
@@ -224,7 +224,7 @@ function DetailTransaction(props) {
     return(
       <Modal centered={true} mask={true} title={<Space>{transactionNumero}</Space>}
             width={1024} open={open} closable={true} onCancel={() => props.setNumeroTransaction(null)}>
-            <Form name="client" labelCol={{ span: 3 }}
+            <Form name="caisse" labelCol={{ span: 3 }}
                  wrapperCol={{ span: 21 }}
                  style={{ width: '100%' }}
                  initialValues={{ remember: true }}>
