@@ -301,11 +301,13 @@ function SideMenu(props) {
         { key: 'fournisseurs', label: 'Fournisseurs', icon: <FileProtectOutlined/> }
       ] },
       { key: 'atelier', label: 'Atelier', icon: <ToolOutlined/>, children: [
-        { key: 'prestations', label: 'Prestations' },
-        { key: 'forfaits', label: 'Forfaits' },
         { key: 'interventions', label: <Link to="/interventions">Interventions</Link> },
         { key: 'planning', label: 'Planning' },
         { key: 'equipe', label: 'Equipe' },
+        { key: 'configuration', label: 'Configuration', children: [
+          { key: 'entretien', label: 'Programme Entretien' },
+          { key: 'tasks', label: 'Tâches' },
+        ] },
       ] },
       { key: 'market', label: 'Market', icon: <AmazonOutlined/>, children: [
         { key: 'marchands', label: 'Marchands' },
