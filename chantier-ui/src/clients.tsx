@@ -207,10 +207,11 @@ function Detail(props) {
                             <Input allowClear={true} defaultValue={clientDetail.nom} />
                         </Form.Item>
                         <Form.Item label={null} name="type">
-                            <Select defaultValue="particulier"
+                            <Select defaultValue={clientDetail.type}
                                 options={[
-                                    { value: 'particulier', label: 'Particulier' },
-                                    { value: 'professionnel', label: 'Professionnel' }
+                                    { value: 'Particulier', label: 'Particulier' },
+                                    { value: 'Professionnel', label: 'Professionnel' },
+                                    { value: 'Professionnel Exonere', label: 'Professionnel Exonere' },
                                 ]}/>
                         </Form.Item>
                         <Form.Item label="E-mail" name="email">
