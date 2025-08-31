@@ -113,7 +113,7 @@ const clients: Client[] = [
         key: '3',
         nom: 'Les Viviers de Carantec',
         prenom: null,
-        type: 'Professionnel de la Mer',
+        type: 'Professionnel Exonere',
         email: 'contact@lesviviersdecarantec.fr',
         adresse: '38 Chem. du Varquez\n29660 Carantec',
         consentement: false,
@@ -287,6 +287,7 @@ function SideMenu(props) {
 
     const menuItems = [
       { key: 'home', label: <Link to="/">Accueil</Link>, icon: <HomeOutlined/> },
+      { key: 'dashboard', label: 'Tableau de Bord' },
       { key: 'clients', label: <Link to="/clients">Clients</Link>, icon: <TeamOutlined /> },
       { key: 'parc', label: 'Parc', icon: <Icon component={ ParcOutlined } />, children: [
         { key: 'bateaux', label: <Link to="/bateaux">Bateaux</Link>, icon: <Icon component={ BoatOutlined } />},

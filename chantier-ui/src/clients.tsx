@@ -15,7 +15,7 @@ interface ClientType {
 const types = [
   { value: 'particulier', label: 'Particulier' },
   { value: 'professionnel', label: 'Professionnel' },
-  { value: 'professionnel_mer', label: 'Professionnel de la Mer' }
+  { value: 'professionnel_mer', label: 'Professionnel Exonere' }
 ];
 
 const style: React.CSSProperties = { padding: '8px 0' };
@@ -91,8 +91,8 @@ function List(props) {
                     value: 'Professionnel'
                 },
                 {
-                    text: 'Professionnel de la Mer',
-                    value: 'Professionnel de la Mer'
+                    text: 'Professionnel Exonere',
+                    value: 'Professionnel Exonere'
                 }
             ],
             onFilter: (value, record) => record.type === value,
