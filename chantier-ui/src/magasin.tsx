@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Row, Col, Input, Select, Button, Space, Table, Rate, Card, Form, InputNumber } from 'antd';
 import { PlusCircleOutlined, LeftCircleOutlined, ZoomInOutlined, StockOutlined } from '@ant-design/icons';
+import { catalogue } from './data.tsx';
 
 const style: React.CSSProperties = { padding: '8px 0' };
 const { Search, TextArea } = Input;
@@ -119,36 +120,6 @@ function List(props) {
         }
     ]
 
-    const data = [
-        {
-            key: '1',
-            nom: 'Bougie LKAR7C-9 pour MERCURY V6, V8, V10',
-            reference: 'LKAR7C-9--8M0176616',
-            marque: 'NGK',
-            categorie: 'Anodes & Bougies',
-            imageUrl: 'https://www.piecesbateaux.com/9338-medium_default/bougie-lkar7c-9-pour-mercury-v6-v8-v10.jpg',
-            stock: 24
-        },
-        {
-            key: '2',
-            nom: 'Filtre à Huile MERCURY 75 à 150Cv 4Temps EFI',
-            reference: '877761Q01--877761K01',
-            marque: 'QUICKSILVER',
-            categorie: 'Pièces Hors Bord',
-            imageUrl: 'https://www.piecesbateaux.com/3879-medium_default/filtre-a-huile-mercury-75-a-150cv-4t-efi.jpg',
-            stock: 12
-        },
-        {
-            key: '3',
-            nom: 'Manutention',
-            reference: 'Manutention 1',
-            marque: 'MS Plaisance',
-            categorie: 'Atelier',
-            imageUrl: '',
-            stock: 0
-        }
-    ];
-
     return (
         <>
                 <Row gutter={[16,16]}>
@@ -180,7 +151,7 @@ function List(props) {
                 </Row>
                 <Row gutter={[16,16]}>
                     <Col span={24}>
-                        <Table<ReferenceType> columns={columns} dataSource={data} />
+                        <Table<ReferenceType> columns={columns} dataSource={catalogue} />
                     </Col>
                 </Row>
         </>

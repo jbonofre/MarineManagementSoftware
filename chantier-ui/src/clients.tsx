@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Card, Avatar, Col, Row, Space, Input, Select, Button, Form, Tabs, Empty, Pagination, DatePicker, Table, Checkbox, Rate, AutoComplete, message } from 'antd';
+import { Card, Avatar, Col, Row, Space, Input, Select, Button, Form, Tabs, Empty, Pagination, DatePicker, Table, Checkbox, Rate, message } from 'antd';
 import type { TabsProps } from 'antd';
 import { UserOutlined, PlusCircleOutlined, LeftCircleOutlined, DeleteOutlined, EditOutlined, FileAddOutlined } from '@ant-design/icons';
 import { demo } from './workspace.tsx';
@@ -106,29 +106,13 @@ function List(props) {
         }
     ];
 
-    var researchOptions = [];
-    props.clients.forEach((client) => {
-       var labelValue;
-       if (client.prenom != null) {
-            labelValue = client.prenom + ' ' + client.nom;
-       } else {
-            labelValue = client.nom;
-       }
-       const item = [ { label: labelValue, value: client.key } ];
-       researchOptions = researchOptions.concat(item);
-    });
-
     return(
       <>
         <Row gutter={[16,16]}>
             <Col span={24}>
                 <div style={style}>
                     <Space>
-                        <AutoComplete options={researchOptions} style={{ width: 350 }} placeholder="Recherche client" onSelect={(search) => {
-                            props.setClient(search);
-                        }} onChange={() => {
-
-                        }}/>
+                        <Search placeholder="Recherche" enterButton style={{ width: 350 }}/>
                         <Button type="primary" icon={<PlusCircleOutlined/>} onClick={() => demo()}>Nouveau Client</Button>
                     </Space>
                 </div>
@@ -145,10 +129,6 @@ function List(props) {
         </Row>
       </>
     );
-}
-
-function Nouveau() {
-
 }
 
 function Detail(props) {

@@ -304,25 +304,49 @@ export const ventes = [
     }
 ];
 
+export const catalogue = [
+        {
+            key: '1',
+            nom: 'Bougie LKAR7C-9 pour MERCURY V6, V8, V10',
+            references: [ 'LKAR7C-9', '8M0176616' ],
+            marque: 'NGK',
+            categorie: 'Anodes & Bougies',
+            imageUrl: 'https://www.piecesbateaux.com/9338-medium_default/bougie-lkar7c-9-pour-mercury-v6-v8-v10.jpg',
+            stock: 24
+        },
+        {
+            key: '2',
+            nom: 'Filtre à Huile MERCURY 75 à 150Cv 4Temps EFI',
+            references: [ '877761Q01', '877761K01' ],
+            marque: 'QUICKSILVER',
+            categorie: 'Pièces Hors Bord',
+            imageUrl: 'https://www.piecesbateaux.com/3879-medium_default/filtre-a-huile-mercury-75-a-150cv-4t-efi.jpg',
+            stock: 12
+        },
+        {
+            key: '3',
+            nom: 'Manutention',
+            categorie: 'Atelier',
+        }
+    ];
+
 export const operations = [
   {
     nom: 'Sortie eau',
     catalogue: [
         { ref: 'Manutention', quantite: 2 }
     ],
-    applicable: {
-        bateaux: { marque: [ '*' ], modele: [ '*' ] }
-    }
+    application: [ '*' ],
   },
   {
-    nom: 'Vidange Mercury FS75',
+    nom: 'Entretien Mercury FS75',
     catalogue: [
         { ref: 'Mécanique 1', quantite: 0.5 },
         { ref: 'Bougie NGK BU8H', quantite: 4 },
+        { ref: 'Huile 10W30', quantite: 2 },
     ],
-    applicable: {
-        moteurs: { marque: 'Mercury', modele: [ 'FS75', ]}
-    },
-    recurrence: { heures: 100, date: 'annuel' }
+    application: [ 'Mercury', 'FS75', 'Rosko' ],
+    heures: 100,
+    periode: 'Annuel',
   }
 ];

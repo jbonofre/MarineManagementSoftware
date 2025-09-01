@@ -51,8 +51,8 @@ function SideMenu(props) {
         { key: 'interventions', label: <Link to="/interventions">Interventions</Link>, icon: <CheckSquareOutlined/> },
         { key: 'planning', label: 'Planning', icon: <CalendarOutlined/> },
         { key: 'equipe', label: 'Equipe', icon: <TeamOutlined/> },
-        { key: 'entretien', label: <Link to="/programme">Programme d'Entretien</Link>, icon: <ScheduleOutlined/> },
-        { key: 'operations', label: <Link to="/operations">Opérations d'Entretien</Link>, icon: <FileDoneOutlined/> },
+        { key: 'entretien', label: <Link to="/programme">Programme</Link>, icon: <ScheduleOutlined/> },
+        { key: 'operations', label: <Link to="/operations">Opérations</Link>, icon: <FileDoneOutlined/> },
       ] },
       { key: 'market', label: 'Market', icon: <AmazonOutlined/>, children: [
         { key: 'marchands', label: 'Marchands' },
