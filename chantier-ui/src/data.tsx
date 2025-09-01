@@ -61,7 +61,7 @@ export const clients = [
         key: '3',
         nom: 'Les Viviers de Carantec',
         prenom: null,
-        type: 'Professionnel Exonere',
+        type: 'Professionnel Exonéré',
         email: 'contact@lesviviersdecarantec.fr',
         adresse: '38 Chem. du Varquez\n29660 Carantec',
         consentement: false,

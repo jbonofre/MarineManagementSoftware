@@ -82,8 +82,8 @@ function List(props) {
                     value: 'Professionnel'
                 },
                 {
-                    text: 'Professionnel Exonere',
-                    value: 'Professionnel Exonere'
+                    text: 'Professionnel Exonéré',
+                    value: 'Professionnel Exonéré'
                 }
             ],
             onFilter: (value, record) => record.type === value,
@@ -203,7 +203,7 @@ function Detail(props) {
                                     { value: 'Particulier', label: 'Particulier' },
                                     { value: 'Professionnel', label: 'Professionnel' },
                                     { value: 'Prospect', label: 'Prospect' },
-                                    { value: 'Professionnel Exonere', label: 'Professionnel Exonere' },
+                                    { value: 'Professionnel Exonéré', label: 'Professionnel Exonéré' },
                                 ]}/>
                         </Form.Item>
                         <Form.Item label="E-mail" name="email">
