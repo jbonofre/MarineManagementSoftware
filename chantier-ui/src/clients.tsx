@@ -5,12 +5,6 @@ import { UserOutlined, PlusCircleOutlined, LeftCircleOutlined, DeleteOutlined, E
 import { demo } from './workspace.tsx';
 import dayjs from 'dayjs';
 
-const types = [
-  { value: 'particulier', label: 'Particulier' },
-  { value: 'professionnel', label: 'Professionnel' },
-  { value: 'professionnel_mer', label: 'Professionnel Exonere' }
-];
-
 const style: React.CSSProperties = { padding: '8px 0' };
 const { Search } = Input;
 const { TextArea } = Input;
@@ -78,6 +72,10 @@ function List(props) {
                 {
                     text: 'Particulier',
                     value: 'Particulier'
+                },
+                {
+                    text: 'Prospect',
+                    value: 'Prospect'
                 },
                 {
                     text: 'Professionnel',
@@ -204,6 +202,7 @@ function Detail(props) {
                                 options={[
                                     { value: 'Particulier', label: 'Particulier' },
                                     { value: 'Professionnel', label: 'Professionnel' },
+                                    { value: 'Prospect', label: 'Prospect' },
                                     { value: 'Professionnel Exonere', label: 'Professionnel Exonere' },
                                 ]}/>
                         </Form.Item>
