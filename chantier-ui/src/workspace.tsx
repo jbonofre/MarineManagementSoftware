@@ -51,7 +51,7 @@ function SideMenu(props) {
         { key: 'equipe', label: 'Equipe' },
         { key: 'configuration', label: 'Configuration', children: [
           { key: 'entretien', label: 'Programme Entretien' },
-          { key: 'tasks', label: 'Tâches' },
+          { key: 'operations', label: 'Opérations' },
         ] },
       ] },
       { key: 'market', label: 'Market', icon: <AmazonOutlined/>, children: [

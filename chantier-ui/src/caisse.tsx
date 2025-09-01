@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Card, Space, Button, Table, Modal, Form, Input, DatePicker, InputNumber } from 'antd';
 import { DesktopOutlined, PlusCircleOutlined, EditOutlined, DeleteOutlined, PrinterOutlined, SendOutlined, CreditCardOutlined } from '@ant-design/icons';
 import { demo } from './workspace.tsx';
+import { transactions } from './data.tsx';
 import dayjs from 'dayjs';
 
 const articlesTable = [
@@ -23,55 +24,6 @@ const reglement = [
 ];
 
 const { TextArea } = Input;
-
-const transactions = [
-  {
-    numero: 'SXZADAX121',
-    codeclient: 'CL01797',
-    client: 'Jean-Baptiste Onofré',
-    adresseclient: 'Lieu dit Coatalec\n29670 Henvic',
-    date: '08-06-2024',
-    montantht: 20.10,
-    tauxtva: 20.00,
-    montantttc: 24.00,
-    montanttva: 4.02,
-    acompte: 0,
-    netapayer: 24,
-    soldedu: 0,
-    modereglement: 'CB',
-    items: [
-        {
-            code: '13311',
-            description: 'Bouée de mouillage rigide orange, diam 25cm',
-            quantite: 1,
-            remise: 0,
-            prixht: 20.10,
-            tva: 20,
-            prixttc: 24
-        }
-    ]
-  },
-  {
-    numero: 'DSDXZ21SQ',
-    date: '06-06-2024',
-    montantht: 20.10,
-    tauxtva: 20.00,
-    montantttc: 24.00,
-    netapayer: 24,
-    modereglement: 'CB',
-    items: [
-        {
-           code: '13311',
-            description: 'Bouée de mouillage rigide orange, diam 25cm',
-            quantite: 1,
-            remise: 0,
-            prixht: 20.10,
-            tva: 20,
-            prixttc: 24
-        }
-    ]
-  }
-];
 
 const columns = [
   {

@@ -1,38 +1,9 @@
 import React, { useState } from 'react';
 import { Card, Space, Button, Table, Modal, Form, Input, DatePicker, Select, InputNumber } from 'antd';
 import { PlusCircleOutlined, FileOutlined, DeleteOutlined } from '@ant-design/icons';
+import { ventes } from './data.tsx';
 
 const { TextArea } = Input;
-
-const ventes = [
-    {
-        numero: 'SDAXZ1SA2',
-        client: 'Jean-Baptiste Onofré',
-        adresseclient: 'Lieu dit Coatalec\n29670 Henvic',
-        status: 'Devis',
-        date: '25-07-2025',
-        montantht: 20.10,
-        tauxtva: 20.00,
-        montantttc: 24.00,
-        monntanttva: 4.02,
-        acompte: 0,
-        netapayer: 24,
-        soldedu: 0,
-        reglement: 'CB',
-        avoir: 0,
-        items: [
-            {
-                code: '13311',
-                description: 'Bouée de mouillage rigide orange, diam 25cm',
-                quantite: 1,
-                remise: 0,
-                prixht: 20.10,
-                tva: 20,
-                prixttc: 24
-            }
-        ]
-    }
-];
 
 const columns = [
     {

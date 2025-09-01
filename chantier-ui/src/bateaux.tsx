@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
 import { Card, Col, Row, Space, Input, InputNumber, Select, Button, Form, Table, Tabs, Empty, Pagination, DatePicker, AutoComplete, Image, Collapse } from 'antd';
-import type { TableTabsProps } from 'antd';
-import type { Bateau } from './workspace.tsx';
 import { UserOutlined, PlusCircleOutlined, LeftCircleOutlined, EditOutlined, DeleteOutlined, PauseCircleOutlined } from '@ant-design/icons';
 import { ReactComponent as BoatOutlined } from './boat.svg';
 import { demo } from './workspace.tsx';
@@ -13,7 +11,7 @@ const { TextArea } = Input;
 
 function List(props) {
 
-    const columns: TablesProps<Bateau>['columns'] = [
+    const columns = [
         {
             title: 'Nom',
             dataIndex: 'nom',
@@ -293,7 +291,7 @@ function Remorque(props) {
 }
 
 function Bateau(props) {
-    const tabItems: TabsProps['items'] = [
+    const tabItems = [
         {
             key: 'documents',
             label: 'Documents',

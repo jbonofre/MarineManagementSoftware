@@ -1,20 +1,6 @@
 import { Card, Space, Table, Select, Input, Button } from 'antd';
 import { UserOutlined, PlusCircleOutlined, DeleteOutlined } from '@ant-design/icons';
-
-const users = [
-  {
-      user: 'admin',
-      roles: 'admin',
-      password: 'admin',
-      email: 'contact@msplaisance.com'
-  },
-  {
-      user: 'accueil',
-      roles: 'accueil',
-      password: 'accueil',
-      email: 'contact@msplaisance.com'
-  }
-];
+import { users } from './data.tsx';
 
 const columns = [
     {

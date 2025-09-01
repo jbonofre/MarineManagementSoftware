@@ -1,18 +1,9 @@
 import React, { useState } from 'react';
 import { Row, Col, Space, Select, Button, Input, Table, Card, QRCode, Form, DatePicker, Tabs } from 'antd';
-import type { TableProps, TabsProps } from 'antd';
 import { PlusCircleOutlined, LeftCircleOutlined } from '@ant-design/icons';
 
 const { Search, TextArea } = Input;
 const style: React.CSSProperties = { padding: '8px 0' };
-
-interface InterventionType {
-    key: string,
-    numero: string,
-    client: string,
-    date: string,
-    status: string
-}
 
 const status = [
     { value: '', label: ''},
@@ -23,7 +14,7 @@ const status = [
     { value: 'terminee', label: 'Terminée' }
 ];
 
-const tabItems: TabsProps['items'] = [
+const tabItems = [
     {
         key: 'pieces',
         label: 'Pièces et Accessoires',
@@ -89,7 +80,7 @@ function Detail(props) {
 }
 
 function List(props) {
-       const columns: TableProps<InterventionType>['columns'] = [
+       const columns = [
                {
                    title: 'Numéro',
                    dataIndex: 'numero',
@@ -123,7 +114,7 @@ function List(props) {
                }
            ]
 
-           const data: InterventionType[] = [
+           const data = [
                {
                    key: '1',
                    numero: 'YB3E2DSDA',

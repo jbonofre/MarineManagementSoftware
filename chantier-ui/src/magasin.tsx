@@ -1,18 +1,6 @@
 import React, { useState } from 'react';
 import { Row, Col, Input, Select, Button, Space, Table, Rate, Card, Form, InputNumber } from 'antd';
 import { PlusCircleOutlined, LeftCircleOutlined, ZoomInOutlined, StockOutlined } from '@ant-design/icons';
-import type { TableProps } from 'antd';
-
-interface ReferenceType {
-    key: string,
-    nom: string,
-    marque: string,
-    imageUrl: string,
-    reference: string,
-    stock: number,
-    categorie: string,
-    evaluation: number,
-}
 
 const style: React.CSSProperties = { padding: '8px 0' };
 const { Search, TextArea } = Input;
@@ -86,7 +74,7 @@ function Detail(props) {
 
 function List(props) {
 
-    const columns: TableProps<ReferenceType>['columns'] = [
+    const columns = [
         {
             title: 'Nom',
             dataIndex: 'nom',
@@ -131,7 +119,7 @@ function List(props) {
         }
     ]
 
-    const data: ReferenceType[] = [
+    const data = [
         {
             key: '1',
             nom: 'Bougie LKAR7C-9 pour MERCURY V6, V8, V10',
