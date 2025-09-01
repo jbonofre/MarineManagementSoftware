@@ -1,12 +1,28 @@
-import { Card, Row, Col, Space, Image, Button, Form, Input } from 'antd';
+import { Card, Row, Col, Space, Image, Button, Form, Input, message } from 'antd';
 import { PlusCircleOutlined, PauseCircleOutlined, DeleteOutlined, DeploymentUnitOutlined } from '@ant-design/icons';
 import { demo } from './workspace.tsx';
 
 const { TextArea } = Input;
-const adresse = 'ZA Le Band\n29670 Henvic';
-const bancaires = 'Banque : CREDIT AGRICOLE CHEQUE\nRIB : 12906000345743433700594\nIBAN : FR7612906000345743433700594\nBIC : AGRIFRPP829';
 
 export default function Chantier(props) {
+
+    const [form] = Form.useForm();
+
+    const onFinish = (values) => {
+        props.chantier.nom = values.nom;
+        props.chantier.siren = values.siren;
+        props.chantier.siret = values.siret;
+        props.chantier.ape = values.ape;
+        props.chantier.rcs = values.rcs;
+        props.chantier.forme = values.forme;
+        props.chantier.capital = values.capital;
+        props.chantier.numerotva = values.numerotva;
+        props.chantier.adresse = values.adresse;
+    };
+
+    const onReset = () => {
+        form.resetFields();
+    };
 
     return(
       <>
@@ -14,48 +30,50 @@ export default function Chantier(props) {
         <Row guttern={[16,16]}>
             <Col span={19}>
                 <Form name="chantier" labelCol={{ span: 8 }}
+                    form={form}
+                    onFinish={onFinish}
                     wrapperCol={{ span: 16 }}
                     style={{ width: '80%' }}>
-                    <Form.Item label="Nom">
-                        <Input value="MS Plaisance"/>
+                    <Form.Item name="nom" label="Nom" initialValue={props.chantier.nom} required={true} rules={[{required: true, message: 'Le nom est requis'}]}>
+                        <Input />
                     </Form.Item>
-                    <Form.Item label="SIREN">
-                        <Input value="790 458 616"/>
+                    <Form.Item name="siren" label="SIREN" initialValue={props.chantier.siren} required={true} rules={[{required: true, message: 'Le SIREN est requis'}]}>
+                        <Input />
                     </Form.Item>
-                    <Form.Item label="SIRET">
-                        <Input value="790 458 616 00022"/>
+                    <Form.Item name="siret" label="SIRET" initialValue={props.chantier.siret}>
+                        <Input />
                     </Form.Item>
-                    <Form.Item label="APE">
-                        <Input value="3315Z"/>
+                    <Form.Item name="ape" label="APE" initialValue={props.chantier.ape}>
+                        <Input />
                     </Form.Item>
-                    <Form.Item label="RCS">
-                        <Input value="790458616"/>
+                    <Form.Item name="rcs" label="RCS" initialValue={props.chantier.rcs}>
+                        <Input />
                     </Form.Item>
-                    <Form.Item label="Forme juridique">
-                        <Input value="EURL"/>
+                    <Form.Item name="forme" label="Forme juridique" initialValue={props.chantier.forme}>
+                        <Input />
                     </Form.Item>
-                    <Form.Item label="Capital">
-                        <Input value="3500"/>
+                    <Form.Item name="capital" label="Capital" initialValue={props.chantier.capital}>
+                        <Input />
                     </Form.Item>
-                    <Form.Item label="Numéro de TVA">
-                        <Input value="FR79790458616"/>
+                    <Form.Item name="numerotva" label="Numéro de TVA" initialValue={props.chantier.numerotva}>
+                        <Input />
                     </Form.Item>
-                    <Form.Item label="Adresse">
-                        <TextArea rows={6} value={adresse} />
+                    <Form.Item name="adresse" label="Adresse" initialValue={props.chantier.adresse}>
+                        <TextArea rows={6} />
                     </Form.Item>
-                    <Form.Item label="Numéro de téléphone">
-                        <Input value="0256455037" />
+                    <Form.Item name="telephone" label="Numéro de téléphone" initialValue={props.chantier.telephone}>
+                        <Input />
                     </Form.Item>
-                    <Form.Item label="Email">
-                        <Input value="contact@msplaisance.com"/>
+                    <Form.Item name="email" label="Email" initialValue={props.chantier.email}>
+                        <Input />
                     </Form.Item>
-                    <Form.Item label="Coordonnées bancaires">
-                        <TextArea rows={6} value={bancaires} />
+                    <Form.Item name="bancaire" label="Coordonnées bancaires" initialValue={props.chantier.bancaire}>
+                        <TextArea rows={6} />
                     </Form.Item>
                     <Form.Item label={null}>
                         <Space>
-                            <Button onClick={() => demo()} type="primary" htmlType="submit" icon={<PlusCircleOutlined/>}>Enregistrer</Button>
-                            <Button icon={<PauseCircleOutlined/>}>Annuler</Button>
+                            <Button onClick={form.submit()} type="primary" htmlType="submit" icon={<PlusCircleOutlined/>}>Enregistrer</Button>
+                            <Button onClick={onReset} icon={<PauseCircleOutlined/>}>Annuler</Button>
                         </Space>
                     </Form.Item>
                 </Form>

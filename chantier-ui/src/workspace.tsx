@@ -9,7 +9,7 @@ import { ReactComponent as BoatOutlined } from './boat.svg';
 import { ReactComponent as EngineOutlined } from './moteur.svg';
 import { ReactComponent as ParcOutlined } from './parc.svg';
 import { ReactComponent as TailerOutlined } from './remorque.svg';
-import { clients, bateaux, moteurs, remorques } from './data.tsx';
+import { clients, bateaux, moteurs, remorques, chantier } from './data.tsx';
 import Home from './home.tsx';
 import Clients from './clients.tsx';
 import Bateaux from './bateaux.tsx';
@@ -135,7 +135,7 @@ export default function Workspace(props) {
                         <Interventions />
                     </Route>
                     <Route path="/chantier" key="chantier">
-                        <Chantier />
+                        <Chantier chantier={chantier} />
                     </Route>
                     <Route path="/utilisateurs" key="utilisateurs">
                         <Utilisateurs />

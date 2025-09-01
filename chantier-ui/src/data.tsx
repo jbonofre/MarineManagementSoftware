@@ -1,3 +1,23 @@
+export var chantier = {
+    nom: 'MS Plaisance',
+    siren: '790 458 616',
+    siret: '790 458 616 00022',
+    ape: '3315Z',
+    rcs: '790458616',
+    forme: 'EURL',
+    capital: 3500,
+    numerotva: 'FR79790458616',
+    adresse: 'ZA Le Band\n29670 Henvic',
+    telephone: '0256455037',
+    email: 'contact@msplaisance.com',
+    bancaire: 'Banque : CREDIT AGRICOLE CHEQUE\nRIB : 12906000345743433700594\nIBAN : FR7612906000345743433700594\nBIC : AGRIFRPP829',
+    images: [
+        'https://www.msplaisance.com/img/logo.png',
+        'https://media.bateaux.com/src/applications/showroom/images/images-produit/7003aaf9d3da1267ec84c6892b7f917b.png',
+        'https://media.bateaux.com/src/applications/showroom/images/images-produit/6f20847f0c57af433795fe664fbd2308.jpg'
+    ]
+}
+
 export const users = [
   {
       user: 'admin',
