@@ -147,8 +147,12 @@ function List(props) {
     );
 }
 
+function Nouveau() {
+
+}
+
 function Detail(props) {
-    const tabItems: TabsProps['items'] = [
+    const tabItems = [
         {
             key: 'documents',
             label: 'Documents',

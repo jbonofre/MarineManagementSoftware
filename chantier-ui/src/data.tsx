@@ -303,3 +303,26 @@ export const ventes = [
         ]
     }
 ];
+
+export const operations = [
+  {
+    nom: 'Sortie eau',
+    catalogue: [
+        { ref: 'Manutention', quantite: 2 }
+    ],
+    applicable: {
+        bateaux: { marque: [ '*' ], modele: [ '*' ] }
+    }
+  },
+  {
+    nom: 'Vidange Mercury FS75',
+    catalogue: [
+        { ref: 'Mécanique 1', quantite: 0.5 },
+        { ref: 'Bougie NGK BU8H', quantite: 4 },
+    ],
+    applicable: {
+        moteurs: { marque: 'Mercury', modele: [ 'FS75', ]}
+    },
+    recurrence: { heures: 100, date: 'annuel' }
+  }
+];

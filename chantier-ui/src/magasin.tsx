@@ -140,12 +140,12 @@ function List(props) {
         },
         {
             key: '3',
-            nom: 'Vidange Moteur Mercury EFI 50-150',
-            reference: 'Atelier VMM',
+            nom: 'Manutention',
+            reference: 'Manutention 1',
             marque: 'MS Plaisance',
-            categorie: 'Service',
+            categorie: 'Atelier',
             imageUrl: '',
-            stock: 1
+            stock: 0
         }
     ];
 

@@ -3,7 +3,7 @@ import { Layout, Input, Col, Row, Image, Menu, Button, message } from 'antd';
 import { Route, Switch } from 'react-router';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { Link } from 'react-router-dom';
-import { UserOutlined, TeamOutlined, HomeOutlined, AmazonOutlined, SettingOutlined, ToolOutlined, StockOutlined, FileOutlined, FileProtectOutlined, ReadOutlined, DesktopOutlined, DeploymentUnitOutlined, DisconnectOutlined, DashboardOutlined } from '@ant-design/icons';
+import { UserOutlined, TeamOutlined, HomeOutlined, AmazonOutlined, SettingOutlined, ToolOutlined, StockOutlined, FileOutlined, FileProtectOutlined, ReadOutlined, DesktopOutlined, DeploymentUnitOutlined, DisconnectOutlined, DashboardOutlined, CalendarOutlined, FileDoneOutlined, CheckSquareOutlined, ScheduleOutlined } from '@ant-design/icons';
 import Icon from '@ant-design/icons';
 import { ReactComponent as BoatOutlined } from './boat.svg';
 import { ReactComponent as EngineOutlined } from './moteur.svg';
@@ -21,6 +21,8 @@ import Chantier from './chantier.tsx';
 import Utilisateurs from './utilisateurs.tsx';
 import Caisse from './caisse.tsx';
 import Vente from './vente.tsx';
+import Programme from './programme.tsx';
+import Operations from './operations.tsx';
 
 export function demo() {
     message.warning("Vous êtes sur une version de démonstration de Marine Management Software. Il n'est pas possible d'ajouter ou supprimer des éléments.")
@@ -46,20 +48,18 @@ function SideMenu(props) {
         { key: 'fournisseurs', label: 'Fournisseurs', icon: <FileProtectOutlined/> }
       ] },
       { key: 'atelier', label: 'Atelier', icon: <ToolOutlined/>, children: [
-        { key: 'interventions', label: <Link to="/interventions">Interventions</Link> },
-        { key: 'planning', label: 'Planning' },
-        { key: 'equipe', label: 'Equipe' },
-        { key: 'configuration', label: 'Configuration', children: [
-          { key: 'entretien', label: 'Programme Entretien' },
-          { key: 'operations', label: 'Opérations' },
-        ] },
+        { key: 'interventions', label: <Link to="/interventions">Interventions</Link>, icon: <CheckSquareOutlined/> },
+        { key: 'planning', label: 'Planning', icon: <CalendarOutlined/> },
+        { key: 'equipe', label: 'Equipe', icon: <TeamOutlined/> },
+        { key: 'entretien', label: <Link to="/programme">Programme d'Entretien</Link>, icon: <ScheduleOutlined/> },
+        { key: 'operations', label: <Link to="/operations">Opérations d'Entretien</Link>, icon: <FileDoneOutlined/> },
       ] },
       { key: 'market', label: 'Market', icon: <AmazonOutlined/>, children: [
         { key: 'marchands', label: 'Marchands' },
         { key: 'site', label: 'Site ecommerce' },
         { key: 'marketing', label: 'Marketing' }
       ] },
-      { key: 'parametrage', label: 'Paramétrage', icon: <SettingOutlined/>, children: [
+      { key: 'parametrage', label: 'Chantier', icon: <SettingOutlined/>, children: [
         { key: 'chantier', label: <Link to="/chantier">Société</Link>, icon: <DeploymentUnitOutlined/> },
         { key: 'utilisateurs', label: <Link to="/utilisateurs">Utilisateurs</Link>, icon: <UserOutlined/> }
       ] }
@@ -145,6 +145,12 @@ export default function Workspace(props) {
                     </Route>
                     <Route path="/vente" key="vente">
                         <Vente />
+                    </Route>
+                    <Route path="/programme" key="programme">
+                        <Programme />
+                    </Route>
+                    <Route path="/operations" key="operations">
+                        <Operations />
                     </Route>
                 </Switch>
             </Layout.Content>
