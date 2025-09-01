@@ -5,13 +5,6 @@ import { UserOutlined, PlusCircleOutlined, LeftCircleOutlined, DeleteOutlined, E
 import { demo } from './workspace.tsx';
 import dayjs from 'dayjs';
 
-interface ClientType {
-    key: string,
-    name: string,
-    type: string,
-    email: string
-}
-
 const types = [
   { value: 'particulier', label: 'Particulier' },
   { value: 'professionnel', label: 'Professionnel' },
@@ -67,7 +60,7 @@ function Messagerie() {
 
 function List(props) {
 
-    const columns: TableProps<ClientType>['columns'] = [
+    const columns = [
         {
             title: 'Nom',
             dataIndex: 'nom',
@@ -145,7 +138,7 @@ function List(props) {
         </Row>
         <Row gutter={[16,16]}>
             <Col span={24}>
-                <Table<ClientType> columns={columns} dataSource={props.clients} onRow={(record, rowIndex) => {
+                <Table columns={columns} dataSource={props.clients} onRow={(record, rowIndex) => {
                   return {
                     onClick: (event) => { props.setClient(record.key) }
                   };
