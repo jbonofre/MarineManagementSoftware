@@ -79,12 +79,28 @@ function List(props) {
 }
 
 function Catalogue(props) {
+
+    const columns = [
+        {
+            title: 'Référence',
+            dataIndex: 'ref',
+            key: 'ref'
+        },
+        {
+            title: 'Quantité',
+            dataIndex: 'quentite',
+            key: 'quantite'
+        }
+    ];
+
     return(
-      <p>Catalogue</p>
+      <Table columns={columns} dataSource={props.operation} />
     );
 }
 
 function Detail(props) {
+
+    const operationDetail = operations.filter(record => record.nom === props.operation)[0];
 
     const tabs = [
         {
@@ -103,8 +119,6 @@ function Detail(props) {
             children: <p>Programmation</p>
         }
     ];
-
-    const operationDetail = operations.filter(record => record.nom === props.operation)[0];
 
     return(
       <>
