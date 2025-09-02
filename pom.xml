@@ -15,18 +15,19 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>persistence</module>
-        <!-- <module>service</module> -->
-        <!-- <module>rest</module> -->
-        <!-- <module>ui</module> -->
+        <module>backend</module>
     </modules>
+
+    <properties>
+        <quarkus.version>3.26.1</quarkus.version>
+    </properties>
 
     <dependencyManagement>
         <dependencies>
             <dependency>
                 <groupId>io.quarkus</groupId>
                 <artifactId>quarkus-bom</artifactId>
-                <version>3.21.0</version>
+                <version>${quarkus.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
