@@ -176,7 +176,7 @@ function DetailTransaction(props) {
     return(
       <Modal centered={true} mask={true} title={<Space>{transactionNumero}</Space>}
             width={1024} open={open} closable={true} onCancel={() => props.setNumeroTransaction(null)}>
-            <Form name="caisse" labelCol={{ span: 3 }}
+            <Form name="comptoir" labelCol={{ span: 3 }}
                  wrapperCol={{ span: 21 }}
                  style={{ width: '100%' }}
                  initialValues={{ remember: true }}>
@@ -222,7 +222,7 @@ function DetailTransaction(props) {
     );
 }
 
-export default function Caisse(props) {
+export default function Comptoir(props) {
     const [ openNew, setOpenNew ] = useState(false);
     const [ numeroTransaction, setNumeroTransaction ] = useState(null);
     return(

@@ -1,4 +1,4 @@
-export var chantier = {
+export var societe = {
     nom: 'MS Plaisance',
     siren: '790 458 616',
     siret: '790 458 616 00022',

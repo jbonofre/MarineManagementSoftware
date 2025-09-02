@@ -78,13 +78,19 @@ function List(props) {
     );
 }
 
+function Catalogue(props) {
+    return(
+      <p>Catalogue</p>
+    );
+}
+
 function Detail(props) {
 
     const tabs = [
         {
             key: 'catalogue',
             label: 'Catalogue',
-            children: <p>Catalogue</p>,
+            children: <Catalogue />,
         },
         {
             key: 'application',
@@ -98,7 +104,7 @@ function Detail(props) {
         }
     ];
 
-    const operationDetail = operations.filter(record => record.name === props.operation)[0];
+    const operationDetail = operations.filter(record => record.nom === props.operation)[0];
 
     return(
       <>
@@ -123,6 +129,12 @@ function Detail(props) {
             <Form.Item name="prixttc" label="Prix TTC">
                 <InputNumber addonAfter="€"/>
             </Form.Item>
+            <Form.Item label={null}>
+                <Space>
+                <Button type="primary">Enregistrer</Button>
+                <Button>Annuler</Button>
+                </Space>
+            </Form.Item>
         </Form>
         <Tabs items={tabs} />
       </Card>
@@ -136,7 +148,7 @@ export default function Operations() {
 
     if (operation) {
         return(
-            <Detail setOperation={setOperation} />
+            <Detail operation={operation} setOperation={setOperation} />
         );
     } else {
         return(

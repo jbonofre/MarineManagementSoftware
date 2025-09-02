@@ -158,7 +158,7 @@ function List(props) {
     );
 }
 
-export default function Magasin() {
+export default function Catalogue() {
 
     const [ detail, setDetail ] = useState();
 

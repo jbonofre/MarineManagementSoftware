@@ -15,11 +15,11 @@ import Clients from './clients.tsx';
 import Bateaux from './bateaux.tsx';
 import Moteurs from './moteurs.tsx';
 import Remorques from './remorques.tsx';
-import Magasin from './magasin.tsx';
+import Catalogue from './catalogue.tsx';
 import Interventions from './interventions.tsx';
-import Chantier from './chantier.tsx';
+import Societe from './societe.tsx';
 import Utilisateurs from './utilisateurs.tsx';
-import Caisse from './caisse.tsx';
+import Comptoir from './comptoir.tsx';
 import Vente from './vente.tsx';
 import Forfait from './forfait.tsx';
 import Operations from './operations.tsx';
@@ -42,9 +42,9 @@ function SideMenu(props) {
         { key: 'remorques', label: <Link to="/remorques">Remorques</Link>, icon: <Icon component= { TailerOutlined } /> }
       ] },
       { key: 'magasin', label: 'Magasin', icon: <StockOutlined/>, children: [
-        { key: 'guichet', label: <Link to="/caisse">Comptoir</Link>, icon: <DesktopOutlined/> },
+        { key: 'comptoir', label: <Link to="/comptoir">Comptoir</Link>, icon: <DesktopOutlined/> },
         { key: 'vente', label: <Link to="/vente">Vente</Link>, icon: <FileOutlined/> },
-        { key: 'catalogue', label: <Link to="/magasin">Catalogue</Link>, icon: <ReadOutlined/> },
+        { key: 'catalogue', label: <Link to="/catalogue">Catalogue</Link>, icon: <ReadOutlined/> },
         { key: 'fournisseurs', label: 'Fournisseurs', icon: <FileProtectOutlined/> }
       ] },
       { key: 'atelier', label: 'Atelier', icon: <ToolOutlined/>, children: [
@@ -59,8 +59,8 @@ function SideMenu(props) {
         { key: 'site', label: 'Site ecommerce' },
         { key: 'marketing', label: 'Marketing' }
       ] },
-      { key: 'parametrage', label: 'Chantier', icon: <SettingOutlined/>, children: [
-        { key: 'chantier', label: <Link to="/chantier">Société</Link>, icon: <DeploymentUnitOutlined/> },
+      { key: 'chantier', label: 'Chantier', icon: <SettingOutlined/>, children: [
+        { key: 'societe', label: <Link to="/societe">Société</Link>, icon: <DeploymentUnitOutlined/> },
         { key: 'utilisateurs', label: <Link to="/utilisateurs">Utilisateurs</Link>, icon: <UserOutlined/> }
       ] }
     ];
@@ -128,20 +128,20 @@ export default function Workspace(props) {
                     <Route path="/remorques" key="remorques">
                         <Remorques remorques={remorques} />
                     </Route>
-                    <Route path="/magasin" key="magasin">
-                        <Magasin />
+                    <Route path="/catalogue" key="catalogue">
+                        <Catalogue />
                     </Route>
                     <Route path="/interventions" key="interventions">
                         <Interventions />
                     </Route>
-                    <Route path="/chantier" key="chantier">
-                        <Chantier chantier={chantier} />
+                    <Route path="/societe" key="societe">
+                        <Societe />
                     </Route>
                     <Route path="/utilisateurs" key="utilisateurs">
                         <Utilisateurs />
                     </Route>
-                    <Route path="/caisse" key="caisse">
-                        <Caisse />
+                    <Route path="/comptoir" key="comptoir">
+                        <Comptoir />
                     </Route>
                     <Route path="/vente" key="vente">
                         <Vente />

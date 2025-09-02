@@ -1,26 +1,27 @@
 import { Card, Row, Col, Space, Image, Button, Form, Input, InputNumber } from 'antd';
 import { PlusCircleOutlined, PauseCircleOutlined, DeleteOutlined, DeploymentUnitOutlined } from '@ant-design/icons';
 import { demo } from './workspace.tsx';
+import { societe } from './data.tsx';
 
 const { TextArea } = Input;
 
-export default function Chantier(props) {
+export default function Societe(props) {
 
     const [form] = Form.useForm();
 
     const onFinish = (values) => {
-        props.chantier.nom = values.nom;
-        props.chantier.siren = values.siren;
-        props.chantier.siret = values.siret;
-        props.chantier.ape = values.ape;
-        props.chantier.rcs = values.rcs;
-        props.chantier.forme = values.forme;
-        props.chantier.capital = values.capital;
-        props.chantier.numerotva = values.numerotva;
-        props.chantier.adresse = values.adresse;
-        props.chantier.telephone = values.telephone;
-        props.chantier.email = values.email;
-        props.chantier.bancaire = values.bancaire;
+        props.societe.nom = values.nom;
+        props.societe.siren = values.siren;
+        props.societe.siret = values.siret;
+        props.societe.ape = values.ape;
+        props.societe.rcs = values.rcs;
+        props.societe.forme = values.forme;
+        props.societe.capital = values.capital;
+        props.societe.numerotva = values.numerotva;
+        props.societe.adresse = values.adresse;
+        props.societe.telephone = values.telephone;
+        props.societe.email = values.email;
+        props.societe.bancaire = values.bancaire;
     };
 
     const onReset = () => {
@@ -32,11 +33,11 @@ export default function Chantier(props) {
       <Card title={<Space><DeploymentUnitOutlined/> Société</Space>}>
         <Row gutter={[16,16]}>
             <Col span={19}>
-                <Form name="chantier" labelCol={{ span: 8 }}
+                <Form name="societe" labelCol={{ span: 8 }}
                     form={form}
                     onFinish={onFinish}
                     wrapperCol={{ span: 16 }}
-                    style={{ width: '80%' }} initialValues={props.chantier}>
+                    style={{ width: '80%' }} initialValues={societe}>
                     <Form.Item name="nom" label="Nom" required={true} rules={[{required: true, message: 'Le nom est requis'}]}>
                         <Input allowClear={true} />
                     </Form.Item>
@@ -84,7 +85,7 @@ export default function Chantier(props) {
             <Col span={5}>
                 <Space direction="vertical" align="center">
                 {
-                    props.chantier.images.map((image) => <Space><Image width={200} src={image} /><Button onClick={() => demo()} icon={<DeleteOutlined/>} /></Space> )
+                    societe.images.map((image) => <Space><Image width={200} src={image} /><Button onClick={() => demo()} icon={<DeleteOutlined/>} /></Space> )
                 }
                 <Button onClick={() => demo()} icon={<PlusCircleOutlined/>}>Ajouter une photo</Button>
                 </Space>
