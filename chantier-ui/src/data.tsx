@@ -18,7 +18,14 @@ export var societe = {
     ]
 }
 
-export const users = [
+export const userRoles = [
+    { value: 'admin', label: 'admin', text: 'admin' },
+    { value: 'atelier', label: 'atelier', text: 'atelier' },
+    { value: 'accueil', label: 'accueil', text: 'accueil' },
+    { value: 'magazin', label: 'magazin', text: 'magazin' }
+];
+
+export var users = [
   {
       user: 'admin',
       roles: 'admin',
