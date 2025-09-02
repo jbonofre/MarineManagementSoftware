@@ -1,5 +1,3 @@
-export const backend = 'http://localhost:8080';
-
 export var societe = {
     nom: 'MS Plaisance',
     siren: '790 458 616',

@@ -1,27 +1,56 @@
 package net.nanthrax.mms.services;
 
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.Path;
-import net.nanthrax.mms.persistence.User;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.transaction.Transactional;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import net.nanthrax.mms.persistence.UserEntity;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Path("/users")
+@ApplicationScoped
+@Produces(MediaType.APPLICATION_JSON)
+@Consumes(MediaType.APPLICATION_JSON)
 public class UserResource {
 
     @GET
-    public List<User> list() {
-        List<User> users = new ArrayList<>();
+    public List<UserEntity> list() {
+        return UserEntity.listAll();
+    }
 
-        User user = new User();
-        user.user = "admin";
-        user.roles = "admin";
-        user.password = "admin";
-        user.email = "contact@msplaisance.com";
-        users.add(user);
+    @POST
+    @Transactional
+    public Response create(UserEntity user) {
+        user.persist();
+        return Response.ok(user).status(201).build();
+    }
 
-        return users;
+    @DELETE
+    @Path("{name}")
+    @Transactional
+    public Response delete(String name) {
+        UserEntity entity = UserEntity.findById(name);
+        if (entity == null) {
+            throw new WebApplicationException("L'utilisateur " + name + " n'est pas trouvé", 404);
+        }
+        entity.delete();
+        return Response.status(204).build();
+    }
+
+    public UserEntity update(String name, UserEntity user) {
+        UserEntity entity = UserEntity.findById(name);
+        if (entity == null) {
+            throw new WebApplicationException("L'utilisateur " + name + " n'est pas trouvé", 404);
+        }
+
+        entity.name = user.name;
+        entity.email = user.email;
+        entity.roles = user.roles;
+        entity.password = user.password;
+
+        return entity;
     }
 
 }

@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
-import { Card, Space, Table, Select, Input, Button, Form } from 'antd';
-import { UserOutlined, PlusCircleOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
-import { backend, userRoles } from './data.tsx';
+import { Card, Space, Table, Select, Input, Button, Form, message } from 'antd';
+import { UserOutlined, PlusCircleOutlined, EditOutlined, DeleteOutlined, PauseCircleOutlined } from '@ant-design/icons';
+import { userRoles } from './data.tsx';
 
 const columns = [
     {
         title: 'Utilisateur',
-        dataIndex: 'user',
-        key: 'user',
-        sorter: (a,b) => a.user.localeCompare(b.user),
+        dataIndex: 'name',
+        key: 'name',
+        sorter: (a,b) => a.name.localeCompare(b.name),
     },
     {
         title: 'Roles',
@@ -41,7 +41,7 @@ const columns = [
         title: '',
         key: 'action',
         render: (_,record) => <div>{(() => {
-            if (record.user === 'admin') {
+            if (record.name === 'admin') {
                 return(
                   <Space>
                     <Button icon={<EditOutlined/>}/>
@@ -51,7 +51,17 @@ const columns = [
                 return(
                     <Space>
                         <Button icon={<EditOutlined/>}/>
-                        <Button icon={<DeleteOutlined/>}/>
+                        <Button onClick={() => {
+                            fetch('./users/' + record.name, {
+                                method: 'DELETE'
+                            })
+                            .then((response) => console.log(response))
+                            .then((data) => message.info('Utilisateur supprimé'))
+                            .catch((error) => {
+                                message.error('Une erreur est survenue: ' + error.message);
+                                console.error(error);
+                            })
+                            }} icon={<DeleteOutlined/>}/>
                     </Space>
                 );
             }
@@ -63,17 +73,39 @@ export default function Utilisateurs(props) {
 
     const [ users, setUsers ] = useState();
 
-    useEffect(() => {
-        fetch(backend + '/users')
+    const fetchUsers = () => {
+        fetch('./users')
             .then((response) => response.json())
             .then((data) => setUsers(data))
-            .catch((error) => console.error(error));
-    }, [ ]);
+            .catch((error) => {
+                message.error('Une erreur est survenue: ' + error.message);
+                console.error({error})
+            })
+    };
+
+    useEffect(fetchUsers, []);
 
     const [ newUserForm ] = Form.useForm();
 
     const newUserFunction = (values) => {
-        console.log(values.user);
+        fetch('./users', {
+                method: 'POST',
+                body: JSON.stringify(values),
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error('Erreur (code ' + response.status + ')');
+                }
+                return response.json();
+            })
+            .then((data) => message.info('Utilisateur sauvegardé'))
+            .catch((error) => {
+                message.error('Une erreur est survenue: ' + error.message);
+                console.error(error);
+            })
     };
 
     return(
@@ -81,14 +113,14 @@ export default function Utilisateurs(props) {
         <Card title={<Space><UserOutlined/> Utilisateurs</Space>}>
             <Space>
                 <Form form={newUserForm} layout='inline' onFinish={newUserFunction}>
-                <Form.Item name='user' rules={[{ required: true, message: 'Le nom d\'utilisateur est requis' }]}>
-                <Input id='user' style={{ width: 200 }} placeholder="Utilisateur" allowClear={true} />
+                <Form.Item name='name' rules={[{ required: true, message: 'Le nom d\'utilisateur est requis' }]}>
+                <Input style={{ width: 200 }} placeholder="Utilisateur" allowClear={true} />
                 </Form.Item>
-                <Form.Item name='userRoles'>
+                <Form.Item name='userRoles' rules={[{ required: true, message: 'Le role de l\'utilisateur est requis' }]}>
                 <Select style={{ width: 150 }} options={userRoles} />
                 </Form.Item>
                 <Form.Item name='password' rules={[{ required: true, message: 'Le mot de passe est requis' }]}>
-                <Input.Password style={{ width: 250 }} placeholder="Mot de passe" allowClear={true}/>
+                <Input.Password style={{ width: 200 }} placeholder="Mot de passe" allowClear={true}/>
                 </Form.Item>
                 <Form.Item name='confirmPassword' rules={[
                     {
@@ -104,12 +136,13 @@ export default function Utilisateurs(props) {
                         },
                     }),
                 ]}>
-                <Input.Password style={{ width: 250 }} placeholder="Confirmer le mot de passe" allowClear={true}/>
+                <Input.Password style={{ width: 200 }} placeholder="Confirmer le mot de passe" allowClear={true}/>
                 </Form.Item>
                 <Form.Item name='email' rules={[{ required: true, message: 'Un email est requis' }]}>
                 <Input style={{ width: 250 }} placeholder="e-mail" allowClear={true}/>
                 </Form.Item>
                 <Button type="primary" onClick={() => newUserForm.submit()} icon={<PlusCircleOutlined/>}>Ajouter utilisateur</Button>
+                <Button onClick={() => newUserForm.resetFields()} icon={<PauseCircleOutlined/>}>Annuler</Button>
                 </Form>
             </Space>
             <Table columns={columns} dataSource={users} />

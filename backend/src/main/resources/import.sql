@@ -1,0 +1,1 @@
+INSERT INTO userEntity(name, roles, password, email) VALUES('admin', 'admin', 'admin', 'contact@msplaisance.com');
