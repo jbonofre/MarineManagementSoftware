@@ -350,3 +350,11 @@ export const operations = [
     periode: 'Annuel',
   }
 ];
+
+export const forfaits = [
+    {
+        nom: 'Entretien Annuel Mercury FS75',
+        operations: [ 'Sortie eau', 'Entretien Mercury FS75' ],
+        periode: 'Annuel'
+    }
+];

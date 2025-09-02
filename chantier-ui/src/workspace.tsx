@@ -21,7 +21,7 @@ import Chantier from './chantier.tsx';
 import Utilisateurs from './utilisateurs.tsx';
 import Caisse from './caisse.tsx';
 import Vente from './vente.tsx';
-import Programme from './programme.tsx';
+import Forfait from './forfait.tsx';
 import Operations from './operations.tsx';
 
 export function demo() {
@@ -51,7 +51,7 @@ function SideMenu(props) {
         { key: 'interventions', label: <Link to="/interventions">Interventions</Link>, icon: <CheckSquareOutlined/> },
         { key: 'planning', label: 'Planning', icon: <CalendarOutlined/> },
         { key: 'equipe', label: 'Equipe', icon: <TeamOutlined/> },
-        { key: 'entretien', label: <Link to="/programme">Programme</Link>, icon: <ScheduleOutlined/> },
+        { key: 'forfait', label: <Link to="/forfait">Forfaits</Link>, icon: <ScheduleOutlined/> },
         { key: 'operations', label: <Link to="/operations">Opérations</Link>, icon: <FileDoneOutlined/> },
       ] },
       { key: 'market', label: 'Market', icon: <AmazonOutlined/>, children: [
@@ -146,8 +146,8 @@ export default function Workspace(props) {
                     <Route path="/vente" key="vente">
                         <Vente />
                     </Route>
-                    <Route path="/programme" key="programme">
-                        <Programme />
+                    <Route path="/forfait" key="forfait">
+                        <Forfait />
                     </Route>
                     <Route path="/operations" key="operations">
                         <Operations />
