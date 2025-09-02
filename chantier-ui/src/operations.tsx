@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { Col, Row, Space, Table, Button, Input, Card, Avatar, Form, InputNumber, Select } from 'antd';
+import { Col, Row, Space, Table, Button, Input, Card, Avatar, Form, InputNumber, Select, Tabs } from 'antd';
 import { PlusCircleOutlined, EditOutlined, DeleteOutlined, LeftCircleOutlined, FileDoneOutlined } from '@ant-design/icons';
 import { demo } from './workspace.tsx';
 import { operations } from './data.tsx';
 
 const style: React.CSSProperties = { padding: '8px 0' };
-const { Search } = Input;
+const { TextArea, Search } = Input;
 
 function List(props) {
 
@@ -82,16 +82,19 @@ function Detail(props) {
 
     const tabs = [
         {
-            label: 'Détails',
-            children: 'Détails'
+            key: 'catalogue',
+            label: 'Catalogue',
+            children: <p>Catalogue</p>,
         },
         {
+            key: 'application',
             label: 'Application',
-            children: 'Application'
+            children: <p>Application</p>
         },
         {
+            key: 'programmation',
             label: 'Programmation',
-            children: 'Programmation'
+            children: <p>Programmation</p>
         }
     ];
 
@@ -108,19 +111,20 @@ function Detail(props) {
             <Form.Item name="nom" label="Nom" required={true} rules={[{ required: true, message: 'Le nom de l\'opération est requis' }]}>
                 <Input allowClear={true} />
             </Form.Item>
-            <Form.Item name="application" label="Application">
-
+            <Form.Item name="description" label="Description">
+                <TextArea rows={6} allowClear={true} />
             </Form.Item>
-            <Form.Item name="programmation" label="Programmation">
-                <InputNumber allowClear={true} addonAfter="h" />
-                <Select defaultValue={operationDetail.periode} options={[
-                    { value: 'Quotidien', label: 'Quotidien' },
-                    { value: 'Hebdomadaire', label: 'Hebdomadaire' },
-                    { value: 'Mensuel', label: 'Mensuel' },
-                    { value: 'Annuel', label: 'Annuel' }
-                ]} />
+            <Form.Item name="prixht" label="Prix HT">
+                <InputNumber addonAfter="€"/>
+            </Form.Item>
+            <Form.Item name="tva" label="Montant TVA">
+                <InputNumber addonAfter="€"/>
+            </Form.Item>
+            <Form.Item name="prixttc" label="Prix TTC">
+                <InputNumber addonAfter="€"/>
             </Form.Item>
         </Form>
+        <Tabs items={tabs} />
       </Card>
       </>
     );

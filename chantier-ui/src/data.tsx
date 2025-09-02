@@ -332,7 +332,11 @@ export const catalogue = [
 
 export const operations = [
   {
-    nom: 'Sortie eau',
+    nom: 'Sortie eau - Pont de la Corde - Henvic',
+    description: 'Opération de sortie d\'eau au Pont de la Corde à Henvic',
+    prixht: 80.0,
+    prixttc: 96.0,
+    tva: 16.0,
     catalogue: [
         { ref: 'Manutention', quantite: 2 }
     ],
