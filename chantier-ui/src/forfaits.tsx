@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Col, Row, Space, Table, Button, Input, Card, Avatar, Form, InputNumber, Select, Tabs } from 'antd';
 import { PlusCircleOutlined, EditOutlined, DeleteOutlined, LeftCircleOutlined, FileDoneOutlined } from '@ant-design/icons';
 import { demo } from './workspace.tsx';
-import { operations } from './data.tsx';
+import { forfaits } from './data.tsx';
 
 const style: React.CSSProperties = { padding: '8px 0' };
 const { TextArea, Search } = Input;
@@ -11,12 +11,12 @@ function List(props) {
 
     const columns = [
         {
-            title: 'Opération',
+            title: 'Forfait',
             dataIndex: 'nom',
             key: 'nom',
             sorter: (a,b) => a.nom.localeCompare(b.nom),
             render: (_,record) => (
-                <a onClick={() => props.setOperation(record.nom)}>{record.nom}</a>
+                <a onClick={() => props.setForfait(record.nom)}>{record.nom}</a>
             )
         },
         {
@@ -46,7 +46,7 @@ function List(props) {
             title: '',
             render: (_,record) => (
                 <Space>
-                    <Button onClick={() => props.setOperation(record.nom)}><EditOutlined/></Button>
+                    <Button onClick={() => props.setForfait(record.nom)}><EditOutlined/></Button>
                     <Button onClick={() => demo()}><DeleteOutlined/></Button>
                 </Space>
             )
@@ -60,16 +60,16 @@ function List(props) {
                     <div style={style}>
                         <Space>
                             <Search placeholder="Recherche" enterButton style={{ width: 350 }}/>
-                            <Button type="primary" icon={<PlusCircleOutlined/>}>Nouvelle Opération</Button>
+                            <Button type="primary" icon={<PlusCircleOutlined/>}>Nouveau forfait</Button>
                         </Space>
                     </div>
                 </Col>
             </Row>
             <Row gutter={[16,16]}>
                 <Col span={24}>
-                    <Table columns={columns} dataSource={props.operations} onRow={(record, rowIndex) => {
+                    <Table columns={columns} dataSource={forfaits} onRow={(record, rowIndex) => {
                        return {
-                         onClick: (event) => { props.setOperation(record.nom) }
+                         onClick: (event) => { props.setForfait(record.nom) }
                        };
                     }} />
                 </Col>
@@ -80,7 +80,7 @@ function List(props) {
 
 function Catalogue(props) {
 
-    const operationDetail = operations.filter(record => record.nom === props.operation[0])[0];
+    const forfaitDetail = forfaits.filter(record => record.nom === props.forfait[0])[0];
 
     const columns = [
         {
@@ -118,7 +118,7 @@ function Catalogue(props) {
       </Row>
       <Row gutter={[16,16]}>
         <Col span={24}>
-            <Table columns={columns} dataSource={operationDetail.catalogue} />
+            <Table columns={columns} dataSource={forfaitDetail.catalogue} />
         </Col>
       </Row>
       </>
@@ -127,13 +127,13 @@ function Catalogue(props) {
 
 function Detail(props) {
 
-    const operationDetail = operations.filter(record => record.nom === props.operation)[0];
+    const forfaitDetail = forfaits.filter(record => record.nom === props.forfait)[0];
 
     const tabs = [
         {
             key: 'catalogue',
             label: 'Catalogue',
-            children: (<Catalogue operation={[ props.operation ]} />),
+            children: (<Catalogue forfait={[ props.forfait ]} />),
         },
         {
             key: 'application',
@@ -149,13 +149,13 @@ function Detail(props) {
 
     return(
       <>
-      <a onClick={() => props.setOperation(null)}><LeftCircleOutlined/> Retour à la liste des opérations</a>
-      <Card title={<Space><Avatar size="large" icon={<FileDoneOutlined/>} /> {operationDetail.nom}</Space>} style={{ width: '100%' }}>
-        <Form name="operationDetailForm" labelCol={{ span: 8 }}
+      <a onClick={() => props.setForfait(null)}><LeftCircleOutlined/> Retour à la liste des forfaits</a>
+      <Card title={<Space><Avatar size="large" icon={<FileDoneOutlined/>} /> {forfaitDetail.nom}</Space>} style={{ width: '100%' }}>
+        <Form name="forfaitDetailForm" labelCol={{ span: 8 }}
             wrapperCol={{ span: 16 }}
             style={{ width: '80%' }}
-            initialValues={operationDetail}>
-            <Form.Item name="nom" label="Nom" required={true} rules={[{ required: true, message: 'Le nom de l\'opération est requis' }]}>
+            initialValues={forfaitDetail}>
+            <Form.Item name="nom" label="Nom" required={true} rules={[{ required: true, message: 'Le nom du forfait est requis' }]}>
                 <Input allowClear={true} />
             </Form.Item>
             <Form.Item name="description" label="Description">
@@ -183,17 +183,17 @@ function Detail(props) {
     );
 }
 
-export default function Operations() {
+export default function Forfaits() {
 
-    const [ operation, setOperation ] = useState();
+    const [ forfait, setForfait ] = useState();
 
-    if (operation) {
+    if (forfait) {
         return(
-            <Detail operation={operation} setOperation={setOperation} />
+            <Detail forfait={forfait} setForfait={setForfait} />
         );
     } else {
         return(
-            <List setOperation={setOperation} operations={operations} />
+            <List setForfait={setForfait} />
         );
     }
 }

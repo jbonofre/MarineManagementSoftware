@@ -330,7 +330,7 @@ export const catalogue = [
         }
     ];
 
-export const operations = [
+export const forfaits = [
   {
     nom: 'Sortie eau - Pont de la Corde - Henvic',
     description: 'Opération de sortie d\'eau au Pont de la Corde à Henvic',
@@ -353,12 +353,4 @@ export const operations = [
     heures: 100,
     periode: 'Annuel',
   }
-];
-
-export const forfaits = [
-    {
-        nom: 'Entretien Annuel Mercury FS75',
-        operations: [ 'Sortie eau', 'Entretien Mercury FS75' ],
-        periode: 'Annuel'
-    }
 ];

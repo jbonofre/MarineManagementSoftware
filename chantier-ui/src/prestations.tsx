@@ -41,14 +41,14 @@ function Detail(props) {
     const descriptionValue = "Installation d'un compas, vérification";
     return(
         <>
-        <a onClick={ () => props.setIntervention(null) }><LeftCircleOutlined/> Retour à la liste des intervention</a>
+        <a onClick={ () => props.setPrestation(null) }><LeftCircleOutlined/> Retour à la liste des prestations</a>
         <Card title={
                 <Space>
                     <QRCode size={80} value="dqdqsdqd"/>
-                    Intervention YB3E2DSDA | Jean-Baptiste Onofré
+                    Prestation YB3E2DSDA | Jean-Baptiste Onofré
                 </Space>
             } style={{ width: '100%' }}>
-            <Form name="intervention" labelCol={{ span: 8 }}
+            <Form name="prestationDetailForm" labelCol={{ span: 8 }}
                 wrapperCol={{ span: 16 }}
                 style={{ width: '80%' }}
                 initialValue={{ remember: true }}>
@@ -85,7 +85,7 @@ function List(props) {
                    title: 'Numéro',
                    dataIndex: 'numero',
                    key: 'numero',
-                   render: (text,record) => <a onClick={ () => props.setIntervention(record.key) }>{text}</a>
+                   render: (text,record) => <a onClick={ () => props.setPrestation(record.key) }>{text}</a>
                },
                {
                    title: 'Client',
@@ -138,31 +138,31 @@ function List(props) {
                            <Space>
                                <Search placeholder="Recherche" enterButton style={{ width: 350 }}/>
                                <Select mode="tags" placeholder="Status" style={{ width: 350 }} options={status}/>
-                               <Button type="primary" icon={<PlusCircleOutlined/>}>Créer une intervention</Button>
+                               <Button type="primary" icon={<PlusCircleOutlined/>}>Créer une prestation</Button>
                            </Space>
                        </div>
                    </Col>
                </Row>
                <Row gutter={[16,16]}>
                    <Col span={24}>
-                       <Table<InterventionType> columns={columns} dataSource={data} />
+                       <Table columns={columns} dataSource={data} />
                    </Col>
                </Row>
            </>
        );
 }
 
-export default function Interventions() {
+export default function Prestations() {
 
-    const [ intervention, setIntervention ] = useState();
+    const [ prestation, setPrestation ] = useState();
 
-    if (intervention) {
+    if (prestation) {
         return(
-            <Detail intervention={intervention} setIntervention={setIntervention} />
+            <Detail prestation={prestation} setPrestation={setPrestation} />
         );
     } else {
         return(
-            <List setIntervention={setIntervention} />
+            <List setPrestation={setPrestation} />
         );
     }
 }

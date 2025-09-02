@@ -16,13 +16,12 @@ import Bateaux from './bateaux.tsx';
 import Moteurs from './moteurs.tsx';
 import Remorques from './remorques.tsx';
 import Catalogue from './catalogue.tsx';
-import Interventions from './interventions.tsx';
+import Prestations from './prestations.tsx';
 import Societe from './societe.tsx';
 import Utilisateurs from './utilisateurs.tsx';
 import Comptoir from './comptoir.tsx';
 import Vente from './vente.tsx';
-import Forfait from './forfait.tsx';
-import Operations from './operations.tsx';
+import Forfaits from './forfaits.tsx';
 
 export function demo() {
     message.warning("Vous êtes sur une version de démonstration de Marine Management Software. Il n'est pas possible d'ajouter ou supprimer des éléments.")
@@ -48,11 +47,10 @@ function SideMenu(props) {
         { key: 'fournisseurs', label: 'Fournisseurs', icon: <FileProtectOutlined/> }
       ] },
       { key: 'atelier', label: 'Atelier', icon: <ToolOutlined/>, children: [
-        { key: 'interventions', label: <Link to="/interventions">Interventions</Link>, icon: <CheckSquareOutlined/> },
+        { key: 'prestations', label: <Link to="/prestations">Prestations</Link>, icon: <CheckSquareOutlined/> },
         { key: 'planning', label: 'Planning', icon: <CalendarOutlined/> },
         { key: 'equipe', label: 'Equipe', icon: <TeamOutlined/> },
-        { key: 'forfait', label: <Link to="/forfait">Forfaits</Link>, icon: <ScheduleOutlined/> },
-        { key: 'operations', label: <Link to="/operations">Opérations</Link>, icon: <FileDoneOutlined/> },
+        { key: 'forfaits', label: <Link to="/forfaits">Forfaits</Link>, icon: <FileDoneOutlined/> },
       ] },
       { key: 'market', label: 'Market', icon: <AmazonOutlined/>, children: [
         { key: 'marchands', label: 'Marchands' },
@@ -131,9 +129,6 @@ export default function Workspace(props) {
                     <Route path="/catalogue" key="catalogue">
                         <Catalogue />
                     </Route>
-                    <Route path="/interventions" key="interventions">
-                        <Interventions />
-                    </Route>
                     <Route path="/societe" key="societe">
                         <Societe />
                     </Route>
@@ -146,11 +141,11 @@ export default function Workspace(props) {
                     <Route path="/vente" key="vente">
                         <Vente />
                     </Route>
-                    <Route path="/forfait" key="forfait">
-                        <Forfait />
+                    <Route path="/prestations" key="prestations">
+                        <Prestations />
                     </Route>
-                    <Route path="/operations" key="operations">
-                        <Operations />
+                    <Route path="/forfaits" key="forfaits">
+                        <Forfaits />
                     </Route>
                 </Switch>
             </Layout.Content>
