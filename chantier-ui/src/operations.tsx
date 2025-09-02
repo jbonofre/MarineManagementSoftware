@@ -80,6 +80,8 @@ function List(props) {
 
 function Catalogue(props) {
 
+    const operationDetail = operations.filter(record => record.nom === props.operation[0])[0];
+
     const columns = [
         {
             title: 'Référence',
@@ -88,13 +90,38 @@ function Catalogue(props) {
         },
         {
             title: 'Quantité',
-            dataIndex: 'quentite',
+            dataIndex: 'quantite',
             key: 'quantite'
+        },
+        {
+            title: null,
+            render: (_,record) => (
+                <Space>
+                    <Button><DeleteOutlined/></Button>
+                </Space>
+            ),
         }
     ];
 
     return(
-      <Table columns={columns} dataSource={props.operation} />
+      <>
+      <Row gutter={[16,16]}>
+        <Col span={24}>
+            <div style={style}>
+                <Space>
+                    <Search placeholder="Recherche" enterButton style={{ width: 350 }}/>
+                    <InputNumber />
+                    <Button type="primary" icon={<PlusCircleOutlined/>} onClick={() => demo()}>Ajouter</Button>
+                </Space>
+            </div>
+        </Col>
+      </Row>
+      <Row gutter={[16,16]}>
+        <Col span={24}>
+            <Table columns={columns} dataSource={operationDetail.catalogue} />
+        </Col>
+      </Row>
+      </>
     );
 }
 
@@ -106,7 +133,7 @@ function Detail(props) {
         {
             key: 'catalogue',
             label: 'Catalogue',
-            children: <Catalogue />,
+            children: (<Catalogue operation={[ props.operation ]} />),
         },
         {
             key: 'application',
