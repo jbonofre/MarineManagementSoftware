@@ -1,3 +1,5 @@
+export const backend = 'http://localhost:8080';
+
 export var societe = {
     nom: 'MS Plaisance',
     siren: '790 458 616',
@@ -16,7 +18,7 @@ export var societe = {
         'https://media.bateaux.com/src/applications/showroom/images/images-produit/7003aaf9d3da1267ec84c6892b7f917b.png',
         'https://media.bateaux.com/src/applications/showroom/images/images-produit/6f20847f0c57af433795fe664fbd2308.jpg'
     ]
-}
+};
 
 export const userRoles = [
     { value: 'admin', label: 'admin', text: 'admin' },

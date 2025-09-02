@@ -13,9 +13,12 @@ public class UserResource {
     @GET
     public List<User> list() {
         List<User> users = new ArrayList<>();
+
         User user = new User();
-        user.name = "test";
-        user.email = "test@test.com";
+        user.user = "admin";
+        user.roles = "admin";
+        user.password = "admin";
+        user.email = "contact@msplaisance.com";
         users.add(user);
 
         return users;
