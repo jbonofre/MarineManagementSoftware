@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Col, Row, Space, Table, Button, Input } from 'antd';
-import { PlusCircleOutlined, EditOutlined, DeleteOutlined, LeftCircleOutlined } from '@ant-design/icons';
+import { Col, Row, Space, Table, Button, Input, Card, Avatar, Form, InputNumber, Select } from 'antd';
+import { PlusCircleOutlined, EditOutlined, DeleteOutlined, LeftCircleOutlined, FileDoneOutlined } from '@ant-design/icons';
 import { demo } from './workspace.tsx';
 import { operations } from './data.tsx';
 
@@ -100,6 +100,28 @@ function Detail(props) {
     return(
       <>
       <a onClick={() => props.setOperation(null)}><LeftCircleOutlined/> Retour à la liste des opérations</a>
+      <Card title={<Space><Avatar size="large" icon={<FileDoneOutlined/>} /> {operationDetail.nom}</Space>} style={{ width: '100%' }}>
+        <Form name="operationDetailForm" labelCol={{ span: 8 }}
+            wrapperCol={{ span: 16 }}
+            style={{ width: '80%' }}
+            initialValues={operationDetail}>
+            <Form.Item name="nom" label="Nom" required={true} rules={[{ required: true, message: 'Le nom de l\'opération est requis' }]}>
+                <Input allowClear={true} />
+            </Form.Item>
+            <Form.Item name="application" label="Application">
+
+            </Form.Item>
+            <Form.Item name="programmation" label="Programmation">
+                <InputNumber allowClear={true} addonAfter="h" />
+                <Select defaultValue={operationDetail.periode} options={[
+                    { value: 'Quotidien', label: 'Quotidien' },
+                    { value: 'Hebdomadaire', label: 'Hebdomadaire' },
+                    { value: 'Mensuel', label: 'Mensuel' },
+                    { value: 'Annuel', label: 'Annuel' }
+                ]} />
+            </Form.Item>
+        </Form>
+      </Card>
       </>
     );
 }
