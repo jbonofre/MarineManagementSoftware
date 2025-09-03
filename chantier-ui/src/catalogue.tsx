@@ -1,20 +1,20 @@
-import React, { useState } from 'react';
-import { Row, Col, Input, Select, Button, Space, Table, Rate, Card, Form, InputNumber } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Row, Col, Input, Select, Button, Space, Table, Rate, Card, Form, InputNumber, Spin, message } from 'antd';
 import { PlusCircleOutlined, LeftCircleOutlined, ZoomInOutlined, StockOutlined } from '@ant-design/icons';
-import { catalogue } from './data.tsx';
+import { productCategories } from './data.tsx';
 
 const style: React.CSSProperties = { padding: '8px 0' };
 const { Search, TextArea } = Input;
 
-function Detail(props) {
+function Produit(props) {
 
     const description = "Bougie LKAR7C-9\n\nRéférences Mercury: 8M0135348, 8M0204737, 8M0176616\n\nMercury 175, 200, 225Cv 3.4L V6\n\nMercury 225, 250, 300Cv 4.6L V8\n\nMercury 350 et 400Cv 5.7L V10\n";
 
     return(
         <>
-            <a onClick={ () => props.setDetail(null) }><LeftCircleOutlined/> Retour au magasin</a>
+            <a onClick={ () => props.setProduit(null) }><LeftCircleOutlined/> Retour au magasin</a>
             <Card title={ <Space><img width='30px' src='https://www.piecesbateaux.com/9338-medium_default/bougie-lkar7c-9-pour-mercury-v6-v8-v10.jpg'/> Bougie LKAR7C-9 pour MERCURY V6, V8, V10</Space> }>
-               <Form name="detail" labelCol={{ span: 8 }}
+               <Form name="produit" labelCol={{ span: 8 }}
                     wrapperCol={{ span: 16 }}
                     style={{ width: '80%' }}>
                 <Form.Item label="Nom">
@@ -75,17 +75,40 @@ function Detail(props) {
 
 function List(props) {
 
+    const [ catalogue, setCatalogue ] = useState();
+
+    useEffect(() => {
+        fetch('./catalogue')
+        .then((response) => {
+            if (!response.ok) {
+                throw new Error('Erreur ' + response.status);
+            }
+            return response.json();
+        })
+        .then((data) => setCatalogue(data))
+        .catch((error) => {
+            message.error('Une erreur est survenue: ' + error.message);
+            console.error(error);
+        });
+    }, []);
+
+    if (!catalogue) {
+       return(<Spin/>);
+    }
+
     const columns = [
         {
             title: 'Nom',
             dataIndex: 'nom',
             key: 'nom',
-            render: (text,record) => <a onClick={ () => { props.setDetail(record.key) }}><img width='30px' src={record.imageUrl}/>  {text}</a>,
+            sorter: (a,b) => a.nom.localeCompare(b.nom),
+            render: (text,record) => <a onClick={ () => { props.setProduit(record.id) }}><img width='30px' src={record.image}/>  {text}</a>,
         },
         {
             title: 'Marque',
             dataIndex: 'marque',
-            key: 'marque'
+            key: 'marque',
+            sorter: (a,b) => a.marque.localeCompare(b.marque),
         },
         {
             title: 'Référence',
@@ -95,7 +118,9 @@ function List(props) {
         {
             title: 'Catégorie',
             dataIndex: 'categorie',
-            key: 'categorie'
+            key: 'categorie',
+            filters: productCategories,
+            onFilter: (value, record) => record.categorie === value,
         },
         {
             title: 'Evaluation',
@@ -113,8 +138,8 @@ function List(props) {
             key: 'action',
             render: (_, record) => (
                 <Space>
-                    <Button>Editer</Button>
-                    <Button>Supprimer</Button>
+                    <Button icon={<EditOutlined/>} />
+                    <Button icon={<DeleteOutlined/>} />
                 </Space>
             )
         }
@@ -127,31 +152,16 @@ function List(props) {
                         <div style={style}>
                             <Space>
                                 <Search placeholder="Recherche" enterButton style={{ width: 350 }}/>
-                                <Select mode="tags" placeholder="Catégories" style={{ width: 350 }} options={[
-                                      { value: '', label: ''},
-                                      { value: 'service', label: 'Service' },
-                                      { value: 'moteurs', label: 'Moteurs' },
-                                      { value: 'bateaux', label: 'Bateaux' },
-                                      { value: 'remoraues', label: 'Remorques' },
-                                      { value: 'piecehb', label: 'Pièces Hors Bord' },
-                                      { value: 'pieceib', label: 'Piècecs Inboard' },
-                                      { value: 'helices', label: 'Hélices' },
-                                      { value: 'entretien', label: 'Entretien' },
-                                      { value: 'anodesbougies', label: 'Anodes & Bougies' },
-                                      { value: 'eccastillage', label: 'Accastillage & Confort à Bord' },
-                                      { value: 'equipement', label: 'Equipement & Accessoires' },
-                                      { value: 'securite', label: 'Navigation & Sécurité' },
-                                      { value: 'sports', label: 'Pneumatiques & Sports Nautiques'},
-                                    ]}/>
-                                <Button type="primary" icon={<StockOutlined/>}>Mise à jour du stock</Button>
-                                <Button type="primary" icon={<PlusCircleOutlined/>}>Ajouter Référence</Button>
+                                <Select mode="tags" placeholder="Catégories" style={{ width: 350 }} options={productCategories} />
+                                <Button type="primary" icon={<StockOutlined/>} />
+                                <Button type="primary" icon={<PlusCircleOutlined/>} onClick={() => props.setProduit(0)} />
                             </Space>
                         </div>
                     </Col>
                 </Row>
                 <Row gutter={[16,16]}>
                     <Col span={24}>
-                        <Table<ReferenceType> columns={columns} dataSource={catalogue} />
+                        <Table columns={columns} dataSource={catalogue} />
                     </Col>
                 </Row>
         </>
@@ -160,15 +170,15 @@ function List(props) {
 
 export default function Catalogue() {
 
-    const [ detail, setDetail ] = useState();
+    const [ produit, setProduit ] = useState();
 
-    if (detail) {
+    if (produit) {
         return (
-            <Detail detail={detail} setDetail={setDetail} />
+            <Produit produit={produit} setProduit={setProduit} />
         );
     } else {
         return (
-            <List setDetail={setDetail} />
+            <List setProduit={setProduit} />
         );
     }
 }
