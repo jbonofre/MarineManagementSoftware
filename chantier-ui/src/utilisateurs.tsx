@@ -56,9 +56,21 @@ export default function Utilisateurs(props) {
             title: 'Roles',
             dataIndex: 'roles',
             key: 'roles',
-            render: (_,record) => (
-                <Select style={{ width: 200 }} defaultValue={record.roles} options={userRoles} />
-            ),
+            render: (_,record) => <div>{(() => {
+                if (record.name === 'admin') {
+                    return(
+                        <Form.Item name="roles" initialValue={record.roles}>
+                            <Select style={{ width: 200 }} options={userRoles} disabled={true} />
+                        </Form.Item>
+                   );
+                } else {
+                    return(
+                        <Form.Item name="roles" initialValue={record.roles}>
+                            <Select style={{ width: 200 }} options={userRoles} />
+                        </Form.Item>
+                    );
+                }
+            })()}</div>,
             filters: userRoles,
             onFilter: (value,record) => record.roles === value,
         },
@@ -67,7 +79,9 @@ export default function Utilisateurs(props) {
             dataIndex: 'password',
             key: 'password',
             render: (_,record) => (
-                <Input.Password defaultValue={record.password} />
+                <Form.Item name="password" initialValue={record.password} rules={[{ required: true, message: 'Le mot de passe est requis' }]}>
+                    <Input.Password allowClear={true}/>
+                </Form.Item>
             )
         },
         {
@@ -75,7 +89,9 @@ export default function Utilisateurs(props) {
             dataIndex: 'email',
             key: 'email',
             render: (_,record) => (
-                <Input defaultValue={record.email} allowClear={true}/>
+                <Form.Item name="email" initialValue={record.email} rules={[{ required: true, message: 'L\'e-mail est requis' }]}>
+                    <Input allowClear={true}/>
+                </Form.Item>
             ),
             sorter: (a,b) => a.email.localeCompare(b.email),
         },
@@ -155,7 +171,9 @@ export default function Utilisateurs(props) {
                 <Button onClick={() => newUserForm.resetFields()} icon={<PauseCircleOutlined/>}>Annuler</Button>
                 </Form>
             </Space>
-            <Table columns={columns} dataSource={users} />
+            <Form component={false}>
+                <Table columns={columns} dataSource={users} />
+            </Form>
         </Card>
         </>
     );
