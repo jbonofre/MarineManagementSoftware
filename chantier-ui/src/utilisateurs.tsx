@@ -114,6 +114,10 @@ export default function Utilisateurs(props) {
 
     const [ newUserForm ] = Form.useForm();
 
+    if (!users) {
+        return(<Spin/>);
+    }
+
     const newUserFunction = (values) => {
         fetch('./users', {
                 method: 'POST',

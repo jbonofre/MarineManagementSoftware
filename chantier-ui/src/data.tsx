@@ -25,21 +25,6 @@ export const userRoles = [
     { value: 'magazin', label: 'magazin', text: 'magazin' }
 ];
 
-export var users = [
-  {
-      user: 'admin',
-      roles: 'admin',
-      password: 'admin',
-      email: 'contact@msplaisance.com'
-  },
-  {
-      user: 'accueil',
-      roles: 'accueil',
-      password: 'accueil',
-      email: 'contact@msplaisance.com'
-  }
-];
-
 export const clients = [
     {
         key: '1',
