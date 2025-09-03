@@ -20,6 +20,7 @@ export default function Utilisateurs(props) {
     useEffect(fetchUsers, []);
 
     const [ newUserForm ] = Form.useForm();
+    const [ editUserForm] = Form.useForm();
 
     const newUserFunction = (values) => {
         fetch('./users', {
@@ -102,7 +103,9 @@ export default function Utilisateurs(props) {
                 if (record.name === 'admin') {
                     return(
                         <Space>
-                        <Button icon={<EditOutlined/>}/>
+                        <Button icon={<EditOutlined/>} onClick={() => {
+                            editUserForm.validateFields().then((value) => console.log(value));
+                        }}/>
                         </Space>
                     );
                 } else {
@@ -171,7 +174,7 @@ export default function Utilisateurs(props) {
                 <Button onClick={() => newUserForm.resetFields()} icon={<PauseCircleOutlined/>}>Annuler</Button>
                 </Form>
             </Space>
-            <Form component={false}>
+            <Form form={editUserForm} component={false}>
                 <Table columns={columns} dataSource={users} />
             </Form>
         </Card>
