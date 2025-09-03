@@ -6,6 +6,8 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import net.nanthrax.mms.persistence.SocieteEntity;
 
+import java.util.ArrayList;
+
 @Path("/societe")
 @ApplicationScoped
 @Produces(MediaType.APPLICATION_JSON)
@@ -41,6 +43,40 @@ public class SocieteResource {
         entity.telephone = societe.telephone;
         entity.email = societe.email;
         entity.bancaire = societe.bancaire;
+
+        return entity;
+    }
+
+    @POST
+    @Transactional
+    public SocieteEntity addImage(@HeaderParam("mms-image") String url) {
+        SocieteEntity entity = SocieteEntity.findById(1);
+        if (entity == null) {
+            throw new WebApplicationException("La société n'est pas trouvée", 404);
+        }
+
+        if (entity.images == null) {
+            entity.images = new ArrayList<>();
+        }
+
+        entity.images.add(url);
+
+        return entity;
+    }
+
+    @DELETE
+    @Transactional
+    public SocieteEntity deleteImage(@HeaderParam("mms-image") String url) {
+        SocieteEntity entity = SocieteEntity.findById(1);
+        if (entity == null) {
+            throw new WebApplicationException("La société n'est pas trouvée", 404);
+        }
+
+        if (entity.images == null) {
+            entity.images = new ArrayList<>();
+        }
+
+        entity.images.remove(url);
 
         return entity;
     }

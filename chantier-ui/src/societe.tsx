@@ -10,6 +10,7 @@ export default function Societe(props) {
     const [ societe, setSociete ] = useState();
 
     const [ societeForm ] = Form.useForm();
+    const [ newImageForm ] = Form.useForm();
 
     useEffect(() => {
        fetch('./societe')
@@ -32,7 +33,28 @@ export default function Societe(props) {
 
     let images = [];
     if (societe.images) {
-        images = societe.images.map((image) => <Space><Image width={200} src={image} /><Button onClick={() => demo()} icon={<DeleteOutlined/>} /></Space> );
+        images = societe.images.map((image) => <Space><Image width={200} src={image} /><Button onClick={() => {
+            fetch('./societe', {
+                method: 'DELETE',
+                headers: {
+                    'mms-image': image
+                }
+            })
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error('Erreur (code ' + response.status + ')');
+                }
+                return response.json();
+            })
+            .then(data => {
+                setSociete(data);
+                message.info('L\'image a été supprimée');
+            })
+            .catch((error) => {
+                message.error('Une erreur est survenue: ' + error.message);
+                console.error(error)
+            })
+        }} icon={<DeleteOutlined/>} /></Space> );
     }
 
     const updateSocieteFunction = (values) => {
@@ -57,6 +79,29 @@ export default function Societe(props) {
             message.error('Une erreur est survenue: ' + error.message);
             console.error(error)
         });
+    };
+
+    const addImage = (values) => {
+        fetch('./societe', {
+            method: 'POST',
+            headers: {
+                'mms-image': values.image
+            }
+        })
+        .then((response) => {
+            if (!response.ok) {
+                throw new Error('Erreur (code ' + response.status + ')');
+            }
+            return response.json();
+        })
+        .then((data) => {
+            setSociete(data);
+            message.info('L\'image a été ajoutée')
+        })
+        .catch((error) => {
+            message.error('Une erreur est survenue: ' + error.message);
+            console.error(error)
+        })
     };
 
     return(
@@ -116,7 +161,14 @@ export default function Societe(props) {
             <Col span={5}>
                 <Space direction="vertical" align="center">
                 {images}
-                <Button onClick={() => demo()} icon={<PlusCircleOutlined/>}>Ajouter une photo</Button>
+                <Form form={newImageForm} component={false} onFinish={addImage}>
+                <Space.Compact>
+                <Form.Item name="image" rules={[{ required: true, message: 'L\'adresse de l\'image est requise' }]}>
+                <Input placeholder="Adresse de l'image" allowClear={true} />
+                </Form.Item>
+                <Button type="primary" icon={<PlusCircleOutlined/>} onClick={() => newImageForm.submit()}>Ajouter</Button>
+                </Space.Compact>
+                </Form>
                 </Space>
             </Col>
         </Row>
