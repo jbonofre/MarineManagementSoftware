@@ -3,72 +3,6 @@ import { Card, Space, Table, Select, Input, Button, Form, message } from 'antd';
 import { UserOutlined, PlusCircleOutlined, EditOutlined, DeleteOutlined, PauseCircleOutlined } from '@ant-design/icons';
 import { userRoles } from './data.tsx';
 
-const columns = [
-    {
-        title: 'Utilisateur',
-        dataIndex: 'name',
-        key: 'name',
-        sorter: (a,b) => a.name.localeCompare(b.name),
-    },
-    {
-        title: 'Roles',
-        dataIndex: 'roles',
-        key: 'roles',
-        render: (_,record) => (
-            <Select style={{ width: 200 }} defaultValue={record.roles} options={userRoles} />
-        ),
-        filters: userRoles,
-        onFilter: (value,record) => record.roles === value,
-    },
-    {
-        title: 'Mot de Passe',
-        dataIndex: 'password',
-        key: 'password',
-        render: (_,record) => (
-            <Input.Password defaultValue={record.password} />
-        )
-    },
-    {
-        title: 'E-mail',
-        dataIndex: 'email',
-        key: 'email',
-        render: (_,record) => (
-            <Input defaultValue={record.email} allowClear={true}/>
-        ),
-        sorter: (a,b) => a.email.localeCompare(b.email),
-    },
-    {
-        title: '',
-        key: 'action',
-        render: (_,record) => <div>{(() => {
-            if (record.name === 'admin') {
-                return(
-                  <Space>
-                    <Button icon={<EditOutlined/>}/>
-                  </Space>
-                );
-            } else {
-                return(
-                    <Space>
-                        <Button icon={<EditOutlined/>}/>
-                        <Button onClick={() => {
-                            fetch('./users/' + record.name, {
-                                method: 'DELETE'
-                            })
-                            .then((response) => console.log(response))
-                            .then((data) => message.info('Utilisateur supprimé'))
-                            .catch((error) => {
-                                message.error('Une erreur est survenue: ' + error.message);
-                                console.error(error);
-                            })
-                            }} icon={<DeleteOutlined/>}/>
-                    </Space>
-                );
-            }
-        })()}</div>,
-    }
-];
-
 export default function Utilisateurs(props) {
 
     const [ users, setUsers ] = useState();
@@ -101,12 +35,88 @@ export default function Utilisateurs(props) {
                 }
                 return response.json();
             })
-            .then((data) => message.info('Utilisateur sauvegardé'))
+            .then((data) => {
+                message.info('Utilisateur sauvegardé');
+                fetchUsers();
+            })
             .catch((error) => {
                 message.error('Une erreur est survenue: ' + error.message);
                 console.error(error);
             })
     };
+
+    const columns = [
+        {
+            title: 'Utilisateur',
+            dataIndex: 'name',
+            key: 'name',
+            sorter: (a,b) => a.name.localeCompare(b.name),
+        },
+        {
+            title: 'Roles',
+            dataIndex: 'roles',
+            key: 'roles',
+            render: (_,record) => (
+                <Select style={{ width: 200 }} defaultValue={record.roles} options={userRoles} />
+            ),
+            filters: userRoles,
+            onFilter: (value,record) => record.roles === value,
+        },
+        {
+            title: 'Mot de Passe',
+            dataIndex: 'password',
+            key: 'password',
+            render: (_,record) => (
+                <Input.Password defaultValue={record.password} />
+            )
+        },
+        {
+            title: 'E-mail',
+            dataIndex: 'email',
+            key: 'email',
+            render: (_,record) => (
+                <Input defaultValue={record.email} allowClear={true}/>
+            ),
+            sorter: (a,b) => a.email.localeCompare(b.email),
+        },
+        {
+            title: '',
+            key: 'action',
+            render: (_,record) => <div>{(() => {
+                if (record.name === 'admin') {
+                    return(
+                        <Space>
+                        <Button icon={<EditOutlined/>}/>
+                        </Space>
+                    );
+                } else {
+                    return(
+                        <Space>
+                        <Button icon={<EditOutlined/>}/>
+                        <Button onClick={() => {
+                            fetch('./users/' + record.name, {
+                                method: 'DELETE'
+                            })
+                            .then((response) => {
+                                if (!response.ok) {
+                                    throw new Error('Erreur (code ' + response.status + ')');
+                                }
+                            })
+                            .then((data) => {
+                                message.info('Utilisateur supprimé');
+                                fetchUsers();
+                            })
+                            .catch((error) => {
+                                message.error('Une erreur est survenue: ' + error.message);
+                                console.error(error);
+                            })
+                            }} icon={<DeleteOutlined/>}/>
+                        </Space>
+                    );
+                }
+            })()}</div>,
+        }
+    ];
 
     return(
         <>
@@ -116,7 +126,7 @@ export default function Utilisateurs(props) {
                 <Form.Item name='name' rules={[{ required: true, message: 'Le nom d\'utilisateur est requis' }]}>
                 <Input style={{ width: 200 }} placeholder="Utilisateur" allowClear={true} />
                 </Form.Item>
-                <Form.Item name='userRoles' rules={[{ required: true, message: 'Le role de l\'utilisateur est requis' }]}>
+                <Form.Item name='roles' rules={[{ required: true, message: 'Le role de l\'utilisateur est requis' }]}>
                 <Select style={{ width: 150 }} options={userRoles} />
                 </Form.Item>
                 <Form.Item name='password' rules={[{ required: true, message: 'Le mot de passe est requis' }]}>
