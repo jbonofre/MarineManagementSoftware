@@ -27,6 +27,16 @@ public class UserResource {
         return Response.ok(user).status(201).build();
     }
 
+    @GET
+    @Path("{name}")
+    public UserEntity get(String name) {
+        UserEntity entity = UserEntity.findById(name);
+        if (entity == null) {
+            throw new WebApplicationException("L'utilisateur " + name + " n'est pas trouvé", 404);
+        }
+        return entity;
+    }
+
     @DELETE
     @Path("{name}")
     @Transactional
@@ -39,6 +49,9 @@ public class UserResource {
         return Response.status(204).build();
     }
 
+    @PUT
+    @Path("{name}")
+    @Transactional
     public UserEntity update(String name, UserEntity user) {
         UserEntity entity = UserEntity.findById(name);
         if (entity == null) {
