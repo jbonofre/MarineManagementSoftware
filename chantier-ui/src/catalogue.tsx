@@ -8,20 +8,53 @@ const { Search, TextArea } = Input;
 
 function Produit(props) {
 
-    const description = "Bougie LKAR7C-9\n\nRéférences Mercury: 8M0135348, 8M0204737, 8M0176616\n\nMercury 175, 200, 225Cv 3.4L V6\n\nMercury 225, 250, 300Cv 4.6L V8\n\nMercury 350 et 400Cv 5.7L V10\n";
+    const [ produit, setProduit ] = saveState();
+
+    if (props.produit === 'new') {
+        setProduit({
+           nom: 'Nouveau produit',
+           image: null,
+           images: [],
+           references: []
+        });
+    } else {
+        setProduit({
+           nom: 'Bougie LKAR7C-9 pour MERCURY V6, V8, V10',
+           description: 'Bougie LKAR7C-9\n\nRéférences Mercury: 8M0135348, 8M0204737, 8M0176616\n\nMercury 175, 200, 225Cv 3.4L V6\n\nMercury 225, 250, 300Cv 4.6L V8\n\nMercury 350 et 400Cv 5.7L V10\n',
+           marque: 'NGK',
+           image: 'https://www.piecesbateaux.com/9338-medium_default/bougie-lkar7c-9-pour-mercury-v6-v8-v10.jpg',
+           images: [],
+           reference: '',
+           references: [ '8M0135348', '8M0204737', '8M0176616' ],
+           stock: 24,
+           stockMini: 3,
+           emplacement: 'A-26 bas',
+           prixCatalogue: 12.0,
+           prixAchat: 10.0,
+           frais: 6.0,
+           tauxMarge: 6.0,
+           tauxMarque: 6.0,
+           prixVenteHT: 10.0,
+           tva: 20.0,
+           montantTva: 0.0,
+           prixVenteTTC: 13
+        });
+    }
+
+    const [ produitForm ] = Form.useForm();
 
     return(
         <>
-            <a onClick={ () => props.setProduit(null) }><LeftCircleOutlined/> Retour au magasin</a>
+            <Button type="text" onClick={() => props.setProduit(null)} icon={<LeftCircleOutlined/>} />
             <Card title={ <Space><img width='30px' src='https://www.piecesbateaux.com/9338-medium_default/bougie-lkar7c-9-pour-mercury-v6-v8-v10.jpg'/> Bougie LKAR7C-9 pour MERCURY V6, V8, V10</Space> }>
-               <Form name="produit" labelCol={{ span: 8 }}
+               <Form name="produit" form={produitForm} labelCol={{ span: 8 }}
                     wrapperCol={{ span: 16 }}
-                    style={{ width: '80%' }}>
+                    style={{ width: '80%' }} initialValues={produit}>
                 <Form.Item label="Nom">
-                    <Input value="Bougie LKAR7C-9 pour MERCURY V6, V8, V10" />
+                    <Input />
                 </Form.Item>
                 <Form.Item label="Marque">
-                    <Input value="NGK" addonAfter={<ZoomInOutlined/>} />
+                    <Input addonAfter={<ZoomInOutlined/>} />
                 </Form.Item>
                 <Form.Item label="Références">
                     <Select mode="tags" options={[
@@ -31,13 +64,13 @@ function Produit(props) {
                     ]} defaultValue={[ '8M0135348', '8M0204737', '8M0176616']} suffixIcon={<PlusCircleOutlined/>} />
                 </Form.Item>
                 <Form.Item label="Description">
-                    <TextArea rows={6} value={description}/>
+                    <TextArea rows={6} />
                 </Form.Item>
                 <Form.Item label="Stock">
-                    <InputNumber value={24} addonAfter="Scanner" />
+                    <InputNumber addonAfter="Scanner" />
                 </Form.Item>
                 <Form.Item label="Stock Minimal">
-                    <InputNumber value={3} addonAfter="Scanner" />
+                    <InputNumber addonAfter="Scanner" />
                 </Form.Item>
                 <Form.Item label="Emplacement">
                     <Input value="A-26 Bas" />
@@ -154,7 +187,7 @@ function List(props) {
                                 <Search placeholder="Recherche" enterButton style={{ width: 350 }}/>
                                 <Select mode="tags" placeholder="Catégories" style={{ width: 350 }} options={productCategories} />
                                 <Button type="primary" icon={<StockOutlined/>} />
-                                <Button type="primary" icon={<PlusCircleOutlined/>} onClick={() => props.setProduit(0)} />
+                                <Button type="primary" icon={<PlusCircleOutlined/>} onClick={() => props.setProduit('new')} />
                             </Space>
                         </div>
                     </Col>
