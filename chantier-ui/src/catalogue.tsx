@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Row, Col, Input, Select, Button, Space, Table, Rate, Card, Form, InputNumber, Spin, message } from 'antd';
-import { PlusCircleOutlined, LeftCircleOutlined, ZoomInOutlined, StockOutlined, SaveOutlined, PauseCircleOutlined } from '@ant-design/icons';
+import { PlusCircleOutlined, LeftCircleOutlined, ZoomInOutlined, StockOutlined, SaveOutlined, PauseCircleOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { productCategories } from './data.tsx';
 
 const style: React.CSSProperties = { padding: '8px 0' };
@@ -11,37 +11,40 @@ function Produit(props) {
     const newProduct = {
       nom: 'Nouveau produit',
       image: '',
-      images: [],
-      references: [ 'test', 'test' ],
+      references: [ ],
     };
 
     const [ detail, setDetail ] = useState(newProduct);
 
     if (props.produit && (props.produit !== 'new')) {
-        setDetail({
-           nom: 'Bougie LKAR7C-9 pour MERCURY V6, V8, V10',
-           description: 'Bougie LKAR7C-9\n\nRéférences Mercury: 8M0135348, 8M0204737, 8M0176616\n\nMercury 175, 200, 225Cv 3.4L V6\n\nMercury 225, 250, 300Cv 4.6L V8\n\nMercury 350 et 400Cv 5.7L V10\n',
-           marque: 'NGK',
-           image: 'https://www.piecesbateaux.com/9338-medium_default/bougie-lkar7c-9-pour-mercury-v6-v8-v10.jpg',
-           images: [],
-           reference: '',
-           references: [ '8M0135348', '8M0204737', '8M0176616' ],
-           stock: 24,
-           stockMini: 3,
-           emplacement: 'A-26 bas',
-           prixCatalogue: 12.0,
-           prixAchat: 10.0,
-           frais: 6.0,
-           tauxMarge: 6.0,
-           tauxMarque: 6.0,
-           prixVenteHT: 10.0,
-           tva: 20.0,
-           montantTva: 0.0,
-           prixVenteTTC: 13
-        });
+        return(<div>Edit produit</div>);
     }
 
     const [ produitForm ] = Form.useForm();
+
+    const saveProduit = (values) => {
+        fetch('./catalogue', {
+            method: 'POST',
+            body: JSON.stringify(values),
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then((response) => {
+            if (!response.ok) {
+                throw new Error('Erreur (code ' + response.status + ')');
+            }
+            return response.json();
+        })
+        .then((data) => {
+            message.info('Produit sauvegardé');
+            setDetail(data);
+        })
+        .catch((error) => {
+            message.error('Une erreur est survenue: ' + error.message);
+            console.error(error);
+        })
+    };
 
     return(
         <>
@@ -49,57 +52,74 @@ function Produit(props) {
             <Card title={ <Space><img width='30px' src={detail.image}/> {detail.nom}</Space> }>
                <Form name="produit" form={produitForm} labelCol={{ span: 8 }}
                     wrapperCol={{ span: 16 }}
-                    style={{ width: '80%' }} initialValues={detail}>
-                <Form.Item label="Nom">
-                    <Input />
+                    style={{ width: '80%' }}
+                    initialValues={detail}
+                    onFinish={saveProduit}>
+                <Form.Item name="nom" label="Nom" rules={[{ required: true, message: 'Le nom est requis' }]}>
+                    <Input allowClear={true} />
                 </Form.Item>
-                <Form.Item label="Marque">
-                    <Input addonAfter={<ZoomInOutlined/>} />
+                <Form.Item name="marque" label="Marque" rules={[{ required: true, message: 'La marque est requise' }]}>
+                    <Input allowClear={true} />
                 </Form.Item>
-                <Form.Item label="Références">
+                <Form.Item name="categorie" label="Catégorie" rules={[{ required: true, message: 'La catégorie est requise' }]}>
+                    <Select options={productCategories} />
+                </Form.Item>
+                <Form.Item name="image" label="Adresse de l'image">
+                    <Input allowClear={true} />
+                </Form.Item>
+                <Form.Item name="ref" label="Référence interne">
+                    <Input allowClear={true} />
+                </Form.Item>
+                <Form.Item name="refs" label="Références">
                     <Select mode="tags" defaultValue={detail.references} suffixIcon={<PlusCircleOutlined/>} />
                 </Form.Item>
-                <Form.Item label="Description">
+                <Form.Item name="description" label="Description">
                     <TextArea rows={6} />
                 </Form.Item>
-                <Form.Item label="Stock">
+                <Form.Item name="evaluation" label="Note produit">
+                    <Rate />
+                </Form.Item>
+                <Form.Item name="stock" label="Stock">
                     <InputNumber addonAfter="Scanner" />
                 </Form.Item>
-                <Form.Item label="Stock Minimal">
+                <Form.Item name="stockMini" label="Stock Minimal">
                     <InputNumber addonAfter="Scanner" />
                 </Form.Item>
-                <Form.Item label="Emplacement">
-                    <Input />
+                <Form.Item name="emplacement" label="Emplacement">
+                    <Input allowClear={true} />
                 </Form.Item>
-                <Form.Item label="Prix catalogue">
+                <Form.Item name="prixCatalogue" label="Prix catalogue">
                     <InputNumber addonAfter="€" />
                 </Form.Item>
-                <Form.Item label="Prix d'achat">
+                <Form.Item name="prixAchat" label="Prix d'achat">
                     <InputNumber addonAfter="€" />
                 </Form.Item>
-                <Form.Item label="Frais">
+                <Form.Item name="frais" label="Frais">
                     <Input addonAfter="%"/>
                 </Form.Item>
-                <Form.Item label="Taux de marge">
+                <Form.Item name="tauxMarge" label="Taux de marge">
                     <Input addonAfter="%"/>
                 </Form.Item>
-                <Form.Item label="Taux de Marque">
+                <Form.Item name="tauxMarque" label="Taux de Marque">
                     <Input addonAfter="%"/>
                 </Form.Item>
-                <Form.Item label="Prix de vente HT">
+                <Form.Item name="prixVenteHT" label="Prix de vente HT">
                     <InputNumber addonAfter="€" />
                 </Form.Item>
-                <Form.Item label="TVA">
+                <Form.Item name="TVA" label="TVA">
                     <InputNumber addonAfter="%" />
                 </Form.Item>
-                <Form.Item label="Prix de vente TTC">
+                <Form.Item name="montantTVA" label="Montant de la TVA">
+                    <InputNumber addonAfter="€" disabled={true} />
+                </Form.Item>
+                <Form.Item name="prixVenteTTC" label="Prix de vente TTC">
                     <InputNumber addonAfter="€" />
                 </Form.Item>
                </Form>
                <Form.Item label={null}>
                     <Space>
-                    <Button type="primary" icon={<SaveOutlined/>}>Enregistrer</Button>
-                    <Button icon={<PauseCircleOutlined/>}>Annuler</Button>
+                    <Button type="primary" icon={<SaveOutlined/>} onClick={() => produitForm.submit()}>Enregistrer</Button>
+                    <Button icon={<PauseCircleOutlined/>} onClick={() => produitForm.resetFields()}>Annuler</Button>
                     </Space>
                </Form.Item>
             </Card>
@@ -146,8 +166,8 @@ function List(props) {
         },
         {
             title: 'Référence',
-            dataIndex: 'reference',
-            key: 'reference'
+            dataIndex: 'ref',
+            key: 'ref'
         },
         {
             title: 'Catégorie',
@@ -160,7 +180,7 @@ function List(props) {
             title: 'Evaluation',
             dataIndex: 'evaluation',
             key: 'evaluation',
-            render: (_,record) => ( <Rate defaultValue={3.5}/> )
+            render: (_,record) => ( <Rate defaultValue={3.5} disabled={true} /> )
         },
         {
             title: 'Stock',

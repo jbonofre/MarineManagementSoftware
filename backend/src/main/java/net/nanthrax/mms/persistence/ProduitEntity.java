@@ -13,8 +13,10 @@ public class ProduitEntity extends PanacheEntity {
     @Column(nullable = false)
     public String nom;
 
+    @Column(nullable = false)
     public String marque;
 
+    @Column(nullable = false)
     public String categorie;
 
     public String ref;
@@ -23,15 +25,13 @@ public class ProduitEntity extends PanacheEntity {
 
     public String image;
 
-    public List<String> images = new ArrayList<>();
-
     public String description;
 
     public double evaluation;
 
     public int stock;
 
-    public int stockMinimal;
+    public int stockMini;
 
     public String emplacement;
 
@@ -45,10 +45,12 @@ public class ProduitEntity extends PanacheEntity {
 
     public double tauxMarque;
 
-    public double montantHt;
+    public double prixVentHT;
 
-    public double montantTva;
+    public double TVA;
 
-    public double montantTtc;
+    public double montantTVA;
+
+    public double prixVenteTTC;
 
 }

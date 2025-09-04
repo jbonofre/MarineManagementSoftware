@@ -4,7 +4,6 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
 import net.nanthrax.mms.persistence.ProduitEntity;
 
 import java.util.List;
@@ -22,9 +21,9 @@ public class ProduitResource {
 
     @POST
     @Transactional
-    public Response create(ProduitEntity produit) {
+    public ProduitEntity create(ProduitEntity produit) {
         produit.persist();
-        return Response.ok().status(201).build();
+        return produit;
     }
 
 }

@@ -26,20 +26,16 @@ export const userRoles = [
 ];
 
 export const productCategories = [
-    { value: '', label: ''},
-    { value: 'service', label: 'Service' },
-    { value: 'moteurs', label: 'Moteurs' },
-    { value: 'bateaux', label: 'Bateaux' },
-    { value: 'remoraues', label: 'Remorques' },
-    { value: 'piecehb', label: 'Pièces Hors Bord' },
-    { value: 'pieceib', label: 'Piècecs Inboard' },
-    { value: 'helices', label: 'Hélices' },
-    { value: 'entretien', label: 'Entretien' },
-    { value: 'anodesbougies', label: 'Anodes & Bougies' },
-    { value: 'eccastillage', label: 'Accastillage & Confort à Bord' },
-    { value: 'equipement', label: 'Equipement & Accessoires' },
-    { value: 'securite', label: 'Navigation & Sécurité' },
-    { value: 'sports', label: 'Pneumatiques & Sports Nautiques'},
+    { value: 'Service & Main d\'Oeuvre', label: 'Service & Main d\'Oeuvre' },
+    { value: 'Pièces Hors Bord', label: 'Pièces Hors Bord' },
+    { value: 'Pièces Inboard', label: 'Piècecs Inboard' },
+    { value: 'Hélices', label: 'Hélices' },
+    { value: 'Entretien', label: 'Entretien' },
+    { value: 'Anodes & Bougies', label: 'Anodes & Bougies' },
+    { value: 'Accastillage & Confort à Bord', label: 'Accastillage & Confort à Bord' },
+    { value: 'Equipement & Accessoires', label: 'Equipement & Accessoires' },
+    { value: 'Navigation & Sécurité', label: 'Navigation & Sécurité' },
+    { value: 'Pneumatiques & Sports Nautiques', label: 'Pneumatiques & Sports Nautiques'},
 ];
 
 export const clients = [
