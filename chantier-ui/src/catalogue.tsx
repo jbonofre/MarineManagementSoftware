@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Row, Col, Input, Select, Button, Space, Table, Rate, Card, Form, InputNumber, Spin, message } from 'antd';
-import { PlusCircleOutlined, LeftCircleOutlined, ZoomInOutlined, StockOutlined } from '@ant-design/icons';
+import { PlusCircleOutlined, LeftCircleOutlined, ZoomInOutlined, StockOutlined, SaveOutlined, PauseCircleOutlined } from '@ant-design/icons';
 import { productCategories } from './data.tsx';
 
 const style: React.CSSProperties = { padding: '8px 0' };
@@ -8,17 +8,17 @@ const { Search, TextArea } = Input;
 
 function Produit(props) {
 
-    const [ produit, setProduit ] = saveState();
+    const newProduct = {
+      nom: 'Nouveau produit',
+      image: '',
+      images: [],
+      references: [ 'test', 'test' ],
+    };
 
-    if (props.produit === 'new') {
-        setProduit({
-           nom: 'Nouveau produit',
-           image: null,
-           images: [],
-           references: []
-        });
-    } else {
-        setProduit({
+    const [ detail, setDetail ] = useState(newProduct);
+
+    if (props.produit && (props.produit !== 'new')) {
+        setDetail({
            nom: 'Bougie LKAR7C-9 pour MERCURY V6, V8, V10',
            description: 'Bougie LKAR7C-9\n\nRéférences Mercury: 8M0135348, 8M0204737, 8M0176616\n\nMercury 175, 200, 225Cv 3.4L V6\n\nMercury 225, 250, 300Cv 4.6L V8\n\nMercury 350 et 400Cv 5.7L V10\n',
            marque: 'NGK',
@@ -46,10 +46,10 @@ function Produit(props) {
     return(
         <>
             <Button type="text" onClick={() => props.setProduit(null)} icon={<LeftCircleOutlined/>} />
-            <Card title={ <Space><img width='30px' src='https://www.piecesbateaux.com/9338-medium_default/bougie-lkar7c-9-pour-mercury-v6-v8-v10.jpg'/> Bougie LKAR7C-9 pour MERCURY V6, V8, V10</Space> }>
+            <Card title={ <Space><img width='30px' src={detail.image}/> {detail.nom}</Space> }>
                <Form name="produit" form={produitForm} labelCol={{ span: 8 }}
                     wrapperCol={{ span: 16 }}
-                    style={{ width: '80%' }} initialValues={produit}>
+                    style={{ width: '80%' }} initialValues={detail}>
                 <Form.Item label="Nom">
                     <Input />
                 </Form.Item>
@@ -57,11 +57,7 @@ function Produit(props) {
                     <Input addonAfter={<ZoomInOutlined/>} />
                 </Form.Item>
                 <Form.Item label="Références">
-                    <Select mode="tags" options={[
-                        { value: '8M0135348', label: '8M0135348'},
-                        { value: '8M0204737', label: '8M0204737'},
-                        { value: '8M0176616', label: '8M0176616'}
-                    ]} defaultValue={[ '8M0135348', '8M0204737', '8M0176616']} suffixIcon={<PlusCircleOutlined/>} />
+                    <Select mode="tags" defaultValue={detail.references} suffixIcon={<PlusCircleOutlined/>} />
                 </Form.Item>
                 <Form.Item label="Description">
                     <TextArea rows={6} />
@@ -73,34 +69,39 @@ function Produit(props) {
                     <InputNumber addonAfter="Scanner" />
                 </Form.Item>
                 <Form.Item label="Emplacement">
-                    <Input value="A-26 Bas" />
+                    <Input />
                 </Form.Item>
                 <Form.Item label="Prix catalogue">
-                    <InputNumber value={12} addonAfter="€" />
+                    <InputNumber addonAfter="€" />
                 </Form.Item>
                 <Form.Item label="Prix d'achat">
-                    <InputNumber value={10} addonAfter="€" />
+                    <InputNumber addonAfter="€" />
                 </Form.Item>
                 <Form.Item label="Frais">
-                    <Input value="6" addonAfter="%"/>
+                    <Input addonAfter="%"/>
                 </Form.Item>
                 <Form.Item label="Taux de marge">
-                    <Input value="6" addonAfter="%"/>
+                    <Input addonAfter="%"/>
                 </Form.Item>
                 <Form.Item label="Taux de Marque">
-                    <Input value="6" addonAfter="%"/>
+                    <Input addonAfter="%"/>
                 </Form.Item>
                 <Form.Item label="Prix de vente HT">
-                    <InputNumber value={10} addonAfter="€" />
+                    <InputNumber addonAfter="€" />
                 </Form.Item>
                 <Form.Item label="TVA">
-                    <InputNumber value={20} addonAfter="%" />
+                    <InputNumber addonAfter="%" />
                 </Form.Item>
                 <Form.Item label="Prix de vente TTC">
-                    <InputNumber value={13} addonAfter="€" />
+                    <InputNumber addonAfter="€" />
                 </Form.Item>
                </Form>
-
+               <Form.Item label={null}>
+                    <Space>
+                    <Button type="primary" icon={<SaveOutlined/>}>Enregistrer</Button>
+                    <Button icon={<PauseCircleOutlined/>}>Annuler</Button>
+                    </Space>
+               </Form.Item>
             </Card>
         </>
     );
