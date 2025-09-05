@@ -10,10 +10,9 @@ import java.util.List;
 @Entity
 public class ProduitEntity extends PanacheEntity {
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     public String nom;
 
-    @Column(nullable = false)
     public String marque;
 
     @Column(nullable = false)
@@ -24,6 +23,8 @@ public class ProduitEntity extends PanacheEntity {
     public List<String> refs = new ArrayList<>();
 
     public String image;
+
+    public List<String> images = new ArrayList<>();
 
     public String description;
 

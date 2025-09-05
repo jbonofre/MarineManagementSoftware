@@ -6,23 +6,18 @@ import { productCategories } from './data.tsx';
 const style: React.CSSProperties = { padding: '8px 0' };
 const { Search, TextArea } = Input;
 
-function Produit(props) {
+function EditProduit(props) {
 
-    const newProduct = {
-      nom: 'Nouveau produit',
-      image: '',
-      references: [ ],
-    };
+    return(
+      <div>Hello {props.produit}</div>
+    );
+}
 
-    const [ detail, setDetail ] = useState(newProduct);
+function NewProduit(props) {
 
-    if (props.produit && (props.produit !== 'new')) {
-        return(<div>Edit produit</div>);
-    }
+    const [ newProduitForm ] = Form.useForm();
 
-    const [ produitForm ] = Form.useForm();
-
-    const saveProduit = (values) => {
+    const createProduit = (values) => {
         fetch('./catalogue', {
             method: 'POST',
             body: JSON.stringify(values),
@@ -38,7 +33,7 @@ function Produit(props) {
         })
         .then((data) => {
             message.info('Produit sauvegardé');
-            setDetail(data);
+            props.setProduit(null);
         })
         .catch((error) => {
             message.error('Une erreur est survenue: ' + error.message);
@@ -49,20 +44,19 @@ function Produit(props) {
     return(
         <>
             <Button type="text" onClick={() => props.setProduit(null)} icon={<LeftCircleOutlined/>} />
-            <Card title={ <Space><img width='30px' src={detail.image}/> {detail.nom}</Space> }>
-               <Form name="produit" form={produitForm} labelCol={{ span: 8 }}
+            <Card title={ <Space>Nouveau produit</Space> }>
+               <Form name="produit" form={newProduitForm} labelCol={{ span: 8 }}
                     wrapperCol={{ span: 16 }}
                     style={{ width: '80%' }}
-                    initialValues={detail}
-                    onFinish={saveProduit}>
+                    onFinish={createProduit}>
                 <Form.Item name="nom" label="Nom" rules={[{ required: true, message: 'Le nom est requis' }]}>
-                    <Input allowClear={true} />
-                </Form.Item>
-                <Form.Item name="marque" label="Marque" rules={[{ required: true, message: 'La marque est requise' }]}>
                     <Input allowClear={true} />
                 </Form.Item>
                 <Form.Item name="categorie" label="Catégorie" rules={[{ required: true, message: 'La catégorie est requise' }]}>
                     <Select options={productCategories} />
+                </Form.Item>
+                <Form.Item name="marque" label="Marque">
+                    <Input allowClear={true} />
                 </Form.Item>
                 <Form.Item name="image" label="Adresse de l'image">
                     <Input allowClear={true} />
@@ -71,7 +65,7 @@ function Produit(props) {
                     <Input allowClear={true} />
                 </Form.Item>
                 <Form.Item name="refs" label="Références">
-                    <Select mode="tags" defaultValue={detail.references} suffixIcon={<PlusCircleOutlined/>} />
+                    <Select mode="tags" suffixIcon={<PlusCircleOutlined/>} />
                 </Form.Item>
                 <Form.Item name="description" label="Description">
                     <TextArea rows={6} />
@@ -118,8 +112,8 @@ function Produit(props) {
                </Form>
                <Form.Item label={null}>
                     <Space>
-                    <Button type="primary" icon={<SaveOutlined/>} onClick={() => produitForm.submit()}>Enregistrer</Button>
-                    <Button icon={<PauseCircleOutlined/>} onClick={() => produitForm.resetFields()}>Annuler</Button>
+                    <Button type="primary" icon={<SaveOutlined/>} onClick={() => newProduitForm.submit()}>Enregistrer</Button>
+                    <Button icon={<PauseCircleOutlined/>} onClick={() => newProduitForm.resetFields()}>Annuler</Button>
                     </Space>
                </Form.Item>
             </Card>
@@ -131,7 +125,7 @@ function List(props) {
 
     const [ catalogue, setCatalogue ] = useState();
 
-    useEffect(() => {
+    const fetchCatalog = () => {
         fetch('./catalogue')
         .then((response) => {
             if (!response.ok) {
@@ -144,11 +138,32 @@ function List(props) {
             message.error('Une erreur est survenue: ' + error.message);
             console.error(error);
         });
-    }, []);
+    };
+
+    useEffect(fetchCatalog, []);
 
     if (!catalogue) {
        return(<Spin/>);
     }
+
+    const deleteProduit = (id) => {
+        fetch('./catalogue/' + id, {
+            method: 'DELETE',
+        })
+        .then((response) => {
+            if (!response.ok) {
+                 throw new Error('Erreur ' + response.status);
+            }
+        })
+        .then((data) => {
+            message.info('Produit supprimé');
+            fetchCatalog();
+        })
+        .catch((error) => {
+            message.error('Une erreur est survenue: ' + error.message);
+            console.error(error);
+        })
+    };
 
     const columns = [
         {
@@ -156,7 +171,6 @@ function List(props) {
             dataIndex: 'nom',
             key: 'nom',
             sorter: (a,b) => a.nom.localeCompare(b.nom),
-            render: (text,record) => <a onClick={ () => { props.setProduit(record.id) }}><img width='30px' src={record.image}/>  {text}</a>,
         },
         {
             title: 'Marque',
@@ -192,8 +206,8 @@ function List(props) {
             key: 'action',
             render: (_, record) => (
                 <Space>
-                    <Button icon={<EditOutlined/>} />
-                    <Button icon={<DeleteOutlined/>} />
+                    <Button icon={<EditOutlined/>} onClick={() => props.setProduit(record.id)} />
+                    <Button icon={<DeleteOutlined/>} onClick={() => deleteProduit(record.id)} />
                 </Space>
             )
         }
@@ -227,9 +241,11 @@ export default function Catalogue() {
     const [ produit, setProduit ] = useState();
 
     if (produit) {
-        return (
-            <Produit produit={produit} setProduit={setProduit} />
-        );
+        if (produit === 'new') {
+            return (<NewProduit produit={produit} setProduit={setProduit} />);
+        } else {
+            return(<EditProduit produit={produit} setProduit={setProduit} />);
+        }
     } else {
         return (
             <List setProduit={setProduit} />
