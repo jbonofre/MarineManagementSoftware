@@ -1,54 +1,97 @@
 import React, { useState, useEffect } from 'react';
-import { Row, Col, Input, Select, Button, Space, Table, Rate, Card, Form, InputNumber, Spin, message } from 'antd';
+import { Row, Col, Input, Select, Button, Space, Table, Rate, Card, Form, InputNumber, Spin, AutoComplete, message } from 'antd';
 import { PlusCircleOutlined, LeftCircleOutlined, ZoomInOutlined, StockOutlined, SaveOutlined, PauseCircleOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
-import { productCategories } from './data.tsx';
+import { productCategories, marques } from './data.tsx';
 
 const style: React.CSSProperties = { padding: '8px 0' };
 const { Search, TextArea } = Input;
 
-function EditProduit(props) {
+function Detail(props) {
 
-    return(
-      <div>Hello {props.produit}</div>
-    );
-}
+    const [ produitForm ] = Form.useForm();
+    const [ detail, setDetail ] = useState();
 
-function NewProduit(props) {
+    if (props.produit !== 'new') {
+        const fetchProduit = () => {
+            fetch('./catalogue/' + props.produit)
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error('Erreur (code ' + response.status + ')');
+                }
+                return response.json();
+            })
+            .then((data) => setDetail(data))
+            .catch((error) => {
+                message.error('Une erreur est survenue: ' + error.message);
+                console.error(error);
+            })
+        };
 
-    const [ newProduitForm ] = Form.useForm();
+        useEffect(fetchProduit, []);
 
-    const createProduit = (values) => {
-        fetch('./catalogue', {
-            method: 'POST',
-            body: JSON.stringify(values),
-            headers: {
-                'Content-Type': 'application/json',
-            }
-        })
-        .then((response) => {
-            if (!response.ok) {
-                throw new Error('Erreur (code ' + response.status + ')');
-            }
-            return response.json();
-        })
-        .then((data) => {
-            message.info('Produit sauvegardé');
-            props.setProduit(null);
-        })
-        .catch((error) => {
-            message.error('Une erreur est survenue: ' + error.message);
-            console.error(error);
-        })
+        if (!detail) {
+            return(<Spin/>);
+        }
+    }
+
+    const onFinish = (values) => {
+        if (props.produit === 'new') {
+            fetch('./catalogue', {
+                method: 'POST',
+                body: JSON.stringify(values),
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error('Erreur (code ' + response.status + ')');
+                }
+                return response.json();
+            })
+            .then((data) => {
+                message.info('Produit sauvegardé');
+                props.setProduit(null);
+            })
+            .catch((error) => {
+                message.error('Une erreur est survenue: ' + error.message);
+                console.error(error);
+            })
+        } else {
+            fetch('./catalogue/' + props.produit, {
+                method: 'PUT',
+                body: JSON.stringify(values),
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error('Erreur (code ' + response.status + ')');
+                }
+                return response.json();
+            })
+            .then((data) => {
+                message.info('Produit mis à jour');
+                props.setProduit(null);
+            })
+        }
     };
+
+    let title = <Space>Nouveau Produit</Space>;
+    if (detail) {
+        title = <Space><img width='200px' src={detail.image}/> {detail.nom}</Space>
+    }
 
     return(
         <>
             <Button type="text" onClick={() => props.setProduit(null)} icon={<LeftCircleOutlined/>} />
-            <Card title={ <Space>Nouveau produit</Space> }>
-               <Form name="produit" form={newProduitForm} labelCol={{ span: 8 }}
+            <Card title={title}>
+               <Form name="produit" form={produitForm} labelCol={{ span: 8 }}
                     wrapperCol={{ span: 16 }}
                     style={{ width: '80%' }}
-                    onFinish={createProduit}>
+                    initialValues={detail}
+                    onFinish={onFinish}>
                 <Form.Item name="nom" label="Nom" rules={[{ required: true, message: 'Le nom est requis' }]}>
                     <Input allowClear={true} />
                 </Form.Item>
@@ -56,7 +99,7 @@ function NewProduit(props) {
                     <Select options={productCategories} />
                 </Form.Item>
                 <Form.Item name="marque" label="Marque">
-                    <Input allowClear={true} />
+                    <AutoComplete allowClear={true} options={marques} />
                 </Form.Item>
                 <Form.Item name="image" label="Adresse de l'image">
                     <Input allowClear={true} />
@@ -100,20 +143,20 @@ function NewProduit(props) {
                 <Form.Item name="prixVenteHT" label="Prix de vente HT">
                     <InputNumber addonAfter="€" />
                 </Form.Item>
-                <Form.Item name="TVA" label="TVA">
+                <Form.Item name="tva" label="TVA">
                     <InputNumber addonAfter="%" />
                 </Form.Item>
                 <Form.Item name="montantTVA" label="Montant de la TVA">
                     <InputNumber addonAfter="€" disabled={true} />
                 </Form.Item>
                 <Form.Item name="prixVenteTTC" label="Prix de vente TTC">
-                    <InputNumber addonAfter="€" />
+                    <InputNumber addonAfter="€" disabled={true} />
                 </Form.Item>
                </Form>
                <Form.Item label={null}>
                     <Space>
-                    <Button type="primary" icon={<SaveOutlined/>} onClick={() => newProduitForm.submit()}>Enregistrer</Button>
-                    <Button icon={<PauseCircleOutlined/>} onClick={() => newProduitForm.resetFields()}>Annuler</Button>
+                    <Button type="primary" icon={<SaveOutlined/>} onClick={() => produitForm.submit()}>Enregistrer</Button>
+                    <Button icon={<PauseCircleOutlined/>} onClick={() => produitForm.resetFields()}>Annuler</Button>
                     </Space>
                </Form.Item>
             </Card>
@@ -170,6 +213,7 @@ function List(props) {
             title: 'Nom',
             dataIndex: 'nom',
             key: 'nom',
+            render: (_,record) => (<Space><img width='30px' src={record.image} /> {record.nom}</Space>),
             sorter: (a,b) => a.nom.localeCompare(b.nom),
         },
         {
@@ -194,7 +238,7 @@ function List(props) {
             title: 'Evaluation',
             dataIndex: 'evaluation',
             key: 'evaluation',
-            render: (_,record) => ( <Rate defaultValue={3.5} disabled={true} /> )
+            render: (_,record) => ( <Rate defaultValue={record.evaluation} disabled={true} /> )
         },
         {
             title: 'Stock',
@@ -241,11 +285,7 @@ export default function Catalogue() {
     const [ produit, setProduit ] = useState();
 
     if (produit) {
-        if (produit === 'new') {
-            return (<NewProduit produit={produit} setProduit={setProduit} />);
-        } else {
-            return(<EditProduit produit={produit} setProduit={setProduit} />);
-        }
+        return (<Detail produit={produit} setProduit={setProduit} />)
     } else {
         return (
             <List setProduit={setProduit} />

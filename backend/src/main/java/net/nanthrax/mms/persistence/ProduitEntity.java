@@ -46,9 +46,9 @@ public class ProduitEntity extends PanacheEntity {
 
     public double tauxMarque;
 
-    public double prixVentHT;
+    public double prixVenteHT;
 
-    public double TVA;
+    public double tva;
 
     public double montantTVA;
 
