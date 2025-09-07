@@ -8,6 +8,7 @@ const { TextArea } = Input;
 export default function Societe(props) {
 
     const [ societe, setSociete ] = useState();
+    const [ images, setImages ] = useState();
 
     const [ societeForm ] = Form.useForm();
     const [ newImageForm ] = Form.useForm();
@@ -20,7 +21,14 @@ export default function Societe(props) {
             };
             return response.json();
        })
-       .then(data => setSociete(data))
+       .then(data => {
+           setSociete(data);
+           if (data.images) {
+               setImages(data.images);
+           } else {
+               setImages([]);
+           }
+       })
        .catch((error) => {
             message.error('Une erreur est survenue: ' + error.message);
             console.error(error)
@@ -31,36 +39,19 @@ export default function Societe(props) {
         return(<Spin/>);
     }
 
-    let images = [];
-    if (societe.images) {
-        images = societe.images.map((image) => <Space><Image width={200} src={image} /><Button onClick={() => {
-            fetch('./societe', {
-                method: 'DELETE',
-                headers: {
-                    'mms-image': image
-                }
-            })
-            .then((response) => {
-                if (!response.ok) {
-                    throw new Error('Erreur (code ' + response.status + ')');
-                }
-                return response.json();
-            })
-            .then(data => {
-                setSociete(data);
-                message.info('L\'image a été supprimée');
-            })
-            .catch((error) => {
-                message.error('Une erreur est survenue: ' + error.message);
-                console.error(error)
-            })
-        }} icon={<DeleteOutlined/>} /></Space> );
-    }
+    const imagesRender = images.map((image) =>
+      <Space><Image width={200} src={image} /><Button icon={<DeleteOutlined/>} onClick={() => {
+        const newImages = images.filter((img) => img !== image);
+        setImages(newImages);
+      }} /></Space>
+    );
 
     const updateSocieteFunction = (values) => {
+        let newSociete = values;
+        newSociete.images = images;
         fetch('./societe', {
             method: 'PUT',
-            body: JSON.stringify(values),
+            body: JSON.stringify(newSociete),
             headers: {
                 'Content-Type': 'application/json'
             }
@@ -73,6 +64,11 @@ export default function Societe(props) {
         })
         .then((data) => {
             setSociete(data);
+            if(data.images) {
+                setImages(data.images);
+            } else {
+                setImages([]);
+            }
             message.info('La société a été mise à jour.')
         })
         .catch((error) => {
@@ -82,26 +78,8 @@ export default function Societe(props) {
     };
 
     const addImage = (values) => {
-        fetch('./societe', {
-            method: 'POST',
-            headers: {
-                'mms-image': values.image
-            }
-        })
-        .then((response) => {
-            if (!response.ok) {
-                throw new Error('Erreur (code ' + response.status + ')');
-            }
-            return response.json();
-        })
-        .then((data) => {
-            setSociete(data);
-            message.info('L\'image a été ajoutée')
-        })
-        .catch((error) => {
-            message.error('Une erreur est survenue: ' + error.message);
-            console.error(error)
-        })
+        const newImages = [...images,...[ values.image ]];
+        setImages(newImages);
     };
 
     return(
@@ -160,7 +138,7 @@ export default function Societe(props) {
             </Col>
             <Col span={5}>
                 <Space direction="vertical" align="center">
-                {images}
+                {imagesRender}
                 <Form form={newImageForm} component={false} onFinish={addImage}>
                 <Space.Compact>
                 <Form.Item name="image" rules={[{ required: true, message: 'L\'adresse de l\'image est requise' }]}>
