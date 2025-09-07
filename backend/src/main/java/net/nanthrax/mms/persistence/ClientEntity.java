@@ -1,17 +1,19 @@
 package net.nanthrax.mms.persistence;
 
 import io.quarkus.hibernate.orm.panache.PanacheEntity;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 
-import java.sql.Date;
 
 @Entity
 public class ClientEntity extends PanacheEntity {
 
     public String prenom;
 
+    @Column(nullable = false)
     public String nom;
 
+    @Column(nullable = false)
     public String type;
 
     public String email;
@@ -19,8 +21,6 @@ public class ClientEntity extends PanacheEntity {
     public String adresse;
 
     public boolean consentement;
-
-    public Date date;
 
     public double evaluation;
 

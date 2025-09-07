@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Avatar, Col, Row, Space, Input, Select, Button, Form, Tabs, Empty, Pagination, DatePicker, Table, Checkbox, Rate, Spin, message } from 'antd';
+import { Card, Avatar, Col, Row, Space, Input, Select, Button, Form, Tabs, Empty, Pagination, Table, Checkbox, Rate, Spin, message } from 'antd';
 import type { TabsProps } from 'antd';
-import { UserOutlined, PlusCircleOutlined, LeftCircleOutlined, DeleteOutlined, EditOutlined, FileAddOutlined } from '@ant-design/icons';
-import { demo } from './workspace.tsx';
+import { UserOutlined, PlusCircleOutlined, LeftCircleOutlined, DeleteOutlined, EditOutlined, FileAddOutlined, SaveOutlined, PauseCircleOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
+import { demo } from './workspace.tsx';
 
 const style: React.CSSProperties = { padding: '8px 0' };
 const { Search } = Input;
@@ -77,7 +77,7 @@ function List(props) {
         return(<Spin/>);
     }
 
-    const deleteClient = () => {
+    const deleteClient = (id) => {
         fetch('./clients/' + id, {
             method: 'DELETE'
         })
@@ -101,7 +101,12 @@ function List(props) {
             title: 'Nom',
             dataIndex: 'nom',
             key: 'nom',
-            sorter: (a,b) => a.nom.localeCompare(b.nom)
+            render: (_,record) => record.prenom + ' ' + record.nom,
+            sorter: (a,b) => {
+                const anom = a.prenom + ' ' + a.nom;
+                const bnom = b.prenom + ' ' + b.nom;
+                return(anom.localeCompare(bnom));
+            }
         },
         {
             title: 'Type',
@@ -159,7 +164,7 @@ function List(props) {
         </Row>
         <Row gutter={[16,16]}>
             <Col span={24}>
-                <Table columns={columns} dataSource={props.clients} />
+                <Table columns={columns} dataSource={clients} />
             </Col>
         </Row>
       </>
@@ -167,6 +172,33 @@ function List(props) {
 }
 
 function Detail(props) {
+
+    const [ detailForm ] = Form.useForm();
+    const [ detail, setDetail ] = useState();
+
+    if (props.client !== 'new') {
+        const fetchClient = () => {
+            fetch('./clients/' + props.client)
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error('Erreur (code ' + response.status + ')');
+                }
+                return response.json();
+            })
+            .then((data) => setDetail(data))
+            .catch((error) => {
+                message.error('Une erreur est survenue: ' + error.message);
+                console.error(error);
+            })
+        };
+
+        useEffect(fetchClient, []);
+
+        if (!detail) {
+            return(<Spin />);
+        }
+    }
+
     const tabItems = [
         {
             key: 'documents',
@@ -200,25 +232,77 @@ function Detail(props) {
         }
     ];
 
-    const clientDetail = props.clients.filter(record => record.key === props.client)[0];
+    let title = 'Nouveau client';
+    if (detail) {
+        title = detail.prenom + ' ' + detail.nom;
+    }
+
+    const onFinish = (values) => {
+        if (props.client === 'new') {
+            fetch('./clients', {
+                method: 'POST',
+                body: JSON.stringify(values),
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error('Erreur (code ' + response.status + ')');
+                }
+                return response.json();
+            })
+            .then((data) => {
+                message.info('Client sauvegardé');
+                props.setClient(null);
+            })
+            .catch((error) => {
+                message.error('Une erreur est survenue: ' + error.message);
+                console.error(error);
+            });
+        } else {
+            fetch('./clients/' + props.client, {
+                method: 'PUT',
+                body: JSON.stringify(values),
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error('Erreur (code ' + response.status + ')');
+                }
+                return response.json();
+            })
+            .then((data) => {
+                message.info('Client mis à jour');
+                props.setClient(null);
+            })
+            .catch((error) => {
+                message.error('Une erreur est survenue: ' + error.message);
+                console.error(error);
+            })
+        }
+    };
 
     return(
         <>
-            <a onClick={ () => props.setClient(null) }><LeftCircleOutlined/> Retour à la liste des clients</a>
-                <Card title={<Space><Avatar size="large" icon={<UserOutlined/>}/>{clientDetail.prenom}{clientDetail.nom}</Space>} style={{ width: '100%' }}>
+            <Button type="text" onClick={() => props.setClient(null)} icon={<LeftCircleOutlined/>} />
+            <Card title={<Space><Avatar size="large" icon={<UserOutlined/>}/>{title}</Space>} style={{ width: '100%' }}>
                     <Form name="client" labelCol={{ span: 8 }}
                         wrapperCol={{ span: 16 }}
                         style={{ width: '80%' }}
-                        initialValues={{ remember: true }}>
-                        <Form.Item label="Prénom" name="prenom" rules={[{ required: true, message: 'Le prénom est requis' }]}>
-                            <Input allowClear={true} defaultValue={clientDetail.prenom}/>
+                        form={detailForm}
+                        onFinish={onFinish}
+                        initialValues={detail}>
+                        <Form.Item label="Prénom" name="prenom">
+                            <Input allowClear={true} />
                         </Form.Item>
                         <Form.Item label="Nom" name="nom" rules={[{ required: true, message: 'Le nom est requis' }]}>
-                            <Input allowClear={true} defaultValue={clientDetail.nom} />
+                            <Input allowClear={true} />
                         </Form.Item>
-                        <Form.Item label={null} name="type">
-                            <Select defaultValue={clientDetail.type}
-                                options={[
+                        <Form.Item label="Type de Client" name="type" rules={[{ required: true, message: 'Le type de client est requis' }]}>
+                            <Select options={[
                                     { value: 'Particulier', label: 'Particulier' },
                                     { value: 'Professionnel', label: 'Professionnel' },
                                     { value: 'Prospect', label: 'Prospect' },
@@ -226,26 +310,36 @@ function Detail(props) {
                                 ]}/>
                         </Form.Item>
                         <Form.Item label="E-mail" name="email">
-                            <Input allowClear={true} defaultValue={clientDetail.email} />
+                            <Input allowClear={true} />
                         </Form.Item>
-                        <Form.Item label="Adresse">
-                            <TextArea rows={6} value={clientDetail.adresse}/>
+                        <Form.Item label="Adresse" name="adresse">
+                            <TextArea rows={6} />
                         </Form.Item>
                         <Form.Item label="Consentement" name="consentement">
-                            <Checkbox defaultChecked={clientDetail.consentement}/>
-                        </Form.Item>
-                        <Form.Item label="Client depuis ">
-                            <DatePicker defaultValue={dayjs(clientDetail.date, 'DD-MM-YYYY')} format='DD-MM-YYYY' />
+                            <Checkbox />
                         </Form.Item>
                         <Form.Item label="Evaluation" name="evaluation">
-                            <Rate defaultValue={clientDetail.evaluation}/>
+                            <Rate />
                         </Form.Item>
-                        <Form.Item label="Notes">
-                            <TextArea rows={6} value={clientDetail.notes}/>
+                        <Form.Item label="Notes" name="notes">
+                            <TextArea rows={6} />
+                        </Form.Item>
+                        <Form.Item label="SIREN" name="siren">
+                            <Input />
+                        </Form.Item>
+                        <Form.Item label="SIRET" name="siret">
+                            <Input />
+                        </Form.Item>
+                        <Form.Item label="Numéro TVA" name="tva">
+                            <Input />
+                        </Form.Item>
+                        <Form.Item label="NAF" name="naf">
+                            <Input />
                         </Form.Item>
                         <Form.Item label={null}>
                             <Space>
-                            <Button type="primary" htmlType="submit">Enregistrer</Button><Button htmlType="button">Annuler</Button>
+                            <Button type="primary" icon={<SaveOutlined/>} onClick={() => detailForm.submit()}>Enregistrer</Button>
+                            <Button icon={<PauseCircleOutlined/>} onClick={() => detailForm.resetFields()}>Annuler</Button>
                             </Space>
                         </Form.Item>
                     </Form>
