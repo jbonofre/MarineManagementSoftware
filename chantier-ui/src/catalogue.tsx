@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Row, Col, Input, Select, Button, Space, Table, Rate, Card, Form, InputNumber, Spin, AutoComplete, Image, message } from 'antd';
 import { PlusCircleOutlined, LeftCircleOutlined, ZoomInOutlined, StockOutlined, SaveOutlined, PauseCircleOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
-import { productCategories, marques } from './data.tsx';
+import { productCategories } from './data.tsx';
 
 const style: React.CSSProperties = { padding: '8px 0' };
 const { Search, TextArea } = Input;
@@ -144,7 +144,7 @@ function Detail(props) {
                                 <Select options={productCategories} />
                             </Form.Item>
                             <Form.Item name="marque" label="Marque">
-                                <AutoComplete allowClear={true} options={marques} />
+                                <AutoComplete allowClear={true} options={props.marques} />
                             </Form.Item>
                             <Form.Item name="image" label="Adresse de l'image">
                                 <Input allowClear={true} />
@@ -236,7 +236,12 @@ function List(props) {
             }
             return response.json();
         })
-        .then((data) => setCatalogue(data))
+        .then((data) => {
+            setCatalogue(data);
+            const marquesSet = [...new Set(data.map((produit) => produit.marque))];
+            const marques = marquesSet.map((marque) => { return ({value: marque })});
+            props.setMarques(marques);
+        })
         .catch((error) => {
             message.error('Une erreur est survenue: ' + error.message);
             console.error(error);
@@ -343,12 +348,13 @@ function List(props) {
 export default function Catalogue() {
 
     const [ produit, setProduit ] = useState();
+    const [ marques, setMarques ] = useState();
 
     if (produit) {
-        return (<Detail produit={produit} setProduit={setProduit} />)
+        return (<Detail produit={produit} setProduit={setProduit} marques={marques} />)
     } else {
         return (
-            <List setProduit={setProduit} />
+            <List setProduit={setProduit} setMarques={setMarques} />
         );
     }
 }

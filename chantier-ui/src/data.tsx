@@ -38,12 +38,6 @@ export const productCategories = [
     { value: 'Pneumatiques & Sports Nautiques', label: 'Pneumatiques & Sports Nautiques'},
 ];
 
-export const marques = [
-  { value: 'Mercury' },
-  { value: 'MS Plaisance'},
-  { value: 'NGK' }
-];
-
 export const clients = [
     {
         key: '1',
