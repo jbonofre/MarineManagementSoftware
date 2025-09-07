@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Row, Col, Input, Select, Button, Space, Table, Rate, Card, Form, InputNumber, Spin, AutoComplete, message } from 'antd';
+import { Row, Col, Input, Select, Button, Space, Table, Rate, Card, Form, InputNumber, Spin, AutoComplete, Image, message } from 'antd';
 import { PlusCircleOutlined, LeftCircleOutlined, ZoomInOutlined, StockOutlined, SaveOutlined, PauseCircleOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { productCategories, marques } from './data.tsx';
 
@@ -9,7 +9,9 @@ const { Search, TextArea } = Input;
 function Detail(props) {
 
     const [ produitForm ] = Form.useForm();
+    const [ newImageForm ] = Form.useForm();
     const [ detail, setDetail ] = useState();
+    const [ images, setImages ] = useState([]);
 
     if (props.produit !== 'new') {
         const fetchProduit = () => {
@@ -20,7 +22,14 @@ function Detail(props) {
                 }
                 return response.json();
             })
-            .then((data) => setDetail(data))
+            .then((data) => {
+                setDetail(data);
+                if (data.images) {
+                    setImages(data.images);
+                } else {
+                    setImages([]);
+                }
+            })
             .catch((error) => {
                 message.error('Une erreur est survenue: ' + error.message);
                 console.error(error);
@@ -34,11 +43,20 @@ function Detail(props) {
         }
     }
 
+    const imagesRender = images.map((image) =>
+      <Space><Image width={200} src={image} /><Button icon={<DeleteOutlined/>} onClick={() => {
+        const newImages = images.filter((img) => img !== image);
+        setImages(newImages);
+      }} /></Space>
+    );
+
     const onFinish = (values) => {
+        let newProduit = values;
+        newProduit.images = images;
         if (props.produit === 'new') {
             fetch('./catalogue', {
                 method: 'POST',
-                body: JSON.stringify(values),
+                body: JSON.stringify(newProduit),
                 headers: {
                     'Content-Type': 'application/json',
                 }
@@ -60,7 +78,7 @@ function Detail(props) {
         } else {
             fetch('./catalogue/' + props.produit, {
                 method: 'PUT',
-                body: JSON.stringify(values),
+                body: JSON.stringify(newProduit),
                 headers: {
                     'Content-Type': 'application/json',
                 }
@@ -83,82 +101,104 @@ function Detail(props) {
         title = <Space><img width='200px' src={detail.image}/> {detail.nom}</Space>
     }
 
+    const addImage = (values) => {
+        const newImages = [...images,...[values.image]];
+        setImages(newImages);
+    };
+
     return(
         <>
             <Button type="text" onClick={() => props.setProduit(null)} icon={<LeftCircleOutlined/>} />
             <Card title={title}>
-               <Form name="produit" form={produitForm} labelCol={{ span: 8 }}
-                    wrapperCol={{ span: 16 }}
-                    style={{ width: '80%' }}
-                    initialValues={detail}
-                    onFinish={onFinish}>
-                <Form.Item name="nom" label="Nom" rules={[{ required: true, message: 'Le nom est requis' }]}>
-                    <Input allowClear={true} />
-                </Form.Item>
-                <Form.Item name="categorie" label="Catégorie" rules={[{ required: true, message: 'La catégorie est requise' }]}>
-                    <Select options={productCategories} />
-                </Form.Item>
-                <Form.Item name="marque" label="Marque">
-                    <AutoComplete allowClear={true} options={marques} />
-                </Form.Item>
-                <Form.Item name="image" label="Adresse de l'image">
-                    <Input allowClear={true} />
-                </Form.Item>
-                <Form.Item name="ref" label="Référence interne">
-                    <Input allowClear={true} />
-                </Form.Item>
-                <Form.Item name="refs" label="Références">
-                    <Select mode="tags" suffixIcon={<PlusCircleOutlined/>} />
-                </Form.Item>
-                <Form.Item name="description" label="Description">
-                    <TextArea rows={6} />
-                </Form.Item>
-                <Form.Item name="evaluation" label="Note produit">
-                    <Rate />
-                </Form.Item>
-                <Form.Item name="stock" label="Stock">
-                    <InputNumber addonAfter="Scanner" />
-                </Form.Item>
-                <Form.Item name="stockMini" label="Stock Minimal">
-                    <InputNumber addonAfter="Scanner" />
-                </Form.Item>
-                <Form.Item name="emplacement" label="Emplacement">
-                    <Input allowClear={true} />
-                </Form.Item>
-                <Form.Item name="prixCatalogue" label="Prix catalogue">
-                    <InputNumber addonAfter="€" />
-                </Form.Item>
-                <Form.Item name="prixAchat" label="Prix d'achat">
-                    <InputNumber addonAfter="€" />
-                </Form.Item>
-                <Form.Item name="frais" label="Frais">
-                    <Input addonAfter="%"/>
-                </Form.Item>
-                <Form.Item name="tauxMarge" label="Taux de marge">
-                    <Input addonAfter="%"/>
-                </Form.Item>
-                <Form.Item name="tauxMarque" label="Taux de Marque">
-                    <Input addonAfter="%"/>
-                </Form.Item>
-                <Form.Item name="prixVenteHT" label="Prix de vente HT">
-                    <InputNumber addonAfter="€" />
-                </Form.Item>
-                <Form.Item name="tva" label="TVA">
-                    <InputNumber addonAfter="%" />
-                </Form.Item>
-                <Form.Item name="montantTVA" label="Montant de la TVA">
-                    <InputNumber addonAfter="€" disabled={true} />
-                </Form.Item>
-                <Form.Item name="prixVenteTTC" label="Prix de vente TTC">
-                    <InputNumber addonAfter="€" disabled={true} />
-                </Form.Item>
-               </Form>
-               <Form.Item label={null}>
-                    <Space>
-                    <Button type="primary" icon={<SaveOutlined/>} onClick={() => produitForm.submit()}>Enregistrer</Button>
-                    <Button icon={<PauseCircleOutlined/>} onClick={() => produitForm.resetFields()}>Annuler</Button>
-                    </Space>
-               </Form.Item>
+                <Row gutter={[16,16]}>
+                    <Col span={19}>
+                        <Form name="produit" form={produitForm} labelCol={{ span: 8 }}
+                            wrapperCol={{ span: 16 }}
+                            style={{ width: '80%' }}
+                            initialValues={detail}
+                            onFinish={onFinish}>
+                            <Form.Item name="nom" label="Nom" rules={[{ required: true, message: 'Le nom est requis' }]}>
+                                <Input allowClear={true} />
+                            </Form.Item>
+                            <Form.Item name="categorie" label="Catégorie" rules={[{ required: true, message: 'La catégorie est requise' }]}>
+                                <Select options={productCategories} />
+                            </Form.Item>
+                            <Form.Item name="marque" label="Marque">
+                                <AutoComplete allowClear={true} options={marques} />
+                            </Form.Item>
+                            <Form.Item name="image" label="Adresse de l'image">
+                                <Input allowClear={true} />
+                            </Form.Item>
+                            <Form.Item name="ref" label="Référence interne">
+                                <Input allowClear={true} />
+                            </Form.Item>
+                            <Form.Item name="refs" label="Références">
+                                <Select mode="tags" suffixIcon={<PlusCircleOutlined/>} />
+                            </Form.Item>
+                            <Form.Item name="description" label="Description">
+                                <TextArea rows={6} />
+                            </Form.Item>
+                            <Form.Item name="evaluation" label="Note produit">
+                                <Rate />
+                            </Form.Item>
+                            <Form.Item name="stock" label="Stock">
+                                <InputNumber addonAfter="Scanner" />
+                            </Form.Item>
+                            <Form.Item name="stockMini" label="Stock Minimal">
+                                <InputNumber addonAfter="Scanner" />
+                            </Form.Item>
+                            <Form.Item name="emplacement" label="Emplacement">
+                                <Input allowClear={true} />
+                            </Form.Item>
+                            <Form.Item name="prixCatalogue" label="Prix catalogue">
+                                <InputNumber addonAfter="€" />
+                            </Form.Item>
+                            <Form.Item name="prixAchat" label="Prix d'achat">
+                                <InputNumber addonAfter="€" />
+                            </Form.Item>
+                            <Form.Item name="frais" label="Frais">
+                                <Input addonAfter="%"/>
+                            </Form.Item>
+                            <Form.Item name="tauxMarge" label="Taux de marge">
+                                <Input addonAfter="%"/>
+                            </Form.Item>
+                            <Form.Item name="tauxMarque" label="Taux de Marque">
+                                <Input addonAfter="%"/>
+                            </Form.Item>
+                            <Form.Item name="prixVenteHT" label="Prix de vente HT">
+                                <InputNumber addonAfter="€" />
+                            </Form.Item>
+                            <Form.Item name="tva" label="TVA">
+                                <InputNumber addonAfter="%" />
+                            </Form.Item>
+                            <Form.Item name="montantTVA" label="Montant de la TVA">
+                                <InputNumber addonAfter="€" disabled={true} />
+                            </Form.Item>
+                            <Form.Item name="prixVenteTTC" label="Prix de vente TTC">
+                                <InputNumber addonAfter="€" disabled={true} />
+                            </Form.Item>
+                        </Form>
+                        <Form.Item label={null}>
+                            <Space>
+                                <Button type="primary" icon={<SaveOutlined/>} onClick={() => produitForm.submit()}>Enregistrer</Button>
+                                <Button icon={<PauseCircleOutlined/>} onClick={() => produitForm.resetFields()}>Annuler</Button>
+                            </Space>
+                        </Form.Item>
+                    </Col>
+                    <Col span={5}>
+                        <Space direction="vertical" align="center">
+                            {imagesRender}
+                            <Form form={newImageForm} component={false} onFinish={addImage}>
+                            <Space.Compact>
+                            <Form.Item name="image" rules={[{ required: true, message: 'L\'adresse de l\'image est requise' }]}>
+                                <Input placeholder="Adresse de l'image" allowClear={true} />
+                            </Form.Item>
+                            <Button type="primary" icon={<PlusCircleOutlined/>} onClick={() => newImageForm.submit()} />
+                            </Space.Compact>
+                            </Form>
+                        </Space>
+                    </Col>
+                </Row>
             </Card>
         </>
     );

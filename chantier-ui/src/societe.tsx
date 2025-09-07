@@ -144,7 +144,7 @@ export default function Societe(props) {
                 <Form.Item name="image" rules={[{ required: true, message: 'L\'adresse de l\'image est requise' }]}>
                 <Input placeholder="Adresse de l'image" allowClear={true} />
                 </Form.Item>
-                <Button type="primary" icon={<PlusCircleOutlined/>} onClick={() => newImageForm.submit()}>Ajouter</Button>
+                <Button type="primary" icon={<PlusCircleOutlined/>} onClick={() => newImageForm.submit()} />
                 </Space.Compact>
                 </Form>
                 </Space>
