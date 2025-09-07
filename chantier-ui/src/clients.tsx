@@ -151,7 +151,7 @@ function List(props) {
             <Col span={24}>
                 <div style={style}>
                     <Space>
-                        <Search placeholder="Recherche" enterButton style={{ width: 350 }}/>
+                        <Search placeholder="Recherche" enterButton style={{ width: 600 }}/>
                         <Button type="primary" icon={<PlusCircleOutlined/>} onClick={() => props.setClient('new')} />
                     </Space>
                 </div>

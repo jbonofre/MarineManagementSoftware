@@ -328,8 +328,7 @@ function List(props) {
                     <Col span={24}>
                         <div style={style}>
                             <Space>
-                                <Search placeholder="Recherche" enterButton style={{ width: 350 }}/>
-                                <Select mode="tags" placeholder="Catégories" style={{ width: 350 }} options={productCategories} />
+                                <Search placeholder="Recherche" enterButton style={{ width: 600 }}/>
                                 <Button type="primary" icon={<StockOutlined/>} />
                                 <Button type="primary" icon={<PlusCircleOutlined/>} onClick={() => props.setProduit('new')} />
                             </Space>

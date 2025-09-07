@@ -26,16 +26,16 @@ export const userRoles = [
 ];
 
 export const productCategories = [
-    { value: 'Service & Main d\'Oeuvre', label: 'Service & Main d\'Oeuvre' },
-    { value: 'Pièces Hors Bord', label: 'Pièces Hors Bord' },
-    { value: 'Pièces Inboard', label: 'Piècecs Inboard' },
-    { value: 'Hélices', label: 'Hélices' },
-    { value: 'Entretien', label: 'Entretien' },
-    { value: 'Anodes & Bougies', label: 'Anodes & Bougies' },
-    { value: 'Accastillage & Confort à Bord', label: 'Accastillage & Confort à Bord' },
-    { value: 'Equipement & Accessoires', label: 'Equipement & Accessoires' },
-    { value: 'Navigation & Sécurité', label: 'Navigation & Sécurité' },
-    { value: 'Pneumatiques & Sports Nautiques', label: 'Pneumatiques & Sports Nautiques'},
+    { text: 'Service & Main d\'Oeuvre', value: 'Service & Main d\'Oeuvre', label: 'Service & Main d\'Oeuvre' },
+    { text: 'Pièces Hors Board', value: 'Pièces Hors Bord', label: 'Pièces Hors Bord' },
+    { text: 'Pièces Inboard', value: 'Pièces Inboard', label: 'Piècecs Inboard' },
+    { text: 'Hélices', value: 'Hélices', label: 'Hélices' },
+    { text: 'Entretien', value: 'Entretien', label: 'Entretien' },
+    { text: 'Anodes & Bougies', value: 'Anodes & Bougies', label: 'Anodes & Bougies' },
+    { text: 'Accastillage & Confort à Board', value: 'Accastillage & Confort à Bord', label: 'Accastillage & Confort à Bord' },
+    { text: 'Equipement & Accessoires', value: 'Equipement & Accessoires', label: 'Equipement & Accessoires' },
+    { text: 'Navigation & Sécurité', value: 'Navigation & Sécurité', label: 'Navigation & Sécurité' },
+    { text: 'Pneumatiques & Sports Nautiques', value: 'Pneumatiques & Sports Nautiques', label: 'Pneumatiques & Sports Nautiques'},
 ];
 
 export const clients = [
