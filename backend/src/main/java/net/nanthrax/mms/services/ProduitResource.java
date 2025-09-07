@@ -23,8 +23,6 @@ public class ProduitResource {
     @POST
     @Transactional
     public ProduitEntity create(ProduitEntity produit) {
-        produit.montantTVA = produit.prixVenteHT * (produit.tva / 100);
-        produit.prixVenteTTC = produit.prixVenteHT + produit.montantTVA;
         produit.persist();
         return produit;
     }
@@ -59,9 +57,6 @@ public class ProduitResource {
         if (entity == null) {
             throw new WebApplicationException("Le produit (" + id + ") n'est pas trouvé", 404);
         }
-
-        produit.montantTVA = produit.prixVenteHT * (produit.tva / 100);
-        produit.prixVenteTTC = produit.prixVenteHT + produit.montantTVA;
 
         entity.nom = produit.nom;
         entity.marque = produit.marque;

@@ -106,6 +106,25 @@ function Detail(props) {
         setImages(newImages);
     };
 
+    const onValuesChange = (changedValues, allValues) => {
+        if (changedValues.prixVenteHT || changedValues.tva) {
+            const prixVenteHT = produitForm.getFieldValue('prixVenteHT');
+            const tva = produitForm.getFieldValue('tva');
+            const montantTVA = Math.round(((prixVenteHT * (tva / 100)) + Number.EPSILON) * 100) / 100;
+            produitForm.setFieldValue('montantTVA', montantTVA);
+            const prixVenteTTC = Math.round(((prixVenteHT + montantTVA) + Number.EPSILON) * 100) / 100;
+            produitForm.setFieldValue('prixVenteTTC', prixVenteTTC);
+        }
+        if (changedValues.prixVenteTTC) {
+            const prixVenteTTC = produitForm.getFieldValue('prixVenteTTC');
+            const tva = produitForm.getFieldValue('tva');
+            const montantTVA = Math.round((((prixVenteTTC / (100 + tva)) * tva) + Number.EPSILON) * 100) / 100;
+            produitForm.setFieldValue('montantTVA', montantTVA);
+            const prixVenteHT = Math.round(((prixVenteTTC - montantTVA) + Number.EPSILON) * 100) / 100;
+            produitForm.setFieldValue('prixVenteHT', prixVenteHT);
+        }
+    };
+
     return(
         <>
             <Button type="text" onClick={() => props.setProduit(null)} icon={<LeftCircleOutlined/>} />
@@ -116,7 +135,8 @@ function Detail(props) {
                             wrapperCol={{ span: 16 }}
                             style={{ width: '80%' }}
                             initialValues={detail}
-                            onFinish={onFinish}>
+                            onFinish={onFinish}
+                            onValuesChange={onValuesChange}>
                             <Form.Item name="nom" label="Nom" rules={[{ required: true, message: 'Le nom est requis' }]}>
                                 <Input allowClear={true} />
                             </Form.Item>
@@ -172,10 +192,10 @@ function Detail(props) {
                                 <InputNumber addonAfter="%" />
                             </Form.Item>
                             <Form.Item name="montantTVA" label="Montant de la TVA">
-                                <InputNumber addonAfter="€" disabled={true} />
+                                <InputNumber addonAfter="€" />
                             </Form.Item>
                             <Form.Item name="prixVenteTTC" label="Prix de vente TTC">
-                                <InputNumber addonAfter="€" disabled={true} />
+                                <InputNumber addonAfter="€" />
                             </Form.Item>
                         </Form>
                         <Form.Item label={null}>
