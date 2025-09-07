@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Card, Avatar, Col, Row, Space, Input, Select, Button, Form, Tabs, Empty, Pagination, DatePicker, Table, Checkbox, Rate, message } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Card, Avatar, Col, Row, Space, Input, Select, Button, Form, Tabs, Empty, Pagination, DatePicker, Table, Checkbox, Rate, Spin, message } from 'antd';
 import type { TabsProps } from 'antd';
 import { UserOutlined, PlusCircleOutlined, LeftCircleOutlined, DeleteOutlined, EditOutlined, FileAddOutlined } from '@ant-design/icons';
 import { demo } from './workspace.tsx';
@@ -54,14 +54,53 @@ function Messagerie() {
 
 function List(props) {
 
+    const [ clients, setClients ] = useState();
+
+    const fetchClients = () => {
+        fetch('./clients')
+        .then((response) => {
+            if (!response.ok) {
+                throw new Error('Erreur ' + response.status);
+            }
+            return response.json();
+        })
+        .then((data) => setClients(data))
+        .catch((error) => {
+            message.error('Une erreur est survenue: ' + error.message);
+            console.error(error);
+        });
+    };
+
+    useEffect(fetchClients, []);
+
+    if (!clients) {
+        return(<Spin/>);
+    }
+
+    const deleteClient = () => {
+        fetch('./clients/' + id, {
+            method: 'DELETE'
+        })
+        .then((response) => {
+            if (!response.ok) {
+                throw new Error('Erreur ' + response.status);
+            }
+        })
+        .then((data) => {
+            message.info('Client supprimé');
+            fetchClients();
+        })
+        .catch((error) => {
+            message.error('Une erreur est survenue: ' + error.message);
+            console.error(error);
+        })
+    };
+
     const columns = [
         {
             title: 'Nom',
             dataIndex: 'nom',
             key: 'nom',
-            render: (_,record) => (
-                <a onClick={() => props.setClient(record.key)}>{record.prenom} {record.nom}</a>
-            ),
             sorter: (a,b) => a.nom.localeCompare(b.nom)
         },
         {
@@ -99,8 +138,8 @@ function List(props) {
             key: 'action',
             render: (_,record) => (
                 <Space>
-                    <Button onClick={() => props.setClient(record.key) }><EditOutlined/></Button>
-                    <Button onClick={() => demo() }><DeleteOutlined/></Button>
+                    <Button onClick={() => props.setClient(record.id) }><EditOutlined/></Button>
+                    <Button onClick={() => deleteClient(record.id) }><DeleteOutlined/></Button>
                 </Space>
             )
         }
@@ -113,18 +152,14 @@ function List(props) {
                 <div style={style}>
                     <Space>
                         <Search placeholder="Recherche" enterButton style={{ width: 350 }}/>
-                        <Button type="primary" icon={<PlusCircleOutlined/>} onClick={() => demo()}>Nouveau Client</Button>
+                        <Button type="primary" icon={<PlusCircleOutlined/>} onClick={() => props.setClient('new')} />
                     </Space>
                 </div>
             </Col>
         </Row>
         <Row gutter={[16,16]}>
             <Col span={24}>
-                <Table columns={columns} dataSource={props.clients} onRow={(record, rowIndex) => {
-                  return {
-                    onClick: (event) => { props.setClient(record.key) }
-                  };
-                }}/>
+                <Table columns={columns} dataSource={props.clients} />
             </Col>
         </Row>
       </>
@@ -226,11 +261,11 @@ export default function Clients(props) {
 
     if (client) {
         return (
-            <Detail client={client} setClient={setClient} clients={props.clients} />
+            <Detail client={client} setClient={setClient} />
         );
     } else {
         return (
-            <List setClient={setClient} clients={props.clients} />
+            <List setClient={setClient} />
         );
     }
 
