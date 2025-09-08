@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Avatar, Col, Row, Space, Input, Select, Button, Form, Tabs, Empty, Pagination, Table, Checkbox, Rate, Spin, message } from 'antd';
+import { Card, Avatar, Col, Row, Space, Input, Select, Button, Form, Tabs, Empty, DatePicker, Table, Checkbox, Rate, Spin, message } from 'antd';
 import type { TabsProps } from 'antd';
 import { UserOutlined, PlusCircleOutlined, LeftCircleOutlined, DeleteOutlined, EditOutlined, FileAddOutlined, SaveOutlined, PauseCircleOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
@@ -133,6 +133,12 @@ function List(props) {
             onFilter: (value, record) => record.type === value,
         },
         {
+            title: 'Evaluation',
+            dataIndex: 'evaluation',
+            key: 'evaluation',
+            render: (_,record) => <Rate defaultValue={record.evaluation} />,
+        },
+        {
             title: 'E-mail',
             dataIndex: 'email',
             key: 'email',
@@ -233,9 +239,14 @@ function Detail(props) {
     ];
 
     let title = 'Nouveau client';
+    let date = dayjs();
+
     if (detail) {
         title = detail.prenom + ' ' + detail.nom;
+        date = dayjs(detail.date);
     }
+
+    const initialValues = {...detail, date: date};
 
     const onFinish = (values) => {
         if (props.client === 'new') {
@@ -293,8 +304,8 @@ function Detail(props) {
                         wrapperCol={{ span: 16 }}
                         style={{ width: '80%' }}
                         form={detailForm}
-                        onFinish={onFinish}
-                        initialValues={detail}>
+                        initialValues={initialValues}
+                        onFinish={onFinish}>
                         <Form.Item label="Prénom" name="prenom">
                             <Input allowClear={true} />
                         </Form.Item>
@@ -315,11 +326,14 @@ function Detail(props) {
                         <Form.Item label="Adresse" name="adresse">
                             <TextArea rows={6} />
                         </Form.Item>
-                        <Form.Item label="Consentement" name="consentement">
+                        <Form.Item label="Consentement" name="consentement" valuePropName="checked">
                             <Checkbox />
                         </Form.Item>
                         <Form.Item label="Evaluation" name="evaluation">
                             <Rate />
+                        </Form.Item>
+                        <Form.Item label="Client depuis " name="date">
+                            <DatePicker format="DD-MM-YYYY" />
                         </Form.Item>
                         <Form.Item label="Notes" name="notes">
                             <TextArea rows={6} />

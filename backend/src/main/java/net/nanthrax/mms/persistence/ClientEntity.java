@@ -24,6 +24,8 @@ public class ClientEntity extends PanacheEntity {
 
     public double evaluation;
 
+    public String date;
+
     public String notes;
 
     public double remise;
