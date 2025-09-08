@@ -156,7 +156,7 @@ function Detail(props) {
                                 <Select mode="tags" suffixIcon={<PlusCircleOutlined/>} />
                             </Form.Item>
                             <Form.Item name="description" label="Description">
-                                <TextArea rows={6} />
+                                <TextArea rows={6} allowClear={true} />
                             </Form.Item>
                             <Form.Item name="evaluation" label="Note produit">
                                 <Rate />
@@ -177,13 +177,13 @@ function Detail(props) {
                                 <InputNumber addonAfter="€" />
                             </Form.Item>
                             <Form.Item name="frais" label="Frais">
-                                <Input addonAfter="%"/>
+                                <InputNumber addonAfter="%"/>
                             </Form.Item>
                             <Form.Item name="tauxMarge" label="Taux de marge">
-                                <Input addonAfter="%"/>
+                                <InputNumber addonAfter="%"/>
                             </Form.Item>
                             <Form.Item name="tauxMarque" label="Taux de Marque">
-                                <Input addonAfter="%"/>
+                                <InputNumber addonAfter="%"/>
                             </Form.Item>
                             <Form.Item name="prixVenteHT" label="Prix de vente HT">
                                 <InputNumber addonAfter="€" />

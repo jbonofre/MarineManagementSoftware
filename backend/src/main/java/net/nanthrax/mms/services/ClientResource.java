@@ -62,6 +62,7 @@ public class ClientResource {
         entity.nom = client.nom;
         entity.type = client.type;
         entity.email = client.email;
+        entity.telephone = client.telephone;
         entity.adresse = client.adresse;
         entity.consentement = client.consentement;
         entity.date = client.date;

@@ -145,6 +145,12 @@ function List(props) {
             sorter: (a,b) => a.email.localeCompare(b.email)
         },
         {
+            title: 'Téléphone',
+            dataIndex: 'telephone',
+            key: 'telephone',
+            sorter: (a,b) => a.telephone.localeCompare(b.telephone)
+        },
+        {
             title: '',
             key: 'action',
             render: (_,record) => (
@@ -323,8 +329,11 @@ function Detail(props) {
                         <Form.Item label="E-mail" name="email">
                             <Input allowClear={true} />
                         </Form.Item>
+                        <Form.Item label="Téléphone" name="telephone">
+                            <Input allowClear={true} />
+                        </Form.Item>
                         <Form.Item label="Adresse" name="adresse">
-                            <TextArea rows={6} />
+                            <TextArea rows={6} allowClear={true}/>
                         </Form.Item>
                         <Form.Item label="Consentement" name="consentement" valuePropName="checked">
                             <Checkbox />
@@ -336,19 +345,19 @@ function Detail(props) {
                             <DatePicker format="DD-MM-YYYY" />
                         </Form.Item>
                         <Form.Item label="Notes" name="notes">
-                            <TextArea rows={6} />
+                            <TextArea rows={6} allowClear={true} />
                         </Form.Item>
                         <Form.Item label="SIREN" name="siren">
-                            <Input />
+                            <Input allowClear={true} />
                         </Form.Item>
                         <Form.Item label="SIRET" name="siret">
-                            <Input />
+                            <Input allowClear={true} />
                         </Form.Item>
                         <Form.Item label="Numéro TVA" name="tva">
-                            <Input />
+                            <Input allowClear={true} />
                         </Form.Item>
                         <Form.Item label="NAF" name="naf">
-                            <Input />
+                            <Input allowClear={true} />
                         </Form.Item>
                         <Form.Item label="Remise" name="remise">
                             <InputNumber addonAfter="%"/>
