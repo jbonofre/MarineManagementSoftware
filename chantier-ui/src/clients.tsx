@@ -133,12 +133,6 @@ function List(props) {
             onFilter: (value, record) => record.type === value,
         },
         {
-            title: 'Evaluation',
-            dataIndex: 'evaluation',
-            key: 'evaluation',
-            render: (_,record) => <Rate defaultValue={record.evaluation} />,
-        },
-        {
             title: 'E-mail',
             dataIndex: 'email',
             key: 'email',

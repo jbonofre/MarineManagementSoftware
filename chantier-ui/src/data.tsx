@@ -27,14 +27,12 @@ export const userRoles = [
 
 export const productCategories = [
     { text: 'Service & Main d\'Oeuvre', value: 'Service & Main d\'Oeuvre', label: 'Service & Main d\'Oeuvre' },
-    { text: 'Pièces Hors Board', value: 'Pièces Hors Bord', label: 'Pièces Hors Bord' },
-    { text: 'Pièces Inboard', value: 'Pièces Inboard', label: 'Piècecs Inboard' },
-    { text: 'Entretien', value: 'Entretien', label: 'Entretien' },
-    { text: 'Anodes & Bougies', value: 'Anodes & Bougies', label: 'Anodes & Bougies' },
-    { text: 'Accastillage & Confort à Board', value: 'Accastillage & Confort à Bord', label: 'Accastillage & Confort à Bord' },
+    { text: 'Pièces Moteur', value: 'Pièces Moteur', label: 'Pièces Moteur' },
+    { text: 'Pièces Remorque', value: 'Pièces Remorque', label: 'Pièces Remorque' },
+    { text: 'Electronique', value: 'Electronique', label: 'Electronique' },
+    { text: 'Sécurité', value: 'Sécurité', label: 'Sécurité' },
     { text: 'Equipement & Accessoires', value: 'Equipement & Accessoires', label: 'Equipement & Accessoires' },
-    { text: 'Navigation & Sécurité', value: 'Navigation & Sécurité', label: 'Navigation & Sécurité' },
-    { text: 'Pneumatiques & Sports Nautiques', value: 'Pneumatiques & Sports Nautiques', label: 'Pneumatiques & Sports Nautiques'},
+    { text: 'Loisirs', value: 'Loisirs', label: 'Loisirs' },
 ];
 
 export const bateaux = [
