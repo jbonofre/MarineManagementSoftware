@@ -9,7 +9,7 @@ import net.nanthrax.mms.persistence.ProduitEntity;
 
 import java.util.List;
 
-@Path("/catalogue")
+@Path("/catalogue/produits")
 @ApplicationScoped
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)

@@ -16,6 +16,7 @@ import Bateaux from './bateaux.tsx';
 import Moteurs from './moteurs.tsx';
 import Remorques from './remorques.tsx';
 import Produits from './produits.tsx';
+import Helices from './helices.tsx';
 import Prestations from './prestations.tsx';
 import Societe from './societe.tsx';
 import Utilisateurs from './utilisateurs.tsx';
@@ -44,6 +45,7 @@ function SideMenu(props) {
         { key: 'produits', label: <Link to="/catalogue/produits">Produits</Link> },
         { key: 'bateaux', label: <Link to="/catalogue/bateaux">Bateaux</Link> },
         { key: 'moteurs', label: <Link to="/catalogue/moteurs">Moteurs</Link> },
+        { key: 'helices', label: <Link to="/catalogue/helices">Hélices</Link> },
         { key: 'remorques', label: <Link to="/catalogue/remorques">Remorques</Link> },
       ]},
       { key: 'magasin', label: 'Magasin', icon: <StockOutlined/>, children: [
@@ -90,7 +92,7 @@ function Header(props) {
     return(
         <Layout.Header style={{ height: "80px", background: "#fff", padding: "5px", margin: "10px" }}>
             <Row align="middle" justify="center" wrap="false">
-                <Col span={3}><Image src="./logo.png" preview={false} width={75}/></Col>
+                <Col span={3}><Image src="/logo.png" preview={false} width={75}/></Col>
                 <Col span={19}><Search /></Col>
                 <Col span={2}><Menu items={menuUser} onClick={(e) => {
                     if (e.key === 'deconnexion') {
@@ -133,6 +135,9 @@ export default function Workspace(props) {
                     </Route>
                     <Route path="/catalogue/produits" key="produits">
                         <Produits />
+                    </Route>
+                    <Route path="/catalogue/helices" key="helices">
+                        <Helices />
                     </Route>
                     <Route path="/societe" key="societe">
                         <Societe />

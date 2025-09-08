@@ -15,7 +15,7 @@ function Detail(props) {
 
     if (props.produit !== 'new') {
         const fetchProduit = () => {
-            fetch('./catalogue/' + props.produit)
+            fetch('./produits/' + props.produit)
             .then((response) => {
                 if (!response.ok) {
                     throw new Error('Erreur (code ' + response.status + ')');
@@ -54,7 +54,7 @@ function Detail(props) {
         let newProduit = values;
         newProduit.images = images;
         if (props.produit === 'new') {
-            fetch('./catalogue', {
+            fetch('./produits', {
                 method: 'POST',
                 body: JSON.stringify(newProduit),
                 headers: {
@@ -76,7 +76,7 @@ function Detail(props) {
                 console.error(error);
             })
         } else {
-            fetch('./catalogue/' + props.produit, {
+            fetch('./produits/' + props.produit, {
                 method: 'PUT',
                 body: JSON.stringify(newProduit),
                 headers: {
@@ -226,10 +226,10 @@ function Detail(props) {
 
 function List(props) {
 
-    const [ catalogue, setCatalogue ] = useState();
+    const [ produits, setProduits ] = useState();
 
-    const fetchCatalog = () => {
-        fetch('./catalogue')
+    const fetchProduits = () => {
+        fetch('./produits')
         .then((response) => {
             if (!response.ok) {
                 throw new Error('Erreur ' + response.status);
@@ -237,7 +237,7 @@ function List(props) {
             return response.json();
         })
         .then((data) => {
-            setCatalogue(data);
+            setProduits(data);
             const marquesSet = [...new Set(data.map((produit) => produit.marque))];
             const marques = marquesSet.map((marque) => { return ({value: marque })});
             props.setMarques(marques);
@@ -248,14 +248,14 @@ function List(props) {
         });
     };
 
-    useEffect(fetchCatalog, []);
+    useEffect(fetchProduits, []);
 
-    if (!catalogue) {
+    if (!produits) {
        return(<Spin/>);
     }
 
     const deleteProduit = (id) => {
-        fetch('./catalogue/' + id, {
+        fetch('./produits/' + id, {
             method: 'DELETE',
         })
         .then((response) => {
@@ -265,7 +265,7 @@ function List(props) {
         })
         .then((data) => {
             message.info('Produit supprimé');
-            fetchCatalog();
+            fetchProduits();
         })
         .catch((error) => {
             message.error('Une erreur est survenue: ' + error.message);
@@ -337,7 +337,7 @@ function List(props) {
                 </Row>
                 <Row gutter={[16,16]}>
                     <Col span={24}>
-                        <Table columns={columns} dataSource={catalogue} />
+                        <Table columns={columns} dataSource={produits} />
                     </Col>
                 </Row>
         </>

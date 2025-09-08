@@ -29,7 +29,6 @@ export const productCategories = [
     { text: 'Service & Main d\'Oeuvre', value: 'Service & Main d\'Oeuvre', label: 'Service & Main d\'Oeuvre' },
     { text: 'Pièces Hors Board', value: 'Pièces Hors Bord', label: 'Pièces Hors Bord' },
     { text: 'Pièces Inboard', value: 'Pièces Inboard', label: 'Piècecs Inboard' },
-    { text: 'Hélices', value: 'Hélices', label: 'Hélices' },
     { text: 'Entretien', value: 'Entretien', label: 'Entretien' },
     { text: 'Anodes & Bougies', value: 'Anodes & Bougies', label: 'Anodes & Bougies' },
     { text: 'Accastillage & Confort à Board', value: 'Accastillage & Confort à Bord', label: 'Accastillage & Confort à Bord' },

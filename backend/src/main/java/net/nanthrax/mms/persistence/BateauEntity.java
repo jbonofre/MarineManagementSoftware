@@ -16,6 +16,7 @@ public class BateauEntity extends PanacheEntity {
 
     public List<String> images = new ArrayList<>();
 
+    // TODO doit être sur une entité BateauClient
     public String immatriculation;
 
     public String numeroSerie;
@@ -35,7 +36,7 @@ public class BateauEntity extends PanacheEntity {
 
     public String dateFinDeGuarantie;
 
-    public ClientEntity proprietaire;
+    // public ClientEntity proprietaire;
 
     public double longueurExterieure;
 
