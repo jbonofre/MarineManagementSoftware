@@ -344,7 +344,7 @@ function List(props) {
     );
 }
 
-export default function Catalogue() {
+export default function Produits() {
 
     const [ produit, setProduit ] = useState();
     const [ marques, setMarques ] = useState();

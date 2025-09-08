@@ -15,7 +15,7 @@ import Clients from './clients.tsx';
 import Bateaux from './bateaux.tsx';
 import Moteurs from './moteurs.tsx';
 import Remorques from './remorques.tsx';
-import Catalogue from './catalogue.tsx';
+import Produits from './produits.tsx';
 import Prestations from './prestations.tsx';
 import Societe from './societe.tsx';
 import Utilisateurs from './utilisateurs.tsx';
@@ -40,10 +40,15 @@ function SideMenu(props) {
         { key: 'moteurs', label: <Link to="/moteurs">Moteurs</Link>, icon: <Icon component={ EngineOutlined } /> },
         { key: 'remorques', label: <Link to="/remorques">Remorques</Link>, icon: <Icon component= { TailerOutlined } /> }
       ] },
+      { key: 'catalogue', label: 'Catalogue', icon: <ReadOutlined/>, children: [
+        { key: 'produits', label: <Link to="/catalogue/produits">Produits</Link> },
+        { key: 'bateaux', label: <Link to="/catalogue/bateaux">Bateaux</Link> },
+        { key: 'moteurs', label: <Link to="/catalogue/moteurs">Moteurs</Link> },
+        { key: 'remorques', label: <Link to="/catalogue/remorques">Remorques</Link> },
+      ]},
       { key: 'magasin', label: 'Magasin', icon: <StockOutlined/>, children: [
         { key: 'comptoir', label: <Link to="/comptoir">Comptoir</Link>, icon: <DesktopOutlined/> },
         { key: 'vente', label: <Link to="/vente">Vente</Link>, icon: <FileOutlined/> },
-        { key: 'catalogue', label: <Link to="/catalogue">Catalogue</Link>, icon: <ReadOutlined/> },
         { key: 'fournisseurs', label: 'Fournisseurs', icon: <FileProtectOutlined/> }
       ] },
       { key: 'atelier', label: 'Atelier', icon: <ToolOutlined/>, children: [
@@ -126,8 +131,8 @@ export default function Workspace(props) {
                     <Route path="/remorques" key="remorques">
                         <Remorques remorques={remorques} />
                     </Route>
-                    <Route path="/catalogue" key="catalogue">
-                        <Catalogue />
+                    <Route path="/catalogue/produits" key="produits">
+                        <Produits />
                     </Route>
                     <Route path="/societe" key="societe">
                         <Societe />
