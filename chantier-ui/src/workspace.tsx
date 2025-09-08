@@ -17,6 +17,7 @@ import Moteurs from './moteurs.tsx';
 import Remorques from './remorques.tsx';
 import Produits from './produits.tsx';
 import Helices from './helices.tsx';
+import Fournisseurs from './fournisseurs.tsx';
 import Prestations from './prestations.tsx';
 import Societe from './societe.tsx';
 import Utilisateurs from './utilisateurs.tsx';
@@ -47,11 +48,11 @@ function SideMenu(props) {
         { key: 'moteurs', label: <Link to="/catalogue/moteurs">Moteurs</Link> },
         { key: 'helices', label: <Link to="/catalogue/helices">Hélices</Link> },
         { key: 'remorques', label: <Link to="/catalogue/remorques">Remorques</Link> },
+        { key: 'fournisseurs', label: <Link to="/catalogue/fournisseurs">Fournisseurs</Link>, icon: <FileProtectOutlined/> },
       ]},
       { key: 'magasin', label: 'Magasin', icon: <StockOutlined/>, children: [
         { key: 'comptoir', label: <Link to="/comptoir">Comptoir</Link>, icon: <DesktopOutlined/> },
         { key: 'vente', label: <Link to="/vente">Vente</Link>, icon: <FileOutlined/> },
-        { key: 'fournisseurs', label: 'Fournisseurs', icon: <FileProtectOutlined/> }
       ] },
       { key: 'atelier', label: 'Atelier', icon: <ToolOutlined/>, children: [
         { key: 'prestations', label: <Link to="/prestations">Prestations</Link>, icon: <CheckSquareOutlined/> },
@@ -138,6 +139,9 @@ export default function Workspace(props) {
                     </Route>
                     <Route path="/catalogue/helices" key="helices">
                         <Helices />
+                    </Route>
+                    <Route path="/catalogue/fournisseurs" key="fournisseurs">
+                        <Fournisseurs />
                     </Route>
                     <Route path="/societe" key="societe">
                         <Societe />

@@ -93,6 +93,10 @@ function Detail(props) {
                 message.info('Produit mis à jour');
                 props.setProduit(null);
             })
+            .catch((error) => {
+                message.error('Une erreur est survenue: ' + error.message);
+                console.error(error);
+            })
         }
     };
 
