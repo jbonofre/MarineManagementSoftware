@@ -38,52 +38,6 @@ export const productCategories = [
     { text: 'Pneumatiques & Sports Nautiques', value: 'Pneumatiques & Sports Nautiques', label: 'Pneumatiques & Sports Nautiques'},
 ];
 
-export const clients = [
-    {
-        key: '1',
-        nom: 'Onofré',
-        prenom: 'Jean-Baptiste',
-        type: 'Particulier',
-        email: 'jb@nanthrax.net',
-        adresse: 'Lieu dit Coatalec\n29670 Henvic',
-        consentement: true,
-        date: '25-05-2023',
-        evaluation: 5
-    },
-    {
-        key: '2',
-        nom: 'Aventure Pêche',
-        prenom: null,
-        type: 'Professionnel',
-        email: 'contact@aventurepechebretagne.com',
-        adresse: 'Port de Plaisance du Port du Bloscon\n29680 Roscoff',
-        consentement: true,
-        date: '02-03-2020',
-        evaluation: 4,
-        notes: 'Partenaire loueur'
-    },
-    {
-        key: '3',
-        nom: 'Les Viviers de Carantec',
-        prenom: null,
-        type: 'Professionnel Exonéré',
-        email: 'contact@lesviviersdecarantec.fr',
-        adresse: '38 Chem. du Varquez\n29660 Carantec',
-        consentement: false,
-        date: '10-01-2025',
-        evaluation: 3
-    },
-    {
-        key: '4',
-        nom: 'Jourdan',
-        prenom: 'Pierre',
-        type: 'Particulier',
-        consentement: true,
-        date: '01-07-2025',
-        evaluation: 4
-    }
-];
-
 export const bateaux = [
     {
         key: '1',
@@ -308,32 +262,6 @@ export const ventes = [
         ]
     }
 ];
-
-export const catalogue = [
-        {
-            key: '1',
-            nom: 'Bougie LKAR7C-9 pour MERCURY V6, V8, V10',
-            references: [ 'LKAR7C-9', '8M0176616' ],
-            marque: 'NGK',
-            categorie: 'Anodes & Bougies',
-            imageUrl: 'https://www.piecesbateaux.com/9338-medium_default/bougie-lkar7c-9-pour-mercury-v6-v8-v10.jpg',
-            stock: 24
-        },
-        {
-            key: '2',
-            nom: 'Filtre à Huile MERCURY 75 à 150Cv 4Temps EFI',
-            references: [ '877761Q01', '877761K01' ],
-            marque: 'QUICKSILVER',
-            categorie: 'Pièces Hors Bord',
-            imageUrl: 'https://www.piecesbateaux.com/3879-medium_default/filtre-a-huile-mercury-75-a-150cv-4t-efi.jpg',
-            stock: 12
-        },
-        {
-            key: '3',
-            nom: 'Manutention',
-            categorie: 'Atelier',
-        }
-    ];
 
 export const forfaits = [
   {
