@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Row, Col, Input, Select, Button, Space, Table, Rate, Card, Form, InputNumber, Spin, AutoComplete, Image, message } from 'antd';
+import { Row, Col, Input, Select, Button, Space, Table, Rate, Card, Form, InputNumber, Spin, AutoComplete, Image, Popconfirm, message } from 'antd';
 import { PlusCircleOutlined, LeftCircleOutlined, ZoomInOutlined, StockOutlined, SaveOutlined, PauseCircleOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { productCategories } from './data.tsx';
 
@@ -44,10 +44,16 @@ function Detail(props) {
     }
 
     const imagesRender = images.map((image) =>
-      <Space><Image width={200} src={image} /><Button icon={<DeleteOutlined/>} onClick={() => {
-        const newImages = images.filter((img) => img !== image);
-        setImages(newImages);
-      }} /></Space>
+      <Space><Image width={200} src={image} />
+        <Popconfirm title="Supprimer l'image"
+            description="Etes-vous sûr de vouloir supprimer l'image ?"
+            onConfirm={() => {
+                const newImages = images.filter((img) => img !== image);
+                setImages(newImages);
+            }} okText="Oui" cancelText="Non">
+            <Button danger icon={<DeleteOutlined/>} />
+        </Popconfirm>
+      </Space>
     );
 
     const onFinish = (values) => {
@@ -320,7 +326,12 @@ function List(props) {
             render: (_, record) => (
                 <Space>
                     <Button icon={<EditOutlined/>} onClick={() => props.setProduit(record.id)} />
-                    <Button icon={<DeleteOutlined/>} onClick={() => deleteProduit(record.id)} />
+                    <Popconfirm title="Supprimer produit"
+                        description="Etes-vous sûr de vouloir supprimer le produit ?"
+                        onConfirm={() => deleteProduit(record.id)}
+                        okText="Oui" cancelText="Non">
+                        <Button danger icon={<DeleteOutlined/>} />
+                    </Popconfirm>
                 </Space>
             )
         }

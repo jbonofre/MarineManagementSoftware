@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Avatar, Col, Row, Space, Input, InputNumber, Select, Button, Form, Tabs, Empty, DatePicker, Table, Checkbox, Rate, Spin, message } from 'antd';
+import { Card, Avatar, Col, Row, Space, Input, InputNumber, Select, Button, Form, Tabs, Empty, DatePicker, Table, Checkbox, Rate, Spin, Popconfirm, message } from 'antd';
 import type { TabsProps } from 'antd';
 import { UserOutlined, PlusCircleOutlined, LeftCircleOutlined, DeleteOutlined, EditOutlined, FileAddOutlined, SaveOutlined, PauseCircleOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
@@ -150,7 +150,12 @@ function List(props) {
             render: (_,record) => (
                 <Space>
                     <Button onClick={() => props.setClient(record.id) }><EditOutlined/></Button>
-                    <Button onClick={() => deleteClient(record.id) }><DeleteOutlined/></Button>
+                    <Popconfirm title="Supprimer le client"
+                        description="Etes-vous sûr de vouloir supprimer le client ?"
+                        onConfirm={() => deleteClient(record.id)}
+                        okText="Oui" cancelText="Non">
+                        <Button danger icon={<DeleteOutlined/>}/>
+                    </Popconfirm>
                 </Space>
             )
         }
@@ -246,7 +251,7 @@ function Detail(props) {
         date = dayjs(detail.date);
     }
 
-    const initialValues = {...detail, date: date};
+    const initialValues = {...detail, date: date, consentement: true};
 
     const onFinish = (values) => {
         if (props.client === 'new') {
