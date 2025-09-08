@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Avatar, Col, Row, Space, Input, Select, Button, Form, Tabs, Empty, DatePicker, Table, Checkbox, Rate, Spin, message } from 'antd';
+import { Card, Avatar, Col, Row, Space, Input, InputNumber, Select, Button, Form, Tabs, Empty, DatePicker, Table, Checkbox, Rate, Spin, message } from 'antd';
 import type { TabsProps } from 'antd';
 import { UserOutlined, PlusCircleOutlined, LeftCircleOutlined, DeleteOutlined, EditOutlined, FileAddOutlined, SaveOutlined, PauseCircleOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
@@ -349,6 +349,9 @@ function Detail(props) {
                         </Form.Item>
                         <Form.Item label="NAF" name="naf">
                             <Input />
+                        </Form.Item>
+                        <Form.Item label="Remise" name="remise">
+                            <InputNumber addonAfter="%"/>
                         </Form.Item>
                         <Form.Item label={null}>
                             <Space>
