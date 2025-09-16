@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Space, Button, Spin, Row, Col, Input, Table, Form, Card, Rate, Popconfirm, message } from 'antd';
-import { EditOutlined, DeleteOutlined, LeftCircleOutlined, PauseCircleOutlined, PlusCircleOutlined, SaveOutlined } from '@ant-design/icons';
+import { Link } from 'react-router-dom';
+import { Breadcrumb, Space, Button, Spin, Row, Col, Input, Table, Tabs, Form, Card, Rate, Popconfirm, message } from 'antd';
+import { HomeOutlined, EditOutlined, DeleteOutlined, LeftCircleOutlined, PauseCircleOutlined, PlusCircleOutlined, SaveOutlined } from '@ant-design/icons';
 
 const style: React.CSSProperties = { padding: '8px 0' };
 
@@ -8,6 +9,7 @@ function Detail(props) {
 
     const [ fournisseurForm ] = Form.useForm();
     const [ detail, setDetail ] = useState();
+    const [ catalogue, setCatalogue ] = useState([ { } ]);
 
     if (props.fournisseur !== 'new') {
         const fetchFournisseur = () => {
@@ -85,9 +87,52 @@ function Detail(props) {
         }
     };
 
+    const columns = [
+        {
+            title: 'Article',
+            dataIndex: 'produit.name',
+            key: 'article',
+        },
+        {
+            title: 'Prix Achat HT',
+            dataIndex: 'prixAchatHT',
+            key: 'prixAchatHT'
+        },
+        {
+            title: '',
+            key: 'action',
+            render: (_,record) => (
+                <Space>
+                    <Button icon={<SaveOutlined/>} />
+                    <Button icon={<DeleteOutlined/>} />
+                </Space>
+            )
+        }
+    ];
+
+    const newRow = {
+        name: '',
+        prixAchatHT: 0.0
+    };
+
+    const fetchCatalogue = () => {
+        fetch('./fournisseurs/' + props.fournisseur + '/produits')
+        .then((response) => {
+            if (response.ok) {
+                return response.json();
+           }
+        })
+        .then((data) => setCatalogue(data))
+    };
+
+    useEffect(fetchCatalogue, []);
+
     return(
        <>
-       <Button type="text" onClick={() => props.setFournisseur(null)} icon={<LeftCircleOutlined/>} />
+       <Breadcrumb items={[
+           { title: <Link to="/"><HomeOutlined/></Link> },
+           { title: <Button type='text' size='small' onClick={() => props.setFournisseur(null)} >Fournisseurs</Button> }
+       ]} />
        <Card title={title}>
             <Form name="fournisseur" form={fournisseurForm} labelCol={{ span: 8 }}
                 wrapperCol={{ span: 16 }}
@@ -133,7 +178,8 @@ function Detail(props) {
                         <Button icon={<PauseCircleOutlined/>} onClick={() => fournisseurForm.resetFields()}>Annuler</Button>
                     </Space>
                 </Form.Item>
-            </Form>>
+            </Form>
+            <Table column={columns} dataSource={[...catalogue, newRow]} />
        </Card>
        </>
     );

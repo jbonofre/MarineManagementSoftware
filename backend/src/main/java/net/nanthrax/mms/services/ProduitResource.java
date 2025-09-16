@@ -6,6 +6,7 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import net.nanthrax.mms.persistence.ProduitEntity;
+import net.nanthrax.mms.persistence.ProduitFournisseurEntity;
 
 import java.util.List;
 
@@ -20,6 +21,18 @@ public class ProduitResource {
         return ProduitEntity.listAll();
     }
 
+    @GET
+    @Path("/fournisseurs")
+    public List<ProduitFournisseurEntity> listProduitsFournisseurs() {
+        return ProduitFournisseurEntity.listAll();
+    }
+
+    @GET
+    @Path("/{id}/fournisseurs")
+    public List<ProduitFournisseurEntity> listFournisseurs(long id) {
+        return ProduitFournisseurEntity.list("produit.id = ?1", id);
+    }
+
     @POST
     @Transactional
     public ProduitEntity create(ProduitEntity produit) {
@@ -29,7 +42,7 @@ public class ProduitResource {
 
     @GET
     @Path("{id}")
-    public ProduitEntity get(int id) {
+    public ProduitEntity get(long id) {
         ProduitEntity entity = ProduitEntity.findById(id);
         if (entity == null) {
             throw new WebApplicationException("Le produit (" + id + ") n'est pas trouvé", 404);
@@ -40,7 +53,7 @@ public class ProduitResource {
     @DELETE
     @Path("{id}")
     @Transactional
-    public Response delete(int id) {
+    public Response delete(long id) {
         ProduitEntity entity = ProduitEntity.findById(id);
         if (entity == null) {
             throw new WebApplicationException("Le produit (" + id + ") n'est pas trouvé", 404);
@@ -52,7 +65,7 @@ public class ProduitResource {
     @PUT
     @Path("{id}")
     @Transactional
-    public ProduitEntity update(int id, ProduitEntity produit) {
+    public ProduitEntity update(long id, ProduitEntity produit) {
         ProduitEntity entity = ProduitEntity.findById(id);
         if (entity == null) {
             throw new WebApplicationException("Le produit (" + id + ") n'est pas trouvé", 404);
@@ -70,8 +83,7 @@ public class ProduitResource {
         entity.stock = produit.stock;
         entity.stockMini = produit.stockMini;
         entity.emplacement = produit.emplacement;
-        entity.prixCatalogue = produit.prixCatalogue;
-        entity.prixAchat = produit.prixAchat;
+        entity.prixPublic = produit.prixPublic;
         entity.frais = produit.frais;
         entity.tauxMarge = produit.tauxMarge;
         entity.tauxMarque = produit.tauxMarque;

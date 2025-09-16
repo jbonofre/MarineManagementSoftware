@@ -29,7 +29,7 @@ public class HeliceResource {
 
     @GET
     @Path("{id}")
-    public HeliceEntity get(int id) {
+    public HeliceEntity get(long id) {
         HeliceEntity entity = HeliceEntity.findById(id);
         if (entity == null) {
             throw new WebApplicationException("L'hélice (" + id + ") n'est pas trouvée", 404);
@@ -40,7 +40,7 @@ public class HeliceResource {
     @DELETE
     @Path("{id}")
     @Transactional
-    public Response delete(int id) {
+    public Response delete(long id) {
         HeliceEntity entity = HeliceEntity.findById(id);
         if (entity == null) {
             throw new WebApplicationException("L'hélice (" + id + ") n'est pas trouvée", 404);
@@ -52,7 +52,7 @@ public class HeliceResource {
     @PUT
     @Path("{id}")
     @Transactional
-    public HeliceEntity update(int id, HeliceEntity helice) {
+    public HeliceEntity update(long id, HeliceEntity helice) {
         HeliceEntity entity = HeliceEntity.findById(id);
         if (entity == null) {
             throw new WebApplicationException("L'hélice (" + id + ") n'est pas trouvée", 404);

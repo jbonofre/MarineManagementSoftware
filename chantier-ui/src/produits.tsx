@@ -180,10 +180,7 @@ function Detail(props) {
                             <Form.Item name="emplacement" label="Emplacement">
                                 <Input allowClear={true} />
                             </Form.Item>
-                            <Form.Item name="prixCatalogue" label="Prix catalogue">
-                                <InputNumber addonAfter="€" />
-                            </Form.Item>
-                            <Form.Item name="prixAchat" label="Prix d'achat">
+                            <Form.Item name="prixPublic" label="Prix public">
                                 <InputNumber addonAfter="€" />
                             </Form.Item>
                             <Form.Item name="frais" label="Frais">

@@ -36,9 +36,7 @@ public class ProduitEntity extends PanacheEntity {
 
     public String emplacement;
 
-    public double prixCatalogue;
-
-    public double prixAchat;
+    public double prixPublic;
 
     public double frais;
 

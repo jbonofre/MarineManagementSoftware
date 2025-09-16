@@ -29,7 +29,7 @@ public class ClientResource {
 
     @GET
     @Path("{id}")
-    public ClientEntity get(int id) {
+    public ClientEntity get(long id) {
         ClientEntity entity = ClientEntity.findById(id);
         if (entity == null) {
             throw new WebApplicationException("Le client (" + id + ") n'est pas trouvé", 404);
@@ -40,7 +40,7 @@ public class ClientResource {
     @DELETE
     @Path("{id}")
     @Transactional
-    public Response delete(int id) {
+    public Response delete(long id) {
         ClientEntity entity = ClientEntity.findById(id);
         if (entity == null) {
             throw new WebApplicationException("Le client (" + id + ") n'est pas trouvé", 404);
@@ -52,7 +52,7 @@ public class ClientResource {
     @PUT
     @Path("{id}")
     @Transactional
-    public ClientEntity update(int id, ClientEntity client) {
+    public ClientEntity update(long id, ClientEntity client) {
         ClientEntity entity = ClientEntity.findById(id);
         if (entity == null) {
             throw new WebApplicationException("Le client (" + id + ") n'est pas trouvé", 404);
