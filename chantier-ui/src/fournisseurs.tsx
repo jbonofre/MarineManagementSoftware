@@ -24,7 +24,19 @@ function Detail(props) {
             .catch((error) => {
                 message.error('Une erreur est survenue: ' + error.message);
                 console.error(error);
+            });
+            fetch('./fournisseurs/' + props.fournisseur + '/produits')
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error('Erreur ' + response.status);
+                }
+                return response.json();
             })
+            .then((data) => setCatalogue(data))
+            .catch((error) => {
+                message.error('Une erreur est survenue: ' + error.message);
+                console.error(error);
+            });
         };
 
         useEffect(fetchFournisseur, []);
@@ -110,22 +122,12 @@ function Detail(props) {
         }
     ];
 
-    const newRow = {
-        name: '',
-        prixAchatHT: 0.0
-    };
-
-    const fetchCatalogue = () => {
-        fetch('./fournisseurs/' + props.fournisseur + '/produits')
-        .then((response) => {
-            if (response.ok) {
-                return response.json();
-           }
-        })
-        .then((data) => setCatalogue(data))
-    };
-
-    useEffect(fetchCatalogue, []);
+    const newRow = [
+      {
+        article: '',
+        prixAchatHT: '',
+      }
+    ];
 
     return(
        <>
