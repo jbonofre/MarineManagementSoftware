@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Avatar, Col, Row, Space, Input, InputNumber, Select, Button, Form, Tabs, Empty, DatePicker, Table, Checkbox, Rate, Spin, Popconfirm, message } from 'antd';
+import { Link } from 'react-router-dom';
+import { Breadcrumb, Card, Avatar, Col, Row, Space, Input, InputNumber, Select, Button, Form, Tabs, Empty, DatePicker, Table, Checkbox, Rate, Spin, Popconfirm, message } from 'antd';
 import type { TabsProps } from 'antd';
-import { UserOutlined, PlusCircleOutlined, LeftCircleOutlined, DeleteOutlined, EditOutlined, FileAddOutlined, SaveOutlined, PauseCircleOutlined } from '@ant-design/icons';
+import { HomeOutlined, UserOutlined, PlusCircleOutlined, LeftCircleOutlined, DeleteOutlined, EditOutlined, FileAddOutlined, SaveOutlined, PauseCircleOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { demo } from './workspace.tsx';
 
@@ -303,7 +304,10 @@ function Detail(props) {
 
     return(
         <>
-            <Button type="text" onClick={() => props.setClient(null)} icon={<LeftCircleOutlined/>} />
+            <Breadcrumb items={[
+                { title: <Link to="/"><HomeOutlined/></Link> },
+                { title: <Button type="text" size="small" onClick={() => props.setClient(null) }>Clients</Button> }
+            ]} />
             <Card title={<Space><Avatar size="large" icon={<UserOutlined/>}/>{title}</Space>} style={{ width: '100%' }}>
                     <Form name="client" labelCol={{ span: 8 }}
                         wrapperCol={{ span: 16 }}

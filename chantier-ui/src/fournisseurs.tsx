@@ -133,7 +133,7 @@ function Detail(props) {
        <>
        <Breadcrumb items={[
            { title: <Link to="/"><HomeOutlined/></Link> },
-           { title: <Button type='text' size='small' onClick={() => props.setFournisseur(null)} >Fournisseurs</Button> }
+           { title: <Button type="text" size="small" onClick={() => props.setFournisseur(null)} >Fournisseurs</Button> }
        ]} />
        <Card title={title}>
             <Form name="fournisseur" form={fournisseurForm} labelCol={{ span: 8 }}

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Col, Row, Space, Table, Button, Input, Card, Avatar, Form, InputNumber, Select, Tabs } from 'antd';
-import { PlusCircleOutlined, EditOutlined, DeleteOutlined, LeftCircleOutlined, FileDoneOutlined } from '@ant-design/icons';
+import { Link } from 'react-router-dom';
+import { Breadcrumb, Col, Row, Space, Table, Button, Input, Card, Avatar, Form, InputNumber, Select, Tabs } from 'antd';
+import { HomeOutlined, PlusCircleOutlined, EditOutlined, DeleteOutlined, LeftCircleOutlined, FileDoneOutlined } from '@ant-design/icons';
 import { demo } from './workspace.tsx';
 import { forfaits } from './data.tsx';
 
@@ -149,7 +150,10 @@ function Detail(props) {
 
     return(
       <>
-      <a onClick={() => props.setForfait(null)}><LeftCircleOutlined/> Retour à la liste des forfaits</a>
+      <Breadcrumb items={[
+        { title: <Link to="/"><HomeOutlined/></Link> },
+        { title: <Button type="text" size="small" onClick={() => props.setForfait(null) }>Forfaits</Button> }
+      ]} />
       <Card title={<Space><Avatar size="large" icon={<FileDoneOutlined/>} /> {forfaitDetail.nom}</Space>} style={{ width: '100%' }}>
         <Form name="forfaitDetailForm" labelCol={{ span: 8 }}
             wrapperCol={{ span: 16 }}

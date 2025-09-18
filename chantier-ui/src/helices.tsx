@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Row, Col, Space, Form, Card, Input, InputNumber, Button, Table, Spin, Image, Rate, message } from 'antd';
-import { PlusCircleOutlined, EditOutlined, DeleteOutlined, LeftCircleOutlined, SaveOutlined, PauseCircleOutlined } from '@ant-design/icons';
+import { Link } from 'react-router-dom';
+import { Breadcrumb, Row, Col, Space, Form, Card, Input, InputNumber, Button, Table, Spin, Image, Rate, message } from 'antd';
+import { HomeOutlined, PlusCircleOutlined, EditOutlined, DeleteOutlined, LeftCircleOutlined, SaveOutlined, PauseCircleOutlined } from '@ant-design/icons';
 
 const style: React.CSSProperties = { padding: '8px 0' };
 
@@ -60,7 +61,10 @@ function Detail(props) {
 
     return(
         <>
-        <Button type="text" onClick={() => props.setHelice(null)} icon={<LeftCircleOutlined/>} />
+        <Breadcrumb items={[
+            { title: <Link to="/"><HomeOutlined/></Link> },
+            { title: <Button type="text" size="small" onClick={() => props.setHelice(null)} >Hélices</Button> }
+        ]} />
         <Card title={title}>
             <Row gutter={[16,16]}>
                 <Col span={19}>

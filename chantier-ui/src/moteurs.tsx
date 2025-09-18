@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Space, Button, Row, Col, AutoComplete, Table, Card, Form, Input, Image, Select, InputNumber, Collapse, DatePicker } from 'antd';
-import { EditOutlined, DeleteOutlined, PlusCircleOutlined, LinkOutlined, LeftCircleOutlined, PauseCircleOutlined } from '@ant-design/icons';
+import { Link } from 'react-router-dom';
+import { Breadcrumb, Space, Button, Row, Col, AutoComplete, Table, Card, Form, Input, Image, Select, InputNumber, Collapse, DatePicker } from 'antd';
+import { HomeOutlined, EditOutlined, DeleteOutlined, PlusCircleOutlined, LinkOutlined, LeftCircleOutlined, PauseCircleOutlined } from '@ant-design/icons';
 import { demo } from './workspace.tsx';
 import dayjs from 'dayjs';
 
@@ -127,7 +128,10 @@ function Moteur(props) {
 
     return(
       <>
-        <a onClick={() => props.setMoteur(null) }><LeftCircleOutlined/> Retour aux moteurs</a>
+        <Breadcrumb items={[
+            { title: <Link to="/"><HomeOutlined/></Link> },
+            { title: <Button type="text" size="small" onClick={() => props.setMoteur(null) }>Moteurs</Button> }
+        ]} />
         <Card title={<Space><img width='60px' src={moteurDetail.imageUrl} /> {moteurDetail.denomination}</Space>} style={{ width: '100%' }}>
             <Row gutter={[16,16]}>
                 <Col span={19}>

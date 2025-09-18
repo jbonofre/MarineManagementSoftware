@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Row, Col, Space, Select, Button, Input, Table, Card, QRCode, Form, DatePicker, Tabs } from 'antd';
-import { PlusCircleOutlined, LeftCircleOutlined } from '@ant-design/icons';
+import { Link } from 'react-router-dom';
+import { Breadcrumb, Row, Col, Space, Select, Button, Input, Table, Card, QRCode, Form, DatePicker, Tabs } from 'antd';
+import { HomeOutlined, PlusCircleOutlined, LeftCircleOutlined } from '@ant-design/icons';
 
 const { Search, TextArea } = Input;
 const style: React.CSSProperties = { padding: '8px 0' };
@@ -41,7 +42,10 @@ function Detail(props) {
     const descriptionValue = "Installation d'un compas, vérification";
     return(
         <>
-        <a onClick={ () => props.setPrestation(null) }><LeftCircleOutlined/> Retour à la liste des prestations</a>
+        <Breadcrumb items={[
+            { title: <Link to="/"><HomeOutlined/></Link> },
+            { title: <Button type="text" size="small" onClick={() => props.setPrestation(null) }>Prestations</Button> }
+        ]} />
         <Card title={
                 <Space>
                     <QRCode size={80} value="dqdqsdqd"/>

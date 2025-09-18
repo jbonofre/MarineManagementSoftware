@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Card, Col, Row, Space, Input, InputNumber, Select, Button, Form, Table, Tabs, Empty, Pagination, DatePicker, AutoComplete, Image, Collapse } from 'antd';
-import { UserOutlined, PlusCircleOutlined, LeftCircleOutlined, EditOutlined, DeleteOutlined, PauseCircleOutlined } from '@ant-design/icons';
+import { Link } from 'react-router-dom';
+import { Breadcrumb, Card, Col, Row, Space, Input, InputNumber, Select, Button, Form, Table, Tabs, Empty, Pagination, DatePicker, AutoComplete, Image, Collapse } from 'antd';
+import { HomeOutlined, UserOutlined, PlusCircleOutlined, LeftCircleOutlined, EditOutlined, DeleteOutlined, PauseCircleOutlined } from '@ant-design/icons';
 import { ReactComponent as BoatOutlined } from './boat.svg';
 import { demo } from './workspace.tsx';
 import dayjs from 'dayjs';
@@ -367,7 +368,10 @@ function Bateau(props) {
 
     return(
         <>
-            <a onClick={() => ( props.setBateau(null) )}><LeftCircleOutlined/> Retour aux bateaux</a>
+            <Breadcrumb items={[
+                { title: <Link to="/"><HomeOutlined/></Link> },
+                { title: <Button type="text" size="small" onClick={() => props.setBateau(null) } >Bateaux</Button> }
+            ]} />
                 <Card title={<Space><img width='60px' src={bateauDetail.imageUrl}/> {bateauDetail.nom}</Space>} style={{ width: '100%' }}>
                     <Row gutter={[16,16]}>
                     <Col span={19}>

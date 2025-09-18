@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Card, Space, Table, Select, Input, Button, Form, Avatar, Spin, message } from 'antd';
-import { UserOutlined, PlusCircleOutlined, EditOutlined, DeleteOutlined, PauseCircleOutlined, ReloadOutlined, LeftCircleOutlined, SaveOutlined } from '@ant-design/icons';
+import { Link } from 'react-router-dom';
+import { Breadcrumb, Card, Space, Table, Select, Input, Button, Form, Avatar, Spin, message } from 'antd';
+import { HomeOutlined, UserOutlined, PlusCircleOutlined, EditOutlined, DeleteOutlined, PauseCircleOutlined, ReloadOutlined, LeftCircleOutlined, SaveOutlined } from '@ant-design/icons';
 import { userRoles } from './data.tsx';
 
 function Utilisateur(props) {
@@ -62,7 +63,10 @@ function Utilisateur(props) {
 
     return(
       <>
-      <Button type="text" icon={<LeftCircleOutlined/>} onClick={() => props.setUser(null)} />
+      <Breadcrumb items={[
+          { title: <Link to="/"><HomeOutlined/></Link> },
+          { title: <Button type="text" size="small" onClick={() => props.setUser(null)}>Utilisateurs</Button> }
+      ]} />
       <Card title={<Space><Avatar size="large" icon={<UserOutlined/>} />{details.name}</Space>} style={{ width: '100%' }}>
         <Form name="userForm" labelCol={{ span: 8 }} wrapperCol={{ span: 16 }} style={{ width: '80%' }} initialValues={details}
             form={userForm} onFinish={updateUserFunction}>
