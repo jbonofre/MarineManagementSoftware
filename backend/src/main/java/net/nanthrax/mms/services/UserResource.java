@@ -15,6 +15,20 @@ import java.util.List;
 @Consumes(MediaType.APPLICATION_JSON)
 public class UserResource {
 
+    @POST
+    @Path("/authenticate")
+    public Response authenticate(UserEntity user) {
+        if (user == null || user.name == null || user.password == null) {
+            return Response.status(Response.Status.BAD_REQUEST).entity("Nom d'utilisateur et mot de passe requis.").build();
+        }
+        UserEntity entity = UserEntity.findById(user.name);
+        if (entity == null || !entity.password.equals(user.password)) {
+            return Response.status(Response.Status.UNAUTHORIZED).entity("Identifiants invalides.").build();
+        }
+        // You can return more data if needed (e.g., JWT token, user details, etc.)
+        return Response.ok(entity).build();
+    }
+
     @GET
     public List<UserEntity> list() {
         return UserEntity.listAll();
