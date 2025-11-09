@@ -15,7 +15,8 @@ import Clients from './clients.tsx';
 import Bateaux from './bateaux.tsx';
 import Moteurs from './moteurs.tsx';
 import Remorques from './remorques.tsx';
-import Produits from './produits.tsx';
+import Produits from './catalogue-produits.tsx';
+import CatalogueBateaux from './catalogue-bateaux.tsx';
 import Helices from './helices.tsx';
 import Fournisseurs from './fournisseurs.tsx';
 import Prestations from './prestations.tsx';
@@ -36,18 +37,17 @@ function SideMenu(props) {
     const menuItems = [
       { key: 'home', label: <Link to="/">Accueil</Link>, icon: <HomeOutlined/> },
       { key: 'dashboard', label: 'Tableau de Bord', icon: <DashboardOutlined/> },
-      { key: 'clients', label: <Link to="/clients">Clients</Link>, icon: <TeamOutlined /> },
-      { key: 'parc', label: 'Parc', icon: <Icon component={ ParcOutlined } />, children: [
+      { key: 'clients', label: <Link to="/clients">Clients</Link>, icon: <TeamOutlined />, children: [
         { key: 'bateaux', label: <Link to="/bateaux">Bateaux</Link>, icon: <Icon component={ BoatOutlined } />},
         { key: 'moteurs', label: <Link to="/moteurs">Moteurs</Link>, icon: <Icon component={ EngineOutlined } /> },
         { key: 'remorques', label: <Link to="/remorques">Remorques</Link>, icon: <Icon component= { TailerOutlined } /> }
       ] },
       { key: 'catalogue', label: 'Catalogue', icon: <ReadOutlined/>, children: [
         { key: 'produits', label: <Link to="/catalogue/produits">Produits</Link> },
-        { key: 'bateaux', label: <Link to="/catalogue/bateaux">Bateaux</Link> },
-        { key: 'moteurs', label: <Link to="/catalogue/moteurs">Moteurs</Link> },
+        { key: 'bateaux', label: <Link to="/catalogue/bateaux">Bateaux</Link>, icon: <Icon component={ BoatOutlined } /> },
+        { key: 'moteurs', label: <Link to="/catalogue/moteurs">Moteurs</Link>, icon: <Icon component={ EngineOutlined } /> },
         { key: 'helices', label: <Link to="/catalogue/helices">Hélices</Link> },
-        { key: 'remorques', label: <Link to="/catalogue/remorques">Remorques</Link> },
+        { key: 'remorques', label: <Link to="/catalogue/remorques">Remorques</Link>, icon: <Icon component={ TailerOutlined } /> },
         { key: 'fournisseurs', label: <Link to="/catalogue/fournisseurs">Fournisseurs</Link>, icon: <FileProtectOutlined/> },
       ]},
       { key: 'magasin', label: 'Magasin', icon: <StockOutlined/>, children: [
@@ -136,6 +136,9 @@ export default function Workspace(props) {
                     </Route>
                     <Route path="/catalogue/produits" key="produits">
                         <Produits />
+                    </Route>
+                    <Route path="/catalogue/bateaux" key="catalogue-bateaux">
+                        <CatalogueBateaux />
                     </Route>
                     <Route path="/catalogue/helices" key="helices">
                         <Helices />

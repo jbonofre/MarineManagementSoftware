@@ -9,7 +9,7 @@ export default function Login(props) {
     return (
         <Modal centered={true} mask={false} title={<Space>Bienvenue sur Marine Management Software <Image width={50} src="/logo.png" preview={false}/></Space>} open={true} okText="Se connecter" cancelText="Effacer" closable={false} onOk={() => loginForm.submit()} onCancel={() => loginForm.resetFields()}>
             <Form name="login" form={loginForm} labelCol={{ span: 8 }} wrapperCol={{ span: 16 }} autoComplete="off" onFinish={(values) => {
-                fetch('./users/authenticate', {
+                fetch('/users/authenticate', {
                     method: 'POST',
                     body: JSON.stringify(values),
                     headers: {
