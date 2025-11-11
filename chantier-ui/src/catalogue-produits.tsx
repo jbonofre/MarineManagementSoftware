@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Breadcrumb, Row, Col, Input, Select, Button, Space, Table, Rate, Card, Form, InputNumber, Spin, AutoComplete, Image, Popconfirm, message } from 'antd';
-import { HomeOutlined, PlusCircleOutlined, LeftCircleOutlined, ZoomInOutlined, StockOutlined, SaveOutlined, PauseCircleOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { ReadOutlined, HomeOutlined, PlusCircleOutlined, LeftCircleOutlined, ZoomInOutlined, StockOutlined, SaveOutlined, PauseCircleOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { productCategories } from './data.tsx';
 
 const style: React.CSSProperties = { padding: '8px 0' };
@@ -140,6 +140,7 @@ function Detail(props) {
         <>
             <Breadcrumb items={[
                 { title: <Link to="/"><HomeOutlined/></Link> },
+                { title: <ReadOutlined/> },
                 { title: <Button type="text" size="small" onClick={() => props.setProduit(null)}>Produits</Button> }
             ]} />
             <Card title={title}>

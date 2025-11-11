@@ -18,6 +18,16 @@ public class BateauCatalogueResource {
     }
 
     @GET
+    @Path("/search")
+    public List<BateauCatalogueEntity> search(@QueryParam("q") String query) {
+        if (query == null || query.trim().isEmpty()) {
+            return BateauCatalogueEntity.listAll();
+        }
+        String likeQuery = "%" + query.toLowerCase() + "%";
+        return BateauCatalogueEntity.list("lower(modele) like ?1 or lower(marque) like ?1", likeQuery);
+    }
+
+    @GET
     @Path("/{id}")
     public BateauCatalogueEntity get(@PathParam("id") Long id) {
         BateauCatalogueEntity entity = BateauCatalogueEntity.findById(id);
