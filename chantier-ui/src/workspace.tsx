@@ -17,6 +17,7 @@ import Moteurs from './moteurs.tsx';
 import Remorques from './remorques.tsx';
 import Produits from './catalogue-produits.tsx';
 import CatalogueBateaux from './catalogue-bateaux.tsx';
+import CatalogueMoteurs from './catalogue-moteurs.tsx';
 import Helices from './helices.tsx';
 import Fournisseurs from './fournisseurs.tsx';
 import Prestations from './prestations.tsx';
@@ -43,10 +44,10 @@ function SideMenu(props) {
         { key: 'remorques', label: <Link to="/remorques">Remorques</Link>, icon: <Icon component= { TailerOutlined } /> }
       ] },
       { key: 'catalogue', label: 'Catalogue', icon: <ReadOutlined/>, children: [
-        { key: 'produits', label: <Link to="/catalogue/produits">Produits</Link> },
+        { key: 'produits', label: <Link to="/catalogue/produits">Produits</Link>, icon: <StockOutlined /> },
         { key: 'bateaux', label: <Link to="/catalogue/bateaux">Bateaux</Link>, icon: <Icon component={ BoatOutlined } /> },
         { key: 'moteurs', label: <Link to="/catalogue/moteurs">Moteurs</Link>, icon: <Icon component={ EngineOutlined } /> },
-        { key: 'helices', label: <Link to="/catalogue/helices">Hélices</Link> },
+        { key: 'helices', label: <Link to="/catalogue/helices">Hélices</Link>, icon: <DeploymentUnitOutlined /> },
         { key: 'remorques', label: <Link to="/catalogue/remorques">Remorques</Link>, icon: <Icon component={ TailerOutlined } /> },
         { key: 'fournisseurs', label: <Link to="/catalogue/fournisseurs">Fournisseurs</Link>, icon: <FileProtectOutlined/> },
       ]},
@@ -139,6 +140,9 @@ export default function Workspace(props) {
                     </Route>
                     <Route path="/catalogue/bateaux" key="catalogue-bateaux">
                         <CatalogueBateaux />
+                    </Route>
+                    <Route path="/catalogue/moteurs" key="catalogue-moteurs">
+                        <CatalogueMoteurs />
                     </Route>
                     <Route path="/catalogue/helices" key="helices">
                         <Helices />

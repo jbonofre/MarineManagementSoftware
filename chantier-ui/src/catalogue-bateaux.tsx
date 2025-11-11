@@ -159,8 +159,8 @@ const CatalogueBateaux: React.FC = () => {
             key: 'actions',
             render: (_: any, record: BateauCatalogueEntity) => (
                 <Space>
-                    <Button type="link" onClick={() => openModal(record)}>
-                        Modifier
+                    <Button onClick={() => openModal(record)}>
+                        <EditOutlined/> 
                     </Button>
                     <Popconfirm
                         title="Supprimer ce bateau?"
@@ -168,8 +168,8 @@ const CatalogueBateaux: React.FC = () => {
                         okText="Oui"
                         cancelText="Non"
                     >
-                        <Button type="link" danger>
-                            Supprimer
+                        <Button danger>
+                            <DeleteOutlined/>
                         </Button>
                     </Popconfirm>
                 </Space>
@@ -187,10 +187,11 @@ const CatalogueBateaux: React.FC = () => {
                                 placeholder="Recherche"
                                 enterButton
                                 style={{ width: 600 }}
+                                allowClear={true}
                                 onSearch={async (value) => {
                                     setLoading(true);
                                     try {
-                                        const response = await axios.get('/api/catalogue/bateaux/search', { params: { q: value } });
+                                        const response = await axios.get('/catalogue/bateaux/search', { params: { q: value } });
                                         setBateaux(response.data);
                                     } catch (error) {
                                         message.error('Erreur lors de la recherche');
@@ -199,7 +200,7 @@ const CatalogueBateaux: React.FC = () => {
                                     }
                                 }}
                             />
-                            <Button type="primary" icon={<PlusCircleOutlined />} onClick={() => openModal()} style={{ marginBottom: 16 }} />
+                            <Button type="primary" icon={<PlusCircleOutlined />} onClick={() => openModal()} />
                         </Space>
                     </div>
                 </Col>
@@ -235,10 +236,50 @@ const CatalogueBateaux: React.FC = () => {
                                 <Input />
                             </Form.Item>
                             <Form.Item name="type" label="Type" rules={[{ required: true }]}>
-                                <Input />
+                                <Select>
+                                    <Select.Option value="moteur">Moteur</Select.Option>
+                                    <Select.Option value="voilier">Voilier</Select.Option>
+                                </Select>
                             </Form.Item>
-                            <Form.Item name="images" label="Images (url, séparées par une virgule)">
-                                <Input />
+                            <Form.Item name="description" label="Description">
+                                <Input.TextArea rows={3} placeholder="Description du bateau" />
+                            </Form.Item>
+                            <Form.Item name="images" label="Images">
+                                <Form.List name="images">
+                                    {(fields, { add, remove }) => (
+                                        <>
+                                            {fields.map((field, index) => (
+                                                <Space key={field.key} align="baseline" style={{ display: 'flex', marginBottom: 8 }}>
+                                                    <Form.Item
+                                                        {...field}
+                                                        name={[field.name]}
+                                                        fieldKey={[field.fieldKey]}
+                                                        rules={[{ required: true, message: 'Veuillez entrer une URL d\'image' }]}
+                                                        style={{ flex: 1 }}
+                                                    >
+                                                        <Input placeholder="URL de l'image" />
+                                                    </Form.Item>
+                                                    <Button
+                                                        icon={<DeleteOutlined />}
+                                                        danger
+                                                        onClick={() => remove(field.name)}
+                                                    />
+                                                    {form.getFieldValue(['images', index]) &&
+                                                        <img
+                                                            src={form.getFieldValue(['images', index])}
+                                                            alt="aperçu"
+                                                            style={{ width: 60, height: 36, objectFit: 'cover', borderRadius: 4, marginLeft: 8, border: '1px solid #eee' }}
+                                                            onError={e => e.currentTarget.style.display = 'none'}
+                                                        />
+                                                    }
+                                                </Space>
+                                            ))}
+                                            <Button type="dashed" onClick={() => add()} block icon={<PlusCircleOutlined />}>
+                                                Ajouter une image
+                                            </Button>
+                                        </>
+                                    )}
+                                </Form.List>
                             </Form.Item>
                             <Form.Item name="longueurExterieure" label="Longueur extérieure (m)">
                                 <InputNumber min={0} step={0.01} style={{ width: '100%' }} />

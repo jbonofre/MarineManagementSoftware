@@ -5,7 +5,7 @@ import jakarta.transaction.Transactional;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import net.nanthrax.mms.persistence.ProduitEntity;
+import net.nanthrax.mms.persistence.ProduitCatalogueEntity;
 import net.nanthrax.mms.persistence.ProduitFournisseurEntity;
 
 import java.util.List;
@@ -14,11 +14,25 @@ import java.util.List;
 @ApplicationScoped
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-public class ProduitResource {
+public class ProduitCatalogueResource {
 
     @GET
-    public List<ProduitEntity> list() {
-        return ProduitEntity.listAll();
+    public List<ProduitCatalogueEntity> list() {
+        return ProduitCatalogueEntity.listAll();
+    }
+
+    @GET
+    @Path("/search")
+    public List<ProduitCatalogueEntity> search(@QueryParam("q") String q) {
+        if (q == null || q.trim().isEmpty()) {
+            return ProduitCatalogueEntity.listAll();
+        }
+        String likePattern = "%" + q.toLowerCase() + "%";
+        // Search in 'nom', 'marque', 'categorie', 'ref', 'description'
+        return ProduitCatalogueEntity.list(
+            "LOWER(nom) LIKE ?1 OR LOWER(marque) LIKE ?1 OR LOWER(categorie) LIKE ?1 OR LOWER(ref) LIKE ?1 OR LOWER(description) LIKE ?1",
+            likePattern
+        );
     }
 
     @GET
@@ -35,15 +49,15 @@ public class ProduitResource {
 
     @POST
     @Transactional
-    public ProduitEntity create(ProduitEntity produit) {
+    public ProduitCatalogueEntity create(ProduitCatalogueEntity produit) {
         produit.persist();
         return produit;
     }
 
     @GET
     @Path("{id}")
-    public ProduitEntity get(long id) {
-        ProduitEntity entity = ProduitEntity.findById(id);
+    public ProduitCatalogueEntity get(long id) {
+        ProduitCatalogueEntity entity = ProduitCatalogueEntity.findById(id);
         if (entity == null) {
             throw new WebApplicationException("Le produit (" + id + ") n'est pas trouvé", 404);
         }
@@ -54,7 +68,7 @@ public class ProduitResource {
     @Path("{id}")
     @Transactional
     public Response delete(long id) {
-        ProduitEntity entity = ProduitEntity.findById(id);
+        ProduitCatalogueEntity entity = ProduitCatalogueEntity.findById(id);
         if (entity == null) {
             throw new WebApplicationException("Le produit (" + id + ") n'est pas trouvé", 404);
         }
@@ -65,8 +79,8 @@ public class ProduitResource {
     @PUT
     @Path("{id}")
     @Transactional
-    public ProduitEntity update(long id, ProduitEntity produit) {
-        ProduitEntity entity = ProduitEntity.findById(id);
+    public ProduitCatalogueEntity update(long id, ProduitCatalogueEntity produit) {
+        ProduitCatalogueEntity entity = ProduitCatalogueEntity.findById(id);
         if (entity == null) {
             throw new WebApplicationException("Le produit (" + id + ") n'est pas trouvé", 404);
         }
@@ -76,7 +90,6 @@ public class ProduitResource {
         entity.categorie = produit.categorie;
         entity.ref = produit.ref;
         entity.refs = produit.refs;
-        entity.image = produit.image;
         entity.images = produit.images;
         entity.description = produit.description;
         entity.evaluation = produit.evaluation;

@@ -9,14 +9,18 @@ import java.util.List;
 @Entity
 public class BateauCatalogueEntity extends PanacheEntity {
 
+    @Column(nullable = false)
     public String modele;
 
+    @Column(nullable = false)
     public String marque;
 
     public List<String> images = new ArrayList<>();
 
     @Column(nullable = false)
     public String type;
+
+    public String description;
 
     public double longueurExterieure;
 

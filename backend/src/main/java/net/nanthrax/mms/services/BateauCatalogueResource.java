@@ -7,7 +7,7 @@ import jakarta.transaction.Transactional;
 import java.util.List;
 import net.nanthrax.mms.persistence.BateauCatalogueEntity;
 
-@Path("/api/catalogue/bateaux")
+@Path("/catalogue/bateaux")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class BateauCatalogueResource {
@@ -19,12 +19,16 @@ public class BateauCatalogueResource {
 
     @GET
     @Path("/search")
-    public List<BateauCatalogueEntity> search(@QueryParam("q") String query) {
-        if (query == null || query.trim().isEmpty()) {
+    public List<BateauCatalogueEntity> search(@QueryParam("q") String q) {
+        if (q == null || q.trim().isEmpty()) {
             return BateauCatalogueEntity.listAll();
         }
-        String likeQuery = "%" + query.toLowerCase() + "%";
-        return BateauCatalogueEntity.list("lower(modele) like ?1 or lower(marque) like ?1", likeQuery);
+        String likePattern = "%" + q.toLowerCase() + "%";
+        // Search in modele, marque, type, description
+        return BateauCatalogueEntity.list(
+            "LOWER(modele) LIKE ?1 OR LOWER(marque) LIKE ?1 OR LOWER(type) LIKE ?1 OR LOWER(description) LIKE ?1",
+            likePattern
+        );
     }
 
     @GET
@@ -57,6 +61,7 @@ public class BateauCatalogueResource {
         entity.marque = updatedBateauCatalogue.marque;
         entity.images = updatedBateauCatalogue.images;
         entity.type = updatedBateauCatalogue.type;
+        entity.description = updatedBateauCatalogue.description;
         entity.longueurExterieure = updatedBateauCatalogue.longueurExterieure;
         entity.longueurCoque = updatedBateauCatalogue.longueurCoque;
         entity.hauteur = updatedBateauCatalogue.hauteur;

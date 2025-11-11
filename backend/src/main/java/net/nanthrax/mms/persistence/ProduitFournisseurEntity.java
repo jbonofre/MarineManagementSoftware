@@ -8,7 +8,7 @@ import jakarta.persistence.OneToOne;
 public class ProduitFournisseurEntity extends PanacheEntity {
 
     @OneToOne
-    public ProduitEntity produit;
+    public ProduitCatalogueEntity produit;
 
     @OneToOne
     public FournisseurEntity fournisseur;

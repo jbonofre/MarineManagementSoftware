@@ -30,5 +30,4 @@ public class FournisseurEntity extends PanacheEntity {
 
     public String connexion;
 
-
 }

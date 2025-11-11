@@ -5,7 +5,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 
 @Entity
-public class MoteurEntity extends PanacheEntity {
+public class MoteurCatalogueEntity extends PanacheEntity {
 
     @Column(nullable = false)
     public String modele;

@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-public class ProduitEntity extends PanacheEntity {
+public class ProduitCatalogueEntity extends PanacheEntity {
 
     @Column(nullable = false, unique = true)
     public String nom;
@@ -21,8 +21,6 @@ public class ProduitEntity extends PanacheEntity {
     public String ref;
 
     public List<String> refs = new ArrayList<>();
-
-    public String image;
 
     public List<String> images = new ArrayList<>();
 
