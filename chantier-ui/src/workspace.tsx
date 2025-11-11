@@ -9,7 +9,7 @@ import { ReactComponent as BoatOutlined } from './boat.svg';
 import { ReactComponent as EngineOutlined } from './moteur.svg';
 import { ReactComponent as ParcOutlined } from './parc.svg';
 import { ReactComponent as TailerOutlined } from './remorque.svg';
-import { bateaux, moteurs, remorques, chantier } from './data.tsx';
+import { bateaux, moteurs, remorques } from './data.tsx';
 import Home from './home.tsx';
 import Clients from './clients.tsx';
 import Bateaux from './bateaux.tsx';

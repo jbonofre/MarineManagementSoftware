@@ -6,8 +6,6 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import net.nanthrax.mms.persistence.SocieteEntity;
 
-import java.util.ArrayList;
-
 @Path("/societe")
 @ApplicationScoped
 @Produces(MediaType.APPLICATION_JSON)

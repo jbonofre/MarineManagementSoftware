@@ -6,7 +6,6 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import net.nanthrax.mms.persistence.FournisseurEntity;
-import net.nanthrax.mms.persistence.ProduitEntity;
 import net.nanthrax.mms.persistence.ProduitFournisseurEntity;
 
 import java.util.List;
