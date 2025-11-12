@@ -5,7 +5,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 
 @Entity
-public class HeliceEntity extends PanacheEntity {
+public class HeliceCatalogueEntity extends PanacheEntity {
 
     @Column(nullable = false)
     public String modele;

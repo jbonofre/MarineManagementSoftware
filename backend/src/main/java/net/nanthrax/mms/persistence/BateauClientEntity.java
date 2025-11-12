@@ -2,6 +2,8 @@ package net.nanthrax.mms.persistence;
 
 import io.quarkus.hibernate.orm.panache.PanacheEntity;
 import jakarta.persistence.Entity;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,9 +27,11 @@ public class BateauClientEntity extends PanacheEntity {
 
     public String dateFinDeGuarantie;
 
-    // public ClientEntity proprietaire;
+    @OneToOne
+    public ClientEntity proprietaire;
 
-    // public BateauCatalogueEntity bateau;
+    @OneToOne
+    public BateauCatalogueEntity bateau;
 
     public String categorieCe;
 
@@ -39,12 +43,13 @@ public class BateauClientEntity extends PanacheEntity {
 
     public String localisationGps;
 
-    // moteurs
+    @ManyToOne
+    public List<MoteurCatalogueEntity> moteurs = new ArrayList<>();
 
-    // electronique
+    @OneToOne
+    public RemorqueCatalogueEntity remorque;
 
-    // equipement
-
-    // remorque
+    @ManyToOne
+    public List<ProduitCatalogueEntity> equipements = new ArrayList<>();
 
 }

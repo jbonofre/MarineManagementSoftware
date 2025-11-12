@@ -30,6 +30,16 @@ public class UserResource {
     }
 
     @GET
+    @Path("/search")
+    public List<UserEntity> search(@QueryParam("q") String query) {
+        if (query == null || query.trim().isEmpty()) {
+            return UserEntity.listAll();
+        }
+        String likeQuery = "%" + query.toLowerCase() + "%";
+        return UserEntity.list("lower(name) like ?1 or lower(email) like ?1", likeQuery);
+    }
+
+    @GET
     public List<UserEntity> list() {
         return UserEntity.listAll();
     }
