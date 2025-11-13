@@ -102,10 +102,10 @@ const CatalogueBateaux: React.FC = () => {
             };
 
             if (isEdit && currentBateau && currentBateau.id) {
-                await axios.put(`/api/catalogue/bateaux/${currentBateau.id}`, bateauToSave);
+                await axios.put(`/catalogue/bateaux/${currentBateau.id}`, bateauToSave);
                 message.success('Bateau modifié avec succès');
             } else {
-                await axios.post('/api/catalogue/bateaux', bateauToSave);
+                await axios.post('/catalogue/bateaux', bateauToSave);
                 message.success('Bateau ajouté avec succès');
             }
             setModalVisible(false);
@@ -119,7 +119,7 @@ const CatalogueBateaux: React.FC = () => {
     const handleDelete = async (id: number | undefined) => {
         if (!id) return;
         try {
-            await axios.delete(`/api/catalogue/bateaux/${id}`);
+            await axios.delete(`/catalogue/bateaux/${id}`);
             message.success('Bateau supprimé avec succès');
             fetchBateaux();
         } catch {
