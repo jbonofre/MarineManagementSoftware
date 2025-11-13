@@ -66,7 +66,7 @@ const CatalogueBateaux: React.FC = () => {
     const fetchBateaux = async () => {
         setLoading(true);
         try {
-            const res = await axios.get('/api/catalogue/bateaux');
+            const res = await axios.get('/catalogue/bateaux');
             setBateaux(res.data);
         } catch {
             message.error('Erreur lors du chargement des bateaux.');
