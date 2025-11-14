@@ -32,6 +32,17 @@ interface Moteur {
   cylindree: number;
   regime: string;
   huileRecommandee: string;
+  stock: number;
+  stockAlerte: number;
+  emplacement: string;
+  prixPublic: number;
+  frais: number;
+  tauxMarge: number;
+  tauxMarque: number;
+  prixVenteHT: number;
+  tva: number;
+  montantTVA: number;
+  prixVenteTTC: number;
 }
 
 const defaultMoteur: Moteur = {
@@ -51,6 +62,17 @@ const defaultMoteur: Moteur = {
   cylindree: 0,
   regime: '',
   huileRecommandee: '',
+  stock: 0,
+  stockAlerte: 0,
+  emplacement: '',
+  prixPublic: 0,
+  frais: 0,
+  tauxMarge: 0,
+  tauxMarque: 0,
+  prixVenteHT: 0,
+  tva: 0,
+  montantTVA: 0,
+  prixVenteTTC: 0,
 };
 
 const MoteurCatalogue = () => {
@@ -167,6 +189,25 @@ const MoteurCatalogue = () => {
     },
   ];
 
+  const onValuesChange = (changedValues, allValues) => {
+    if (changedValues.prixVenteHT || changedValues.tva) {
+      const prixVenteHT = form.getFieldValue('prixVenteHT');
+      const tva = form.getFieldValue('tva');
+      const montantTVA = Math.round(((prixVenteHT * (tva / 100)) + Number.EPSILON) * 100) / 100;
+      form.setFieldValue('montantTVA', montantTVA);
+      const prixVenteTTC = Math.round(((prixVenteHT + montantTVA) + Number.EPSILON) * 100) / 100;
+      form.setFieldValue('prixVenteTTC', prixVenteTTC);
+    }
+    if (changedValues.prixVenteTTC) {
+      const prixVenteTTC = form.getFieldValue('prixVenteTTC');
+      const tva = form.getFieldValue('tva');
+      const montantTVA = Math.round((((prixVenteTTC / (100 + tva)) * tva) + Number.EPSILON) * 100) / 100;
+      form.setFieldValue('montantTVA', montantTVA);
+      const prixVenteHT = Math.round(((prixVenteTTC - montantTVA) + Number.EPSILON) * 100) / 100;
+      form.setFieldValue('prixVenteHT', prixVenteHT);
+    }
+  };
+
   return (
     <>
       <Row gutter={[16, 16]}>
@@ -217,6 +258,7 @@ const MoteurCatalogue = () => {
               form={form}
               layout="vertical"
               initialValues={defaultMoteur}
+              onValuesChange={onValuesChange}
             >
               <Form.Item name="modele" label="Modèle" rules={[{ required: true }]}>
                 <Input />
@@ -301,6 +343,39 @@ const MoteurCatalogue = () => {
               </Form.Item>
               <Form.Item name="huileRecommandee" label="Huile recommandée">
                 <Input />
+              </Form.Item>
+              <Form.Item name="stock" label="Stock">
+                <InputNumber min={0} step={1} style={{ width: '100%' }} />
+              </Form.Item>
+              <Form.Item name="stockAlerte" label="Stock alerte">
+                <InputNumber min={0} step={1} style={{ width: '100%' }} />
+              </Form.Item>
+              <Form.Item name="emplacement" label="Emplacement">
+                <Input />
+              </Form.Item>
+              <Form.Item name="prixPublic" label="Prix public">
+                <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+              </Form.Item>
+              <Form.Item name="frais" label="Frais">
+                <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+              </Form.Item>
+              <Form.Item name="tauxMarge" label="Taux de marge">
+                <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+              </Form.Item>
+              <Form.Item name="tauxMarque" label="Taux de marque">
+                <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+              </Form.Item>
+              <Form.Item name="prixVenteHT" label="Prix de vente HT">
+                <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+              </Form.Item>
+              <Form.Item name="tva" label="TVA">
+                <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+              </Form.Item>
+              <Form.Item name="montantTVA" label="Montant TVA">
+                <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+              </Form.Item>
+              <Form.Item name="prixVenteTTC" label="Prix de vente TTC">
+                <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
               </Form.Item>
             </Form>
           </Modal>

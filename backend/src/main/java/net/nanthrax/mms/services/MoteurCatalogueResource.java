@@ -76,6 +76,17 @@ public class MoteurCatalogueResource {
         entity.cylindree = moteur.cylindree;
         entity.regime = moteur.regime;
         entity.huileRecommandee = moteur.huileRecommandee;
+        entity.stock = moteur.stock;
+        entity.stockAlerte = moteur.stockAlerte;
+        entity.emplacement = moteur.emplacement;
+        entity.prixPublic = moteur.prixPublic;
+        entity.frais = moteur.frais;
+        entity.tauxMarge = moteur.tauxMarge;
+        entity.tauxMarque = moteur.tauxMarque;
+        entity.prixVenteHT = moteur.prixVenteHT;
+        entity.tva = moteur.tva;
+        entity.montantTVA = moteur.montantTVA;
+        entity.prixVenteTTC = moteur.prixVenteTTC;
 
         // Panache updates are flushed automatically at transaction close
         return entity;
