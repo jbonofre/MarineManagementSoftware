@@ -185,6 +185,25 @@ const CatalogueBateaux: React.FC = () => {
         },
     ];
 
+    const onValuesChange = (changedValues, allValues) => {
+        if (changedValues.prixVenteHT || changedValues.tva) {
+            const prixVenteHT = form.getFieldValue('prixVenteHT');
+            const tva = form.getFieldValue('tva');
+            const montantTVA = Math.round(((prixVenteHT * (tva / 100)) + Number.EPSILON) * 100) / 100;
+            form.setFieldValue('montantTVA', montantTVA);
+            const prixVenteTTC = Math.round(((prixVenteHT + montantTVA) + Number.EPSILON) * 100) / 100;
+            form.setFieldValue('prixVenteTTC', prixVenteTTC);
+        }
+        if (changedValues.prixVenteTTC) {
+            const prixVenteTTC = form.getFieldValue('prixVenteTTC');
+            const tva = form.getFieldValue('tva');
+            const montantTVA = Math.round((((prixVenteTTC / (100 + tva)) * tva) + Number.EPSILON) * 100) / 100;
+            form.setFieldValue('montantTVA', montantTVA);
+            const prixVenteHT = Math.round(((prixVenteTTC - montantTVA) + Number.EPSILON) * 100) / 100;
+            form.setFieldValue('prixVenteHT', prixVenteHT);
+        }
+    };
+
     return (
         <>
             <Row gutter={[16, 16]}>
@@ -236,6 +255,7 @@ const CatalogueBateaux: React.FC = () => {
                             form={form}
                             layout="vertical"
                             initialValues={defaultBateau}
+                            onValuesChange={onValuesChange}
                         >
                             <Form.Item name="modele" label="Modèle" rules={[{ required: true }]}>
                                 <Input />
