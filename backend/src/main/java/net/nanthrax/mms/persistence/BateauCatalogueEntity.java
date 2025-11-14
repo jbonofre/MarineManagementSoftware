@@ -24,6 +24,8 @@ public class BateauCatalogueEntity extends PanacheEntity {
 
     public double evaluation;
 
+    public int annee;
+
     public double longueurExterieure;
 
     public double longueurCoque;
@@ -53,5 +55,27 @@ public class BateauCatalogueEntity extends PanacheEntity {
     public int nombrePassagersMax;
 
     public String categorieCe;
+
+    public long stock;
+
+    public long stockAlerte;
+
+    public String emplacement;
+
+    public double prixPublic;
+
+    public double frais;
+
+    public double tauxMarge;
+
+    public double tauxMarque;
+
+    public double prixVenteHT;
+
+    public double tva;
+
+    public double montantTVA;
+
+    public double prixVenteTTC;
 
 }

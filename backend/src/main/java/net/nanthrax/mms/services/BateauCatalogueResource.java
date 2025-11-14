@@ -63,6 +63,7 @@ public class BateauCatalogueResource {
         entity.type = updatedBateauCatalogue.type;
         entity.description = updatedBateauCatalogue.description;
         entity.evaluation = updatedBateauCatalogue.evaluation;
+        entity.annee = updatedBateauCatalogue.annee;
         entity.longueurExterieure = updatedBateauCatalogue.longueurExterieure;
         entity.longueurCoque = updatedBateauCatalogue.longueurCoque;
         entity.hauteur = updatedBateauCatalogue.hauteur;
@@ -78,6 +79,17 @@ public class BateauCatalogueResource {
         entity.reservoirCarburant = updatedBateauCatalogue.reservoirCarburant;
         entity.nombrePassagersMax = updatedBateauCatalogue.nombrePassagersMax;
         entity.categorieCe = updatedBateauCatalogue.categorieCe;
+        entity.stock = updatedBateauCatalogue.stock;
+        entity.stockAlerte = updatedBateauCatalogue.stockAlerte;
+        entity.emplacement = updatedBateauCatalogue.emplacement;
+        entity.prixPublic = updatedBateauCatalogue.prixPublic;
+        entity.frais = updatedBateauCatalogue.frais;
+        entity.tauxMarge = updatedBateauCatalogue.tauxMarge;
+        entity.tauxMarque = updatedBateauCatalogue.tauxMarque;
+        entity.prixVenteHT = updatedBateauCatalogue.prixVenteHT;
+        entity.tva = updatedBateauCatalogue.tva;
+        entity.montantTVA = updatedBateauCatalogue.montantTVA;
+        entity.prixVenteTTC = updatedBateauCatalogue.prixVenteTTC;
         return Response.ok(entity).build();
     }
 

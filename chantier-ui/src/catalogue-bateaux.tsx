@@ -7,11 +7,13 @@ import { bateauTypes } from './data.tsx';
 const style: React.CSSProperties = { padding: '8px 0' };
 const { Option } = Select;
 const { Search } = Input;
+const { TextArea } = Input;
 
 interface BateauCatalogueEntity {
     id?: number;
     modele: string;
     marque: string;
+    annee: number;
     images: string[];
     type: string;
     longueurExterieure: number;
@@ -34,6 +36,7 @@ interface BateauCatalogueEntity {
 const defaultBateau: BateauCatalogueEntity = {
     modele: '',
     marque: '',
+    annee: 2025,
     images: [],
     type: '',
     longueurExterieure: 0,
@@ -155,6 +158,11 @@ const CatalogueBateaux: React.FC = () => {
             render: (_,record) => ( <Rate defaultValue={record.evaluation} disabled={true} /> )
         },
         {
+            title: 'Stock',
+            dataIndex: 'stock',
+            sorter: (a,b) => a.stock - b.stock,
+        },
+        {
             title: 'Actions',
             key: 'actions',
             render: (_: any, record: BateauCatalogueEntity) => (
@@ -248,6 +256,9 @@ const CatalogueBateaux: React.FC = () => {
                             <Form.Item name="evaluation" label="Évaluation">
                                 <Rate allowHalf />
                             </Form.Item>
+                            <Form.Item name="annee" label="Année">
+                                <InputNumber min={1900} max={new Date().getFullYear()} step={1} style={{ width: '100%' }} />
+                            </Form.Item>
                             <Form.Item name="images" label="Images">
                                 <Form.List name="images">
                                     {(fields, { add, remove }) => (
@@ -324,6 +335,39 @@ const CatalogueBateaux: React.FC = () => {
                             </Form.Item>
                             <Form.Item name="categorieCe" label="Catégorie CE">
                                 <Input />
+                            </Form.Item>
+                            <Form.Item name="stock" label="Stock">
+                                <InputNumber min={0} step={1} style={{ width: '100%' }} />
+                            </Form.Item>
+                            <Form.Item name="stockAlerte" label="Stock alerte">
+                                <InputNumber min={0} step={1} style={{ width: '100%' }} />
+                            </Form.Item>
+                            <Form.Item name="emplacement" label="Emplacement">
+                                <TextArea rows={3} placeholder="Emplacement du stock bateau" allowClear={true} />
+                            </Form.Item>
+                            <Form.Item name="prixPublic" label="Prix public">
+                                <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+                            </Form.Item>
+                            <Form.Item name="frais" label="Frais">
+                                <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+                            </Form.Item>
+                            <Form.Item name="tauxMarge" label="Taux de marge">
+                                <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+                            </Form.Item>
+                            <Form.Item name="tauxMarque" label="Taux de marque">
+                                <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+                            </Form.Item>
+                            <Form.Item name="prixVenteHT" label="Prix de vente HT">
+                                <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+                            </Form.Item>
+                            <Form.Item name="tva" label="TVA">
+                                <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+                            </Form.Item>
+                            <Form.Item name="montantTVA" label="Montant TVA">
+                                <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+                            </Form.Item>
+                            <Form.Item name="prixVenteTTC" label="Prix de vente TTC">
+                                <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
                             </Form.Item>
                         </Form>
                     </Modal>
