@@ -12,7 +12,29 @@ const moteurTypes = [
   { text: 'Diesel', value: 'Diesel' },
 ];
 
-const defaultMoteur = {
+type CatalogueImage = string;
+
+interface Moteur {
+  id?: number;
+  modele: string;
+  marque: string;
+  type: string;
+  description: string;
+  evaluation: number;
+  images: CatalogueImage[];
+  puissanceCv: number;
+  puissanceKw: number;
+  longueurArbre: string;
+  arbre: number;
+  demarrage: string;
+  direction: string;
+  cylindres: number;
+  cylindree: number;
+  regime: string;
+  huileRecommandee: string;
+}
+
+const defaultMoteur: Moteur = {
   modele: '',
   marque: '',
   type: '',
@@ -34,9 +56,9 @@ const defaultMoteur = {
 const MoteurCatalogue = () => {
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
-  const [moteurs, setMoteurs] = useState([]);
+  const [moteurs, setMoteurs] = useState<Moteur[]>([]);
   const [form] = Form.useForm();
-  const [editingMoteur, setEditingMoteur] = useState(null);
+  const [editingMoteur, setEditingMoteur] = useState<Moteur | null>(null);
 
   const fetchMoteurs = async () => {
     setLoading(true);
