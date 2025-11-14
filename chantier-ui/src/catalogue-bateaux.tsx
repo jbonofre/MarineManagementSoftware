@@ -1,10 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Breadcrumb, Card, Image,Table, Row, Col, Button, Modal, Form, Input, InputNumber, Select, Space, Popconfirm, message } from 'antd';
-import { ReadOutlined, HomeOutlined, PlusCircleOutlined, LeftCircleOutlined, ZoomInOutlined, StockOutlined, SaveOutlined, PauseCircleOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
-import Icon from '@ant-design/icons';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Image, Table, Rate, Row, Col, Button, Modal, Form, AutoComplete, Input, InputNumber, Select, Space, Popconfirm, message } from 'antd';
+import { PlusCircleOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import axios from 'axios';
-import { ReactComponent as BoatOutlined } from './boat.svg';
+import { bateauTypes } from './data.tsx';
 
 const style: React.CSSProperties = { padding: '8px 0' };
 const { Option } = Select;
@@ -62,6 +60,11 @@ const CatalogueBateaux: React.FC = () => {
     const [isEdit, setIsEdit] = useState<boolean>(false);
     const [currentBateau, setCurrentBateau] = useState<BateauCatalogueEntity | null>(null);
     const [form] = Form.useForm();
+
+    const marqueOptions = useMemo(() => {
+        const uniqueMarques = Array.from(new Set(bateaux.map((bateau) => bateau.marque))).filter(Boolean) as string[];
+        return uniqueMarques.map((marque) => ({ value: marque }));
+    }, [bateaux]);
 
     const fetchBateaux = async () => {
         setLoading(true);
@@ -131,15 +134,25 @@ const CatalogueBateaux: React.FC = () => {
                     <Image width={50} src={record.images[0]} />
                     {record.modele}
                 </Space>
-            )
+            ),
+            sorter: (a,b) => a.modele.localeCompare(b.modele),
         },
         {
             title: 'Marque',
             dataIndex: 'marque',
+            sorter: (a,b) => a.marque.localeCompare(b.marque),
         },
         {
             title: 'Type',
             dataIndex: 'type',
+            sorter: (a,b) => a.type.localeCompare(b.type),
+            filters: bateauTypes,
+            onFilter: (value, record) => record.type === value,
+        },
+        {
+            title: 'Evaluation',
+            dataIndex: 'evaluation',
+            render: (_,record) => ( <Rate defaultValue={record.evaluation} disabled={true} /> )
         },
         {
             title: 'Actions',
@@ -220,16 +233,20 @@ const CatalogueBateaux: React.FC = () => {
                                 <Input />
                             </Form.Item>
                             <Form.Item name="marque" label="Marque" rules={[{ required: true }]}>
-                                <Input />
+                                <AutoComplete
+                                    allowClear
+                                    options={marqueOptions}
+                                    placeholder="Saisir ou sélectionner une marque"
+                                />
                             </Form.Item>
                             <Form.Item name="type" label="Type" rules={[{ required: true }]}>
-                                <Select>
-                                    <Select.Option value="moteur">Moteur</Select.Option>
-                                    <Select.Option value="voilier">Voilier</Select.Option>
-                                </Select>
+                                <Select options={bateauTypes} />
                             </Form.Item>
                             <Form.Item name="description" label="Description">
                                 <Input.TextArea rows={3} placeholder="Description du bateau" />
+                            </Form.Item>
+                            <Form.Item name="evaluation" label="Évaluation">
+                                <Rate allowHalf />
                             </Form.Item>
                             <Form.Item name="images" label="Images">
                                 <Form.List name="images">
@@ -240,7 +257,7 @@ const CatalogueBateaux: React.FC = () => {
                                                     <Form.Item
                                                         {...field}
                                                         name={[field.name]}
-                                                        fieldKey={[field.fieldKey]}
+                                                        fieldKey={[field.fieldKey ?? field.key]}
                                                         rules={[{ required: true, message: 'Veuillez entrer une URL d\'image' }]}
                                                         style={{ flex: 1 }}
                                                     >

@@ -22,6 +22,8 @@ public class BateauCatalogueEntity extends PanacheEntity {
 
     public String description;
 
+    public double evaluation;
+
     public double longueurExterieure;
 
     public double longueurCoque;

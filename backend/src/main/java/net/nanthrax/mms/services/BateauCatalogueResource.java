@@ -62,6 +62,7 @@ public class BateauCatalogueResource {
         entity.images = updatedBateauCatalogue.images;
         entity.type = updatedBateauCatalogue.type;
         entity.description = updatedBateauCatalogue.description;
+        entity.evaluation = updatedBateauCatalogue.evaluation;
         entity.longueurExterieure = updatedBateauCatalogue.longueurExterieure;
         entity.longueurCoque = updatedBateauCatalogue.longueurCoque;
         entity.hauteur = updatedBateauCatalogue.hauteur;

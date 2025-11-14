@@ -35,6 +35,13 @@ export const productCategories = [
     { text: 'Loisirs', value: 'Loisirs', label: 'Loisirs' },
 ];
 
+export const bateauTypes = [
+    { text: 'Bateau à Moteur', value: 'Bateau à Moteur', label: 'Bateau à Moteur' },
+    { text: 'Voilier', value: 'Voilier', label: 'Voilier' },
+    { text: 'Catamaran', value: 'Catamaran', label: 'Catamaran' },
+    { text: 'Autre', value: 'Autre', label: 'Autre' },
+];
+
 export const bateaux = [
     {
         key: '1',
