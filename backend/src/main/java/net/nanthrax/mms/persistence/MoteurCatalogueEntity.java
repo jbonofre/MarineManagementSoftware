@@ -1,5 +1,8 @@
 package net.nanthrax.mms.persistence;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import io.quarkus.hibernate.orm.panache.PanacheEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -16,11 +19,11 @@ public class MoteurCatalogueEntity extends PanacheEntity {
     @Column(nullable = false)
     public String type;
 
-    public String notes;
+    public String description;
 
     public double evaluation;
 
-    public String image;
+    public List<String> images = new ArrayList<>();
 
     public double puissanceCv;
 
@@ -32,7 +35,7 @@ public class MoteurCatalogueEntity extends PanacheEntity {
 
     public String demarrage;
 
-    public String barre;
+    public String direction;
 
     public int cylindres;
 
