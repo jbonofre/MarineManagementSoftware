@@ -30,6 +30,19 @@ public class MoteurCatalogueResource {
         return entity;
     }
 
+    @GET
+    @Path("/search")
+    public List<MoteurCatalogueEntity> search(@QueryParam("q") String query) {
+        if (query == null || query.trim().isEmpty()) {
+            return MoteurCatalogueEntity.listAll();
+        }
+        String q = "%" + query.toLowerCase() + "%";
+        return MoteurCatalogueEntity.find(
+            "lower(modele) like ?1 or lower(marque) like ?1 or lower(type) like ?1",
+            q
+        ).list();
+    }
+
     @POST
     @Transactional
     public MoteurCatalogueEntity create(MoteurCatalogueEntity moteur) {
