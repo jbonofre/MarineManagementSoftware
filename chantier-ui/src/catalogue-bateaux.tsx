@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Breadcrumb, Card, Table, Row, Col, Button, Modal, Form, Input, InputNumber, Select, Space, Popconfirm, message } from 'antd';
+import { Breadcrumb, Card, Image,Table, Row, Col, Button, Modal, Form, Input, InputNumber, Select, Space, Popconfirm, message } from 'antd';
 import { ReadOutlined, HomeOutlined, PlusCircleOutlined, LeftCircleOutlined, ZoomInOutlined, StockOutlined, SaveOutlined, PauseCircleOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import Icon from '@ant-design/icons';
 import axios from 'axios';
@@ -82,7 +82,7 @@ const CatalogueBateaux: React.FC = () => {
         if (bateau) {
             setIsEdit(true);
             setCurrentBateau(bateau);
-            form.setFieldsValue({ ...bateau, images: bateau.images?.join(', ') });
+            form.setFieldsValue(bateau);
         } else {
             setIsEdit(false);
             setCurrentBateau(null);
@@ -94,12 +94,7 @@ const CatalogueBateaux: React.FC = () => {
     const handleModalOk = async () => {
         try {
             const values = await form.validateFields();
-            const bateauToSave = {
-                ...values,
-                images: typeof values.images === 'string'
-                    ? values.images.split(',').map((img: string) => img.trim()).filter((img: string) => img)
-                    : [],
-            };
+            const bateauToSave = values;
 
             if (isEdit && currentBateau && currentBateau.id) {
                 await axios.put(`/catalogue/bateaux/${currentBateau.id}`, bateauToSave);
@@ -131,6 +126,12 @@ const CatalogueBateaux: React.FC = () => {
         {
             title: 'Modèle',
             dataIndex: 'modele',
+            render: (_,record) => (
+                <Space>
+                    <Image width={50} src={record.images[0]} />
+                    {record.modele}
+                </Space>
+            )
         },
         {
             title: 'Marque',
@@ -139,20 +140,6 @@ const CatalogueBateaux: React.FC = () => {
         {
             title: 'Type',
             dataIndex: 'type',
-        },
-        {
-            title: 'Longueur ext.',
-            dataIndex: 'longueurExterieure',
-            render: (val: number) => val + ' m',
-        },
-        {
-            title: 'Largeur',
-            dataIndex: 'largeur',
-            render: (val: number) => val + ' m',
-        },
-        {
-            title: 'Nombre passagers',
-            dataIndex: 'nombrePassagersMax',
         },
         {
             title: 'Actions',
@@ -257,7 +244,7 @@ const CatalogueBateaux: React.FC = () => {
                                                         rules={[{ required: true, message: 'Veuillez entrer une URL d\'image' }]}
                                                         style={{ flex: 1 }}
                                                     >
-                                                        <Input placeholder="URL de l'image" />
+                                                        <Input placeholder="URL de l'image" style={{ width: '700px' }} />
                                                     </Form.Item>
                                                     <Button
                                                         icon={<DeleteOutlined />}
@@ -265,12 +252,7 @@ const CatalogueBateaux: React.FC = () => {
                                                         onClick={() => remove(field.name)}
                                                     />
                                                     {form.getFieldValue(['images', index]) &&
-                                                        <img
-                                                            src={form.getFieldValue(['images', index])}
-                                                            alt="aperçu"
-                                                            style={{ width: 60, height: 36, objectFit: 'cover', borderRadius: 4, marginLeft: 8, border: '1px solid #eee' }}
-                                                            onError={e => e.currentTarget.style.display = 'none'}
-                                                        />
+                                                    <Image width={100} src={form.getFieldValue(['images', index])} />
                                                     }
                                                 </Space>
                                             ))}
