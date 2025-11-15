@@ -12,6 +12,7 @@ interface MoteurCatalogueEntity {
     modele: string;
     marque: string;
     type: string;
+    helicesCompatibles?: HeliceCatalogueEntity[];
 }
 
 interface HeliceCatalogueEntity {
@@ -25,7 +26,7 @@ interface HeliceCatalogueEntity {
     pas?: string;
     pales?: number;
     cannelures?: number;
-    compatible?: MoteurCatalogueEntity[];
+    moteursCompatibles?: MoteurCatalogueEntity[];
     prixPublic?: number;
     frais?: number;
     tauxMarge?: number;
@@ -46,7 +47,7 @@ const defaultHelice: HeliceCatalogueEntity = {
     pas: '',
     pales: 0,
     cannelures: 0,
-    compatible: [],
+    moteursCompatibles: [],
     prixPublic: 0,
     frais: 0,
     tauxMarge: 0,
@@ -94,6 +95,29 @@ const deleteHelice = async (id: number) => {
     if (!res.ok) throw new Error("Erreur lors de la suppression");
 };
 
+const summarizeMoteur = (moteur: MoteurCatalogueEntity) => ({
+    id: moteur.id,
+    modele: moteur.modele,
+    marque: moteur.marque,
+    type: moteur.type,
+});
+
+const attachMoteursCompatibles = (
+    helicesList: HeliceCatalogueEntity[],
+    moteursList: MoteurCatalogueEntity[],
+) =>
+    helicesList.map((helice) => {
+        if (!helice.id) {
+            return helice;
+        }
+        const compatibles = moteursList
+            .filter((moteur) =>
+                (moteur.helicesCompatibles || []).some((linkedHelice) => linkedHelice.id === helice.id),
+            )
+            .map(summarizeMoteur);
+        return { ...helice, moteursCompatibles: compatibles };
+    });
+
 const HeliceCatalogueView: React.FC = () => {
     const [helices, setHelices] = useState<HeliceCatalogueEntity[]>([]);
     const [loading, setLoading] = useState(false);
@@ -106,7 +130,8 @@ const HeliceCatalogueView: React.FC = () => {
     const loadHelices = async () => {
         setLoading(true);
         try {
-            setHelices(await fetchHelices());
+            const data = await fetchHelices();
+            setHelices(attachMoteursCompatibles(data, moteurs));
         } catch (e: any) {
             message.error(e.message);
         }
@@ -115,10 +140,57 @@ const HeliceCatalogueView: React.FC = () => {
 
     const loadMoteurs = async () => {
         try {
-            setMoteurs(await fetchMoteurs());
+            const data = await fetchMoteurs();
+            setMoteurs(data);
+            setHelices((prev) => attachMoteursCompatibles(prev, data));
         } catch (e: any) {
             message.error(e.message);
         }
+    };
+
+    const getMotorIdsLinkedToHelice = (heliceId?: number): number[] => {
+        if (!heliceId) {
+            return [];
+        }
+        return moteurs
+            .filter((moteur) => (moteur.helicesCompatibles || []).some((helice) => helice.id === heliceId))
+            .map((moteur) => moteur.id)
+            .filter((id): id is number => typeof id === 'number');
+    };
+
+    const syncMoteursForHelice = async (
+        helice: HeliceCatalogueEntity,
+        selectedMotorIds: number[] = [],
+    ) => {
+        if (!helice.id) {
+            return;
+        }
+        const previouslyLinkedIds = getMotorIdsLinkedToHelice(helice.id);
+        const idsToProcess = Array.from(new Set([...previouslyLinkedIds, ...selectedMotorIds]));
+        if (idsToProcess.length === 0) {
+            return;
+        }
+        const sanitizedHelice = (({ moteursCompatibles, ...rest }) => rest)(helice);
+        await Promise.all(
+            idsToProcess.map(async (moteurId) => {
+                const moteur = moteurs.find((m) => m.id === moteurId);
+                if (!moteur) {
+                    return;
+                }
+                const shouldBeLinked = selectedMotorIds.includes(moteurId);
+                const currentlyLinked = (moteur.helicesCompatibles || []).some(
+                    (linkedHelice) => linkedHelice.id === helice.id,
+                );
+                if (shouldBeLinked === currentlyLinked) {
+                    return;
+                }
+                const updatedHelices = shouldBeLinked
+                    ? [...(moteur.helicesCompatibles || []), sanitizedHelice]
+                    : (moteur.helicesCompatibles || []).filter((linkedHelice) => linkedHelice.id !== helice.id);
+                const payload = { ...moteur, helicesCompatibles: updatedHelices };
+                await axios.put(`/catalogue/moteurs/${moteurId}`, payload);
+            }),
+        );
     };
 
     useEffect(() => {
@@ -140,9 +212,12 @@ const HeliceCatalogueView: React.FC = () => {
         setEditing(record);
         setModalMode('edit');
         setModalOpen(true);
+        const moteurIds =
+            record.moteursCompatibles?.map((m) => m.id).filter((id): id is number => typeof id === 'number') ||
+            getMotorIdsLinkedToHelice(record.id);
         form.setFieldsValue({
             ...record,
-            compatible: record.compatible?.map(m => m.id),
+            moteursCompatibles: moteurIds,
         });
     };
 
@@ -156,11 +231,13 @@ const HeliceCatalogueView: React.FC = () => {
     const handleModalOk = async () => {
         try {
             const values = await form.validateFields();
-            // handle compatible moteurs
-            const selectedMoteurs = moteurs.filter(m => (values.compatible || []).includes(m.id));
+            const moteurIds: number[] = (values.moteursCompatibles || []).filter(
+                (id: number): id is number => typeof id === 'number',
+            );
+            const selectedMoteurs = moteurs.filter((m) => moteurIds.includes(m.id));
             const heliceToSend = {
                 ...values,
-                compatible: selectedMoteurs,
+                moteursCompatibles: selectedMoteurs,
             };
             let result;
             if (modalMode === 'edit' && editing?.id) {
@@ -170,8 +247,10 @@ const HeliceCatalogueView: React.FC = () => {
                 result = await createHelice(heliceToSend);
                 message.success('Hélice créée');
             }
+            await syncMoteursForHelice(result, moteurIds);
             setModalOpen(false);
-            loadHelices();
+            await loadHelices();
+            await loadMoteurs();
         } catch (e: any) {
             if (e.errorFields || e instanceof Array) {
                 // Validation errors
@@ -265,7 +344,7 @@ const HeliceCatalogueView: React.FC = () => {
             </Row>
             <Row gutter={[16, 16]}>
                 <Col span={24}>
-                    <Table columns={columns} dataSource={helices} loading={loading} />
+                    <Table rowKey="id" columns={columns} dataSource={helices} loading={loading} />
                     <Modal
                         open={modalOpen}
                         title={modalMode === 'edit' ? 'Modifier une Hélice' : 'Nouvelle Hélice'}
@@ -346,7 +425,7 @@ const HeliceCatalogueView: React.FC = () => {
                             <Form.Item name="cannelures" label="Cannelures">
                                 <InputNumber min={0} style={{ width: '100%' }} />
                             </Form.Item>
-                            <Form.Item name="compatible" label="Moteurs compatibles">
+                            <Form.Item name="moteursCompatibles" label="Moteurs compatibles">
                                 <Select mode="multiple" optionFilterProp="children" showSearch>
                                     {moteurs.map(m => (
                                         <Select.Option key={m.id} value={m.id}>

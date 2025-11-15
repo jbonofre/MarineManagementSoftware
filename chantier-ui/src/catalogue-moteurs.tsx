@@ -14,6 +14,16 @@ const moteurTypes = [
 
 type CatalogueImage = string;
 
+interface Helice {
+  id?: number;
+  modele: string;
+  marque: string;
+  description: string;
+  evaluation: number;
+  diametre: number;
+  moteursCompatibles?: Array<Pick<Moteur, 'id' | 'modele' | 'marque' | 'type'>>;
+}
+
 interface Moteur {
   id?: number;
   modele: string;
@@ -32,6 +42,7 @@ interface Moteur {
   cylindree: number;
   regime: string;
   huileRecommandee: string;
+  helicesCompatibles: Helice[];
   stock: number;
   stockAlerte: number;
   emplacement: string;
@@ -62,6 +73,7 @@ const defaultMoteur: Moteur = {
   cylindree: 0,
   regime: '',
   huileRecommandee: '',
+  helicesCompatibles: [],
   stock: 0,
   stockAlerte: 0,
   emplacement: '',
@@ -75,10 +87,29 @@ const defaultMoteur: Moteur = {
   prixVenteTTC: 0,
 };
 
+const summarizeMoteur = (moteur: Moteur) => ({
+  id: moteur.id,
+  modele: moteur.modele,
+  marque: moteur.marque,
+  type: moteur.type,
+});
+
+const attachMoteursToHelices = (helicesList: Helice[], moteursList: Moteur[]) =>
+  helicesList.map((helice) => {
+    if (!helice.id) {
+      return helice;
+    }
+    const moteursCompatibles = moteursList
+      .filter((moteur) => (moteur.helicesCompatibles || []).some((linkedHelice) => linkedHelice.id === helice.id))
+      .map(summarizeMoteur);
+    return { ...helice, moteursCompatibles };
+  });
+
 const MoteurCatalogue = () => {
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [moteurs, setMoteurs] = useState<Moteur[]>([]);
+  const [helices, setHelices] = useState<Helice[]>([]);
   const [form] = Form.useForm();
   const [editingMoteur, setEditingMoteur] = useState<Moteur | null>(null);
 
@@ -86,7 +117,9 @@ const MoteurCatalogue = () => {
     setLoading(true);
     try {
       const res = await axios.get('/catalogue/moteurs');
-      setMoteurs(res.data ?? []);
+      const data = res.data ?? [];
+      setMoteurs(data);
+      setHelices((prev) => attachMoteursToHelices(prev, data));
     } catch {
       message.error('Erreur lors du chargement des moteurs');
     } finally {
@@ -94,15 +127,34 @@ const MoteurCatalogue = () => {
     }
   };
 
+  const fetchHelices = async () => {
+    setLoading(true);
+    try {
+      const res = await axios.get('/catalogue/helices');
+      const data = res.data ?? [];
+      setHelices(attachMoteursToHelices(data, moteurs));
+    } catch {
+      message.error('Erreur lors du chargement des hélices');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchMoteurs();
+    fetchHelices();
   }, []);
 
   const openModal = (record = null) => {
     setEditingMoteur(record);
     setModalVisible(true);
     if (record) {
-      form.setFieldsValue(record);
+      form.setFieldsValue({
+        ...(record as object),
+        helicesCompatibles: (record as any)?.helicesCompatibles
+          ? (record as any).helicesCompatibles.map((h: { id: number }) => h.id)
+          : [],
+      });
     } else {
       form.resetFields();
       form.setFieldsValue(defaultMoteur);
@@ -123,7 +175,12 @@ const MoteurCatalogue = () => {
   const handleModalOk = async () => {
     try {
       const values = await form.validateFields();
-      let moteurToSave = values;
+      // handle helices compatibles
+      const selectedHelices = helices.filter(h => (values.helicesCompatibles || []).includes(h.id));
+      let moteurToSave = {
+        ...values,
+        helicesCompatibles: selectedHelices,
+      };
 
       if (editingMoteur && editingMoteur.id != null) {
         await axios.put(`/catalogue/moteurs/${editingMoteur.id}`, moteurToSave);
@@ -133,7 +190,8 @@ const MoteurCatalogue = () => {
         message.success('Moteur ajouté avec succès');
       }
       setModalVisible(false);
-      fetchMoteurs();
+      await fetchMoteurs();
+      await fetchHelices();
       form.resetFields();
     } catch (err) {
       // Already shown by Form.Item
@@ -343,6 +401,15 @@ const MoteurCatalogue = () => {
               </Form.Item>
               <Form.Item name="huileRecommandee" label="Huile recommandée">
                 <Input />
+              </Form.Item>
+              <Form.Item name="helicesCompatibles" label="Hélices compatibles">
+                <Select mode="multiple" optionFilterProp="children" showSearch>
+                  {helices.map(h => (
+                    <Select.Option key={h.id} value={h.id}>
+                    {h.marque + " " + h.modele}
+                    </Select.Option>
+                  ))}
+                </Select>
               </Form.Item>
               <Form.Item name="stock" label="Stock">
                 <InputNumber min={0} step={1} style={{ width: '100%' }} />

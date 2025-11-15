@@ -87,6 +87,7 @@ public class MoteurCatalogueResource {
         entity.tva = moteur.tva;
         entity.montantTVA = moteur.montantTVA;
         entity.prixVenteTTC = moteur.prixVenteTTC;
+        entity.helicesCompatibles = moteur.helicesCompatibles;
 
         // Panache updates are flushed automatically at transaction close
         return entity;

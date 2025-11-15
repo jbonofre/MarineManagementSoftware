@@ -111,7 +111,7 @@ public class HeliceCatalogueResource {
         entity.pas = helice.pas;
         entity.pales = helice.pales;
         entity.cannelures = helice.cannelures;
-        entity.compatible = helice.compatible;
+        entity.moteursCompatibles = helice.moteursCompatibles;
         entity.prixPublic = helice.prixPublic;
         entity.frais = helice.frais;
         entity.tauxMarge = helice.tauxMarge;

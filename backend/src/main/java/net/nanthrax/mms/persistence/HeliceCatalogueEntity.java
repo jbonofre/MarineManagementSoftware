@@ -3,6 +3,8 @@ package net.nanthrax.mms.persistence;
 import java.util.ArrayList;
 import java.util.List;
 
+import jakarta.json.bind.annotation.JsonbTransient;
+
 import io.quarkus.hibernate.orm.panache.PanacheEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.ManyToMany;
@@ -31,8 +33,9 @@ public class HeliceCatalogueEntity extends PanacheEntity {
 
     public int cannelures;
 
-    @ManyToMany
-    public List<MoteurCatalogueEntity> compatible = new ArrayList<>();
+    @ManyToMany(mappedBy = "helicesCompatibles")
+    @JsonbTransient
+    public List<MoteurCatalogueEntity> moteursCompatibles = new ArrayList<>();
 
     public double prixPublic;   
 
