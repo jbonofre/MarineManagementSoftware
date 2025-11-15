@@ -111,8 +111,16 @@ public class HeliceCatalogueResource {
         entity.pas = helice.pas;
         entity.pales = helice.pales;
         entity.cannelures = helice.cannelures;
-        // entity.compatible = helice.compatible;
+        entity.compatible = helice.compatible;
+        entity.prixPublic = helice.prixPublic;
+        entity.frais = helice.frais;
+        entity.tauxMarge = helice.tauxMarge;
+        entity.tauxMarque = helice.tauxMarque;
+        entity.prixVenteHT = helice.prixVenteHT;
+        entity.tva = helice.tva;
+        entity.montantTVA = helice.montantTVA;
         entity.prixVenteTTC = helice.prixVenteTTC;
+        entity.images = helice.images;
 
         return entity;
     }

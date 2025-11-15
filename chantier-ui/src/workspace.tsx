@@ -18,7 +18,7 @@ import Remorques from './remorques.tsx';
 import Produits from './catalogue-produits.tsx';
 import CatalogueBateaux from './catalogue-bateaux.tsx';
 import CatalogueMoteurs from './catalogue-moteurs.tsx';
-import Helices from './helices.tsx';
+import CatalogueHelices from './catalogue-helices.tsx';
 import Fournisseurs from './fournisseurs.tsx';
 import Prestations from './prestations.tsx';
 import Societe from './societe.tsx';
@@ -93,7 +93,7 @@ function Header(props) {
 
     return(
         <Layout.Header style={{ height: "80px", background: "#fff", padding: "5px", margin: "10px" }}>
-            <Row align="middle" justify="center" wrap="false">
+            <Row align="middle" justify="center" wrap={false}>
                 <Col span={3}><Image src="/logo.png" preview={false} width={75}/></Col>
                 <Col span={19}><Search /></Col>
                 <Col span={2}><Menu items={menuUser} onClick={(e) => {
@@ -145,7 +145,7 @@ export default function Workspace(props) {
                         <CatalogueMoteurs />
                     </Route>
                     <Route path="/catalogue/helices" key="helices">
-                        <Helices />
+                        <CatalogueHelices />
                     </Route>
                     <Route path="/catalogue/fournisseurs" key="fournisseurs">
                         <Fournisseurs />
