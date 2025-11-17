@@ -39,5 +39,27 @@ public class RemorqueCatalogueEntity extends PanacheEntity {
 
     public String equipement;
 
+    public long stock;
+
+    public long stockAlerte;
+
+    public String emplacement;
+
+    public double prixPublic;
+
+    public double frais;
+
+    public double tauxMarge;
+
+    public double tauxMarque;
+
+    public double prixVenteHT;
+
+    public double tva;
+
+    public double montantTVA;
+
+    public double prixVenteTTC;
+
 }
 
