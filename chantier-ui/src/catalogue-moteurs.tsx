@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Row, Col, AutoComplete, Table, Button, Modal, Form, Input, InputNumber, Rate, Space, Popconfirm, message, Select, Image } from 'antd';
+import { Row, Col, AutoComplete, Table, Button, Modal, Form, Input, InputNumber, Rate, Space, Popconfirm, message, Select, Image, Card } from 'antd';
 import { EditOutlined, DeleteOutlined, PlusCircleOutlined } from '@ant-design/icons';
 import axios from 'axios';
 
@@ -268,6 +268,7 @@ const MoteurCatalogue = () => {
 
   return (
     <>
+      <Card title="Catalogue Moteurs">
       <Row gutter={[16, 16]}>
         <Col span={24}>
           <div style={style}>
@@ -450,6 +451,7 @@ const MoteurCatalogue = () => {
           </Modal>
         </Col>
       </Row>
+    </Card>
     </>
   );
 };

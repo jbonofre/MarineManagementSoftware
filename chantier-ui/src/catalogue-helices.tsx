@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Table, Button, Modal, Form, Input, InputNumber, Image, Select, message, Popconfirm, Space, Row, Col, Rate } from 'antd';
+import { Table, Button, Modal, Form, Input, InputNumber, Image, Select, message, Popconfirm, Space, Row, Col, Rate, Card } from 'antd';
 import axios from 'axios';
 import { PlusCircleOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons';
 
@@ -316,6 +316,7 @@ const HeliceCatalogueView: React.FC = () => {
 
     return (
         <>
+            <Card title="Catalogue Hélices">
             <Row gutter={[16, 16]}>
                 <Col span={24}>
                     <div style={style}>
@@ -462,6 +463,7 @@ const HeliceCatalogueView: React.FC = () => {
                     </Modal>
                 </Col>
             </Row>
+            </Card>
         </>
     );
 };

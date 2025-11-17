@@ -14,10 +14,12 @@ import {
   Select,
   Rate,
   Spin,
+  Card,
 } from "antd";
 import { PlusCircleOutlined, EditOutlined, DeleteOutlined, SearchOutlined } from "@ant-design/icons";
 import axios from "axios";
 
+const style: React.CSSProperties = { padding: '8px 0' };
 const { Search } = Input;
 
 // Defaults for a Remorque
@@ -210,15 +212,17 @@ const RemorqueCatalogue: React.FC = () => {
   ];
 
   return (
-    <div>
+    <>
+    <Card title="Catalogue Remorques">
       <Row gutter={[16, 16]}>
         <Col span={24}>
-          <Space style={{ marginBottom: 16 }}>
+          <div style={style}>
+          <Space>
             <Search
               allowClear
               placeholder="Rechercher"
               onSearch={handleSearch}
-              style={{ width: 350 }}
+              style={{ width: 600 }} 
               enterButton={<SearchOutlined />}
             />
             <Button
@@ -228,6 +232,7 @@ const RemorqueCatalogue: React.FC = () => {
             / >
             {loading && <Spin />}
           </Space>
+          </div>
         </Col>
       </Row>
       <Row>
@@ -403,7 +408,8 @@ const RemorqueCatalogue: React.FC = () => {
           </Form.Item>
         </Form>
       </Modal>
-    </div>
+    </Card>
+    </>
   );
 };
 
