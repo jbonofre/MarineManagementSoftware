@@ -105,6 +105,14 @@ public class RemorqueCatalogResource {
         entity.typeChassis = remorque.typeChassis;
         entity.roues = remorque.roues;
         entity.equipement = remorque.equipement;
+        entity.stock = remorque.stock;
+        entity.stockAlerte = remorque.stockAlerte;
+        entity.emplacement = remorque.emplacement;
+        entity.prixPublic = remorque.prixPublic;
+        entity.frais = remorque.frais;
+        entity.tauxMarge = remorque.tauxMarge;
+        entity.tauxMarque = remorque.tauxMarque;
+        entity.prixVenteHT = remorque.prixVenteHT;
         // Panache will flush the update at transaction end
         return entity;
     }

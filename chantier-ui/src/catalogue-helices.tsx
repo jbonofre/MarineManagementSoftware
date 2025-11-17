@@ -350,7 +350,7 @@ const HeliceCatalogueView: React.FC = () => {
                         title={modalMode === 'edit' ? 'Modifier une Hélice' : 'Nouvelle Hélice'}
                         onCancel={() => setModalOpen(false)}
                         onOk={handleModalOk}
-                        okText="Valider"
+                        okText="Enregistrer"
                         cancelText="Annuler"
                         destroyOnClose
                         width={1024}

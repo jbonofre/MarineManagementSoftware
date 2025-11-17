@@ -26,6 +26,7 @@ import Utilisateurs from './utilisateurs.tsx';
 import Comptoir from './comptoir.tsx';
 import Vente from './vente.tsx';
 import Forfaits from './forfaits.tsx';
+import CatalogueRemorques from './catalogue-remorques.tsx';
 
 export function demo() {
     message.warning("Vous êtes sur une version de démonstration de Marine Management Software. Il n'est pas possible d'ajouter ou supprimer des éléments.")
@@ -66,7 +67,7 @@ function SideMenu(props) {
         { key: 'site', label: 'Site ecommerce' },
         { key: 'marketing', label: 'Marketing' }
       ] },
-      { key: 'chantier', label: 'Chantier', icon: <SettingOutlined/>, children: [
+      { key: 'parametrage', label: 'Paramétrage', icon: <SettingOutlined/>, children: [
         { key: 'societe', label: <Link to="/societe">Société</Link>, icon: <DeploymentUnitOutlined/> },
         { key: 'utilisateurs', label: <Link to="/utilisateurs">Utilisateurs</Link>, icon: <UserOutlined/> }
       ] }
@@ -146,6 +147,9 @@ export default function Workspace(props) {
                     </Route>
                     <Route path="/catalogue/helices" key="helices">
                         <CatalogueHelices />
+                    </Route>
+                    <Route path="/catalogue/remorques" key="catalogue-remorques">
+                        <CatalogueRemorques />
                     </Route>
                     <Route path="/catalogue/fournisseurs" key="fournisseurs">
                         <Fournisseurs />

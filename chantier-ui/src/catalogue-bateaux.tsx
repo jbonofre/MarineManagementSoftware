@@ -249,6 +249,8 @@ const CatalogueBateaux: React.FC = () => {
                         onCancel={() => setModalVisible(false)}
                         maskClosable={false}
                         width={1024}
+                        okText="Enregistrer"
+                        cancelText="Annuler"
                         destroyOnClose
                     >
                         <Form

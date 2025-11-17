@@ -309,6 +309,8 @@ const MoteurCatalogue = () => {
             onOk={handleModalOk}
             onCancel={() => setModalVisible(false)}
             maskClosable={false}
+            okText="Enregistrer"
+            cancelText="Annuler"
             destroyOnClose
             width={1024}
           >

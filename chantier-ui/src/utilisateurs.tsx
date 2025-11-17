@@ -1,259 +1,293 @@
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { Breadcrumb, Card, Space, Table, Select, Input, Button, Form, Avatar, Spin, message } from 'antd';
-import { HomeOutlined, UserOutlined, PlusCircleOutlined, EditOutlined, DeleteOutlined, PauseCircleOutlined, ReloadOutlined, LeftCircleOutlined, SaveOutlined } from '@ant-design/icons';
-import { userRoles } from './data.tsx';
+import React, { useEffect, useState } from 'react';
+import { Space, Table, Button, Input, Form, Modal, Avatar, Spin, Select, Popconfirm, message, Row, Col } from 'antd';
+import { UserOutlined, PlusCircleOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 
-function Utilisateur(props) {
+const style: React.CSSProperties = { padding: '8px 0' };
+const { Search } = Input;
 
-    const [ details, setDetails ] = useState();
+// Roles for demonstration
+const USER_ROLES = [
+    { label: "Administrateur", value: "admin" },
+    { label: "Utilisateur", value: "user" }
+];
 
-    const [ userForm ] = Form.useForm();
+// User Form Modal component
+const UserFormModal = ({ visible, onCancel, onSubmit, initialValues, loading }) => {
+    const [form] = Form.useForm();
 
-    const fetchUser = () => {
-        fetch('./users/' + props.user)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Erreur (code ' + response.status + ')');
-                }
-                return response.json();
-            })
-            .then(response => setDetails(response))
-            .catch((error) => {
-                message.error('Une erreur est survenue: ' + error.message);
-                console.error(error)
-            })
-        };
+    useEffect(() => {
+        if (visible) {
+            form.resetFields();
+            form.setFieldsValue(initialValues || {});
+        }
+    }, [visible, initialValues]);
 
-    useEffect(fetchUser, []);
-
-    if (!details) {
-        return(<Spin/>);
-    }
-
-    const updateUserFunction = (values) => {
-        fetch('./users/' + props.user, {
-          method: 'PUT',
-          body: JSON.stringify(values),
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        })
-        .then((response) => {
-          if (!response.ok) {
-              throw new Error('Erreur (code ' + response.status + ')');
-          };
-          return response.json();
-        })
-        .then((response) => {
-            message.info('L\'utilisateur ' + props.user + ' a été mis à jour');
-            setDetails(response);
-            props.fetchUsers();
-        })
-        .catch((error) => {
-            message.error('Une erreur est survenue: ' + error.message);
-            console.error(error)
-        })
-    };
-
-    let disabledSelect = false;
-    if (props.user === 'admin') {
-        disabledSelect = true;
-    };
-
-    return(
-      <>
-      <Breadcrumb items={[
-          { title: <Link to="/"><HomeOutlined/></Link> },
-          { title: <Button type="text" size="small" onClick={() => props.setUser(null)}>Utilisateurs</Button> }
-      ]} />
-      <Card title={<Space><Avatar size="large" icon={<UserOutlined/>} />{details.name}</Space>} style={{ width: '100%' }}>
-        <Form name="userForm" labelCol={{ span: 8 }} wrapperCol={{ span: 16 }} style={{ width: '80%' }} initialValues={details}
-            form={userForm} onFinish={updateUserFunction}>
-            <Form.Item name="name" label="Nom d'utilisateur">
-                <Input disabled={true}/>
-            </Form.Item>
-            <Form.Item name="roles" label="Roles" rules={[{ required: true, message: 'Le role de l\'utilisateur est requis' }]}>
-                <Select options={userRoles} disabled={disabledSelect} />
-            </Form.Item>
-            <Form.Item name="password" label="Mot de passe" rules={[{ required: true, message: 'Le mot de passe est requis' }]}>
-                <Input.Password allowClear={true} />
-            </Form.Item>
-            <Form.Item name="email" label="E-mail" rules={[{ required: true, message: 'L\'e-mail est requis' }]}>
-                <Input allowClear={true} />
-            </Form.Item>
-            <Form.Item label={null}>
-                <Space>
-                <Button type="primary" icon={<SaveOutlined/>} onClick={() => userForm.submit()}>Enregistrer</Button>
-                <Button icon={<PauseCircleOutlined/>} onClick={() => userForm.resetFields()}>Annuler</Button>
-                </Space>
-            </Form.Item>
-        </Form>
-      </Card>
-      </>
+    return (
+        <Modal
+            open={visible}
+            title={initialValues && initialValues.name ? "Modifier l'utilisateur" : "Créer un utilisateur"}
+            onCancel={onCancel}
+            onOk={() => {
+                form
+                    .validateFields()
+                    .then((values) => {
+                        onSubmit(values);
+                    })
+                    .catch(() => {});
+            }}
+            confirmLoading={loading}
+            destroyOnClose
+            okText="Enregistrer"
+            cancelText="Annuler"
+        >
+            <Form form={form} layout="vertical" initialValues={initialValues}>
+                <Form.Item
+                    label="Utilisateur"
+                    name="name"
+                    rules={[{ required: true, message: "Champ requis" }]}
+                >
+                    <Input disabled={!!(initialValues && initialValues.name)} />
+                </Form.Item>
+                <Form.Item
+                    label="Email"
+                    name="email"
+                    rules={[
+                        { required: true, message: "Champ requis" },
+                        { type: "email", message: "Email invalide" }
+                    ]}
+                >
+                    <Input />
+                </Form.Item>
+                <Form.Item
+                    label="Mot de passe"
+                    name="password"
+                    rules={
+                        initialValues && initialValues.name
+                            ? []
+                            : [{ required: true, message: "Champ requis" }]
+                    }
+                >
+                    <Input.Password autoComplete="new-password" />
+                </Form.Item>
+                <Form.Item
+                    label="Roles"
+                    name="roles"
+                    rules={[{ required: true, message: "Le(s) rôle(s) est/sont requis" }]}
+                >
+                    <Select mode="tags" options={USER_ROLES} placeholder="Ajouter les rôles" />
+                </Form.Item>
+            </Form>
+        </Modal>
     );
-}
+};
 
-export default function Utilisateurs(props) {
 
-    const [ users, setUsers ] = useState();
-    const [ user, setUser ] = useState();
+export default function Utilisateurs() {
+    const [users, setUsers] = useState([]);
+    const [search, setSearch] = useState('');
+    const [loading, setLoading] = useState(true);
+    const [modalOpen, setModalOpen] = useState(false);
+    const [modalLoading, setModalLoading] = useState(false);
+    const [editUser, setEditUser] = useState(null);
 
-    const fetchUsers = () => {
-        fetch('./users')
-            .then((response) => {
-                if(!response.ok) {
-                    throw new Error('Erreur (code ' + response.status + ')');
-                }
-                return response.json();
+    // Fetch users
+    const fetchUsers = (query = '') => {
+        setLoading(true);
+        let url = '/users';
+        if (query) {
+            url = `/users/search?q=${encodeURIComponent(query)}`;
+        }
+        fetch(url)
+            .then(r => {
+                if (!r.ok) throw new Error("Erreur HTTP: " + r.status);
+                return r.json();
             })
-            .then((data) => setUsers(data))
-            .catch((error) => {
-                message.error('Une erreur est survenue: ' + error.message);
-                console.error(error)
+            .then(setUsers)
+            .catch(e => {
+                message.error("Erreur lors du chargement des utilisateurs: " + e.message);
+                setUsers([]);
             })
+            .finally(() => setLoading(false));
     };
 
-    useEffect(fetchUsers, []);
+    useEffect(() => {
+        fetchUsers();
+    }, []);
 
-    const [ newUserForm ] = Form.useForm();
-
-    if (!users) {
-        return(<Spin/>);
-    }
-
-    const newUserFunction = (values) => {
-        fetch('./users', {
-                method: 'POST',
-                body: JSON.stringify(values),
-                headers: {
-                    'Content-Type': 'application/json'
+    // Create User
+    const handleCreate = (data) => {
+        setModalLoading(true);
+        fetch('/users', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        })
+            .then(async res => {
+                if (!res.ok) {
+                    const errTxt = await res.text();
+                    throw new Error(errTxt || "Erreur réseau");
                 }
+                return res.json();
             })
-            .then((response) => {
-                if (!response.ok) {
-                    throw new Error('Erreur (code ' + response.status + ')');
-                }
-                return response.json();
-            })
-            .then((data) => {
-                message.info('Utilisateur sauvegardé');
+            .then(() => {
+                message.success("Utilisateur créé !");
+                setModalOpen(false);
                 fetchUsers();
             })
-            .catch((error) => {
-                message.error('Une erreur est survenue: ' + error.message);
-                console.error(error);
-            })
+            .catch(e => message.error("Erreur création: " + e.message))
+            .finally(() => setModalLoading(false));
     };
 
+    // Update User
+    const handleUpdate = (data) => {
+        setModalLoading(true);
+        fetch(`/users/${encodeURIComponent(editUser.name)}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...editUser, ...data })
+        })
+            .then(async res => {
+                if (!res.ok) {
+                    const errTxt = await res.text();
+                    throw new Error(errTxt || "Erreur réseau");
+                }
+                return res.json();
+            })
+            .then(() => {
+                message.success("Utilisateur modifié !");
+                setModalOpen(false);
+                setEditUser(null);
+                fetchUsers();
+            })
+            .catch(e => message.error("Erreur modification: " + e.message))
+            .finally(() => setModalLoading(false));
+    };
+
+    // Delete User
+    const handleDelete = user => {
+        fetch(`/users/${encodeURIComponent(user.name)}`, { method: 'DELETE' })
+            .then(res => {
+                if (!res.ok) throw new Error("Erreur HTTP: " + res.status);
+                message.success("Utilisateur supprimé");
+                fetchUsers();
+            })
+            .catch(e => {
+                message.error("Erreur suppression: " + e.message);
+            });
+    };
+
+    // Table columns
     const columns = [
         {
-            title: 'Utilisateur',
-            dataIndex: 'name',
-            key: 'name',
+            title: '',
+            dataIndex: '',
+            key: 'avatar',
+            render: (_, r) => <Avatar icon={<UserOutlined />} />
+        },
+        {
+            title: "Nom d'utilisateur",
+            dataIndex: "name",
+            key: "name",
+            render: (text, record) => <b>{text}{record.name === 'admin' ? ' 👑' : ''}</b>,
             sorter: (a,b) => a.name.localeCompare(b.name),
         },
         {
-            title: 'Roles',
-            dataIndex: 'roles',
-            key: 'roles',
-            filters: userRoles,
-            onFilter: (value,record) => record.roles === value,
-            sorter: (a,b) => a.roles.localeCompare(b.roles),
-        },
-        {
-            title: 'E-mail',
-            dataIndex: 'email',
-            key: 'email',
+            title: "Email",
+            dataIndex: "email",
+            key: "email",
             sorter: (a,b) => a.email.localeCompare(b.email),
         },
         {
-            title: '',
-            key: 'action',
-            render: (_,record) => <div>{(() => {
-                if (record.name === 'admin') {
-                    return(
-                        <Space>
-                        <Button icon={<EditOutlined/>} onClick={() => setUser(record.name)} />
-                        </Space>
-                    );
-                } else {
-                    return(
-                        <Space>
-                        <Button icon={<EditOutlined/>} onClick={() => setUser(record.name)} />
-                        <Button onClick={() => {
-                            fetch('./users/' + record.name, {
-                                method: 'DELETE'
-                            })
-                            .then((response) => {
-                                if (!response.ok) {
-                                    throw new Error('Erreur (code ' + response.status + ')');
-                                }
-                            })
-                            .then((data) => {
-                                message.info('Utilisateur supprimé');
-                                fetchUsers();
-                            })
-                            .catch((error) => {
-                                message.error('Une erreur est survenue: ' + error.message);
-                                console.error(error);
-                            })
-                            }} icon={<DeleteOutlined/>}/>
-                        </Space>
-                    );
-                }
-            })()}</div>,
+            title: "Roles",
+            dataIndex: "roles",
+            key: "roles",
+            render: (roles) =>
+                Array.isArray(roles)
+                    ? roles.map((role, idx) => (
+                          <span key={role} style={{ marginRight: 4 }}>
+                              <Button size="small" type="dashed" disabled>
+                                  {role}
+                              </Button>
+                          </span>
+                      ))
+                    : null,
+            filters: USER_ROLES,
+            onFilter: (value, record) => record.roles.includes(value),
+        },
+        {
+            title: "Actions",
+            key: "actions",
+            render: (_, record) => (
+                <Space>
+                    <Button
+                        icon={<EditOutlined />}
+                        size="small"
+                        disabled={record.name === 'admin'}
+                        onClick={() => {
+                            setEditUser(record);
+                            setModalOpen(true);
+                        }}
+                    />
+                    <Popconfirm
+                        title="Confirmer la suppression"
+                        description={`Supprimer l'utilisateur ${record.name} ?`}
+                        disabled={record.name === 'admin'}
+                        onConfirm={() => handleDelete(record)}
+                        okButtonProps={{ danger: true }}
+                        okText="Supprimer"
+                        cancelText="Annuler"
+                    >
+                        <Button
+                            icon={<DeleteOutlined />}
+                            size="small"
+                            danger
+                            disabled={record.name === 'admin'}
+                        />
+                    </Popconfirm>
+                </Space>
+            )
         }
     ];
 
-    if (user) {
-        return(
-          <Utilisateur user={user} setUser={setUser} fetchUsers={fetchUsers}/>
-        );
-    } else {
-        return(
+    return (
         <>
-        <Card title={<Space><UserOutlined/> Utilisateurs</Space>}>
-            <Space>
-                <Form form={newUserForm} layout='inline' onFinish={newUserFunction}>
-                <Form.Item name='name' rules={[{ required: true, message: 'Le nom d\'utilisateur est requis' }]}>
-                <Input style={{ width: 200 }} placeholder="Utilisateur" allowClear={true} />
-                </Form.Item>
-                <Form.Item name='roles' rules={[{ required: true, message: 'Le role de l\'utilisateur est requis' }]}>
-                <Select style={{ width: 150 }} options={userRoles} />
-                </Form.Item>
-                <Form.Item name='password' rules={[{ required: true, message: 'Le mot de passe est requis' }]}>
-                <Input.Password style={{ width: 200 }} placeholder="Mot de passe" allowClear={true}/>
-                </Form.Item>
-                <Form.Item name='confirmPassword' rules={[
-                    {
-                        required: true,
-                        message: 'Veuillez confirmer le mot de passe'
-                    },
-                    ({ getFieldValue }) => ({
-                        validator(_,value) {
-                            if (!value || getFieldValue('password') === value) {
-                                return Promise.resolve();
-                            }
-                            return Promise.reject(new Error('Les mots de passe ne correspondent pas'));
-                        },
-                    }),
-                ]}>
-                <Input.Password style={{ width: 200 }} placeholder="Confirmer le mot de passe" allowClear={true}/>
-                </Form.Item>
-                <Form.Item name='email' rules={[{ required: true, message: 'Un email est requis' }]}>
-                <Input style={{ width: 250 }} placeholder="e-mail" allowClear={true}/>
-                </Form.Item>
-                <Space>
-                <Button type="primary" onClick={() => newUserForm.submit()} icon={<PlusCircleOutlined/>} />
-                <Button onClick={() => newUserForm.resetFields()} icon={<PauseCircleOutlined/>} />
-                <Button onClick={() => fetchUsers()} icon={<ReloadOutlined/>}/>
-                </Space>
-                </Form>
-            </Space>
-            <Table columns={columns} dataSource={users} />
-        </Card>
-        </>
-        );
-    }
+            <Row gutter={[16,16]}>
+                <Col span={24}>
+                    <div style={style}>
+                        <Space>
+                            <Search placeholder="Recherche" allowClear enterButton style={{ width: 600 }} onSearch={value => {
+                                setSearch(value);
+                                fetchUsers(value);
+                            }} value={search} onChange={e => setSearch(e.target.value)}/>
+                            <Button type="primary" icon={<PlusCircleOutlined/>} onClick={() => {
+                                setEditUser(null);
+                                setModalOpen(true);
+                            }} />
+                        </Space>
+                    </div>
+                    </Col>
+            </Row>
+            <Row gutter={[16,16]}>
+                <Col span={24}>
+                {loading ? (
+                    <Spin />
+                ) : (
+                    <Table
+                        rowKey="name"
+                        dataSource={users}
+                        columns={columns}
+                        pagination={{ pageSize: 8, showSizeChanger: false }}
+                    />
+                )}
+                </Col>
+            </Row>
+            <UserFormModal
+                visible={modalOpen}
+                onCancel={() => { setModalOpen(false); setEditUser(null);} }
+                onSubmit={editUser ? handleUpdate : handleCreate}
+                initialValues={editUser}
+                loading={modalLoading}
+            />
+            </>
+    );
 }
