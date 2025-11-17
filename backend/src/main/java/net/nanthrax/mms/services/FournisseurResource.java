@@ -32,6 +32,16 @@ public class FournisseurResource {
         return entity;
     }
 
+    @GET
+    @Path("/search")
+    public List<FournisseurEntity> search(@QueryParam("q") String query) {
+        if (query == null || query.trim().isEmpty()) {
+            return FournisseurEntity.listAll();
+        }
+        String likeQuery = "%" + query.toLowerCase() + "%";
+        return FournisseurEntity.list("lower(nom) like ?1 or lower(email) like ?1 or lower(telephone) like ?1", likeQuery);
+    }
+
     @POST
     @Transactional
     public FournisseurEntity create(FournisseurEntity fournisseur) {

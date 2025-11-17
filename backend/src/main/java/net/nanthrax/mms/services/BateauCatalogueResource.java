@@ -90,6 +90,7 @@ public class BateauCatalogueResource {
         entity.tva = updatedBateauCatalogue.tva;
         entity.montantTVA = updatedBateauCatalogue.montantTVA;
         entity.prixVenteTTC = updatedBateauCatalogue.prixVenteTTC;
+        entity.fournisseurs = updatedBateauCatalogue.fournisseurs;
         return Response.ok(entity).build();
     }
 

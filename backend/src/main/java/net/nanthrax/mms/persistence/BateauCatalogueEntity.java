@@ -3,6 +3,8 @@ package net.nanthrax.mms.persistence;
 import io.quarkus.hibernate.orm.panache.PanacheEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.OneToMany;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -77,5 +79,8 @@ public class BateauCatalogueEntity extends PanacheEntity {
     public double montantTVA;
 
     public double prixVenteTTC;
+
+    @OneToMany
+    public List<FournisseurEntity> fournisseurs = new ArrayList<>();
 
 }
