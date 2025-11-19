@@ -5,20 +5,18 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.OneToOne;
 
 @Entity
-public class ProduitFournisseurEntity extends PanacheEntity {
-
-    @OneToOne
-    public ProduitCatalogueEntity produit;
+public class FournisseurBateauEntity extends PanacheEntity {
 
     @OneToOne
     public FournisseurEntity fournisseur;
 
-    public String reference;
+    @OneToOne
+    public BateauCatalogueEntity bateau;
 
     public double prixAchatHT;
 
     public double tva;
-
+    
     public double montantTVA;
 
     public double prixAchatTTC;
@@ -26,7 +24,9 @@ public class ProduitFournisseurEntity extends PanacheEntity {
     public double portForfaitaire;
 
     public double portParUnite;
-
+    
     public int nombreMinACommander;
+
+    public String notes;
 
 }

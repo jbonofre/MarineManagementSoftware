@@ -6,7 +6,7 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import net.nanthrax.mms.persistence.ProduitCatalogueEntity;
-import net.nanthrax.mms.persistence.ProduitFournisseurEntity;
+import net.nanthrax.mms.persistence.FournisseurProduitEntity;
 
 import java.util.List;
 
@@ -37,14 +37,14 @@ public class ProduitCatalogueResource {
 
     @GET
     @Path("/fournisseurs")
-    public List<ProduitFournisseurEntity> listProduitsFournisseurs() {
-        return ProduitFournisseurEntity.listAll();
+    public List<FournisseurProduitEntity> listProduitsFournisseurs() {
+        return FournisseurProduitEntity.listAll();
     }
 
     @GET
     @Path("/{id}/fournisseurs")
-    public List<ProduitFournisseurEntity> listFournisseurs(long id) {
-        return ProduitFournisseurEntity.list("produit.id = ?1", id);
+    public List<FournisseurProduitEntity> listFournisseurs(long id) {
+        return FournisseurProduitEntity.list("produit.id = ?1", id);
     }
 
     @POST

@@ -6,7 +6,6 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import net.nanthrax.mms.persistence.FournisseurEntity;
-import net.nanthrax.mms.persistence.ProduitFournisseurEntity;
 
 import java.util.List;
 
@@ -60,20 +59,6 @@ public class FournisseurResource {
 
         entity.delete();
         return Response.status(204).build();
-    }
-
-    @GET
-    @Path("/{id}/produits")
-    public List<ProduitFournisseurEntity> listProduits(long id) {
-        return ProduitFournisseurEntity.list("fournisseur.id = ?1", id);
-    }
-
-    @POST
-    @Path("/{id}/produits")
-    @Transactional
-    public ProduitFournisseurEntity createProduit(ProduitFournisseurEntity produitFournisseur) {
-        produitFournisseur.persist();
-        return produitFournisseur;
     }
 
     @PUT
