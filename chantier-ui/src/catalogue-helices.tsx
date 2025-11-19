@@ -279,6 +279,12 @@ const HeliceCatalogueView: React.FC = () => {
             ),
             sorter: (a, b) => a.evaluation - b.evaluation,
         },
+        { title: 'Stock', dataIndex: 'stock', key: 'stock',
+            sorter: (a, b) => a.stock - b.stock,
+        },
+        { title: 'Prix TTC', dataIndex: 'prixVenteTTC', key: 'prixVenteTTC',
+            sorter: (a, b) => a.prixVenteTTC - b.prixVenteTTC,
+        },
         {
             title: 'Actions',
             key: 'actions',

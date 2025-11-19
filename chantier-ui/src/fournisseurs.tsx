@@ -13,15 +13,20 @@ import {
   Row,
   Col,
   Card,
+  Select,
 } from "antd";
 import {
   EditOutlined,
   DeleteOutlined,
   PlusCircleOutlined,
   SaveOutlined,
+  SearchOutlined,
 } from "@ant-design/icons";
+import axios from "axios";
 
+const style: React.CSSProperties = { padding: '8px 0' };
 const { TextArea } = Input;
+const { Search } = Input;
 
 type Fournisseur = {
   id?: number;
@@ -137,20 +142,41 @@ const Fournisseurs = () => {
     }
   };
 
+  const handleSearch = async (value: string) => {
+    setLoading(true);
+    try {
+      const response = await axios.get("/catalogue/fournisseurs/search", {
+        params: value
+          ? {
+              nom: value,
+              email: value,
+              telephone: value,
+            }
+          : {},
+      });
+      setFournisseurs(response.data);
+    } catch {
+      message.error("Erreur lors de la recherche");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const columns = [
-    { title: "Nom", dataIndex: "nom", key: "nom",
-        sorter: (a,b) => a.nom.localeCompare(b.nom),
-     },
+    {
+      title: "Nom", dataIndex: "nom", key: "nom",
+      sorter: (a, b) => a.nom.localeCompare(b.nom),
+    },
     {
       title: "Évaluation",
       dataIndex: "evaluation",
       key: "evaluation",
       render: (val: number) => <Rate allowHalf value={val} disabled style={{ fontSize: 14 }} />,
       width: 120,
-      sorter: (a,b) => a.evaluation - b.evaluation,
+      sorter: (a, b) => a.evaluation - b.evaluation,
     },
-    { title: "Email", dataIndex: "email", key: "email", sorter: (a,b) => a.email.localeCompare(b.email) },
-    { title: "Téléphone", dataIndex: "telephone", key: "telephone", sorter: (a,b) => a.telephone.localeCompare(b.telephone) },
+    { title: "Email", dataIndex: "email", key: "email", sorter: (a, b) => a.email.localeCompare(b.email) },
+    { title: "Téléphone", dataIndex: "telephone", key: "telephone", sorter: (a, b) => a.telephone.localeCompare(b.telephone) },
     {
       title: "Actions",
       key: "actions",
@@ -178,30 +204,23 @@ const Fournisseurs = () => {
   ];
 
   return (
-    <div style={{ padding: 24 }}>
-      <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
-        <Col>
-          <h2>Fournisseurs</h2>
-        </Col>
-        <Col>
-          <Button
-            type="primary"
-            icon={<PlusCircleOutlined />}
-            onClick={handleNew}
-          >
-            Nouveau Fournisseur
-          </Button>
-        </Col>
-      </Row>
-      <Card>
-        <Table
-          rowKey="id"
-          columns={columns}
-          dataSource={fournisseurs}
-          loading={loading}
-          bordered
-          pagination={{ pageSize: 10 }}
-        />
+    <>
+      <Card title="Fournisseurs">
+        <Row gutter={[16, 16]}>
+          <Col span={24}>
+            <div style={style}>
+              <Space>
+                <Search allowClear placeholder="Rechercher" enterButton={<SearchOutlined />} style={{ width: 600 }} onSearch={handleSearch} />
+                <Button type="primary" icon={<PlusCircleOutlined />} onClick={handleNew} />
+              </Space>
+            </div>
+          </Col>
+        </Row>
+        <Row gutter={[16, 16]}>
+          <Col span={24}>
+            <Table rowKey="id" columns={columns} dataSource={fournisseurs} loading={loading} bordered pagination={{ pageSize: 10 }} />
+          </Col>
+        </Row>
       </Card>
       <Modal
         open={modalVisible}
@@ -271,7 +290,7 @@ const Fournisseurs = () => {
           </Form.Item>
         </Form>
       </Modal>
-    </div>
+    </>
   );
 };
 

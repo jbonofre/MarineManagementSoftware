@@ -176,7 +176,6 @@ const RemorqueCatalogue: React.FC = () => {
   const columns = [
     { title: "Modèle", dataIndex: "modele", key: "modele" },
     { title: "Marque", dataIndex: "marque", key: "marque" },
-    { title: "Description", dataIndex: "description", key: "description" },
     {
       title: "Évaluation",
       dataIndex: "evaluation",
@@ -184,10 +183,8 @@ const RemorqueCatalogue: React.FC = () => {
       render: (rate: number) => <Rate allowHalf disabled value={rate} />,
       width: 130,
     },
-    { title: "PTAC", dataIndex: "ptac", key: "ptac" },
     { title: "Longueur", dataIndex: "longueur", key: "longueur" },
     { title: "Stock", dataIndex: "stock", key: "stock" },
-    { title: "Emplacement", dataIndex: "emplacement", key: "emplacement" },
     { title: "Prix TTC", dataIndex: "prixVenteTTC", key: "prixVenteTTC" },
     {
       title: "Actions",

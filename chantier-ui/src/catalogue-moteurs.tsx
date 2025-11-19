@@ -228,6 +228,12 @@ const MoteurCatalogue = () => {
       render: (_: any, record: any) => <Rate value={record.evaluation} disabled allowHalf={true} />,
       sorter: (a, b) => (a.evaluation || 0) - (b.evaluation || 0),
     },
+    { title: 'Stock', dataIndex: 'stock',
+      sorter: (a, b) => a.stock - b.stock,
+    },
+    { title: 'Prix TTC', dataIndex: 'prixVenteTTC', key: 'prixVenteTTC',
+      sorter: (a, b) => a.prixVenteTTC - b.prixVenteTTC,
+    },
     {
       title: 'Actions',
       key: 'actions',

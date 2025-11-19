@@ -162,6 +162,9 @@ const CatalogueBateaux: React.FC = () => {
             dataIndex: 'stock',
             sorter: (a,b) => a.stock - b.stock,
         },
+        { title: 'Prix TTC', dataIndex: 'prixVenteTTC', key: 'prixVenteTTC',
+            sorter: (a, b) => a.prixVenteTTC - b.prixVenteTTC,
+        },
         {
             title: 'Actions',
             key: 'actions',
