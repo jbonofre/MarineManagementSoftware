@@ -23,6 +23,7 @@ import {
   SearchOutlined,
 } from "@ant-design/icons";
 import axios from "axios";
+import FournisseurBateaux from "./fournisseur-bateaux.tsx";
 
 const style: React.CSSProperties = { padding: '8px 0' };
 const { TextArea } = Input;
@@ -145,15 +146,7 @@ const Fournisseurs = () => {
   const handleSearch = async (value: string) => {
     setLoading(true);
     try {
-      const response = await axios.get("/catalogue/fournisseurs/search", {
-        params: value
-          ? {
-              nom: value,
-              email: value,
-              telephone: value,
-            }
-          : {},
-      });
+      const response = await axios.get("/catalogue/fournisseurs/search", { params: { q: value } });
       setFournisseurs(response.data);
     } catch {
       message.error("Erreur lors de la recherche");
@@ -289,6 +282,7 @@ const Fournisseurs = () => {
             <Input />
           </Form.Item>
         </Form>
+        {editing && <FournisseurBateaux fournisseurId={editing.id!} />}
       </Modal>
     </>
   );
