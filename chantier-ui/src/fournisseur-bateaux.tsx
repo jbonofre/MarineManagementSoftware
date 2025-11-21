@@ -21,6 +21,7 @@ import {
   PlusCircleOutlined,
   SaveOutlined,
   SearchOutlined,
+  ShrinkOutlined,
 } from "@ant-design/icons";
 import axios from "axios";
 
@@ -259,7 +260,7 @@ const FournisseurBateaux = ({ fournisseurId, bateauId }: { fournisseurId?: numbe
   return (
     <Card
       title={isBateauMode ? "Fournisseurs pour ce bateau" : "Catalogue Bateaux du Fournisseur"}
-      extra={<Button type="primary" icon={<PlusCircleOutlined />} onClick={handleNew}>
+      extra={<Button type="primary" icon={<ShrinkOutlined />} onClick={handleNew}>
         {isBateauMode ? "Associer un fournisseur" : "Associer un bateau"}
       </Button>}
       style={{ marginTop: 24 }}
