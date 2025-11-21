@@ -2,15 +2,15 @@ package net.nanthrax.mms.persistence;
 
 import io.quarkus.hibernate.orm.panache.PanacheEntity;
 import jakarta.persistence.Entity;
-import jakarta.persistence.OneToOne;
+import jakarta.persistence.ManyToOne;
 
 @Entity
 public class FournisseurHeliceEntity extends PanacheEntity {
 
-    @OneToOne
+    @ManyToOne
     public FournisseurEntity fournisseur;
 
-    @OneToOne
+    @ManyToOne
     public HeliceCatalogueEntity helice;
 
     public double prixAchatHT;
