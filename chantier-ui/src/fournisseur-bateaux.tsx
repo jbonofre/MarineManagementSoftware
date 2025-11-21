@@ -219,23 +219,28 @@ const FournisseurBateaux = ({ fournisseurId, bateauId }: { fournisseurId?: numbe
       title: "Fournisseur",
       dataIndex: ["fournisseur", "id"],
       key: "fournisseur",
+      sorter: (a, b) => a.fournisseur.nom.localeCompare(b.fournisseur.nom),
+      filters: fournisseurs.map(f => ({ text: f.nom, value: f.id })),
+      onFilter: (value, record) => record.fournisseur.id === value,
       render: (_: any, record: FournisseurBateau) =>
         <span>{record.fournisseur.nom}</span>
     }] : [{
       title: "Bateau",
       dataIndex: ["bateau", "id"],
       key: "bateau",
+      sorter: (a, b) => a.bateau.marque.localeCompare(b.bateau.marque) + a.bateau.modele.localeCompare(b.bateau.modele),
+      filters: bateauxCatalogue.map(b => ({ text: b.marque + " " + b.modele, value: b.id })),
+      onFilter: (value, record) => record.bateau.id === value,
       render: (_: any, record: FournisseurBateau) =>
         <span>{record.bateau.marque} {record.bateau.modele}</span>
     }]),
-    { title: "Prix Achat HT", dataIndex: "prixAchatHT", key: "prixAchatHT" },
-    { title: "TVA (%)", dataIndex: "tva", key: "tva" },
-    { title: "Montant TVA", dataIndex: "montantTVA", key: "montantTVA" },
-    { title: "Prix Achat TTC", dataIndex: "prixAchatTTC", key: "prixAchatTTC" },
-    { title: "Port forfaitaire", dataIndex: "portForfaitaire", key: "portForfaitaire" },
-    { title: "Port/unité", dataIndex: "portParUnite", key: "portParUnite" },
-    { title: "Qte min. commande", dataIndex: "nombreMinACommander", key: "nombreMinACommander" },
-    { title: "Notes", dataIndex: "notes", key: "notes", render: val => <span style={{ whiteSpace: 'pre-wrap' }}>{val}</span> },
+    { title: "Prix Achat HT", dataIndex: "prixAchatHT", key: "prixAchatHT", sorter: (a, b) => a.prixAchatHT - b.prixAchatHT },
+    { title: "TVA (%)", dataIndex: "tva", key: "tva", sorter: (a, b) => a.tva - b.tva },
+    { title: "Montant TVA", dataIndex: "montantTVA", key: "montantTVA", sorter: (a, b) => a.montantTVA - b.montantTVA },
+    { title: "Prix Achat TTC", dataIndex: "prixAchatTTC", key: "prixAchatTTC", sorter: (a, b) => a.prixAchatTTC - b.prixAchatTTC },
+    { title: "Port forfaitaire", dataIndex: "portForfaitaire", key: "portForfaitaire", sorter: (a, b) => a.portForfaitaire - b.portForfaitaire },
+    { title: "Port/unité", dataIndex: "portParUnite", key: "portParUnite", sorter: (a, b) => a.portParUnite - b.portParUnite },
+    { title: "Qte min. commande", dataIndex: "nombreMinACommander", key: "nombreMinACommander", sorter: (a, b) => a.nombreMinACommander - b.nombreMinACommander },
     {
       title: "Actions",
       key: "actions",
