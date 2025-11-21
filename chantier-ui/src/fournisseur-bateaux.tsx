@@ -62,22 +62,34 @@ const defaultFournisseurBateau: Partial<FournisseurBateau> = {
   notes: "",
 };
 
-const FournisseurBateaux = ({ fournisseurId }: { fournisseurId: number }) => {
+const FournisseurBateaux = ({ fournisseurId, bateauId }: { fournisseurId?: number; bateauId?: number }) => {
   const [bateauxAssocies, setBateauxAssocies] = useState<FournisseurBateau[]>([]);
   const [bateauxCatalogue, setBateauxCatalogue] = useState<Bateau[]>([]);
+  const [fournisseurs, setFournisseurs] = useState<Fournisseur[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [editing, setEditing] = useState<Partial<FournisseurBateau> | null>(null);
   const [form] = Form.useForm();
 
-  // Fetch all association entries for this fournisseur
+  const isBateauMode = !!bateauId;
+  const isFournisseurMode = !!fournisseurId;
+
+  // Fetch all association entries for this fournisseur or bateau
   const fetchAssocies = async () => {
     setLoading(true);
     try {
-      const { data } = await axios.get(`/fournisseur-bateau/fournisseur/${fournisseurId}`);
-      setBateauxAssocies(data);
+      let url = '';
+      if (isBateauMode && bateauId) {
+        url = `/fournisseur-bateau/search?bateauId=${bateauId}`;
+      } else if (isFournisseurMode && fournisseurId) {
+        url = `/fournisseur-bateau/fournisseur/${fournisseurId}`;
+      }
+      if (url) {
+        const { data } = await axios.get(url);
+        setBateauxAssocies(data);
+      }
     } catch {
-      message.error("Erreur lors du chargement des bateaux associés");
+      message.error("Erreur lors du chargement des associations");
     } finally {
       setLoading(false);
     }
@@ -95,19 +107,35 @@ const FournisseurBateaux = ({ fournisseurId }: { fournisseurId: number }) => {
     }
   };
 
-  useEffect(() => {
-    if (fournisseurId) {
-      fetchAssocies();
-      fetchBateauxCatalogue();
+  const fetchFournisseurs = async () => {
+    setLoading(true);
+    try {
+      const { data } = await axios.get("/catalogue/fournisseurs");
+      setFournisseurs(data);
+    } catch {
+      message.error("Erreur lors du chargement des fournisseurs");
+    } finally {
+      setLoading(false);
     }
-  }, [fournisseurId]);
+  };
+
+  useEffect(() => {
+    if (fournisseurId || bateauId) {
+      fetchAssocies();
+      if (isBateauMode) {
+        fetchFournisseurs();
+      } else {
+        fetchBateauxCatalogue();
+      }
+    }
+  }, [fournisseurId, bateauId]);
 
   // Add
   const handleNew = () => {
     setEditing({
       ...defaultFournisseurBateau,
-      fournisseur: { id: fournisseurId, nom: "" }, // nom optional here
-      bateau: undefined,
+      fournisseur: isFournisseurMode ? { id: fournisseurId!, nom: "" } : undefined,
+      bateau: isBateauMode ? { id: bateauId!, marque: "", modele: "" } : undefined,
     });
     setModalVisible(true);
     setTimeout(() => form.resetFields());
@@ -115,9 +143,15 @@ const FournisseurBateaux = ({ fournisseurId }: { fournisseurId: number }) => {
 
   // Edit
   const handleEdit = (record: FournisseurBateau) => {
-    setEditing({ ...record, bateau: { ...record.bateau } });
+    setEditing({ ...record, bateau: { ...record.bateau }, fournisseur: { ...record.fournisseur } });
     setModalVisible(true);
-    setTimeout(() => form.setFieldsValue({ ...record, bateauId: record.bateau.id }));
+    setTimeout(() => {
+      if (isBateauMode) {
+        form.setFieldsValue({ ...record, fournisseurId: record.fournisseur.id });
+      } else {
+        form.setFieldsValue({ ...record, bateauId: record.bateau.id });
+      }
+    });
   };
 
   // Delete
@@ -139,13 +173,26 @@ const FournisseurBateaux = ({ fournisseurId }: { fournisseurId: number }) => {
   const handleModalOk = async () => {
     try {
       const values = await form.validateFields();
-      let selectedBateau = bateauxCatalogue.find((b) => b.id === values.bateauId);
-      let body: FournisseurBateau = {
-        ...editing,
-        ...values,
-        bateau: selectedBateau!,
-        fournisseur: { id: fournisseurId, nom: "" },
-      };
+      let body: FournisseurBateau;
+      
+      if (isBateauMode) {
+        let selectedFournisseur = fournisseurs.find((f) => f.id === values.fournisseurId);
+        body = {
+          ...editing,
+          ...values,
+          fournisseur: selectedFournisseur!,
+          bateau: { id: bateauId!, marque: "", modele: "" },
+        };
+      } else {
+        let selectedBateau = bateauxCatalogue.find((b) => b.id === values.bateauId);
+        body = {
+          ...editing,
+          ...values,
+          bateau: selectedBateau!,
+          fournisseur: { id: fournisseurId!, nom: "" },
+        };
+      }
+      
       setLoading(true);
 
       if (editing && editing.id) {
@@ -168,13 +215,19 @@ const FournisseurBateaux = ({ fournisseurId }: { fournisseurId: number }) => {
   };
 
   const columns = [
-    {
+    ...(isBateauMode ? [{
+      title: "Fournisseur",
+      dataIndex: ["fournisseur", "id"],
+      key: "fournisseur",
+      render: (_: any, record: FournisseurBateau) =>
+        <span>{record.fournisseur.nom}</span>
+    }] : [{
       title: "Bateau",
       dataIndex: ["bateau", "id"],
       key: "bateau",
       render: (_: any, record: FournisseurBateau) =>
         <span>{record.bateau.marque} {record.bateau.modele}</span>
-    },
+    }]),
     { title: "Prix Achat HT", dataIndex: "prixAchatHT", key: "prixAchatHT" },
     { title: "TVA (%)", dataIndex: "tva", key: "tva" },
     { title: "Montant TVA", dataIndex: "montantTVA", key: "montantTVA" },
@@ -200,8 +253,10 @@ const FournisseurBateaux = ({ fournisseurId }: { fournisseurId: number }) => {
 
   return (
     <Card
-      title="Catalogue Bateaux du Fournisseur"
-      extra={<Button type="primary" icon={<PlusCircleOutlined />} onClick={handleNew}>Associer un bateau</Button>}
+      title={isBateauMode ? "Fournisseurs pour ce bateau" : "Catalogue Bateaux du Fournisseur"}
+      extra={<Button type="primary" icon={<PlusCircleOutlined />} onClick={handleNew}>
+        {isBateauMode ? "Associer un fournisseur" : "Associer un bateau"}
+      </Button>}
       style={{ marginTop: 24 }}
     >
       <Spin spinning={loading}>
@@ -219,7 +274,7 @@ const FournisseurBateaux = ({ fournisseurId }: { fournisseurId: number }) => {
         onCancel={() => setModalVisible(false)}
         onOk={handleModalOk}
         destroyOnClose
-        title={editing && editing.id ? "Modifier l'association" : "Associer un Bateau"}
+        title={editing && editing.id ? "Modifier l'association" : (isBateauMode ? "Associer un Fournisseur" : "Associer un Bateau")}
         okText="Enregistrer"
         cancelText="Annuler"
         width={640}
@@ -239,27 +294,51 @@ const FournisseurBateaux = ({ fournisseurId }: { fournisseurId: number }) => {
             }
           }}
         >
-          <Form.Item
-            label="Bateau catalogue"
-            name="bateauId"
-            rules={[{ required: true, message: "Sélectionnez un bateau du catalogue" }]}
-          >
-            <Select
-              showSearch
-              placeholder="Choisissez un bateau"
-              optionFilterProp="children"
-              filterOption={(input, option: any) =>
-                `${option.children}`.toLowerCase().includes(input.toLowerCase())
-              }
-              disabled={!!(editing && editing.id)}
+          {isBateauMode ? (
+            <Form.Item
+              label="Fournisseur"
+              name="fournisseurId"
+              rules={[{ required: true, message: "Sélectionnez un fournisseur" }]}
             >
-              {bateauxCatalogue.map(b => (
-                <Option key={b.id} value={b.id}>
-                  {b.marque} {b.modele}
-                </Option>
-              ))}
-            </Select>
-          </Form.Item>
+              <Select
+                showSearch
+                placeholder="Choisissez un fournisseur"
+                optionFilterProp="children"
+                filterOption={(input, option: any) =>
+                  `${option.children}`.toLowerCase().includes(input.toLowerCase())
+                }
+                disabled={!!(editing && editing.id)}
+              >
+                {fournisseurs.map(f => (
+                  <Option key={f.id} value={f.id}>
+                    {f.nom}
+                  </Option>
+                ))}
+              </Select>
+            </Form.Item>
+          ) : (
+            <Form.Item
+              label="Bateau catalogue"
+              name="bateauId"
+              rules={[{ required: true, message: "Sélectionnez un bateau du catalogue" }]}
+            >
+              <Select
+                showSearch
+                placeholder="Choisissez un bateau"
+                optionFilterProp="children"
+                filterOption={(input, option: any) =>
+                  `${option.children}`.toLowerCase().includes(input.toLowerCase())
+                }
+                disabled={!!(editing && editing.id)}
+              >
+                {bateauxCatalogue.map(b => (
+                  <Option key={b.id} value={b.id}>
+                    {b.marque} {b.modele}
+                  </Option>
+                ))}
+              </Select>
+            </Form.Item>
+          )}
           <Row gutter={8}>
             <Col span={12}>
               <Form.Item

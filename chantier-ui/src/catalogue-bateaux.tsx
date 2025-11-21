@@ -3,6 +3,7 @@ import { Image, Table, Rate, Row, Col, Card, Button, Modal, Form, AutoComplete, 
 import { PlusCircleOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import { bateauTypes } from './data.tsx';
+import FournisseurBateaux from './fournisseur-bateaux.tsx';
 
 const style: React.CSSProperties = { padding: '8px 0' };
 const { Option } = Select;
@@ -395,6 +396,13 @@ const CatalogueBateaux: React.FC = () => {
                             <Form.Item name="prixVenteTTC" label="Prix de vente TTC">
                                 <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
                             </Form.Item>
+                        {/* Affiche la liste des fournisseurs pour ce bateau quand en modification */}
+                        {isEdit && currentBateau && currentBateau.id && (
+                            <div style={{ marginTop: 32 }}>
+                                <h3>Fournisseurs pour ce bateau</h3>
+                            <FournisseurBateaux bateauId={currentBateau.id} />
+                            </div>
+                        )}
                         </Form>
                     </Modal>
                 </Col>
