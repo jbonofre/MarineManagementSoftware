@@ -2,13 +2,19 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Image, Table, Rate, Row, Col, Card, Button, Modal, Form, AutoComplete, Input, InputNumber, Select, Space, Popconfirm, message } from 'antd';
 import { PlusCircleOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import axios from 'axios';
-import { bateauTypes } from './data.tsx';
 import FournisseurBateaux from './fournisseur-bateaux.tsx';
 
 const style: React.CSSProperties = { padding: '8px 0' };
 const { Option } = Select;
 const { Search } = Input;
 const { TextArea } = Input;
+
+const bateauTypes = [
+    { text: 'Bateau à Moteur', value: 'Bateau à Moteur', label: 'Bateau à Moteur' },
+    { text: 'Voilier', value: 'Voilier', label: 'Voilier' },
+    { text: 'Catamaran', value: 'Catamaran', label: 'Catamaran' },
+    { text: 'Autre', value: 'Autre', label: 'Autre' },
+];
 
 interface BateauCatalogueEntity {
     id?: number;

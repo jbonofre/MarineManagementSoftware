@@ -3,13 +3,12 @@ import { Layout, Input, Col, Row, Image, Menu, Button, message } from 'antd';
 import { Route, Switch } from 'react-router';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { Link } from 'react-router-dom';
-import { UserOutlined, TeamOutlined, HomeOutlined, AmazonOutlined, SettingOutlined, ToolOutlined, StockOutlined, FileOutlined, FileProtectOutlined, ReadOutlined, DesktopOutlined, DeploymentUnitOutlined, DisconnectOutlined, DashboardOutlined, CalendarOutlined, FileDoneOutlined, CheckSquareOutlined, ScheduleOutlined } from '@ant-design/icons';
+import { UserOutlined, TeamOutlined, HomeOutlined, AmazonOutlined, SettingOutlined, ToolOutlined, StockOutlined, FileOutlined, FileProtectOutlined, ReadOutlined, DesktopOutlined, DeploymentUnitOutlined, DisconnectOutlined, DashboardOutlined, CalendarOutlined, FileDoneOutlined, CheckSquareOutlined, BarsOutlined } from '@ant-design/icons';
 import Icon from '@ant-design/icons';
 import { ReactComponent as BoatOutlined } from './boat.svg';
 import { ReactComponent as EngineOutlined } from './moteur.svg';
 import { ReactComponent as ParcOutlined } from './parc.svg';
 import { ReactComponent as TailerOutlined } from './remorque.svg';
-import { bateaux, moteurs, remorques } from './data.tsx';
 import Home from './home.tsx';
 import Clients from './clients.tsx';
 import Bateaux from './bateaux.tsx';
@@ -27,6 +26,7 @@ import Comptoir from './comptoir.tsx';
 import Vente from './vente.tsx';
 import Forfaits from './forfaits.tsx';
 import CatalogueRemorques from './catalogue-remorques.tsx';
+import BateauxClients from './clients-bateaux.tsx';
 
 export function demo() {
     message.warning("Vous êtes sur une version de démonstration de Marine Management Software. Il n'est pas possible d'ajouter ou supprimer des éléments.")
@@ -39,10 +39,11 @@ function SideMenu(props) {
     const menuItems = [
       { key: 'home', label: <Link to="/">Accueil</Link>, icon: <HomeOutlined/> },
       { key: 'dashboard', label: 'Tableau de Bord', icon: <DashboardOutlined/> },
-      { key: 'clients', label: <Link to="/clients">Clients</Link>, icon: <TeamOutlined />, children: [
-        { key: 'bateaux', label: <Link to="/bateaux">Bateaux</Link>, icon: <Icon component={ BoatOutlined } />},
+      { key: 'parc', label: 'Parc', icon: <BarsOutlined />, children: [
+        { key: 'clients', label: <Link to="/clients">Clients</Link>, icon: <TeamOutlined /> },
+        { key: 'bateaux', label: <Link to="/clients/bateaux">Bateaux</Link>, icon: <Icon component={ BoatOutlined } />},
         { key: 'moteurs', label: <Link to="/moteurs">Moteurs</Link>, icon: <Icon component={ EngineOutlined } /> },
-        { key: 'remorques', label: <Link to="/remorques">Remorques</Link>, icon: <Icon component= { TailerOutlined } /> }
+        { key: 'remorques', label: <Link to="/remorques">Remorques</Link>, icon: <Icon component={ TailerOutlined } /> }
       ] },
       { key: 'catalogue', label: 'Catalogue', icon: <ReadOutlined/>, children: [
         { key: 'produits', label: <Link to="/catalogue/produits">Produits</Link>, icon: <StockOutlined /> },
@@ -124,17 +125,11 @@ export default function Workspace(props) {
                     <Route path="/" key="home" exact={true}>
                         <Home/>
                     </Route>
-                    <Route path="/clients" key="clients">
+                    <Route path="/clients" key="clients" exact={true}>
                         <Clients />
                     </Route>
-                    <Route path="/bateaux" key="bateaux">
-                        <Bateaux bateaux={bateaux} />
-                    </Route>
-                    <Route path="/moteurs" key="moteurs">
-                        <Moteurs moteurs={moteurs} />
-                    </Route>
-                    <Route path="/remorques" key="remorques">
-                        <Remorques remorques={remorques} />
+                    <Route path="/clients/bateaux" key="clients-bateaux">
+                        <BateauxClients />
                     </Route>
                     <Route path="/catalogue/produits" key="produits">
                         <Produits />
