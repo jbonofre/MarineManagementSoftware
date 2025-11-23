@@ -19,6 +19,7 @@ import {
   SearchOutlined,
 } from "@ant-design/icons";
 import axios from "axios";
+import clients from "./clients";
 
 const { Option } = Select;
 const { Search } = Input;
@@ -70,6 +71,7 @@ const defaultBateau: BateauClient = {
 function BateauxClients() {
   const [bateaux, setBateaux] = useState<BateauClient[]>([]);
   const [bateauxCatalogue, setBateauxCatalogue] = useState<any[]>([]);
+  const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [editing, setEditing] = useState<BateauClient | null>(null);
@@ -104,7 +106,13 @@ function BateauxClients() {
   useEffect(() => {
     fetchBateaux();
     fetchBateauxCatalogue();
+    fetchClients();
   }, []);
+
+  const fetchClients = async () => {
+    const res = await axios.get('/clients');
+    setClients(res.data);
+  };
 
   const handleAdd = () => {
     setEditing(null);
@@ -117,6 +125,7 @@ function BateauxClients() {
     form.setFieldsValue({
       ...record,
       modeleId: record.modele?.id || undefined,
+      proprietaires: record.proprietaires?.map((p: any) => p.id || p) || [],
     });
     setModalVisible(true);
   };
@@ -138,11 +147,14 @@ function BateauxClients() {
     try {
       const values = await form.validateFields();
       setLoading(true);
-      // Transform modeleId to modele object
-      const { modeleId, ...restValues } = values;
+      // Transform modeleId to modele object and proprietaires IDs to objects
+      const { modeleId, proprietaires, ...restValues } = values;
       const payload = {
         ...restValues,
         modele: modeleId ? { id: modeleId } : null,
+        proprietaires: proprietaires && Array.isArray(proprietaires) 
+          ? proprietaires.map((id: number) => ({ id }))
+          : [],
       };
       if (editing && editing.id) {
         // update
@@ -168,10 +180,10 @@ function BateauxClients() {
     { title: "Nom", dataIndex: "name", key: "name" },
     { title: "Immatriculation", dataIndex: "immatriculation", key: "immatriculation" },
     { title: "Propriétaires", dataIndex: "proprietaires", key: "proprietaires",
-      render: (proprietaires: any[]) => (proprietaires && proprietaires.length ? proprietaires.map(p => (p.nom || p.name || "-")).join(", ") : "-"),
+      render: (proprietaires: any[]) => (proprietaires && proprietaires.length ? proprietaires.map(p => (p.prenom + " " + p.nom)).join(", ") : ""),
     },
-    { title: "Modèle", dataIndex: ["modele", "name"], key: "modele",
-      render: (modele: any) => modele && modele.name ? modele.name : "-",
+    { title: "Modèle", dataIndex: "modele", key: "modele",
+      render: (modele: any) => (modele ? (modele.marque) + " " + (modele.modele) + " (" + (modele.annee) + ")" : ""),
     },
     {
       title: "Actions",
@@ -308,6 +320,21 @@ function BateauxClients() {
                   {bateau.marque} {bateau.modele} {bateau.annee ? `(${bateau.annee})` : ''}
                 </Select.Option>
               ))}
+            </Select>
+          </Form.Item>
+          <Form.Item label="Propriétaires" name="proprietaires">
+            <Select
+              mode="tags"
+              style={{ width: '100%' }}
+              placeholder="Entrer les noms des propriétaires"
+              tokenSeparators={[',']}
+              allowClear
+            >
+                {clients.map((client: any) => (
+                    <Select.Option key={client.id} value={client.id}>
+                        {client.prenom} {client.nom}
+                    </Select.Option>
+                ))}
             </Select>
           </Form.Item>
           {/* propriétaires, moteurs, remorque, équipements could be handled by extra fields/components if needed */}
