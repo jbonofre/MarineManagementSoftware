@@ -398,10 +398,7 @@ const CatalogueBateaux: React.FC = () => {
                             </Form.Item>
                         {/* Affiche la liste des fournisseurs pour ce bateau quand en modification */}
                         {isEdit && currentBateau && currentBateau.id && (
-                            <div style={{ marginTop: 32 }}>
-                                <h3>Fournisseurs pour ce bateau</h3>
                             <FournisseurBateaux bateauId={currentBateau.id} />
-                            </div>
                         )}
                         </Form>
                     </Modal>

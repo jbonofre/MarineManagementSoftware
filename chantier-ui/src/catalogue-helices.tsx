@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Table, Button, Modal, Form, Input, InputNumber, Image, Select, message, Popconfirm, Space, Row, Col, Rate, Card } from 'antd';
 import axios from 'axios';
 import { PlusCircleOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons';
+import FournisseurHelices from './fournisseur-helices.tsx';
 
 const style: React.CSSProperties = { padding: '8px 0' };
 const { Search } = Input;
@@ -465,6 +466,9 @@ const HeliceCatalogueView: React.FC = () => {
                             <Form.Item name="prixVenteTTC" label="Prix Vente TTC">
                                 <InputNumber min={0} step={0.01} addonAfter="€" style={{ width: '100%' }} />
                             </Form.Item>
+                        {modalMode === 'edit' && editing && editing.id && (
+                                <FournisseurHelices heliceId={editing.id} />
+                        )}
                         </Form>
                     </Modal>
                 </Col>

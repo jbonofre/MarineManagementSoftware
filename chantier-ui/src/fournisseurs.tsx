@@ -24,6 +24,7 @@ import {
 } from "@ant-design/icons";
 import axios from "axios";
 import FournisseurBateaux from "./fournisseur-bateaux.tsx";
+import FournisseurHelices from "./fournisseur-helices.tsx";
 
 const style: React.CSSProperties = { padding: '8px 0' };
 const { TextArea } = Input;
@@ -283,6 +284,7 @@ const Fournisseurs = () => {
           </Form.Item>
         </Form>
         {editing && <FournisseurBateaux fournisseurId={editing.id!} />}
+        {editing && <FournisseurHelices fournisseurId={editing.id!} />}
       </Modal>
     </>
   );
