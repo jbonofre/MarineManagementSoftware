@@ -26,6 +26,7 @@ import axios from "axios";
 import FournisseurBateaux from "./fournisseur-bateaux.tsx";
 import FournisseurHelices from "./fournisseur-helices.tsx";
 import FournisseurMoteurs from "./fournisseur-moteurs.tsx";
+import FournisseurRemorques from "./fournisseur-remorques.tsx";
 
 const style: React.CSSProperties = { padding: '8px 0' };
 const { TextArea } = Input;
@@ -287,6 +288,7 @@ const Fournisseurs = () => {
         {editing && <FournisseurBateaux fournisseurId={editing.id!} />}
         {editing && <FournisseurMoteurs fournisseurId={editing.id!} />}
         {editing && <FournisseurHelices fournisseurId={editing.id!} />}
+        {editing && <FournisseurRemorques fournisseurId={editing.id!} />}
       </Modal>
     </>
   );

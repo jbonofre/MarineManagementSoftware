@@ -18,6 +18,7 @@ import {
 } from "antd";
 import { PlusCircleOutlined, EditOutlined, DeleteOutlined, SearchOutlined } from "@ant-design/icons";
 import axios from "axios";
+import FournisseurRemorques from "./fournisseur-remorques.tsx";
 
 const style: React.CSSProperties = { padding: '8px 0' };
 const { Search } = Input;
@@ -404,6 +405,9 @@ const RemorqueCatalogue: React.FC = () => {
             <InputNumber min={0} style={{ width: "100%" }} step={100} />
           </Form.Item>
         </Form>
+        {editingRemorque && editingRemorque.id && (
+          <FournisseurRemorques remorqueId={editingRemorque.id} />
+        )}
       </Modal>
     </Card>
     </>
