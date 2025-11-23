@@ -18,9 +18,6 @@ import {
 import {
   EditOutlined,
   DeleteOutlined,
-  PlusCircleOutlined,
-  SaveOutlined,
-  SearchOutlined,
   ShrinkOutlined,
 } from "@ant-design/icons";
 import axios from "axios";
@@ -30,18 +27,18 @@ const { Option } = Select;
 type Fournisseur = {
   id: number;
   nom: string;
-}
+};
 
-type Bateau = {
+type Moteur = {
   id: number;
   marque: string;
   modele: string;
 };
 
-type FournisseurBateau = {
+type FournisseurMoteur = {
   id?: number;
   fournisseur: Fournisseur;
-  bateau: Bateau;
+  moteur: Moteur;
   prixAchatHT?: number;
   tva?: number;
   montantTVA?: number;
@@ -50,9 +47,9 @@ type FournisseurBateau = {
   portParUnite?: number;
   nombreMinACommander?: number;
   notes?: string;
-}
+};
 
-const defaultFournisseurBateau: Partial<FournisseurBateau> = {
+const defaultFournisseurMoteur: Partial<FournisseurMoteur> = {
   prixAchatHT: 0,
   tva: 20,
   montantTVA: 0,
@@ -63,31 +60,37 @@ const defaultFournisseurBateau: Partial<FournisseurBateau> = {
   notes: "",
 };
 
-const FournisseurBateaux = ({ fournisseurId, bateauId }: { fournisseurId?: number; bateauId?: number }) => {
-  const [bateauxAssocies, setBateauxAssocies] = useState<FournisseurBateau[]>([]);
-  const [bateauxCatalogue, setBateauxCatalogue] = useState<Bateau[]>([]);
+const FournisseurMoteurs = ({
+  fournisseurId,
+  moteurId,
+}: {
+  fournisseurId?: number;
+  moteurId?: number;
+}) => {
+  const [moteursAssocies, setMoteursAssocies] = useState<FournisseurMoteur[]>([]);
+  const [moteursCatalogue, setMoteursCatalogue] = useState<Moteur[]>([]);
   const [fournisseurs, setFournisseurs] = useState<Fournisseur[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
-  const [editing, setEditing] = useState<Partial<FournisseurBateau> | null>(null);
+  const [editing, setEditing] = useState<Partial<FournisseurMoteur> | null>(null);
   const [form] = Form.useForm();
 
-  const isBateauMode = !!bateauId;
+  const isMoteurMode = !!moteurId;
   const isFournisseurMode = !!fournisseurId;
 
-  // Fetch all association entries for this fournisseur or bateau
+  // Fetch associations
   const fetchAssocies = async () => {
     setLoading(true);
     try {
-      let url = '';
-      if (isBateauMode && bateauId) {
-        url = `/fournisseur-bateau/search?bateauId=${bateauId}`;
+      let url = "";
+      if (isMoteurMode && moteurId) {
+        url = `/fournisseur-moteur/search?moteurId=${moteurId}`;
       } else if (isFournisseurMode && fournisseurId) {
-        url = `/fournisseur-bateau/fournisseur/${fournisseurId}`;
+        url = `/fournisseur-moteur/fournisseur/${fournisseurId}`;
       }
       if (url) {
         const { data } = await axios.get(url);
-        setBateauxAssocies(data);
+        setMoteursAssocies(data);
       }
     } catch {
       message.error("Erreur lors du chargement des associations");
@@ -96,18 +99,20 @@ const FournisseurBateaux = ({ fournisseurId, bateauId }: { fournisseurId?: numbe
     }
   };
 
-  const fetchBateauxCatalogue = async () => {
+  // Fetch all moteurs
+  const fetchMoteursCatalogue = async () => {
     setLoading(true);
     try {
-      const { data } = await axios.get("/catalogue/bateaux");
-      setBateauxCatalogue(data);
+      const { data } = await axios.get("/catalogue/moteurs");
+      setMoteursCatalogue(data);
     } catch {
-      message.error("Erreur lors du chargement du catalogue de bateaux");
+      message.error("Erreur lors du chargement du catalogue moteurs");
     } finally {
       setLoading(false);
     }
   };
 
+  // Fetch all fournisseurs
   const fetchFournisseurs = async () => {
     setLoading(true);
     try {
@@ -121,36 +126,37 @@ const FournisseurBateaux = ({ fournisseurId, bateauId }: { fournisseurId?: numbe
   };
 
   useEffect(() => {
-    if (fournisseurId || bateauId) {
+    if (fournisseurId || moteurId) {
       fetchAssocies();
-      if (isBateauMode) {
+      if (isMoteurMode) {
         fetchFournisseurs();
       } else {
-        fetchBateauxCatalogue();
+        fetchMoteursCatalogue();
       }
     }
-  }, [fournisseurId, bateauId]);
+    // eslint-disable-next-line
+  }, [fournisseurId, moteurId]);
 
-  // Add
+  // Create
   const handleNew = () => {
     setEditing({
-      ...defaultFournisseurBateau,
+      ...defaultFournisseurMoteur,
       fournisseur: isFournisseurMode ? { id: fournisseurId!, nom: "" } : undefined,
-      bateau: isBateauMode ? { id: bateauId!, marque: "", modele: "" } : undefined,
+      moteur: isMoteurMode ? { id: moteurId!, marque: "", modele: "" } : undefined,
     });
     setModalVisible(true);
     setTimeout(() => form.resetFields());
   };
 
   // Edit
-  const handleEdit = (record: FournisseurBateau) => {
-    setEditing({ ...record, bateau: { ...record.bateau }, fournisseur: { ...record.fournisseur } });
+  const handleEdit = (record: FournisseurMoteur) => {
+    setEditing({ ...record, moteur: { ...record.moteur }, fournisseur: { ...record.fournisseur } });
     setModalVisible(true);
     setTimeout(() => {
-      if (isBateauMode) {
+      if (isMoteurMode) {
         form.setFieldsValue({ ...record, fournisseurId: record.fournisseur.id });
       } else {
-        form.setFieldsValue({ ...record, bateauId: record.bateau.id });
+        form.setFieldsValue({ ...record, moteurId: record.moteur.id });
       }
     });
   };
@@ -160,7 +166,7 @@ const FournisseurBateaux = ({ fournisseurId, bateauId }: { fournisseurId?: numbe
     if (!id) return;
     setLoading(true);
     try {
-      await axios.delete(`/fournisseur-bateau/${id}`);
+      await axios.delete(`/fournisseur-moteur/${id}`);
       message.success("Supprimé avec succès");
       fetchAssocies();
     } catch {
@@ -170,39 +176,36 @@ const FournisseurBateaux = ({ fournisseurId, bateauId }: { fournisseurId?: numbe
     }
   };
 
-  // Create / Update
+  // Save (Create/Update)
   const handleModalOk = async () => {
     try {
       const values = await form.validateFields();
-      let body: FournisseurBateau;
-      
-      if (isBateauMode) {
+      let body: FournisseurMoteur;
+
+      if (isMoteurMode) {
         let selectedFournisseur = fournisseurs.find((f) => f.id === values.fournisseurId);
         body = {
           ...editing,
           ...values,
           fournisseur: selectedFournisseur!,
-          bateau: { id: bateauId!, marque: "", modele: "" },
+          moteur: { id: moteurId!, marque: "", modele: "" },
         };
       } else {
-        let selectedBateau = bateauxCatalogue.find((b) => b.id === values.bateauId);
+        let selectedMoteur = moteursCatalogue.find((m) => m.id === values.moteurId);
         body = {
           ...editing,
           ...values,
-          bateau: selectedBateau!,
+          moteur: selectedMoteur!,
           fournisseur: { id: fournisseurId!, nom: "" },
         };
       }
-      
-      setLoading(true);
 
+      setLoading(true);
       if (editing && editing.id) {
-        // update
-        await axios.put(`/fournisseur-bateau/${editing.id}`, body);
+        await axios.put(`/fournisseur-moteur/${editing.id}`, body);
         message.success("Modifié avec succès");
       } else {
-        // create
-        await axios.post("/fournisseur-bateau", body);
+        await axios.post("/fournisseur-moteur", body);
         message.success("Ajouté avec succès");
       }
       setModalVisible(false);
@@ -216,60 +219,132 @@ const FournisseurBateaux = ({ fournisseurId, bateauId }: { fournisseurId?: numbe
   };
 
   const columns = [
-    ...(isBateauMode ? [{
-      title: "Fournisseur",
-      dataIndex: ["fournisseur", "id"],
-      key: "fournisseur",
-      sorter: (a, b) => a.fournisseur.nom.localeCompare(b.fournisseur.nom),
-      filters: fournisseurs.map(f => ({ text: f.nom, value: f.id })),
-      onFilter: (value, record) => record.fournisseur.id === value,
-      render: (_: any, record: FournisseurBateau) =>
-        <span>{record.fournisseur.nom}</span>
-    }] : [{
-      title: "Bateau",
-      dataIndex: ["bateau", "id"],
-      key: "bateau",
-      sorter: (a, b) => a.bateau.marque.localeCompare(b.bateau.marque) + a.bateau.modele.localeCompare(b.bateau.modele),
-      filters: bateauxCatalogue.map(b => ({ text: b.marque + " " + b.modele, value: b.id })),
-      onFilter: (value, record) => record.bateau.id === value,
-      render: (_: any, record: FournisseurBateau) =>
-        <span>{record.bateau.marque} {record.bateau.modele}</span>
-    }]),
-    { title: "Prix Achat HT", dataIndex: "prixAchatHT", key: "prixAchatHT", sorter: (a, b) => a.prixAchatHT - b.prixAchatHT },
-    { title: "TVA (%)", dataIndex: "tva", key: "tva", sorter: (a, b) => a.tva - b.tva },
-    { title: "Montant TVA", dataIndex: "montantTVA", key: "montantTVA", sorter: (a, b) => a.montantTVA - b.montantTVA },
-    { title: "Prix Achat TTC", dataIndex: "prixAchatTTC", key: "prixAchatTTC", sorter: (a, b) => a.prixAchatTTC - b.prixAchatTTC },
-    { title: "Port forfaitaire", dataIndex: "portForfaitaire", key: "portForfaitaire", sorter: (a, b) => a.portForfaitaire - b.portForfaitaire },
-    { title: "Port/unité", dataIndex: "portParUnite", key: "portParUnite", sorter: (a, b) => a.portParUnite - b.portParUnite },
-    { title: "Qte min. commande", dataIndex: "nombreMinACommander", key: "nombreMinACommander", sorter: (a, b) => a.nombreMinACommander - b.nombreMinACommander },
+    ...(isMoteurMode
+      ? [
+          {
+            title: "Fournisseur",
+            dataIndex: ["fournisseur", "id"],
+            key: "fournisseur",
+            sorter: (a, b) =>
+              a.fournisseur.nom.localeCompare(b.fournisseur.nom),
+            filters: fournisseurs.map((f) => ({ text: f.nom, value: f.id })),
+            onFilter: (value, record) => record.fournisseur.id === value,
+            render: (_: any, record: FournisseurMoteur) => (
+              <span>{record.fournisseur.nom}</span>
+            ),
+          },
+        ]
+      : [
+          {
+            title: "Moteur",
+            dataIndex: ["moteur", "id"],
+            key: "moteur",
+            sorter: (a, b) =>
+              (a.moteur.marque + a.moteur.modele).localeCompare(
+                b.moteur.marque + b.moteur.modele
+              ),
+            filters: moteursCatalogue.map((m) => ({
+              text: `${m.marque} ${m.modele}`,
+              value: m.id,
+            })),
+            onFilter: (value, record) => record.moteur.id === value,
+            render: (_: any, record: FournisseurMoteur) => (
+              <span>
+                {record.moteur.marque} {record.moteur.modele}
+              </span>
+            ),
+          },
+        ]),
+    {
+      title: "Prix Achat HT",
+      dataIndex: "prixAchatHT",
+      key: "prixAchatHT",
+      sorter: (a, b) => (a.prixAchatHT || 0) - (b.prixAchatHT || 0),
+    },
+    {
+      title: "TVA (%)",
+      dataIndex: "tva",
+      key: "tva",
+      sorter: (a, b) => (a.tva || 0) - (b.tva || 0),
+    },
+    {
+      title: "Montant TVA",
+      dataIndex: "montantTVA",
+      key: "montantTVA",
+      sorter: (a, b) => (a.montantTVA || 0) - (b.montantTVA || 0),
+    },
+    {
+      title: "Prix Achat TTC",
+      dataIndex: "prixAchatTTC",
+      key: "prixAchatTTC",
+      sorter: (a, b) => (a.prixAchatTTC || 0) - (b.prixAchatTTC || 0),
+    },
+    {
+      title: "Port forfaitaire",
+      dataIndex: "portForfaitaire",
+      key: "portForfaitaire",
+      sorter: (a, b) => (a.portForfaitaire || 0) - (b.portForfaitaire || 0),
+    },
+    {
+      title: "Port/unité",
+      dataIndex: "portParUnite",
+      key: "portParUnite",
+      sorter: (a, b) => (a.portParUnite || 0) - (b.portParUnite || 0),
+    },
+    {
+      title: "Qte min. commande",
+      dataIndex: "nombreMinACommander",
+      key: "nombreMinACommander",
+      sorter: (a, b) =>
+        (a.nombreMinACommander || 0) - (b.nombreMinACommander || 0),
+    },
     {
       title: "Actions",
       key: "actions",
-      render: (_: any, record: FournisseurBateau) => (
+      render: (_: any, record: FournisseurMoteur) => (
         <Space>
-          <Button icon={<EditOutlined />} onClick={() => handleEdit(record)} size="small" />
-          <Popconfirm title="Confirmer la suppression ?" onConfirm={() => handleDelete(record.id)}>
+          <Button
+            icon={<EditOutlined />}
+            onClick={() => handleEdit(record)}
+            size="small"
+          />
+          <Popconfirm
+            title="Confirmer la suppression ?"
+            onConfirm={() => handleDelete(record.id)}
+          >
             <Button icon={<DeleteOutlined />} danger size="small" />
           </Popconfirm>
         </Space>
       ),
       width: 110,
-    }
+    },
   ];
 
   return (
     <Card
-      title={isBateauMode ? "Fournisseurs pour ce bateau" : "Catalogue Bateaux"}
-      extra={<Button type="primary" icon={<ShrinkOutlined />} onClick={handleNew}>
-        {isBateauMode ? "Associer un fournisseur" : "Associer un bateau"}
-      </Button>}
+      title={
+        isMoteurMode
+          ? "Fournisseurs pour ce moteur"
+          : "Catalogue Moteurs"
+      }
+      extra={
+        <Button
+          type="primary"
+          icon={<ShrinkOutlined />}
+          onClick={handleNew}
+        >
+          {isMoteurMode
+            ? "Associer un fournisseur"
+            : "Associer un moteur"}
+        </Button>
+      }
       style={{ marginTop: 24 }}
     >
       <Spin spinning={loading}>
         <Table
           rowKey="id"
           columns={columns}
-          dataSource={bateauxAssocies}
+          dataSource={moteursAssocies}
           bordered
           pagination={{ pageSize: 10 }}
         />
@@ -280,7 +355,13 @@ const FournisseurBateaux = ({ fournisseurId, bateauId }: { fournisseurId?: numbe
         onCancel={() => setModalVisible(false)}
         onOk={handleModalOk}
         destroyOnClose
-        title={editing && editing.id ? "Modifier l'association" : (isBateauMode ? "Associer un Fournisseur" : "Associer un Bateau")}
+        title={
+          editing && editing.id
+            ? "Modifier l'association"
+            : isMoteurMode
+            ? "Associer un Fournisseur"
+            : "Associer un Moteur"
+        }
         okText="Enregistrer"
         cancelText="Annuler"
         width={640}
@@ -288,9 +369,9 @@ const FournisseurBateaux = ({ fournisseurId, bateauId }: { fournisseurId?: numbe
         <Form
           form={form}
           layout="vertical"
-          initialValues={editing || defaultFournisseurBateau}
+          initialValues={editing || defaultFournisseurMoteur}
           onValuesChange={(changed, all) => {
-            // Compute montantTVA et TTC dynamiquement
+            // Calcul dynamique du montant TVA et TTC
             if ("prixAchatHT" in changed || "tva" in changed) {
               let prixAchatHT = all.prixAchatHT ?? 0;
               let tva = all.tva ?? 20;
@@ -300,7 +381,7 @@ const FournisseurBateaux = ({ fournisseurId, bateauId }: { fournisseurId?: numbe
             }
           }}
         >
-          {isBateauMode ? (
+          {isMoteurMode ? (
             <Form.Item
               label="Fournisseur"
               name="fournisseurId"
@@ -315,7 +396,7 @@ const FournisseurBateaux = ({ fournisseurId, bateauId }: { fournisseurId?: numbe
                 }
                 disabled={!!(editing && editing.id)}
               >
-                {fournisseurs.map(f => (
+                {fournisseurs.map((f) => (
                   <Option key={f.id} value={f.id}>
                     {f.nom}
                   </Option>
@@ -324,27 +405,28 @@ const FournisseurBateaux = ({ fournisseurId, bateauId }: { fournisseurId?: numbe
             </Form.Item>
           ) : (
             <Form.Item
-              label="Bateau catalogue"
-              name="bateauId"
-              rules={[{ required: true, message: "Sélectionnez un bateau du catalogue" }]}
+              label="Moteur catalogue"
+              name="moteurId"
+              rules={[{ required: true, message: "Sélectionnez un moteur du catalogue" }]}
             >
               <Select
                 showSearch
-                placeholder="Choisissez un bateau"
+                placeholder="Choisissez un moteur"
                 optionFilterProp="children"
                 filterOption={(input, option: any) =>
                   `${option.children}`.toLowerCase().includes(input.toLowerCase())
                 }
                 disabled={!!(editing && editing.id)}
               >
-                {bateauxCatalogue.map(b => (
-                  <Option key={b.id} value={b.id}>
-                    {b.marque} {b.modele}
+                {moteursCatalogue.map((m) => (
+                  <Option key={m.id} value={m.id}>
+                    {m.marque} {m.modele}
                   </Option>
                 ))}
               </Select>
             </Form.Item>
           )}
+
           <Row gutter={8}>
             <Col span={12}>
               <Form.Item
@@ -371,6 +453,7 @@ const FournisseurBateaux = ({ fournisseurId, bateauId }: { fournisseurId?: numbe
               </Form.Item>
             </Col>
           </Row>
+
           <Row gutter={8}>
             <Col span={12}>
               <Form.Item label="Prix Achat TTC (€)" name="prixAchatTTC">
@@ -381,12 +464,19 @@ const FournisseurBateaux = ({ fournisseurId, bateauId }: { fournisseurId?: numbe
               <Form.Item
                 label="Qte min. à commander"
                 name="nombreMinACommander"
-                rules={[{ required: true, type: "number", message: "Quantité min. requise" }]}
+                rules={[
+                  {
+                    required: true,
+                    type: "number",
+                    message: "Quantité min. requise",
+                  },
+                ]}
               >
                 <InputNumber min={1} style={{ width: "100%" }} />
               </Form.Item>
             </Col>
           </Row>
+
           <Row gutter={8}>
             <Col span={12}>
               <Form.Item label="Port forfaitaire (€)" name="portForfaitaire">
@@ -399,6 +489,7 @@ const FournisseurBateaux = ({ fournisseurId, bateauId }: { fournisseurId?: numbe
               </Form.Item>
             </Col>
           </Row>
+
           <Form.Item label="Notes" name="notes">
             <Input.TextArea rows={2} />
           </Form.Item>
@@ -408,4 +499,4 @@ const FournisseurBateaux = ({ fournisseurId, bateauId }: { fournisseurId?: numbe
   );
 };
 
-export default FournisseurBateaux;
+export default FournisseurMoteurs;

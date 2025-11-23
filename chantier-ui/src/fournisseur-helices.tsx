@@ -288,7 +288,7 @@ const FournisseurHelices = ({
       title={
         isHeliceMode
           ? "Fournisseurs pour cette hélice"
-          : "Catalogue Hélices du Fournisseur"
+          : "Catalogue Hélices"
       }
       extra={
         <Button type="primary" icon={<ShrinkOutlined />} onClick={handleNew}>

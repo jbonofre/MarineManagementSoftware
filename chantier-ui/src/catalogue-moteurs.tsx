@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Row, Col, AutoComplete, Table, Button, Modal, Form, Input, InputNumber, Rate, Space, Popconfirm, message, Select, Image, Card } from 'antd';
 import { EditOutlined, DeleteOutlined, PlusCircleOutlined } from '@ant-design/icons';
 import axios from 'axios';
+import FournisseurMoteurs from './fournisseur-moteurs.tsx';
 
 const style: React.CSSProperties = { padding: '8px 0' };
 const { Search } = Input;
@@ -454,6 +455,7 @@ const MoteurCatalogue = () => {
                 <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
               </Form.Item>
             </Form>
+            {editingMoteur && <FournisseurMoteurs moteurId={editingMoteur.id} />}
           </Modal>
         </Col>
       </Row>
