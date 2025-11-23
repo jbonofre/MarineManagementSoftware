@@ -20,6 +20,16 @@ public class ClientResource {
         return ClientEntity.listAll();
     }
 
+    @GET
+    @Path("/search")
+    public List<ClientEntity> search(@QueryParam("q") String q) {
+        if (q == null || q.trim().isEmpty()) {
+            return ClientEntity.listAll();
+        }
+        String likePattern = "%" + q.toLowerCase() + "%";
+        return ClientEntity.list("LOWER(nom) LIKE ?1 OR LOWER(prenom) LIKE ?1 OR LOWER(type) LIKE ?1 OR LOWER(email) LIKE ?1 OR LOWER(telephone) LIKE ?1", likePattern);
+    }
+
     @POST
     @Transactional
     public ClientEntity create(ClientEntity client) {
