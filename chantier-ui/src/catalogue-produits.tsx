@@ -1,378 +1,412 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { Breadcrumb, Row, Col, Input, Select, Button, Space, Table, Rate, Card, Form, InputNumber, Spin, AutoComplete, Image, Popconfirm, message } from 'antd';
-import { ReadOutlined, HomeOutlined, PlusCircleOutlined, StockOutlined, SaveOutlined, PauseCircleOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
-import { productCategories } from './data.tsx';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Image, Table, Rate, Row, Col, Card, Button, Modal, Form, AutoComplete, Input, InputNumber, Select, Space, Popconfirm, message } from 'antd';
+import { PlusCircleOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import axios from 'axios';
+import FournisseurProduits from './fournisseur-produits.tsx';
 
-const style: React.CSSProperties = { padding: '8px 0' };
-const { Search, TextArea } = Input;
+// --- Types ---
 
-function Detail(props) {
-
-    const [ produitForm ] = Form.useForm();
-    const [ newImageForm ] = Form.useForm();
-    const [ detail, setDetail ] = useState();
-    const [ images, setImages ] = useState([]);
-
-    if (props.produit !== 'new') {
-        const fetchProduit = () => {
-            fetch('./produits/' + props.produit)
-            .then((response) => {
-                if (!response.ok) {
-                    throw new Error('Erreur (code ' + response.status + ')');
-                }
-                return response.json();
-            })
-            .then((data) => {
-                setDetail(data);
-                if (data.images) {
-                    setImages(data.images);
-                } else {
-                    setImages([]);
-                }
-            })
-            .catch((error) => {
-                message.error('Une erreur est survenue: ' + error.message);
-                console.error(error);
-            })
-        };
-
-        useEffect(fetchProduit, []);
-
-        if (!detail) {
-            return(<Spin/>);
-        }
-    }
-
-    const imagesRender = images.map((image) =>
-      <Space><Image width={200} src={image} />
-        <Popconfirm title="Supprimer l'image"
-            description="Etes-vous sûr de vouloir supprimer l'image ?"
-            onConfirm={() => {
-                const newImages = images.filter((img) => img !== image);
-                setImages(newImages);
-            }} okText="Oui" cancelText="Non">
-            <Button danger icon={<DeleteOutlined/>} />
-        </Popconfirm>
-      </Space>
-    );
-
-    const onFinish = (values) => {
-        let newProduit = values;
-        newProduit.images = images;
-        if (props.produit === 'new') {
-            fetch('./produits', {
-                method: 'POST',
-                body: JSON.stringify(newProduit),
-                headers: {
-                    'Content-Type': 'application/json',
-                }
-            })
-            .then((response) => {
-                if (!response.ok) {
-                    throw new Error('Erreur (code ' + response.status + ')');
-                }
-                return response.json();
-            })
-            .then((data) => {
-                message.info('Produit sauvegardé');
-                props.setProduit(null);
-            })
-            .catch((error) => {
-                message.error('Une erreur est survenue: ' + error.message);
-                console.error(error);
-            })
-        } else {
-            fetch('./produits/' + props.produit, {
-                method: 'PUT',
-                body: JSON.stringify(newProduit),
-                headers: {
-                    'Content-Type': 'application/json',
-                }
-            })
-            .then((response) => {
-                if (!response.ok) {
-                    throw new Error('Erreur (code ' + response.status + ')');
-                }
-                return response.json();
-            })
-            .then((data) => {
-                message.info('Produit mis à jour');
-                props.setProduit(null);
-            })
-            .catch((error) => {
-                message.error('Une erreur est survenue: ' + error.message);
-                console.error(error);
-            })
-        }
-    };
-
-    let title = <Space>Nouveau Produit</Space>;
-    if (detail) {
-        title = <Space><img width='200px' src={detail.image}/> {detail.nom}</Space>
-    }
-
-    const addImage = (values) => {
-        const newImages = [...images,...[values.image]];
-        setImages(newImages);
-    };
-
-    const onValuesChange = (changedValues, allValues) => {
-        if (changedValues.prixVenteHT || changedValues.tva) {
-            const prixVenteHT = produitForm.getFieldValue('prixVenteHT');
-            const tva = produitForm.getFieldValue('tva');
-            const montantTVA = Math.round(((prixVenteHT * (tva / 100)) + Number.EPSILON) * 100) / 100;
-            produitForm.setFieldValue('montantTVA', montantTVA);
-            const prixVenteTTC = Math.round(((prixVenteHT + montantTVA) + Number.EPSILON) * 100) / 100;
-            produitForm.setFieldValue('prixVenteTTC', prixVenteTTC);
-        }
-        if (changedValues.prixVenteTTC) {
-            const prixVenteTTC = produitForm.getFieldValue('prixVenteTTC');
-            const tva = produitForm.getFieldValue('tva');
-            const montantTVA = Math.round((((prixVenteTTC / (100 + tva)) * tva) + Number.EPSILON) * 100) / 100;
-            produitForm.setFieldValue('montantTVA', montantTVA);
-            const prixVenteHT = Math.round(((prixVenteTTC - montantTVA) + Number.EPSILON) * 100) / 100;
-            produitForm.setFieldValue('prixVenteHT', prixVenteHT);
-        }
-    };
-
-    return(
-        <>
-            <Breadcrumb items={[
-                { title: <Link to="/"><HomeOutlined/></Link> },
-                { title: <ReadOutlined/> },
-                { title: <Button type="text" size="small" onClick={() => props.setProduit(null)}>Produits</Button> }
-            ]} />
-            <Card title={title}>
-                <Row gutter={[16,16]}>
-                    <Col span={19}>
-                        <Form name="produit" form={produitForm} labelCol={{ span: 8 }}
-                            wrapperCol={{ span: 16 }}
-                            style={{ width: '80%' }}
-                            initialValues={detail}
-                            onFinish={onFinish}
-                            onValuesChange={onValuesChange}>
-                            <Form.Item name="nom" label="Nom" rules={[{ required: true, message: 'Le nom est requis' }]}>
-                                <Input allowClear={true} />
-                            </Form.Item>
-                            <Form.Item name="categorie" label="Catégorie" rules={[{ required: true, message: 'La catégorie est requise' }]}>
-                                <Select options={productCategories} />
-                            </Form.Item>
-                            <Form.Item name="marque" label="Marque">
-                                <AutoComplete allowClear={true} options={props.marques} />
-                            </Form.Item>
-                            <Form.Item name="image" label="Adresse de l'image">
-                                <Input allowClear={true} />
-                            </Form.Item>
-                            <Form.Item name="ref" label="Référence interne">
-                                <Input allowClear={true} />
-                            </Form.Item>
-                            <Form.Item name="refs" label="Références">
-                                <Select mode="tags" suffixIcon={<PlusCircleOutlined/>} />
-                            </Form.Item>
-                            <Form.Item name="description" label="Description">
-                                <TextArea rows={6} allowClear={true} />
-                            </Form.Item>
-                            <Form.Item name="evaluation" label="Note produit">
-                                <Rate />
-                            </Form.Item>
-                            <Form.Item name="stock" label="Stock">
-                                <InputNumber addonAfter="Scanner" />
-                            </Form.Item>
-                            <Form.Item name="stockMini" label="Stock Minimal">
-                                <InputNumber addonAfter="Scanner" />
-                            </Form.Item>
-                            <Form.Item name="emplacement" label="Emplacement">
-                                <Input allowClear={true} />
-                            </Form.Item>
-                            <Form.Item name="prixPublic" label="Prix public">
-                                <InputNumber addonAfter="€" />
-                            </Form.Item>
-                            <Form.Item name="frais" label="Frais">
-                                <InputNumber addonAfter="%"/>
-                            </Form.Item>
-                            <Form.Item name="tauxMarge" label="Taux de marge">
-                                <InputNumber addonAfter="%"/>
-                            </Form.Item>
-                            <Form.Item name="tauxMarque" label="Taux de Marque">
-                                <InputNumber addonAfter="%"/>
-                            </Form.Item>
-                            <Form.Item name="prixVenteHT" label="Prix de vente HT">
-                                <InputNumber addonAfter="€" />
-                            </Form.Item>
-                            <Form.Item name="tva" label="TVA">
-                                <InputNumber addonAfter="%" />
-                            </Form.Item>
-                            <Form.Item name="montantTVA" label="Montant de la TVA">
-                                <InputNumber addonAfter="€" />
-                            </Form.Item>
-                            <Form.Item name="prixVenteTTC" label="Prix de vente TTC">
-                                <InputNumber addonAfter="€" />
-                            </Form.Item>
-                        </Form>
-                        <Form.Item label={null}>
-                            <Space>
-                                <Button type="primary" icon={<SaveOutlined/>} onClick={() => produitForm.submit()}>Enregistrer</Button>
-                                <Button icon={<PauseCircleOutlined/>} onClick={() => produitForm.resetFields()}>Annuler</Button>
-                            </Space>
-                        </Form.Item>
-                    </Col>
-                    <Col span={5}>
-                        <Space direction="vertical" align="center">
-                            {imagesRender}
-                            <Form form={newImageForm} component={false} onFinish={addImage}>
-                            <Space.Compact>
-                            <Form.Item name="image" rules={[{ required: true, message: 'L\'adresse de l\'image est requise' }]}>
-                                <Input placeholder="Adresse de l'image" allowClear={true} />
-                            </Form.Item>
-                            <Button type="primary" icon={<PlusCircleOutlined/>} onClick={() => newImageForm.submit()} />
-                            </Space.Compact>
-                            </Form>
-                        </Space>
-                    </Col>
-                </Row>
-            </Card>
-        </>
-    );
+interface ProduitCatalogueEntity {
+    id?: number;
+    nom: string;
+    marque: string;
+    categorie: string;
+    ref: string;
+    refs?: string[];
+    images?: string[];
+    description?: string;
+    evaluation?: number;
+    stock?: number;
+    stockMini?: number;
+    emplacement?: string;
+    prixPublic?: number;
+    frais?: number;
+    tauxMarge?: number;
+    tauxMarque?: number;
+    prixVenteHT?: number;
+    tva?: number;
+    montantTVA?: number;
+    prixVenteTTC?: number;
 }
 
-function List(props) {
+const defaultProduit: ProduitCatalogueEntity = {
+    nom: '',
+    marque: '',
+    categorie: '',
+    ref: '',
+    refs: [],
+    images: [],
+    description: '',
+    evaluation: 0,
+    stock: 0,
+    stockMini: 0,
+    emplacement: '',
+    prixPublic: 0,
+    frais: 0,
+    tauxMarge: 0,
+    tauxMarque: 0,
+    prixVenteHT: 0,
+    tva: 0,
+    montantTVA: 0,
+    prixVenteTTC: 0
+};
 
-    const [ produits, setProduits ] = useState();
+const CATEGORIES = [
+    { text: 'Service & Main d\'Oeuvre', value: 'Service & Main d\'Oeuvre', label: 'Service & Main d\'Oeuvre' },
+    { text: 'Pièces Moteur', value: 'Pièces Moteur', label: 'Pièces Moteur' },
+    { text: 'Pièces Remorque', value: 'Pièces Remorque', label: 'Pièces Remorque' },
+    { text: 'Electronique', value: 'Electronique', label: 'Electronique' },
+    { text: 'Sécurité', value: 'Sécurité', label: 'Sécurité' },
+    { text: 'Equipement & Accessoires', value: 'Equipement & Accessoires', label: 'Equipement & Accessoires' },
+    { text: 'Loisirs', value: 'Loisirs', label: 'Loisirs' },
+];
 
-    const fetchProduits = () => {
-        fetch('./produits')
-        .then((response) => {
-            if (!response.ok) {
-                throw new Error('Erreur ' + response.status);
-            }
-            return response.json();
-        })
-        .then((data) => {
-            setProduits(data);
-            const marquesSet = [...new Set(data.map((produit) => produit.marque))];
-            const marques = marquesSet.map((marque) => { return ({value: marque })});
-            props.setMarques(marques);
-        })
-        .catch((error) => {
-            message.error('Une erreur est survenue: ' + error.message);
-            console.error(error);
-        });
+// --- Component ---
+
+const CatalogueProduits: React.FC = () => {
+    const [produits, setProduits] = useState<ProduitCatalogueEntity[]>([]);
+    const [loading, setLoading] = useState<boolean>(false);
+    const [modalVisible, setModalVisible] = useState<boolean>(false);
+    const [isEdit, setIsEdit] = useState<boolean>(false);
+    const [currentProduit, setCurrentProduit] = useState<ProduitCatalogueEntity | null>(null);
+    const [form] = Form.useForm();
+
+    // Unique marque options
+    const marqueOptions = useMemo(() => {
+        const unique = Array.from(new Set(produits.map(p => p.marque))).filter(Boolean) as string[];
+        return unique.map(marque => ({ value: marque }));
+    }, [produits]);
+
+    // Get all produits
+    const fetchProduits = async () => {
+        setLoading(true);
+        try {
+            const res = await axios.get('/catalogue/produits');
+            setProduits(res.data);
+        } catch {
+            message.error('Erreur lors du chargement des produits.');
+        }
+        setLoading(false);
     };
 
-    useEffect(fetchProduits, []);
+    useEffect(() => {
+        fetchProduits();
+    }, []);
 
-    if (!produits) {
-       return(<Spin/>);
-    }
+    const openModal = (produit?: ProduitCatalogueEntity) => {
+        if (produit) {
+            setIsEdit(true);
+            setCurrentProduit(produit);
+            form.setFieldsValue({
+                ...defaultProduit,
+                ...produit,
+                images: produit.images && produit.images.length > 0
+                    ? produit.images
+                    : [],
+            });
+        } else {
+            setIsEdit(false);
+            setCurrentProduit(null);
+            form.resetFields();
+            form.setFieldsValue(defaultProduit);
+        }
+        setModalVisible(true);
+    };
 
-    const deleteProduit = (id) => {
-        fetch('./produits/' + id, {
-            method: 'DELETE',
-        })
-        .then((response) => {
-            if (!response.ok) {
-                 throw new Error('Erreur ' + response.status);
+    const handleModalOk = async () => {
+        try {
+            const values = await form.validateFields();
+            values.images = values.images || [];
+            if (isEdit && currentProduit && currentProduit.id) {
+                await axios.put(`/catalogue/produits/${currentProduit.id}`, { ...currentProduit, ...values });
+                message.success('Produit modifié avec succès');
+            } else {
+                await axios.post('/catalogue/produits', values);
+                message.success('Produit ajouté avec succès');
             }
-        })
-        .then((data) => {
-            message.info('Produit supprimé');
+            setModalVisible(false);
             fetchProduits();
-        })
-        .catch((error) => {
-            message.error('Une erreur est survenue: ' + error.message);
-            console.error(error);
-        })
+            form.resetFields();
+        } catch (err) {
+            // form validation error
+        }
     };
 
+    const handleDelete = async (id: number | undefined) => {
+        if (!id) return;
+        try {
+            await axios.delete(`/catalogue/produits/${id}`);
+            message.success('Produit supprimé avec succès');
+            fetchProduits();
+        } catch {
+            message.error('Erreur lors de la suppression.');
+        }
+    };
+
+    // Columns
     const columns = [
         {
             title: 'Nom',
             dataIndex: 'nom',
-            key: 'nom',
-            render: (_,record) => (<Space><img width='30px' src={record.image} /> {record.nom}</Space>),
-            sorter: (a,b) => a.nom.localeCompare(b.nom),
+            render: (_: string, record: ProduitCatalogueEntity) => (
+                <Space>
+                    {record.images && record.images[0] && (
+                        <Image src={record.images[0]} width={40} />
+                    )}
+                    {record.nom}
+                </Space>
+            ),
+            sorter: (a: ProduitCatalogueEntity, b: ProduitCatalogueEntity) => a.nom.localeCompare(b.nom),
         },
         {
             title: 'Marque',
             dataIndex: 'marque',
-            key: 'marque',
-            sorter: (a,b) => a.marque.localeCompare(b.marque),
-        },
-        {
-            title: 'Référence',
-            dataIndex: 'ref',
-            key: 'ref'
+            sorter: (a: ProduitCatalogueEntity, b: ProduitCatalogueEntity) => (a.marque || '').localeCompare(b.marque || ''),
         },
         {
             title: 'Catégorie',
             dataIndex: 'categorie',
-            key: 'categorie',
-            filters: productCategories,
+            filters: CATEGORIES,
             onFilter: (value, record) => record.categorie === value,
+            sorter: (a: ProduitCatalogueEntity, b: ProduitCatalogueEntity) => (a.categorie || '').localeCompare(b.categorie || ''),
+        },
+        {
+            title: 'Référence',
+            dataIndex: 'ref',
+            sorter: (a: ProduitCatalogueEntity, b: ProduitCatalogueEntity) => (a.ref || '').localeCompare(b.ref || ''),
         },
         {
             title: 'Evaluation',
             dataIndex: 'evaluation',
-            key: 'evaluation',
-            render: (_,record) => ( <Rate defaultValue={record.evaluation} disabled={true} /> )
+            render: (value: number) => <Rate defaultValue={value} disabled={true} />,
         },
         {
             title: 'Stock',
             dataIndex: 'stock',
-            key: 'stock'
+            sorter: (a: ProduitCatalogueEntity, b: ProduitCatalogueEntity) => (a.stock || 0) - (b.stock || 0),
         },
         {
-            title: '',
-            key: 'action',
-            render: (_, record) => (
+            title: 'Prix TTC',
+            dataIndex: 'prixVenteTTC',
+            key: 'prixVenteTTC',
+            render: (value: number) => value ? value.toFixed(2) + " €" : "",
+            sorter: (a: ProduitCatalogueEntity, b: ProduitCatalogueEntity) => (a.prixVenteTTC || 0) - (b.prixVenteTTC || 0),
+        },
+        {
+            title: 'Actions',
+            key: 'actions',
+            render: (_: any, record: ProduitCatalogueEntity) => (
                 <Space>
-                    <Button icon={<EditOutlined/>} onClick={() => props.setProduit(record.id)} />
-                    <Popconfirm title="Supprimer produit"
-                        description="Etes-vous sûr de vouloir supprimer le produit ?"
-                        onConfirm={() => deleteProduit(record.id)}
-                        okText="Oui" cancelText="Non">
+                    <Button onClick={() => openModal(record)} icon={<EditOutlined/>} />
+                    <Popconfirm
+                        title="Supprimer ce produit ?"
+                        onConfirm={() => handleDelete(record.id)}
+                        okText="Oui"
+                        cancelText="Non"
+                    >
                         <Button danger icon={<DeleteOutlined/>} />
                     </Popconfirm>
                 </Space>
-            )
+            ),
+        },
+    ];
+
+    // prix/tva calculation autocalc
+    const onValuesChange = (changedValues, allValues) => {
+        if (changedValues.prixVenteHT !== undefined || changedValues.tva !== undefined) {
+            const prixVenteHT = form.getFieldValue('prixVenteHT') || 0;
+            const tva = form.getFieldValue('tva') || 0;
+            const montantTVA = Math.round(((prixVenteHT * (tva / 100)) + Number.EPSILON) * 100) / 100;
+            form.setFieldValue('montantTVA', montantTVA);
+            const prixVenteTTC = Math.round(((prixVenteHT + montantTVA) + Number.EPSILON) * 100) / 100;
+            form.setFieldValue('prixVenteTTC', prixVenteTTC);
         }
-    ]
+        if (changedValues.prixVenteTTC !== undefined) {
+            const prixVenteTTC = form.getFieldValue('prixVenteTTC') || 0;
+            const tva = form.getFieldValue('tva') || 0;
+            const montantTVA = Math.round((((prixVenteTTC / (100 + tva)) * tva) + Number.EPSILON) * 100) / 100;
+            form.setFieldValue('montantTVA', montantTVA);
+            const prixVenteHT = Math.round(((prixVenteTTC - montantTVA) + Number.EPSILON) * 100) / 100;
+            form.setFieldValue('prixVenteHT', prixVenteHT);
+        }
+    };
+
+    // --- UI Render ---
 
     return (
-        <> 
+        <>
             <Card title="Catalogue Produits">
-                <Row gutter={[16,16]}>
+                <Row gutter={[16, 16]}>
                     <Col span={24}>
-                        <div style={style}>
-                            <Space>
-                                <Search placeholder="Recherche" enterButton style={{ width: 600 }}/>
-                                <Button type="primary" icon={<StockOutlined/>} />
-                                <Button type="primary" icon={<PlusCircleOutlined/>} onClick={() => props.setProduit('new')} />
-                            </Space>
-                        </div>
+                        <Space>
+                            <Input.Search
+                                placeholder="Recherche"
+                                enterButton
+                                allowClear
+                                style={{ width: 600 }}
+                                onSearch={async (value) => {
+                                    setLoading(true);
+                                    try {
+                                        const r = await axios.get('/catalogue/produits/search', { params: { q: value } });
+                                        setProduits(r.data);
+                                    } catch {
+                                        message.error('Erreur lors de la recherche');
+                                    } finally {
+                                        setLoading(false);
+                                    }
+                                }}
+                            />
+                            <Button type="primary" icon={<PlusCircleOutlined />} onClick={() => openModal()} />
+                        </Space>
                     </Col>
                 </Row>
-                <Row gutter={[16,16]}>
+                <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
                     <Col span={24}>
-                        <Table columns={columns} dataSource={produits} />
+                        <Table
+                            rowKey="id"
+                            columns={columns}
+                            dataSource={produits}
+                            loading={loading}
+                            pagination={{ pageSize: 10 }}
+                            bordered
+                        />
+                        <Modal
+                            title={isEdit ? 'Modifier un produit' : 'Ajouter un produit'}
+                            open={modalVisible}
+                            onOk={handleModalOk}
+                            onCancel={() => setModalVisible(false)}
+                            maskClosable={false}
+                            width={1024}
+                            okText="Enregistrer"
+                            cancelText="Annuler"
+                            destroyOnClose
+                        >
+                            <Form
+                                form={form}
+                                layout="vertical"
+                                initialValues={defaultProduit}
+                                onValuesChange={onValuesChange}
+                            >
+                                <Form.Item name="nom" label="Nom" rules={[{ required: true, message: "Le nom est requis" }]}>
+                                    <Input />
+                                </Form.Item>
+                                <Form.Item name="categorie" label="Catégorie" rules={[{ required: true, message: "La catégorie est requise" }]}>
+                                    <Select options={CATEGORIES} placeholder="Choisir une catégorie" />
+                                </Form.Item>
+                                <Form.Item name="marque" label="Marque">
+                                    <AutoComplete allowClear options={marqueOptions} placeholder="Saisir/select. une marque" />
+                                </Form.Item>
+                                <Form.Item name="image" label="Image principale">
+                                    <Input placeholder="URL de l'image (affichée en liste)" />
+                                </Form.Item>
+                                <Form.Item name="images" label="Images">
+                                    <Form.List name="images">
+                                        {(fields, { add, remove }) => (
+                                            <>
+                                                {fields.map((field, index) => (
+                                                    <Space key={field.key} align="baseline" style={{ display: 'flex', marginBottom: 8 }}>
+                                                        <Form.Item
+                                                            {...field}
+                                                            name={[field.name]}
+                                                            fieldKey={[field.fieldKey ?? field.key]}
+                                                            rules={[{ required: true, message: 'Veuillez entrer une URL d\'image' }]}
+                                                            style={{ flex: 1 }}
+                                                        >
+                                                            <Input placeholder="URL de l'image" style={{ width: '400px' }} />
+                                                        </Form.Item>
+                                                        <Button
+                                                            icon={<DeleteOutlined />}
+                                                            danger
+                                                            onClick={() => remove(field.name)}
+                                                        />
+                                                        {form.getFieldValue(['images', index]) &&
+                                                            <Image width={80} src={form.getFieldValue(['images', index])} />
+                                                        }
+                                                    </Space>
+                                                ))}
+                                                <Button type="dashed" onClick={() => add()} block icon={<PlusCircleOutlined />}>
+                                                    Ajouter une image
+                                                </Button>
+                                            </>
+                                        )}
+                                    </Form.List>
+                                </Form.Item>
+                                <Form.Item name="ref" label="Référence interne">
+                                    <Input />
+                                </Form.Item>
+                                <Form.Item name="refs" label="Références complémentaires">
+                                    <Form.List name="refs">
+                                        {(fields, { add, remove }) => (
+                                            <>
+                                                {fields.map((field, idx) => (
+                                                    <Space key={field.key} align="baseline">
+                                                        <Form.Item
+                                                            {...field}
+                                                            name={[field.name]}
+                                                            fieldKey={[field.fieldKey ?? field.key]}
+                                                            style={{ flex: 1 }}
+                                                        >
+                                                            <Input placeholder="Réf. complémentaire" style={{ width: 200 }} />
+                                                        </Form.Item>
+                                                        <Button icon={<DeleteOutlined />} danger onClick={() => remove(field.name)} />
+                                                    </Space>
+                                                ))}
+                                                <Button type="dashed" onClick={() => add()} block style={{ marginTop: 8 }}>
+                                                    Ajouter une référence
+                                                </Button>
+                                            </>
+                                        )}
+                                    </Form.List>
+                                </Form.Item>
+                                <Form.Item name="description" label="Description">
+                                    <Input.TextArea rows={3} placeholder="Description du produit" allowClear />
+                                </Form.Item>
+                                <Form.Item name="evaluation" label="Évaluation">
+                                    <Rate allowHalf />
+                                </Form.Item>
+                                <Form.Item name="stock" label="Stock">
+                                    <InputNumber min={0} step={1} style={{ width: '100%' }} />
+                                </Form.Item>
+                                <Form.Item name="stockMini" label="Stock minimal d'alerte">
+                                    <InputNumber min={0} step={1} style={{ width: '100%' }} />
+                                </Form.Item>
+                                <Form.Item name="emplacement" label="Emplacement">
+                                    <Input />
+                                </Form.Item>
+                                <Form.Item name="prixPublic" label="Prix public">
+                                    <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+                                </Form.Item>
+                                <Form.Item name="frais" label="Frais">
+                                    <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+                                </Form.Item>
+                                <Form.Item name="tauxMarge" label="Taux de marge (%)">
+                                    <InputNumber min={0} max={100} step={0.01} style={{ width: '100%' }} />
+                                </Form.Item>
+                                <Form.Item name="tauxMarque" label="Taux de marque (%)">
+                                    <InputNumber min={0} max={100} step={0.01} style={{ width: '100%' }} />
+                                </Form.Item>
+                                <Form.Item name="prixVenteHT" label="Prix de vente HT">
+                                    <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+                                </Form.Item>
+                                <Form.Item name="tva" label="TVA (%)">
+                                    <InputNumber min={0} max={100} step={0.01} style={{ width: '100%' }} />
+                                </Form.Item>
+                                <Form.Item name="montantTVA" label="Montant TVA">
+                                    <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+                                </Form.Item>
+                                <Form.Item name="prixVenteTTC" label="Prix de vente TTC">
+                                    <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+                                </Form.Item>
+                            </Form>
+                            {isEdit && currentProduit && currentProduit.id && (
+                            <FournisseurProduits produitId={currentProduit?.id} />  
+                            )}
+                        </Modal>
                     </Col>
                 </Row>
             </Card>
         </>
     );
-}
+};
 
-export default function Produits() {
-
-    const [ produit, setProduit ] = useState();
-    const [ marques, setMarques ] = useState();
-
-    if (produit) {
-        return (<Detail produit={produit} setProduit={setProduit} marques={marques} />)
-    } else {
-        return (
-            <List setProduit={setProduit} setMarques={setMarques} />
-        );
-    }
-}
+export default CatalogueProduits;
