@@ -21,7 +21,7 @@ import {
   SearchOutlined,
 } from "@ant-design/icons";
 import axios from "axios";
-import Bateaux from "./bateaux.tsx";
+import BateauxClients from "./clients-bateaux.tsx";
 
 const { Option } = Select;
 const { Search } = Input;
@@ -287,11 +287,14 @@ function Clients() {
           <Form.Item label="Notes" name="notes">
             <Input.TextArea rows={3} />
           </Form.Item>
-          <Form.Item label="Bateaux">
-            {/* Affiche la liste des bateaux pour ce client */}
-            <Bateaux clientId={editing?.id} />
-          </Form.Item>
         </Form>
+        {editing && editing.id && (
+          <>
+            <Divider />
+            {/* Affiche la liste des bateaux pour ce client */}
+            <BateauxClients clientId={editing.id} />
+          </>
+        )}
       </Modal>
     </Card>
   );

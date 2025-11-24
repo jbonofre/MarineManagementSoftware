@@ -68,7 +68,11 @@ const defaultBateau: BateauClient = {
   equipements: [],
 };
 
-function BateauxClients() {
+interface BateauxClientsProps {
+  clientId?: number;
+}
+
+function BateauxClients({ clientId }: BateauxClientsProps) {
   const [bateaux, setBateaux] = useState<BateauClient[]>([]);
   const [bateauxCatalogue, setBateauxCatalogue] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
@@ -86,7 +90,14 @@ function BateauxClients() {
         url = `/bateaux/search?q=${encodeURIComponent(q)}`;
       }
       const res = await axios.get(url);
-      setBateaux(res.data);
+      let bateauxData = res.data;
+      // Filter by clientId if provided
+      if (clientId) {
+        bateauxData = bateauxData.filter((bateau: BateauClient) =>
+          bateau.proprietaires?.some((p: any) => (p.id || p) === clientId)
+        );
+      }
+      setBateaux(bateauxData);
     } catch {
       message.error("Erreur lors du chargement des bateaux");
     }
@@ -107,7 +118,7 @@ function BateauxClients() {
     fetchBateaux();
     fetchBateauxCatalogue();
     fetchClients();
-  }, []);
+  }, [clientId]);
 
   const fetchClients = async () => {
     const res = await axios.get('/clients');
