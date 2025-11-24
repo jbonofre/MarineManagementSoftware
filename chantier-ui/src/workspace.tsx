@@ -36,7 +36,7 @@ function SideMenu(props) {
     const menuItems = [
       { key: 'home', label: <Link to="/">Accueil</Link>, icon: <HomeOutlined/> },
       { key: 'dashboard', label: 'Tableau de Bord', icon: <DashboardOutlined/> },
-      { key: 'parc', label: 'Parc', icon: <BarsOutlined />, children: [
+      { key: 'parc', label: 'Parc', icon: <Icon component={ ParcOutlined } />, children: [
         { key: 'clients', label: <Link to="/clients">Clients</Link>, icon: <TeamOutlined /> },
         { key: 'bateaux', label: <Link to="/clients/bateaux">Bateaux</Link>, icon: <Icon component={ BoatOutlined } />},
         { key: 'moteurs', label: <Link to="/moteurs">Moteurs</Link>, icon: <Icon component={ EngineOutlined } /> },
