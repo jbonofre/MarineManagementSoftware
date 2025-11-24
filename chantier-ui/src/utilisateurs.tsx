@@ -222,7 +222,6 @@ export default function Utilisateurs() {
                     <Button
                         icon={<EditOutlined />}
                         size="small"
-                        disabled={record.name === 'admin'}
                         onClick={() => {
                             setEditUser(record);
                             setModalOpen(true);
