@@ -12,6 +12,7 @@ import {
   Card,
   Rate,
   Spin,
+  Divider,
 } from "antd";
 import {
   PlusCircleOutlined,
@@ -20,6 +21,7 @@ import {
   SearchOutlined,
 } from "@ant-design/icons";
 import axios from "axios";
+import Bateaux from "./bateaux.tsx";
 
 const { Option } = Select;
 const { Search } = Input;
@@ -237,6 +239,9 @@ function Clients() {
         width={1024}
       >
         <Form layout="vertical" form={form} initialValues={defaultClient}>
+          <Form.Item name="id" hidden>
+            <Input />
+          </Form.Item>
           <Form.Item label="Type" name="type" rules={[{ required: true }]}>
             <Select>
               {typeOptions.map((opt) => (
@@ -281,6 +286,10 @@ function Clients() {
           </Form.Item>
           <Form.Item label="Notes" name="notes">
             <Input.TextArea rows={3} />
+          </Form.Item>
+          <Form.Item label="Bateaux">
+            {/* Affiche la liste des bateaux pour ce client */}
+            <Bateaux clientId={editing?.id} />
           </Form.Item>
         </Form>
       </Modal>

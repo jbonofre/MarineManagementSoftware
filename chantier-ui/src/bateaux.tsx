@@ -1,16 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Breadcrumb, Card, Col, Row, Space, Input, InputNumber, Select, Button, Form, Table, Tabs, Empty, Pagination, DatePicker, AutoComplete, Image, Collapse } from 'antd';
+import { Breadcrumb, Card, Col, Row, Space, Input, InputNumber, Select, Button, Form, Table, Tabs, Empty, Pagination, DatePicker, AutoComplete, Image, Collapse, Spin } from 'antd';
+import type { CollapseProps } from 'antd';
 import { HomeOutlined, UserOutlined, PlusCircleOutlined, LeftCircleOutlined, EditOutlined, DeleteOutlined, PauseCircleOutlined } from '@ant-design/icons';
 import { ReactComponent as BoatOutlined } from './boat.svg';
 import { demo } from './workspace.tsx';
 import dayjs from 'dayjs';
+import axios from 'axios';
 
 const style: React.CSSProperties = { padding: '8px 0' };
 const { Search } = Input;
 const { TextArea } = Input;
 
 function List(props) {
+    const bateaux = props.bateaux || [];
 
     const columns = [
         {
@@ -56,10 +59,9 @@ function List(props) {
         }
     ];
 
-    var searchOptions = [];
-    props.bateaux.forEach((bateau) => {
-        const item = [ { label: bateau.nom, value: bateau.key } ];
-        searchOptions = searchOptions.concat(item);
+    var searchOptions: Array<{ label: string; value: any }> = [];
+    bateaux.forEach((bateau) => {
+        searchOptions.push({ label: bateau.nom, value: bateau.key });
     });
 
     return(
@@ -76,11 +78,13 @@ function List(props) {
             </Row>
             <Row gutter={[16,16]}>
                 <Col span={24}>
-                    <Table<Bateau> columns={columns} dataSource={props.bateaux} onRow={(record, rowIndex) => {
-                        return {
-                            onClick: (event) => { props.setBateau(record.key) }
-                        };
-                    }}/>
+                    <Spin spinning={props.loading || false}>
+                        <Table columns={columns} dataSource={bateaux} onRow={(record, rowIndex) => {
+                            return {
+                                onClick: (event) => { props.setBateau(record.key) }
+                            };
+                        }}/>
+                    </Spin>
                 </Col>
             </Row>
         </>
@@ -315,7 +319,8 @@ function Bateau(props) {
         }
     ];
 
-    const bateauDetail = props.bateaux.filter(record => record.key === props.bateau)[0];
+    const bateaux = props.bateaux || [];
+    const bateauDetail = bateaux.filter(record => record.key === props.bateau)[0];
 
     var collapseItems: CollapseProps['items'] = [
         {
@@ -454,14 +459,60 @@ function Bateau(props) {
 export default function Bateaux(props) {
 
     const [ bateau, setBateau ] = useState();
+    const [ fetchedBateaux, setFetchedBateaux ] = useState<any[]>([]);
+    const [ loading, setLoading ] = useState(false);
+
+    // If clientId is provided, fetch boats for that client
+    useEffect(() => {
+        if (props.clientId) {
+            fetchBateauxForClient();
+        }
+    }, [props.clientId]);
+
+    const fetchBateauxForClient = async () => {
+        if (!props.clientId) return;
+        
+        setLoading(true);
+        try {
+            const res = await axios.get('/bateaux');
+            // Filter boats where the client is in the proprietaires list
+            const filteredBateaux = res.data.filter((b: any) => 
+                b.proprietaires && b.proprietaires.some((p: any) => 
+                    (typeof p === 'object' ? p.id : p) === props.clientId
+                )
+            );
+            // Transform API data to match component's expected format
+            const transformedBateaux = filteredBateaux.map((b: any) => ({
+                key: b.id,
+                nom: b.name || '',
+                imageUrl: b.images && b.images.length > 0 ? b.images[0] : '',
+                marque: b.modele?.marque || '',
+                denomination: b.modele?.denomination || '',
+                type: b.modele?.type || '',
+                proprietaire: b.proprietaires?.map((p: any) => 
+                    typeof p === 'object' ? `${p.prenom || ''} ${p.nom || ''}`.trim() : ''
+                ).filter(Boolean).join(', ') || '',
+                ...b // Include all original properties for detail view
+            }));
+            setFetchedBateaux(transformedBateaux);
+        } catch (error) {
+            console.error('Error fetching boats:', error);
+            setFetchedBateaux([]);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Use fetched boats if clientId is provided, otherwise use props.bateaux
+    const bateaux = props.clientId ? fetchedBateaux : (props.bateaux || []);
 
     if (bateau) {
         return(
-            <Bateau bateaux={props.bateaux} bateau={bateau} setBateau={setBateau} />
+            <Bateau bateaux={bateaux} bateau={bateau} setBateau={setBateau} />
         );
     } else {
         return(
-            <List bateaux={props.bateaux} setBateau={setBateau} />
+            <List bateaux={bateaux} setBateau={setBateau} loading={loading} />
         );
     }
 
