@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.quarkus.hibernate.orm.panache.PanacheEntity;
+import jakarta.json.bind.annotation.JsonbTransient;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
@@ -54,6 +55,7 @@ public class MoteurCatalogueEntity extends PanacheEntity {
         joinColumns = @JoinColumn(name = "moteur_id"),
         inverseJoinColumns = @JoinColumn(name = "helice_id")
     )
+    @JsonbTransient
     public List<HeliceCatalogueEntity> helicesCompatibles = new ArrayList<>();
 
     public long stock;

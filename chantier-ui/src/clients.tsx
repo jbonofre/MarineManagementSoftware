@@ -22,6 +22,7 @@ import {
 } from "@ant-design/icons";
 import axios from "axios";
 import BateauxClients from "./clients-bateaux.tsx";
+import ClientsMoteurs from "./clients-moteurs.tsx";
 
 const { Option } = Select;
 const { Search } = Input;
@@ -293,6 +294,8 @@ function Clients() {
             <Divider />
             {/* Affiche la liste des bateaux pour ce client */}
             <BateauxClients clientId={editing.id} />
+            <Divider />
+            <ClientsMoteurs clientId={editing.id} />
           </>
         )}
       </Modal>
