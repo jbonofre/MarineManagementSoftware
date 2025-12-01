@@ -23,6 +23,7 @@ import {
 import axios from "axios";
 import BateauxClients from "./clients-bateaux.tsx";
 import ClientsMoteurs from "./clients-moteurs.tsx";
+import RemorquesClients from "./clients-remorques.tsx";
 
 const { Option } = Select;
 const { Search } = Input;
@@ -296,6 +297,8 @@ function Clients() {
             <BateauxClients clientId={editing.id} />
             <Divider />
             <ClientsMoteurs clientId={editing.id} />
+            <Divider />
+            <RemorquesClients clientId={editing.id} />
           </>
         )}
       </Modal>

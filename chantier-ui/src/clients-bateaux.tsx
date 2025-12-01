@@ -188,13 +188,17 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
   };
 
   const columns = [
-    { title: "Nom", dataIndex: "name", key: "name" },
-    { title: "Immatriculation", dataIndex: "immatriculation", key: "immatriculation" },
+    { title: "Nom", dataIndex: "name", key: "name", sorter: (a, b) => a.name.localeCompare(b.name) },
+    { title: "Immatriculation", dataIndex: "immatriculation", key: "immatriculation", sorter: (a, b) => a.immatriculation.localeCompare(b.immatriculation) },
     { title: "Propriétaires", dataIndex: "proprietaires", key: "proprietaires",
       render: (proprietaires: any[]) => (proprietaires && proprietaires.length ? proprietaires.map(p => (p.prenom + " " + p.nom)).join(", ") : ""),
+      filters: clients.map((client: any) => ({ text: `${client.prenom} ${client.nom}`, value: client.id })),
+      onFilter: (value, record) => record.proprietaires?.some((p: any) => p.id === value),
     },
     { title: "Modèle", dataIndex: "modele", key: "modele",
       render: (modele: any) => (modele ? (modele.marque) + " " + (modele.modele) + " (" + (modele.annee) + ")" : ""),
+      filters: bateauxCatalogue.map((bateau) => ({ text: `${bateau.marque} ${bateau.modele} ${bateau.annee ? `(${bateau.annee})` : ""}`, value: bateau.id })),
+      onFilter: (value, record) => record.modele?.id === value,
     },
     {
       title: "Actions",

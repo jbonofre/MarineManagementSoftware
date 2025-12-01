@@ -167,12 +167,14 @@ const ClientsMoteurs: React.FC<ClientsMoteursProps> = ({ clientId }) => {
   };
 
   const columns = [
-    { title: "Numéro de série", dataIndex: "numeroSerie", key: "numeroSerie" },
+    { title: "Numéro de série", dataIndex: "numeroSerie", key: "numeroSerie", sorter: (a, b) => a.numeroSerie.localeCompare(b.numeroSerie) },
     {
       title: "Propriétaire",
       dataIndex: "proprietaire",
       key: "proprietaire",
       render: (proprietaire: any) => proprietaire ? `${proprietaire.prenom ?? ""} ${proprietaire.nom ?? ""}` : "",
+      filters: clients.map((client: any) => ({ text: `${client.prenom} ${client.nom}`, value: client.id })),
+      onFilter: (value, record) => record.proprietaire?.id === value,
     },
     {
       title: "Modèle",
@@ -186,16 +188,20 @@ const ClientsMoteurs: React.FC<ClientsMoteursProps> = ({ clientId }) => {
               modele.annee && `(${modele.annee})`
             ].filter(Boolean).join(" ")
           : "",
+      filters: catalogueMoteurs.map((modele) => ({ text: `${modele.marque} ${modele.modele} ${modele.annee ? `(${modele.annee})` : ""}`, value: modele.id })),
+      onFilter: (value, record) => record.modele?.id === value,
     },
     {
       title: "Date achat",
       dataIndex: "dateAchat",
       key: "dateAchat",
+      sorter: (a, b) => a.dateAchat.localeCompare(b.dateAchat),
     },
     {
       title: "Date fin garantie",
       dataIndex: "dateFinDeGuarantie",
       key: "dateFinDeGuarantie",
+      sorter: (a, b) => a.dateFinDeGuarantie.localeCompare(b.dateFinDeGuarantie),
     },
     {
       title: "Actions",
@@ -216,7 +222,7 @@ const ClientsMoteurs: React.FC<ClientsMoteursProps> = ({ clientId }) => {
     <Card title="Moteurs Clients">
       <Space style={{ marginBottom: 16 }}>
         <Search
-          placeholder="Recherche numéro série"
+          placeholder="Recherche"
           enterButton
           allowClear={true}
           style={{ width: 600 }}
