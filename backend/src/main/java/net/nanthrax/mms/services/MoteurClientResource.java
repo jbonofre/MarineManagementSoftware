@@ -58,6 +58,7 @@ public class MoteurClientResource {
         }
         moteur.images = updatedMoteur.images;
         moteur.numeroSerie = updatedMoteur.numeroSerie;
+        moteur.numeroClef = updatedMoteur.numeroClef;
         moteur.dateMeS = updatedMoteur.dateMeS;
         moteur.dateAchat = updatedMoteur.dateAchat;
         moteur.dateFinDeGuarantie = updatedMoteur.dateFinDeGuarantie;

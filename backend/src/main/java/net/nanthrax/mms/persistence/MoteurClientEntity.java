@@ -14,6 +14,8 @@ public class MoteurClientEntity extends PanacheEntity {
 
     public String numeroSerie;
 
+    public String numeroClef;
+
     public String dateMeS;
 
     public String dateAchat;

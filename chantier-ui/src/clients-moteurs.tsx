@@ -28,6 +28,7 @@ interface MoteurClient {
   id?: number;
   images?: string[];
   numeroSerie?: string;
+  numeroClef?: string;
   dateMeS?: string;
   dateAchat?: string;
   dateFinDeGuarantie?: string;
@@ -38,6 +39,7 @@ interface MoteurClient {
 const defaultMoteur: MoteurClient = {
   images: [],
   numeroSerie: "",
+  numeroClef: "",
   dateMeS: "",
   dateAchat: "",
   dateFinDeGuarantie: "",
@@ -251,6 +253,9 @@ const ClientsMoteurs: React.FC<ClientsMoteursProps> = ({ clientId }) => {
       >
         <Form layout="vertical" form={form} initialValues={defaultMoteur}>
           <Form.Item label="Numéro de série" name="numeroSerie" rules={[{ required: true, message: "Numéro de série requis" }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item label="Numéro de clef" name="numeroClef">
             <Input />
           </Form.Item>
           <Form.Item label="Date MeS" name="dateMeS">
