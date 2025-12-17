@@ -262,27 +262,33 @@ const RemorqueCatalogue: React.FC = () => {
           initialValues={defaultRemorque}
           onValuesChange={onValuesChange}
         >
-          <Form.Item
-            name="modele"
-            label="Modèle"
-            rules={[{ required: true, message: "Champ requis" }]}
-          >
-            <Input />
-          </Form.Item>
-          <Form.Item
-            name="marque"
-            label="Marque"
-            rules={[{ required: true, message: "Champ requis" }]}
-          >
-            <Input />
-          </Form.Item>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="modele"
+                label="Modèle"
+                rules={[{ required: true, message: "Champ requis" }]}
+              >
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="marque"
+                label="Marque"
+                rules={[{ required: true, message: "Champ requis" }]}
+              >
+                <Input />
+              </Form.Item>
+            </Col>
+          </Row>
           <Form.Item name="description" label="Description">
             <Input.TextArea rows={3} />
           </Form.Item>
           <Form.Item name="evaluation" label="Évaluation">
             <Rate allowHalf />
           </Form.Item>
-          <Row gutter={12}>
+          <Row gutter={16}>
             <Col span={12}>
               <Form.Item name="ptac" label="PTAC (kg)">
                 <InputNumber min={0} style={{ width: "100%" }} />
@@ -294,7 +300,7 @@ const RemorqueCatalogue: React.FC = () => {
               </Form.Item>
             </Col>
           </Row>
-          <Row gutter={12}>
+          <Row gutter={16}>
             <Col span={12}>
               <Form.Item name="chargeUtile" label="Charge utile (kg)">
                 <InputNumber min={0} style={{ width: "100%" }} />
@@ -306,7 +312,7 @@ const RemorqueCatalogue: React.FC = () => {
               </Form.Item>
             </Col>
           </Row>
-          <Row gutter={12}>
+          <Row gutter={16}>
             <Col span={12}>
               <Form.Item name="largeur" label="Largeur (mm)">
                 <InputNumber min={0} style={{ width: "100%" }} />
@@ -318,7 +324,7 @@ const RemorqueCatalogue: React.FC = () => {
               </Form.Item>
             </Col>
           </Row>
-          <Row gutter={12}>
+          <Row gutter={16}>
             <Col span={12}>
               <Form.Item name="largeurMaxBateau" label="Larg. Max. Bateau (mm)">
                 <InputNumber min={0} style={{ width: "100%" }} />
@@ -330,7 +336,7 @@ const RemorqueCatalogue: React.FC = () => {
               </Form.Item>
             </Col>
           </Row>
-          <Row gutter={12}>
+          <Row gutter={16}>
             <Col span={12}>
               <Form.Item name="typeChassis" label="Type de châssis">
                 <Select options={typeChassisList} allowClear />
@@ -342,10 +348,19 @@ const RemorqueCatalogue: React.FC = () => {
               </Form.Item>
             </Col>
           </Row>
-          <Form.Item name="equipement" label="Équipement">
-            <Input />
-          </Form.Item>
-          <Row gutter={12}>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="equipement" label="Équipement">
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="emplacement" label="Emplacement">
+                <Input />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
             <Col span={12}>
               <Form.Item name="stock" label="Stock">
                 <InputNumber min={0} style={{ width: "100%" }} />
@@ -357,10 +372,7 @@ const RemorqueCatalogue: React.FC = () => {
               </Form.Item>
             </Col>
           </Row>
-          <Form.Item name="emplacement" label="Emplacement">
-            <Input />
-          </Form.Item>
-          <Row gutter={12}>
+          <Row gutter={16}>
             <Col span={12}>
               <Form.Item name="prixPublic" label="Prix public (€)">
                 <InputNumber min={0} style={{ width: "100%" }} step={100} />
@@ -372,7 +384,7 @@ const RemorqueCatalogue: React.FC = () => {
               </Form.Item>
             </Col>
           </Row>
-          <Row gutter={12}>
+          <Row gutter={16}>
             <Col span={12}>
               <Form.Item name="tauxMarge" label="Taux de marge (%)">
                 <InputNumber min={0} max={100} style={{ width: "100%" }} />
@@ -384,26 +396,30 @@ const RemorqueCatalogue: React.FC = () => {
               </Form.Item>
             </Col>
           </Row>
-          <Row gutter={12}>
-            <Col span={8}>
+          <Row gutter={16}>
+            <Col span={12}>
               <Form.Item name="prixVenteHT" label="Prix Vente HT">
                 <InputNumber min={0} style={{ width: "100%" }} step={100} disabled />
               </Form.Item>
             </Col>
-            <Col span={8}>
+            <Col span={12}>
               <Form.Item name="tva" label="TVA (%)">
                 <InputNumber min={0} max={100} style={{ width: "100%" }} step={1} />
               </Form.Item>
             </Col>
-            <Col span={8}>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
               <Form.Item name="montantTVA" label="Montant TVA">
                 <InputNumber min={0} style={{ width: "100%" }} step={1} disabled />
               </Form.Item>
             </Col>
+            <Col span={12}>
+              <Form.Item name="prixVenteTTC" label="Prix Vente TTC">
+                <InputNumber min={0} style={{ width: "100%" }} step={100} />
+              </Form.Item>
+            </Col>
           </Row>
-          <Form.Item name="prixVenteTTC" label="Prix Vente TTC">
-            <InputNumber min={0} style={{ width: "100%" }} step={100} />
-          </Form.Item>
         </Form>
         {editingRemorque && editingRemorque.id && (
           <FournisseurRemorques remorqueId={editingRemorque.id} />
