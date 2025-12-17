@@ -13,6 +13,8 @@ import {
   Rate,
   Spin,
   Divider,
+  Row,
+  Col,
 } from "antd";
 import {
   PlusCircleOutlined,
@@ -244,48 +246,82 @@ function Clients() {
           <Form.Item name="id" hidden>
             <Input />
           </Form.Item>
-          <Form.Item label="Type" name="type" rules={[{ required: true }]}>
-            <Select>
-              {typeOptions.map((opt) => (
-                <Option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </Option>
-              ))}
-            </Select>
-          </Form.Item>
-          <Form.Item label="Nom" name="nom" rules={[{ required: true, message: "Le nom est requis" }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item label="Prénom" name="prenom">
-            <Input />
-          </Form.Item>
-          <Form.Item label="Email" name="email">
-            <Input />
-          </Form.Item>
-          <Form.Item label="Téléphone" name="telephone">
-            <Input />
-          </Form.Item>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="Type" name="type" rules={[{ required: true }]}>
+                <Select>
+                  {typeOptions.map((opt) => (
+                    <Option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="Nom" name="nom" rules={[{ required: true, message: "Le nom est requis" }]}>
+                <Input />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="Prénom" name="prenom">
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="Email" name="email">
+                <Input />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="Téléphone" name="telephone">
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="Évaluation" name="evaluation">
+                <Rate allowClear />
+              </Form.Item>
+            </Col>
+          </Row>
           <Form.Item label="Adresse" name="adresse">
             <Input.TextArea autoSize={{ minRows: 3, maxRows: 6 }} />
           </Form.Item>
-          <Form.Item label="SIREN" name="siren">
-            <Input />
-          </Form.Item>
-          <Form.Item label="SIRET" name="siret">
-            <Input />
-          </Form.Item>
-          <Form.Item label="TVA" name="tva">
-            <Input />
-          </Form.Item>
-          <Form.Item label="NAF" name="naf">
-            <Input />
-          </Form.Item>
-          <Form.Item label="Évaluation" name="evaluation">
-            <Rate allowClear />
-          </Form.Item>
-          <Form.Item label="Remise (%)" name="remise" initialValue={0}>
-            <Input type="number" min={0} max={100}/>
-          </Form.Item>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="SIREN" name="siren">
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="SIRET" name="siret">
+                <Input />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="TVA" name="tva">
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="NAF" name="naf">
+                <Input />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="Remise (%)" name="remise" initialValue={0}>
+                <Input type="number" min={0} max={100}/>
+              </Form.Item>
+            </Col>
+          </Row>
           <Form.Item label="Notes" name="notes">
             <Input.TextArea rows={3} />
           </Form.Item>
