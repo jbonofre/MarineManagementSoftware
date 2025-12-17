@@ -65,9 +65,6 @@ public class BateauClientResource {
         entity.dateFinDeGuarantie = updated.dateFinDeGuarantie;
         entity.proprietaires = updated.proprietaires;
         entity.modele = updated.modele;
-        entity.categorieCe = updated.categorieCe;
-        entity.assureur = updated.assureur;
-        entity.numeroAssurance = updated.numeroAssurance;
         entity.localisation = updated.localisation;
         entity.localisationGps = updated.localisationGps;
         entity.moteurs = updated.moteurs;

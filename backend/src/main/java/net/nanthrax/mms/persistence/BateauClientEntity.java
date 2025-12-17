@@ -33,12 +33,6 @@ public class BateauClientEntity extends PanacheEntity {
     @ManyToOne
     public BateauCatalogueEntity modele;
 
-    public String categorieCe;
-
-    public String assureur;
-
-    public String numeroAssurance;
-
     public String localisation;
 
     public String localisationGps;

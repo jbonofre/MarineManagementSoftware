@@ -37,9 +37,6 @@ interface BateauClient {
   dateFinDeGuarantie?: string;
   proprietaires?: any[];
   modele?: any;
-  categorieCe?: string;
-  assureur?: string;
-  numeroAssurance?: string;
   localisation?: string;
   localisationGps?: string;
   moteurs?: any[];
@@ -58,9 +55,6 @@ const defaultBateau: BateauClient = {
   dateFinDeGuarantie: "",
   proprietaires: [],
   modele: null,
-  categorieCe: "",
-  assureur: "",
-  numeroAssurance: "",
   localisation: "",
   localisationGps: "",
   moteurs: [],
@@ -267,15 +261,6 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
           </Form.Item>
           <Form.Item label="Date fin garantie" name="dateFinDeGuarantie">
             <Input placeholder="YYYY-MM-DD" />
-          </Form.Item>
-          <Form.Item label="Catégorie CE" name="categorieCe">
-            <Input />
-          </Form.Item>
-          <Form.Item label="Assureur" name="assureur">
-            <Input />
-          </Form.Item>
-          <Form.Item label="Numéro d'assurance" name="numeroAssurance">
-            <Input />
           </Form.Item>
           <Form.Item label="Localisation" name="localisation">
             <Input />
