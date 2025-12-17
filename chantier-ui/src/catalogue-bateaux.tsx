@@ -270,27 +270,39 @@ const CatalogueBateaux: React.FC = () => {
                             initialValues={defaultBateau}
                             onValuesChange={onValuesChange}
                         >
-                            <Form.Item name="modele" label="Modèle" rules={[{ required: true }]}>
-                                <Input />
-                            </Form.Item>
-                            <Form.Item name="marque" label="Marque" rules={[{ required: true }]}>
-                                <AutoComplete
-                                    allowClear
-                                    options={marqueOptions}
-                                    placeholder="Saisir ou sélectionner une marque"
-                                />
-                            </Form.Item>
-                            <Form.Item name="type" label="Type" rules={[{ required: true }]}>
-                                <Select options={bateauTypes} />
-                            </Form.Item>
+                            <Row gutter={16}>
+                                <Col span={12}>
+                                    <Form.Item name="modele" label="Modèle" rules={[{ required: true }]}>
+                                        <Input />
+                                    </Form.Item>
+                                </Col>
+                                <Col span={12}>
+                                    <Form.Item name="marque" label="Marque" rules={[{ required: true }]}>
+                                        <AutoComplete
+                                            allowClear
+                                            options={marqueOptions}
+                                            placeholder="Saisir ou sélectionner une marque"
+                                        />
+                                    </Form.Item>
+                                </Col>
+                            </Row>
+                            <Row gutter={16}>
+                                <Col span={12}>
+                                    <Form.Item name="type" label="Type" rules={[{ required: true }]}>
+                                        <Select options={bateauTypes} />
+                                    </Form.Item>
+                                </Col>
+                                <Col span={12}>
+                                    <Form.Item name="annee" label="Année">
+                                        <InputNumber min={1900} max={new Date().getFullYear()} step={1} style={{ width: '100%' }} />
+                                    </Form.Item>
+                                </Col>
+                            </Row>
                             <Form.Item name="description" label="Description">
                                 <Input.TextArea rows={3} placeholder="Description du bateau" />
                             </Form.Item>
                             <Form.Item name="evaluation" label="Évaluation">
                                 <Rate allowHalf />
-                            </Form.Item>
-                            <Form.Item name="annee" label="Année">
-                                <InputNumber min={1900} max={new Date().getFullYear()} step={1} style={{ width: '100%' }} />
                             </Form.Item>
                             <Form.Item name="images" label="Images">
                                 <Form.List name="images">
@@ -305,7 +317,7 @@ const CatalogueBateaux: React.FC = () => {
                                                         rules={[{ required: true, message: 'Veuillez entrer une URL d\'image' }]}
                                                         style={{ flex: 1 }}
                                                     >
-                                                        <Input placeholder="URL de l'image" style={{ width: '700px' }} />
+                                                        <Input placeholder="URL de l'image" style={{ width: '100%' }} />
                                                     </Form.Item>
                                                     <Button
                                                         icon={<DeleteOutlined />}
@@ -324,84 +336,162 @@ const CatalogueBateaux: React.FC = () => {
                                     )}
                                 </Form.List>
                             </Form.Item>
-                            <Form.Item name="longueurExterieure" label="Longueur extérieure (m)">
-                                <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
-                            </Form.Item>
-                            <Form.Item name="longueurCoque" label="Longueur coque (m)">
-                                <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
-                            </Form.Item>
-                            <Form.Item name="hauteur" label="Hauteur (m)">
-                                <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
-                            </Form.Item>
-                            <Form.Item name="largeur" label="Largeur (m)">
-                                <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
-                            </Form.Item>
-                            <Form.Item name="tirantAir" label="Tirant d’air (m)">
-                                <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
-                            </Form.Item>
-                            <Form.Item name="tirantEau" label="Tirant d’eau (m)">
-                                <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
-                            </Form.Item>
-                            <Form.Item name="poidsVide" label="Poids à vide (kg)">
-                                <InputNumber min={0} step={1} style={{ width: '100%' }} />
-                            </Form.Item>
-                            <Form.Item name="poidsMoteurMax" label="Poids moteur max (kg)">
-                                <InputNumber min={0} step={1} style={{ width: '100%' }} />
-                            </Form.Item>
-                            <Form.Item name="chargeMax" label="Charge max (kg)">
-                                <InputNumber min={0} step={1} style={{ width: '100%' }} />
-                            </Form.Item>
-                            <Form.Item name="longueurArbre" label="Longueur arbre">
-                                <Input />
-                            </Form.Item>
-                            <Form.Item name="puissanceMax" label="Puissance max">
-                                <Input />
-                            </Form.Item>
-                            <Form.Item name="reservoirEau" label="Réservoir eau (L)">
-                                <InputNumber min={0} step={1} style={{ width: '100%' }} />
-                            </Form.Item>
-                            <Form.Item name="reservoirCarburant" label="Réservoir carburant (L)">
-                                <InputNumber min={0} step={1} style={{ width: '100%' }} />
-                            </Form.Item>
-                            <Form.Item name="nombrePassagersMax" label="Nombre passagers max">
-                                <InputNumber min={0} step={1} style={{ width: '100%' }} />
-                            </Form.Item>
-                            <Form.Item name="categorieCe" label="Catégorie CE">
-                                <Input />
-                            </Form.Item>
-                            <Form.Item name="stock" label="Stock">
-                                <InputNumber min={0} step={1} style={{ width: '100%' }} />
-                            </Form.Item>
-                            <Form.Item name="stockAlerte" label="Stock alerte">
-                                <InputNumber min={0} step={1} style={{ width: '100%' }} />
-                            </Form.Item>
-                            <Form.Item name="emplacement" label="Emplacement">
-                                <TextArea rows={3} placeholder="Emplacement du stock bateau" allowClear={true} />
-                            </Form.Item>
-                            <Form.Item name="prixPublic" label="Prix public">
-                                <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
-                            </Form.Item>
-                            <Form.Item name="frais" label="Frais">
-                                <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
-                            </Form.Item>
-                            <Form.Item name="tauxMarge" label="Taux de marge">
-                                <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
-                            </Form.Item>
-                            <Form.Item name="tauxMarque" label="Taux de marque">
-                                <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
-                            </Form.Item>
-                            <Form.Item name="prixVenteHT" label="Prix de vente HT">
-                                <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
-                            </Form.Item>
-                            <Form.Item name="tva" label="TVA">
-                                <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
-                            </Form.Item>
-                            <Form.Item name="montantTVA" label="Montant TVA">
-                                <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
-                            </Form.Item>
-                            <Form.Item name="prixVenteTTC" label="Prix de vente TTC">
-                                <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
-                            </Form.Item>
+                            <Row gutter={16}>
+                                <Col span={12}>
+                                    <Form.Item name="longueurExterieure" label="Longueur extérieure (m)">
+                                        <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+                                    </Form.Item>
+                                </Col>
+                                <Col span={12}>
+                                    <Form.Item name="longueurCoque" label="Longueur coque (m)">
+                                        <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+                                    </Form.Item>
+                                </Col>
+                            </Row>
+                            <Row gutter={16}>
+                                <Col span={12}>
+                                    <Form.Item name="hauteur" label="Hauteur (m)">
+                                        <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+                                    </Form.Item>
+                                </Col>
+                                <Col span={12}>
+                                    <Form.Item name="largeur" label="Largeur (m)">
+                                        <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+                                    </Form.Item>
+                                </Col>
+                            </Row>
+                            <Row gutter={16}>
+                                <Col span={12}>
+                                    <Form.Item name="tirantAir" label="Tirant d'air (m)">
+                                        <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+                                    </Form.Item>
+                                </Col>
+                                <Col span={12}>
+                                    <Form.Item name="tirantEau" label="Tirant d'eau (m)">
+                                        <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+                                    </Form.Item>
+                                </Col>
+                            </Row>
+                            <Row gutter={16}>
+                                <Col span={12}>
+                                    <Form.Item name="poidsVide" label="Poids à vide (kg)">
+                                        <InputNumber min={0} step={1} style={{ width: '100%' }} />
+                                    </Form.Item>
+                                </Col>
+                                <Col span={12}>
+                                    <Form.Item name="poidsMoteurMax" label="Poids moteur max (kg)">
+                                        <InputNumber min={0} step={1} style={{ width: '100%' }} />
+                                    </Form.Item>
+                                </Col>
+                            </Row>
+                            <Row gutter={16}>
+                                <Col span={12}>
+                                    <Form.Item name="chargeMax" label="Charge max (kg)">
+                                        <InputNumber min={0} step={1} style={{ width: '100%' }} />
+                                    </Form.Item>
+                                </Col>
+                                <Col span={12}>
+                                    <Form.Item name="longueurArbre" label="Longueur arbre">
+                                        <Input />
+                                    </Form.Item>
+                                </Col>
+                            </Row>
+                            <Row gutter={16}>
+                                <Col span={12}>
+                                    <Form.Item name="puissanceMax" label="Puissance max">
+                                        <Input />
+                                    </Form.Item>
+                                </Col>
+                                <Col span={12}>
+                                    <Form.Item name="reservoirEau" label="Réservoir eau (L)">
+                                        <InputNumber min={0} step={1} style={{ width: '100%' }} />
+                                    </Form.Item>
+                                </Col>
+                            </Row>
+                            <Row gutter={16}>
+                                <Col span={12}>
+                                    <Form.Item name="reservoirCarburant" label="Réservoir carburant (L)">
+                                        <InputNumber min={0} step={1} style={{ width: '100%' }} />
+                                    </Form.Item>
+                                </Col>
+                                <Col span={12}>
+                                    <Form.Item name="nombrePassagersMax" label="Nombre passagers max">
+                                        <InputNumber min={0} step={1} style={{ width: '100%' }} />
+                                    </Form.Item>
+                                </Col>
+                            </Row>
+                            <Row gutter={16}>
+                                <Col span={12}>
+                                    <Form.Item name="categorieCe" label="Catégorie CE">
+                                        <Input />
+                                    </Form.Item>
+                                </Col>
+                                <Col span={12}>
+                                    <Form.Item name="stock" label="Stock">
+                                        <InputNumber min={0} step={1} style={{ width: '100%' }} />
+                                    </Form.Item>
+                                </Col>
+                            </Row>
+                            <Row gutter={16}>
+                                <Col span={12}>
+                                    <Form.Item name="stockAlerte" label="Stock alerte">
+                                        <InputNumber min={0} step={1} style={{ width: '100%' }} />
+                                    </Form.Item>
+                                </Col>
+                                <Col span={12}>
+                                    <Form.Item name="emplacement" label="Emplacement">
+                                        <TextArea rows={3} placeholder="Emplacement du stock bateau" allowClear={true} />
+                                    </Form.Item>
+                                </Col>
+                            </Row>
+                            <Row gutter={16}>
+                                <Col span={12}>
+                                    <Form.Item name="prixPublic" label="Prix public">
+                                        <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+                                    </Form.Item>
+                                </Col>
+                                <Col span={12}>
+                                    <Form.Item name="frais" label="Frais">
+                                        <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+                                    </Form.Item>
+                                </Col>
+                            </Row>
+                            <Row gutter={16}>
+                                <Col span={12}>
+                                    <Form.Item name="tauxMarge" label="Taux de marge">
+                                        <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+                                    </Form.Item>
+                                </Col>
+                                <Col span={12}>
+                                    <Form.Item name="tauxMarque" label="Taux de marque">
+                                        <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+                                    </Form.Item>
+                                </Col>
+                            </Row>
+                            <Row gutter={16}>
+                                <Col span={12}>
+                                    <Form.Item name="prixVenteHT" label="Prix de vente HT">
+                                        <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+                                    </Form.Item>
+                                </Col>
+                                <Col span={12}>
+                                    <Form.Item name="tva" label="TVA">
+                                        <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+                                    </Form.Item>
+                                </Col>
+                            </Row>
+                            <Row gutter={16}>
+                                <Col span={12}>
+                                    <Form.Item name="montantTVA" label="Montant TVA">
+                                        <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+                                    </Form.Item>
+                                </Col>
+                                <Col span={12}>
+                                    <Form.Item name="prixVenteTTC" label="Prix de vente TTC">
+                                        <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+                                    </Form.Item>
+                                </Col>
+                            </Row>
                         {/* Affiche la liste des fournisseurs pour ce bateau quand en modification */}
                         {isEdit && currentBateau && currentBateau.id && (
                             <FournisseurBateaux bateauId={currentBateau.id} />
