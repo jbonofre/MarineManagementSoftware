@@ -287,15 +287,30 @@ const CatalogueProduits: React.FC = () => {
                                 initialValues={defaultProduit}
                                 onValuesChange={onValuesChange}
                             >
-                                <Form.Item name="nom" label="Nom" rules={[{ required: true, message: "Le nom est requis" }]}>
-                                    <Input />
-                                </Form.Item>
-                                <Form.Item name="categorie" label="Catégorie" rules={[{ required: true, message: "La catégorie est requise" }]}>
-                                    <Select options={CATEGORIES} placeholder="Choisir une catégorie" />
-                                </Form.Item>
-                                <Form.Item name="marque" label="Marque">
-                                    <AutoComplete allowClear options={marqueOptions} placeholder="Saisir/select. une marque" />
-                                </Form.Item>
+                                <Row gutter={16}>
+                                    <Col span={12}>
+                                        <Form.Item name="nom" label="Nom" rules={[{ required: true, message: "Le nom est requis" }]}>
+                                            <Input />
+                                        </Form.Item>
+                                    </Col>
+                                    <Col span={12}>
+                                        <Form.Item name="categorie" label="Catégorie" rules={[{ required: true, message: "La catégorie est requise" }]}>
+                                            <Select options={CATEGORIES} placeholder="Choisir une catégorie" />
+                                        </Form.Item>
+                                    </Col>
+                                </Row>
+                                <Row gutter={16}>
+                                    <Col span={12}>
+                                        <Form.Item name="marque" label="Marque">
+                                            <AutoComplete allowClear options={marqueOptions} placeholder="Saisir/select. une marque" />
+                                        </Form.Item>
+                                    </Col>
+                                    <Col span={12}>
+                                        <Form.Item name="ref" label="Référence interne">
+                                            <Input />
+                                        </Form.Item>
+                                    </Col>
+                                </Row>
                                 <Form.Item name="image" label="Image principale">
                                     <Input placeholder="URL de l'image (affichée en liste)" />
                                 </Form.Item>
@@ -312,7 +327,7 @@ const CatalogueProduits: React.FC = () => {
                                                             rules={[{ required: true, message: 'Veuillez entrer une URL d\'image' }]}
                                                             style={{ flex: 1 }}
                                                         >
-                                                            <Input placeholder="URL de l'image" style={{ width: '400px' }} />
+                                                            <Input placeholder="URL de l'image" style={{ width: '100%' }} />
                                                         </Form.Item>
                                                         <Button
                                                             icon={<DeleteOutlined />}
@@ -330,9 +345,6 @@ const CatalogueProduits: React.FC = () => {
                                             </>
                                         )}
                                     </Form.List>
-                                </Form.Item>
-                                <Form.Item name="ref" label="Référence interne">
-                                    <Input />
                                 </Form.Item>
                                 <Form.Item name="refs" label="Références complémentaires">
                                     <Form.List name="refs">
@@ -364,39 +376,69 @@ const CatalogueProduits: React.FC = () => {
                                 <Form.Item name="evaluation" label="Évaluation">
                                     <Rate allowHalf />
                                 </Form.Item>
-                                <Form.Item name="stock" label="Stock">
-                                    <InputNumber min={0} step={1} style={{ width: '100%' }} />
-                                </Form.Item>
-                                <Form.Item name="stockMini" label="Stock minimal d'alerte">
-                                    <InputNumber min={0} step={1} style={{ width: '100%' }} />
-                                </Form.Item>
+                                <Row gutter={16}>
+                                    <Col span={12}>
+                                        <Form.Item name="stock" label="Stock">
+                                            <InputNumber min={0} step={1} style={{ width: '100%' }} />
+                                        </Form.Item>
+                                    </Col>
+                                    <Col span={12}>
+                                        <Form.Item name="stockMini" label="Stock minimal d'alerte">
+                                            <InputNumber min={0} step={1} style={{ width: '100%' }} />
+                                        </Form.Item>
+                                    </Col>
+                                </Row>
                                 <Form.Item name="emplacement" label="Emplacement">
                                     <Input />
                                 </Form.Item>
-                                <Form.Item name="prixPublic" label="Prix public">
-                                    <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
-                                </Form.Item>
-                                <Form.Item name="frais" label="Frais">
-                                    <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
-                                </Form.Item>
-                                <Form.Item name="tauxMarge" label="Taux de marge (%)">
-                                    <InputNumber min={0} max={100} step={0.01} style={{ width: '100%' }} />
-                                </Form.Item>
-                                <Form.Item name="tauxMarque" label="Taux de marque (%)">
-                                    <InputNumber min={0} max={100} step={0.01} style={{ width: '100%' }} />
-                                </Form.Item>
-                                <Form.Item name="prixVenteHT" label="Prix de vente HT">
-                                    <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
-                                </Form.Item>
-                                <Form.Item name="tva" label="TVA (%)">
-                                    <InputNumber min={0} max={100} step={0.01} style={{ width: '100%' }} />
-                                </Form.Item>
-                                <Form.Item name="montantTVA" label="Montant TVA">
-                                    <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
-                                </Form.Item>
-                                <Form.Item name="prixVenteTTC" label="Prix de vente TTC">
-                                    <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
-                                </Form.Item>
+                                <Row gutter={16}>
+                                    <Col span={12}>
+                                        <Form.Item name="prixPublic" label="Prix public">
+                                            <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+                                        </Form.Item>
+                                    </Col>
+                                    <Col span={12}>
+                                        <Form.Item name="frais" label="Frais">
+                                            <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+                                        </Form.Item>
+                                    </Col>
+                                </Row>
+                                <Row gutter={16}>
+                                    <Col span={12}>
+                                        <Form.Item name="tauxMarge" label="Taux de marge (%)">
+                                            <InputNumber min={0} max={100} step={0.01} style={{ width: '100%' }} />
+                                        </Form.Item>
+                                    </Col>
+                                    <Col span={12}>
+                                        <Form.Item name="tauxMarque" label="Taux de marque (%)">
+                                            <InputNumber min={0} max={100} step={0.01} style={{ width: '100%' }} />
+                                        </Form.Item>
+                                    </Col>
+                                </Row>
+                                <Row gutter={16}>
+                                    <Col span={12}>
+                                        <Form.Item name="prixVenteHT" label="Prix de vente HT">
+                                            <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+                                        </Form.Item>
+                                    </Col>
+                                    <Col span={12}>
+                                        <Form.Item name="tva" label="TVA (%)">
+                                            <InputNumber min={0} max={100} step={0.01} style={{ width: '100%' }} />
+                                        </Form.Item>
+                                    </Col>
+                                </Row>
+                                <Row gutter={16}>
+                                    <Col span={12}>
+                                        <Form.Item name="montantTVA" label="Montant TVA">
+                                            <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+                                        </Form.Item>
+                                    </Col>
+                                    <Col span={12}>
+                                        <Form.Item name="prixVenteTTC" label="Prix de vente TTC">
+                                            <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+                                        </Form.Item>
+                                    </Col>
+                                </Row>
                             </Form>
                             {isEdit && currentProduit && currentProduit.id && (
                             <FournisseurProduits produitId={currentProduit?.id} />  
