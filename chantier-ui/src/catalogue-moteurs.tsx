@@ -328,28 +328,40 @@ const MoteurCatalogue = () => {
               initialValues={defaultMoteur}
               onValuesChange={onValuesChange}
             >
-              <Form.Item name="modele" label="Modèle" rules={[{ required: true }]}>
-                <Input />
-              </Form.Item>
-              <Form.Item name="marque" label="Marque" rules={[{ required: true }]}>
-                <AutoComplete
-                  allowClear
-                  options={
-                    Array.from(
-                      new Set(moteurs.map((m: any) => m.marque).filter((m: any) => !!m))
-                    ).map((marque: string) => ({ value: marque }))
-                  }
-                  placeholder="Saisir ou sélectionner une marque"
-                />
-              </Form.Item>
-              <Form.Item name="type" label="Type" rules={[{ required: true }]}>
-                <Select options={moteurTypes.map((t) => ({ label: t.text, value: t.value }))} />
-              </Form.Item>
+              <Row gutter={16}>
+                <Col span={12}>
+                  <Form.Item name="modele" label="Modèle" rules={[{ required: true }]}>
+                    <Input />
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item name="marque" label="Marque" rules={[{ required: true }]}>
+                    <AutoComplete
+                      allowClear
+                      options={
+                        Array.from(
+                          new Set(moteurs.map((m: any) => m.marque).filter((m: any) => !!m))
+                        ).map((marque: string) => ({ value: marque }))
+                      }
+                      placeholder="Saisir ou sélectionner une marque"
+                    />
+                  </Form.Item>
+                </Col>
+              </Row>
+              <Row gutter={16}>
+                <Col span={12}>
+                  <Form.Item name="type" label="Type" rules={[{ required: true }]}>
+                    <Select options={moteurTypes.map((t) => ({ label: t.text, value: t.value }))} />
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item name="evaluation" label="Évaluation">
+                    <Rate allowHalf />
+                  </Form.Item>
+                </Col>
+              </Row>
               <Form.Item name="description" label="Description">
                 <Input.TextArea rows={3} />
-              </Form.Item>
-              <Form.Item name="evaluation" label="Évaluation">
-                <Rate allowHalf />
               </Form.Item>
               <Form.Item name="images" label="Images">
                 <Form.List name="images">
@@ -364,7 +376,7 @@ const MoteurCatalogue = () => {
                             rules={[{ required: true, message: 'Veuillez entrer une URL d\'image' }]}
                             style={{ flex: 1 }}
                           >
-                            <Input placeholder="URL de l'image" style={{ width: '500px' }} />
+                            <Input placeholder="URL de l'image" style={{ width: '100%' }} />
                           </Form.Item>
                           <Button
                             icon={<DeleteOutlined />}
@@ -382,36 +394,66 @@ const MoteurCatalogue = () => {
                   )}
                 </Form.List>
               </Form.Item>
-              <Form.Item name="puissanceCv" label="Puissance (CV)">
-                <InputNumber min={0} step={0.1} style={{ width: '100%' }} />
-              </Form.Item>
-              <Form.Item name="puissanceKw" label="Puissance (kW)">
-                <InputNumber min={0} step={0.1} style={{ width: '100%' }} />
-              </Form.Item>
-              <Form.Item name="longueurArbre" label="Longueur arbre">
-                <Input />
-              </Form.Item>
-              <Form.Item name="arbre" label="Arbre (cm)">
-                <InputNumber min={0} step={0.1} style={{ width: '100%' }} />
-              </Form.Item>
-              <Form.Item name="demarrage" label="Démarrage">
-                <Input />
-              </Form.Item>
-              <Form.Item name="direction" label="Direction">
-                <Input />
-              </Form.Item>
-              <Form.Item name="cylindres" label="Nombre de cylindres">
-                <InputNumber min={0} step={1} style={{ width: '100%' }} />
-              </Form.Item>
-              <Form.Item name="cylindree" label="Cylindrée">
-                <InputNumber min={0} step={1} style={{ width: '100%' }} />
-              </Form.Item>
-              <Form.Item name="regime" label="Régime Max">
-                <Input />
-              </Form.Item>
-              <Form.Item name="huileRecommandee" label="Huile recommandée">
-                <Input />
-              </Form.Item>
+              <Row gutter={16}>
+                <Col span={12}>
+                  <Form.Item name="puissanceCv" label="Puissance (CV)">
+                    <InputNumber min={0} step={0.1} style={{ width: '100%' }} />
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item name="puissanceKw" label="Puissance (kW)">
+                    <InputNumber min={0} step={0.1} style={{ width: '100%' }} />
+                  </Form.Item>
+                </Col>
+              </Row>
+              <Row gutter={16}>
+                <Col span={12}>
+                  <Form.Item name="longueurArbre" label="Longueur arbre">
+                    <Input />
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item name="arbre" label="Arbre (cm)">
+                    <InputNumber min={0} step={0.1} style={{ width: '100%' }} />
+                  </Form.Item>
+                </Col>
+              </Row>
+              <Row gutter={16}>
+                <Col span={12}>
+                  <Form.Item name="demarrage" label="Démarrage">
+                    <Input />
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item name="direction" label="Direction">
+                    <Input />
+                  </Form.Item>
+                </Col>
+              </Row>
+              <Row gutter={16}>
+                <Col span={12}>
+                  <Form.Item name="cylindres" label="Nombre de cylindres">
+                    <InputNumber min={0} step={1} style={{ width: '100%' }} />
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item name="cylindree" label="Cylindrée">
+                    <InputNumber min={0} step={1} style={{ width: '100%' }} />
+                  </Form.Item>
+                </Col>
+              </Row>
+              <Row gutter={16}>
+                <Col span={12}>
+                  <Form.Item name="regime" label="Régime Max">
+                    <Input />
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item name="huileRecommandee" label="Huile recommandée">
+                    <Input />
+                  </Form.Item>
+                </Col>
+              </Row>
               <Form.Item name="helicesCompatibles" label="Hélices compatibles">
                 <Select mode="multiple" optionFilterProp="children" showSearch>
                   {helices.map(h => (
@@ -421,39 +463,69 @@ const MoteurCatalogue = () => {
                   ))}
                 </Select>
               </Form.Item>
-              <Form.Item name="stock" label="Stock">
-                <InputNumber min={0} step={1} style={{ width: '100%' }} />
-              </Form.Item>
-              <Form.Item name="stockAlerte" label="Stock alerte">
-                <InputNumber min={0} step={1} style={{ width: '100%' }} />
-              </Form.Item>
+              <Row gutter={16}>
+                <Col span={12}>
+                  <Form.Item name="stock" label="Stock">
+                    <InputNumber min={0} step={1} style={{ width: '100%' }} />
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item name="stockAlerte" label="Stock alerte">
+                    <InputNumber min={0} step={1} style={{ width: '100%' }} />
+                  </Form.Item>
+                </Col>
+              </Row>
               <Form.Item name="emplacement" label="Emplacement">
                 <Input />
               </Form.Item>
-              <Form.Item name="prixPublic" label="Prix public">
-                <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
-              </Form.Item>
-              <Form.Item name="frais" label="Frais">
-                <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
-              </Form.Item>
-              <Form.Item name="tauxMarge" label="Taux de marge">
-                <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
-              </Form.Item>
-              <Form.Item name="tauxMarque" label="Taux de marque">
-                <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
-              </Form.Item>
-              <Form.Item name="prixVenteHT" label="Prix de vente HT">
-                <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
-              </Form.Item>
-              <Form.Item name="tva" label="TVA">
-                <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
-              </Form.Item>
-              <Form.Item name="montantTVA" label="Montant TVA">
-                <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
-              </Form.Item>
-              <Form.Item name="prixVenteTTC" label="Prix de vente TTC">
-                <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
-              </Form.Item>
+              <Row gutter={16}>
+                <Col span={12}>
+                  <Form.Item name="prixPublic" label="Prix public">
+                    <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item name="frais" label="Frais">
+                    <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+                  </Form.Item>
+                </Col>
+              </Row>
+              <Row gutter={16}>
+                <Col span={12}>
+                  <Form.Item name="tauxMarge" label="Taux de marge">
+                    <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item name="tauxMarque" label="Taux de marque">
+                    <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+                  </Form.Item>
+                </Col>
+              </Row>
+              <Row gutter={16}>
+                <Col span={12}>
+                  <Form.Item name="prixVenteHT" label="Prix de vente HT">
+                    <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item name="tva" label="TVA">
+                    <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+                  </Form.Item>
+                </Col>
+              </Row>
+              <Row gutter={16}>
+                <Col span={12}>
+                  <Form.Item name="montantTVA" label="Montant TVA">
+                    <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item name="prixVenteTTC" label="Prix de vente TTC">
+                    <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+                  </Form.Item>
+                </Col>
+              </Row>
             </Form>
             {editingMoteur && <FournisseurMoteurs moteurId={editingMoteur.id} />}
           </Modal>
