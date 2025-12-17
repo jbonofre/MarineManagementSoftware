@@ -40,9 +40,6 @@ public class BateauClientEntity extends PanacheEntity {
     @ManyToMany
     public List<MoteurCatalogueEntity> moteurs = new ArrayList<>();
 
-    @ManyToOne
-    public RemorqueCatalogueEntity remorque;
-
     @ManyToMany
     public List<ProduitCatalogueEntity> equipements = new ArrayList<>();
 

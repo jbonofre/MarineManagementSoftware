@@ -69,6 +69,7 @@ interface BateauxClientsProps {
 function BateauxClients({ clientId }: BateauxClientsProps) {
   const [bateaux, setBateaux] = useState<BateauClient[]>([]);
   const [bateauxCatalogue, setBateauxCatalogue] = useState<any[]>([]);
+  const [moteursCatalogue, setMoteursCatalogue] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -108,9 +109,20 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
     }
   };
 
+  const fetchMoteursCatalogue = async () => {
+    try {
+      const res = await axios.get('/catalogue/moteurs');
+      setMoteursCatalogue(res.data);
+    } catch {
+      message.error("Erreur lors du chargement du catalogue de moteurs");
+      setMoteursCatalogue([]);
+    }
+  };
+
   useEffect(() => {
     fetchBateaux();
     fetchBateauxCatalogue();
+    fetchMoteursCatalogue();
     fetchClients();
   }, [clientId]);
 
@@ -131,6 +143,7 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
       ...record,
       modeleId: record.modele?.id || undefined,
       proprietaires: record.proprietaires?.map((p: any) => p.id || p) || [],
+      moteurs: record.moteurs?.map((m: any) => m.id || m) || [],
     });
     setModalVisible(true);
   };
@@ -152,13 +165,16 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
     try {
       const values = await form.validateFields();
       setLoading(true);
-      // Transform modeleId to modele object and proprietaires IDs to objects
-      const { modeleId, proprietaires, ...restValues } = values;
+      // Transform modeleId to modele object and proprietaires/moteurs IDs to objects
+      const { modeleId, proprietaires, moteurs, ...restValues } = values;
       const payload = {
         ...restValues,
         modele: modeleId ? { id: modeleId } : null,
         proprietaires: proprietaires && Array.isArray(proprietaires) 
           ? proprietaires.map((id: number) => ({ id }))
+          : [],
+        moteurs: moteurs && Array.isArray(moteurs) 
+          ? moteurs.map((id: number) => ({ id }))
           : [],
       };
       if (editing && editing.id) {
@@ -337,7 +353,26 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
                 ))}
             </Select>
           </Form.Item>
-          {/* propriétaires, moteurs, remorque, équipements could be handled by extra fields/components if needed */}
+          <Form.Item label="Moteurs" name="moteurs">
+            <Select
+              mode="tags"
+              style={{ width: '100%' }}
+              placeholder="Sélectionner les moteurs à associer"
+              optionFilterProp="children"
+              allowClear
+              showSearch
+              filterOption={(input, option) =>
+                `${option?.children ?? ""}`.toLowerCase().includes(input.toLowerCase())
+              }
+            >
+              {moteursCatalogue && moteursCatalogue.map((moteur: any) => (
+                <Select.Option key={moteur.id} value={moteur.id}>
+                  {moteur.marque} {moteur.modele} {moteur.annee ? `(${moteur.annee})` : ''}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+          {/* moteurs, équipements could be handled by extra fields/components if needed */}
         </Form>
       </Modal>
     </Card>

@@ -1,6 +1,7 @@
 package net.nanthrax.mms.persistence;
 
 import io.quarkus.hibernate.orm.panache.PanacheEntity;
+import jakarta.json.bind.annotation.JsonbTransient;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.OneToMany;
@@ -81,6 +82,7 @@ public class BateauCatalogueEntity extends PanacheEntity {
     public double prixVenteTTC;
 
     @OneToMany
+    @JsonbTransient
     public List<FournisseurEntity> fournisseurs = new ArrayList<>();
 
 }
