@@ -369,20 +369,26 @@ const HeliceCatalogueView: React.FC = () => {
                             initialValues={defaultHelice}
                             onValuesChange={onValuesChange}
                         >
-                            <Form.Item
-                                name="modele"
-                                label="Modèle"
-                                rules={[{ required: true, message: "Champ obligatoire" }]}
-                            >
-                                <Input />
-                            </Form.Item>
-                            <Form.Item
-                                name="marque"
-                                label="Marque"
-                                rules={[{ required: true, message: "Champ obligatoire" }]}
-                            >
-                                <Input />
-                            </Form.Item>
+                            <Row gutter={16}>
+                                <Col span={12}>
+                                    <Form.Item
+                                        name="modele"
+                                        label="Modèle"
+                                        rules={[{ required: true, message: "Champ obligatoire" }]}
+                                    >
+                                        <Input />
+                                    </Form.Item>
+                                </Col>
+                                <Col span={12}>
+                                    <Form.Item
+                                        name="marque"
+                                        label="Marque"
+                                        rules={[{ required: true, message: "Champ obligatoire" }]}
+                                    >
+                                        <Input />
+                                    </Form.Item>
+                                </Col>
+                            </Row>
                             <Form.Item name="description" label="Description">
                                 <TextArea rows={2} />
                             </Form.Item>
@@ -399,7 +405,7 @@ const HeliceCatalogueView: React.FC = () => {
                                                         rules={[{ required: true, message: 'Veuillez entrer une URL d\'image' }]}
                                                         style={{ flex: 1 }}
                                                     >
-                                                        <Input placeholder="URL de l'image" style={{ width: '700px' }} />
+                                                        <Input placeholder="URL de l'image" style={{ width: '100%' }} />
                                                     </Form.Item>
                                                     <Button
                                                         icon={<DeleteOutlined />}
@@ -418,18 +424,30 @@ const HeliceCatalogueView: React.FC = () => {
                                     )}
                                 </Form.List>
                             </Form.Item>
-                            <Form.Item name="evaluation" label="Évaluation">
-                                <Rate allowHalf />
-                            </Form.Item>
-                            <Form.Item name="diametre" label="Diamètre (mm)">
-                                <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
-                            </Form.Item>
-                            <Form.Item name="pas" label="Pas">
-                                <Input />
-                            </Form.Item>
-                            <Form.Item name="pales" label="Pales">
-                                <InputNumber min={1} style={{ width: '100%' }} />
-                            </Form.Item>
+                            <Row gutter={16}>
+                                <Col span={12}>
+                                    <Form.Item name="evaluation" label="Évaluation">
+                                        <Rate allowHalf />
+                                    </Form.Item>
+                                </Col>
+                                <Col span={12}>
+                                    <Form.Item name="diametre" label="Diamètre (mm)">
+                                        <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+                                    </Form.Item>
+                                </Col>
+                            </Row>
+                            <Row gutter={16}>
+                                <Col span={12}>
+                                    <Form.Item name="pas" label="Pas">
+                                        <Input />
+                                    </Form.Item>
+                                </Col>
+                                <Col span={12}>
+                                    <Form.Item name="pales" label="Pales">
+                                        <InputNumber min={1} style={{ width: '100%' }} />
+                                    </Form.Item>
+                                </Col>
+                            </Row>
                             <Form.Item name="cannelures" label="Cannelures">
                                 <InputNumber min={0} style={{ width: '100%' }} />
                             </Form.Item>
@@ -442,30 +460,54 @@ const HeliceCatalogueView: React.FC = () => {
                                     ))}
                                 </Select>
                             </Form.Item>
-                            <Form.Item name="prixPublic" label="Prix Public">
-                                <InputNumber min={0} step={0.01} addonAfter="€" style={{ width: '100%' }} />
-                            </Form.Item>
-                            <Form.Item name="frais" label="Frais">
-                                <InputNumber min={0} step={0.01} addonAfter="€" style={{ width: '100%' }} />
-                            </Form.Item>
-                            <Form.Item name="tauxMarge" label="Taux Marge (%)">
-                                <InputNumber min={0} max={100} step={0.01} addonAfter="%" style={{ width: '100%' }} />
-                            </Form.Item>
-                            <Form.Item name="tauxMarque" label="Taux Marque (%)">
-                                <InputNumber min={0} max={100} step={0.01} addonAfter="%" style={{ width: '100%' }} />
-                            </Form.Item>
-                            <Form.Item name="prixVenteHT" label="Prix Vente HT">
-                                <InputNumber min={0} step={0.01} addonAfter="€" style={{ width: '100%' }} />
-                            </Form.Item>
-                            <Form.Item name="tva" label="TVA (%)">
-                                <InputNumber min={0} max={100} step={0.01} addonAfter="%" style={{ width: '100%' }} />
-                            </Form.Item>
-                            <Form.Item name="montantTVA" label="Montant TVA">
-                                <InputNumber min={0} step={0.01} addonAfter="€" style={{ width: '100%' }} />
-                            </Form.Item>
-                            <Form.Item name="prixVenteTTC" label="Prix Vente TTC">
-                                <InputNumber min={0} step={0.01} addonAfter="€" style={{ width: '100%' }} />
-                            </Form.Item>
+                            <Row gutter={16}>
+                                <Col span={12}>
+                                    <Form.Item name="prixPublic" label="Prix Public">
+                                        <InputNumber min={0} step={0.01} addonAfter="€" style={{ width: '100%' }} />
+                                    </Form.Item>
+                                </Col>
+                                <Col span={12}>
+                                    <Form.Item name="frais" label="Frais">
+                                        <InputNumber min={0} step={0.01} addonAfter="€" style={{ width: '100%' }} />
+                                    </Form.Item>
+                                </Col>
+                            </Row>
+                            <Row gutter={16}>
+                                <Col span={12}>
+                                    <Form.Item name="tauxMarge" label="Taux Marge (%)">
+                                        <InputNumber min={0} max={100} step={0.01} addonAfter="%" style={{ width: '100%' }} />
+                                    </Form.Item>
+                                </Col>
+                                <Col span={12}>
+                                    <Form.Item name="tauxMarque" label="Taux Marque (%)">
+                                        <InputNumber min={0} max={100} step={0.01} addonAfter="%" style={{ width: '100%' }} />
+                                    </Form.Item>
+                                </Col>
+                            </Row>
+                            <Row gutter={16}>
+                                <Col span={12}>
+                                    <Form.Item name="prixVenteHT" label="Prix Vente HT">
+                                        <InputNumber min={0} step={0.01} addonAfter="€" style={{ width: '100%' }} />
+                                    </Form.Item>
+                                </Col>
+                                <Col span={12}>
+                                    <Form.Item name="tva" label="TVA (%)">
+                                        <InputNumber min={0} max={100} step={0.01} addonAfter="%" style={{ width: '100%' }} />
+                                    </Form.Item>
+                                </Col>
+                            </Row>
+                            <Row gutter={16}>
+                                <Col span={12}>
+                                    <Form.Item name="montantTVA" label="Montant TVA">
+                                        <InputNumber min={0} step={0.01} addonAfter="€" style={{ width: '100%' }} />
+                                    </Form.Item>
+                                </Col>
+                                <Col span={12}>
+                                    <Form.Item name="prixVenteTTC" label="Prix Vente TTC">
+                                        <InputNumber min={0} step={0.01} addonAfter="€" style={{ width: '100%' }} />
+                                    </Form.Item>
+                                </Col>
+                            </Row>
                         {modalMode === 'edit' && editing && editing.id && (
                                 <FournisseurHelices heliceId={editing.id} />
                         )}
