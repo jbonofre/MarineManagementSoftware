@@ -11,6 +11,8 @@ import {
   Popconfirm,
   Card,
   Spin,
+  Row,
+  Col,
 } from "antd";
 import {
   PlusCircleOutlined,
@@ -257,30 +259,54 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
         width={1024}
       >
         <Form layout="vertical" form={form} initialValues={defaultBateau}>
-          <Form.Item label="Nom" name="name" rules={[{ required: true, message: "Nom requis" }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item label="Immatriculation" name="immatriculation">
-            <Input />
-          </Form.Item>
-          <Form.Item label="Numéro de série" name="numeroSerie">
-            <Input />
-          </Form.Item>
-          <Form.Item label="Numéro clef" name="numeroClef">
-            <Input />
-          </Form.Item>
-          <Form.Item label="Date MeS" name="dateMeS">
-            <Input placeholder="YYYY-MM-DD" />
-          </Form.Item>
-          <Form.Item label="Date achat" name="dateAchat">
-            <Input placeholder="YYYY-MM-DD" />
-          </Form.Item>
-          <Form.Item label="Date fin garantie" name="dateFinDeGuarantie">
-            <Input placeholder="YYYY-MM-DD" />
-          </Form.Item>
-          <Form.Item label="Localisation" name="localisation">
-            <Input />
-          </Form.Item>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="Nom" name="name" rules={[{ required: true, message: "Nom requis" }]}>
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="Immatriculation" name="immatriculation">
+                <Input />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="Numéro de série" name="numeroSerie">
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="Numéro clef" name="numeroClef">
+                <Input />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="Date MeS" name="dateMeS">
+                <Input placeholder="YYYY-MM-DD" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="Date achat" name="dateAchat">
+                <Input placeholder="YYYY-MM-DD" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="Date fin garantie" name="dateFinDeGuarantie">
+                <Input placeholder="YYYY-MM-DD" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="Localisation" name="localisation">
+                <Input />
+              </Form.Item>
+            </Col>
+          </Row>
           <Form.Item label="Localisation GPS" name="localisationGps">
             <Input />
           </Form.Item>
@@ -297,7 +323,7 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
                         rules={[{ required: true, message: "Veuillez entrer une URL d'image" }]}
                         style={{ flex: 1 }}
                       >
-                        <Input placeholder="URL de l'image" style={{ width: '700px' }} />
+                        <Input placeholder="URL de l'image" style={{ width: '100%' }} />
                       </Form.Item>
                       <Button
                         icon={<DeleteOutlined />}
