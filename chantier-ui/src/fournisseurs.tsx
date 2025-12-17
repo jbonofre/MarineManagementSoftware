@@ -236,29 +236,50 @@ const Fournisseurs = () => {
           layout="vertical"
           initialValues={defaultFournisseur}
         >
-          <Form.Item
-            label="Nom"
-            name="nom"
-            rules={[{ required: true, message: "Champ requis" }]}
-          >
-            <Input />
-          </Form.Item>
-          <Form.Item label="Évaluation" name="evaluation">
-            <Rate allowHalf />
-          </Form.Item>
-          <Form.Item label="Image (URL)" name="image">
-            <Input />
-          </Form.Item>
-          <Form.Item label="Email" name="email">
-            <Input type="email" />
-          </Form.Item>
-          <Form.Item label="Téléphone" name="telephone">
-            <Input />
-          </Form.Item>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                label="Nom"
+                name="nom"
+                rules={[{ required: true, message: "Champ requis" }]}
+              >
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="Évaluation" name="evaluation">
+                <Rate allowHalf />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="Image (URL)" name="image">
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="Email" name="email">
+                <Input type="email" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="Téléphone" name="telephone">
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="Connexion" name="connexion">
+                <Input />
+              </Form.Item>
+            </Col>
+          </Row>
           <Form.Item label="Adresse" name="adresse">
             <TextArea rows={2} />
           </Form.Item>
-          <Row gutter={12}>
+          <Row gutter={16}>
             <Col span={12}>
               <Form.Item label="SIREN" name="siren">
                 <Input />
@@ -270,7 +291,7 @@ const Fournisseurs = () => {
               </Form.Item>
             </Col>
           </Row>
-          <Row gutter={12}>
+          <Row gutter={16}>
             <Col span={12}>
               <Form.Item label="TVA" name="tva">
                 <Input />
@@ -282,9 +303,6 @@ const Fournisseurs = () => {
               </Form.Item>
             </Col>
           </Row>
-          <Form.Item label="Connexion" name="connexion">
-            <Input />
-          </Form.Item>
         </Form>
         {editing && <FournisseurBateaux fournisseurId={editing.id!} />}
         {editing && <FournisseurMoteurs fournisseurId={editing.id!} />}
