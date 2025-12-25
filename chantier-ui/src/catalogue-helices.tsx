@@ -360,7 +360,7 @@ const HeliceCatalogueView: React.FC = () => {
                         onOk={handleModalOk}
                         okText="Enregistrer"
                         cancelText="Annuler"
-                        destroyOnClose
+                        destroyOnHidden
                         width={1024}
                     >
                         <Form

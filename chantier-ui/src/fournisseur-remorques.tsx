@@ -296,7 +296,7 @@ const FournisseurRemorques = ({
         open={modalVisible}
         onCancel={() => setModalVisible(false)}
         onOk={handleModalOk}
-        destroyOnClose
+        destroyOnHidden
         title={
           editing && editing.id
             ? "Modifier l'association"

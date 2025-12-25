@@ -319,7 +319,7 @@ const MoteurCatalogue = () => {
             maskClosable={false}
             okText="Enregistrer"
             cancelText="Annuler"
-            destroyOnClose
+            destroyOnHidden
             width={1024}
           >
             <Form

@@ -279,7 +279,7 @@ const CatalogueProduits: React.FC = () => {
                             width={1024}
                             okText="Enregistrer"
                             cancelText="Annuler"
-                            destroyOnClose
+                            destroyOnHidden
                         >
                             <Form
                                 form={form}

@@ -231,7 +231,7 @@ function RemorquesClients({ clientId }: RemorquesClientsProps) {
         onOk={handleModalOk}
         okText="Enregistrer"
         cancelText="Annuler"
-        destroyOnClose
+        destroyOnHidden
         width={1024}
       >
         <Form layout="vertical" form={form} initialValues={defaultRemorque}>

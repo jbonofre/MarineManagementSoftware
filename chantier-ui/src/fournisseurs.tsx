@@ -223,7 +223,7 @@ const Fournisseurs = () => {
         open={modalVisible}
         onCancel={() => setModalVisible(false)}
         onOk={handleModalOk}
-        destroyOnClose
+        destroyOnHidden
         title={editing ? "Modifier Fournisseur" : "Nouveau Fournisseur"}
         okText="Enregistrer"
         cancelText="Annuler"

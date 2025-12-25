@@ -36,7 +36,7 @@ const UserFormModal = ({ visible, onCancel, onSubmit, initialValues, loading }) 
                     .catch(() => {});
             }}
             confirmLoading={loading}
-            destroyOnClose
+            destroyOnHidden
             okText="Enregistrer"
             cancelText="Annuler"
         >

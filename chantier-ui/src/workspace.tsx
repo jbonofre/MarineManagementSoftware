@@ -16,11 +16,10 @@ import CatalogueBateaux from './catalogue-bateaux.tsx';
 import CatalogueMoteurs from './catalogue-moteurs.tsx';
 import CatalogueHelices from './catalogue-helices.tsx';
 import Fournisseurs from './fournisseurs.tsx';
+import Transactions from './transactions.tsx';
 import Prestations from './prestations.tsx';
 import Societe from './societe.tsx';
 import Utilisateurs from './utilisateurs.tsx';
-import Comptoir from './comptoir.tsx';
-import Vente from './vente.tsx';
 import Forfaits from './forfaits.tsx';
 import CatalogueRemorques from './catalogue-remorques.tsx';
 import BateauxClients from './clients-bateaux.tsx';
@@ -52,10 +51,9 @@ function SideMenu(props) {
         { key: 'remorques', label: <Link to="/catalogue/remorques">Remorques</Link>, icon: <Icon component={ TailerOutlined } /> },
         { key: 'fournisseurs', label: <Link to="/catalogue/fournisseurs">Fournisseurs</Link>, icon: <FileProtectOutlined/> },
       ]},
-      { key: 'magasin', label: 'Magasin', icon: <StockOutlined/>, children: [
-        { key: 'comptoir', label: <Link to="/comptoir">Comptoir</Link>, icon: <DesktopOutlined/> },
-        { key: 'vente', label: <Link to="/vente">Vente</Link>, icon: <FileOutlined/> },
-      ] },
+      { key: 'transactions', label: 'Transactions', icon: <FileOutlined/>, children: [
+        { key: 'transactions', label: <Link to="/transactions">Transactions</Link>, icon: <FileOutlined/> },
+      ]},
       { key: 'atelier', label: 'Atelier', icon: <ToolOutlined/>, children: [
         { key: 'prestations', label: <Link to="/prestations">Prestations</Link>, icon: <CheckSquareOutlined/> },
         { key: 'planning', label: 'Planning', icon: <CalendarOutlined/> },
@@ -154,17 +152,14 @@ export default function Workspace(props) {
                     <Route path="/catalogue/fournisseurs" key="fournisseurs">
                         <Fournisseurs />
                     </Route>
+                    <Route path="/transactions" key="transactions">
+                        <Transactions />
+                    </Route>
                     <Route path="/societe" key="societe">
                         <Societe />
                     </Route>
                     <Route path="/utilisateurs" key="utilisateurs">
                         <Utilisateurs />
-                    </Route>
-                    <Route path="/comptoir" key="comptoir">
-                        <Comptoir />
-                    </Route>
-                    <Route path="/vente" key="vente">
-                        <Vente />
                     </Route>
                     <Route path="/prestations" key="prestations">
                         <Prestations />

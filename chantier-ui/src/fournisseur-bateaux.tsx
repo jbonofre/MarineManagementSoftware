@@ -279,7 +279,7 @@ const FournisseurBateaux = ({ fournisseurId, bateauId }: { fournisseurId?: numbe
         open={modalVisible}
         onCancel={() => setModalVisible(false)}
         onOk={handleModalOk}
-        destroyOnClose
+        destroyOnHidden
         title={editing && editing.id ? "Modifier l'association" : (isBateauMode ? "Associer un Fournisseur" : "Associer un Bateau")}
         okText="Enregistrer"
         cancelText="Annuler"
