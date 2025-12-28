@@ -51,7 +51,7 @@ function SideMenu(props) {
         { key: 'remorques', label: <Link to="/catalogue/remorques">Remorques</Link>, icon: <Icon component={ TailerOutlined } /> },
         { key: 'fournisseurs', label: <Link to="/catalogue/fournisseurs">Fournisseurs</Link>, icon: <FileProtectOutlined/> },
       ]},
-      { key: 'transactions', label: 'Transactions', icon: <FileOutlined/>, children: [
+      { key: 'Vente', label: 'Vente', icon: <StockOutlined/>, children: [
         { key: 'transactions', label: <Link to="/transactions">Transactions</Link>, icon: <FileOutlined/> },
       ]},
       { key: 'atelier', label: 'Atelier', icon: <ToolOutlined/>, children: [
