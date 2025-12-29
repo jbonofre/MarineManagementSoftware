@@ -25,6 +25,7 @@ import CatalogueRemorques from './catalogue-remorques.tsx';
 import BateauxClients from './clients-bateaux.tsx';
 import ClientsMoteurs from './clients-moteurs.tsx';
 import RemorquesClients from './clients-remorques.tsx';
+import Techniciens from './techniciens.tsx';
 
 export function demo() {
     message.warning("Vous êtes sur une version de démonstration de Marine Management Software. Il n'est pas possible d'ajouter ou supprimer des éléments.")
@@ -55,10 +56,10 @@ function SideMenu(props) {
         { key: 'transactions', label: <Link to="/transactions">Transactions</Link>, icon: <FileOutlined/> },
       ]},
       { key: 'atelier', label: 'Atelier', icon: <ToolOutlined/>, children: [
-        { key: 'prestations', label: <Link to="/prestations">Prestations</Link>, icon: <CheckSquareOutlined/> },
-        { key: 'planning', label: 'Planning', icon: <CalendarOutlined/> },
-        { key: 'equipe', label: 'Equipe', icon: <TeamOutlined/> },
         { key: 'forfaits', label: <Link to="/forfaits">Forfaits</Link>, icon: <FileDoneOutlined/> },
+        { key: 'prestations', label: <Link to="/prestations">Prestations</Link>, icon: <CheckSquareOutlined/> },
+        { key: 'equipe', label: <Link to="/techniciens">Equipe</Link>, icon: <TeamOutlined/> },
+        { key: 'planning', label: 'Planning', icon: <CalendarOutlined/> },
       ] },
       { key: 'market', label: 'Market', icon: <AmazonOutlined/>, children: [
         { key: 'marchands', label: 'Marchands' },
@@ -166,6 +167,9 @@ export default function Workspace(props) {
                     </Route>
                     <Route path="/forfaits" key="forfaits">
                         <Forfaits />
+                    </Route>
+                    <Route path="/techniciens" key="techniciens">
+                        <Techniciens />
                     </Route>
                 </Switch>
             </Layout.Content>
