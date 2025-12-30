@@ -1,5 +1,6 @@
 package net.nanthrax.mms.persistence;
 
+import java.sql.Date;
 import java.util.List;
 
 import io.quarkus.hibernate.orm.panache.PanacheEntity;
@@ -17,12 +18,18 @@ public class InterventionEntity extends PanacheEntity {
     @ManyToOne
     public MoteurClientEntity moteur;
 
+    public String notes;
+
     @ManyToMany
     public List<ForfaitEntity> forfaits;
     @ManyToMany
     public List<ForfaitPiecesEntity> pieces;
 
     public String status;
-    // intervenant
+
+    public Date statusDate;
+
+    @ManyToMany
+    public List<TechnicienEntity> techniciens;
     
 }

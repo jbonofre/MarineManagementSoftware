@@ -177,7 +177,7 @@ const Techniciens: React.FC = () => {
 
     return (
         <>
-            <Card title="Équipe - Techniciens">
+            <Card title="Équipe">
                 <Row gutter={[16, 16]}>
                     <Col span={24}>
                         <Space>
