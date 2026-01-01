@@ -25,11 +25,11 @@ public class InterventionEntity extends PanacheEntity {
     @ManyToMany
     public List<ForfaitPiecesEntity> pieces;
 
+    @ManyToOne
+    public List<InterventionEtapeEntity> etapes;
+
     public String status;
 
     public Date statusDate;
 
-    @ManyToMany
-    public List<TechnicienEntity> techniciens;
-    
 }
