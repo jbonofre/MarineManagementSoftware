@@ -74,7 +74,7 @@ function List(props) {
             )
         },
         {
-            title: 'Application',
+            title: 'Compétences',
             render: (_, record) => (
                 <>
                     {record.competences && record.competences.length > 0 ? (
@@ -84,6 +84,20 @@ function List(props) {
                     ) : (
                         <span>-</span>
                     )}
+                </>
+            ),
+        },
+        {
+            title: 'Application',
+            key: 'bateaux',
+            render: (_, record) => (
+                <>
+                    {record.bateaux && record.bateaux.length > 0
+                        ? record.bateaux.map((b, idx) => <span key={idx}>{b.nom}{idx < record.bateaux.length - 1 ? ', ' : ''}</span>)
+                        : <span>-</span>}
+                    {record.moteurs && record.moteurs.length > 0
+                        ? record.moteurs.map((m, idx) => <span key={idx}>{m.nom}{idx < record.moteurs.length - 1 ? ', ' : ''}</span>)
+                        : <span>-</span>}
                 </>
             ),
         },
@@ -243,11 +257,11 @@ function Catalogue(props: { forfait: ForfaitEntity | null }) {
         <Col span={24}>
             <div style={style}>
                 <Space>
-                    <Search placeholder="Recherche" enterButton style={{ width: 350 }}/>
+                    <Search placeholder="Recherche" enterButton style={{ width: 500 }}/>
                     <InputNumber placeholder="Quantité" />
                     <Button type="primary" icon={<PlusCircleOutlined/>} onClick={() => {
                         message.info('Fonctionnalité d\'ajout à implémenter');
-                    }}>Ajouter</Button>
+                    }}/>
                 </Space>
             </div>
         </Col>
@@ -362,8 +376,8 @@ function Detail(props) {
             children: (<Catalogue forfait={forfaitDetail || props.forfait} />),
         },
         {
-            key: 'application',
-            label: 'Application',
+            key: 'competences',
+            label: 'Compétences',
             children: (
                 <Form.Item name="competences" label="Compétences">
                     <Select
