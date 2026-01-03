@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Col, Row, Space, Table, Button, Input, Card, Avatar, Form, InputNumber, Select, Tabs, message, Popconfirm, Modal } from 'antd';
+import { Col, Row, Space, Table, Button, Input, Form, InputNumber, Select, Tabs, message, Popconfirm, Modal } from 'antd';
 import { PlusCircleOutlined, EditOutlined, DeleteOutlined, FileDoneOutlined } from '@ant-design/icons';
 import axios from 'axios';
 
@@ -410,11 +410,6 @@ function Detail(props) {
     }
 
     return(
-      <Card 
-        title={<Space><Avatar size="large" icon={<FileDoneOutlined/>} /> {forfaitDetail?.nom || 'Nouveau forfait'}</Space>} 
-        style={{ width: '100%' }}
-        loading={loading}
-      >
         <Form 
             form={form}
             name="forfaitDetailForm" 
@@ -441,7 +436,6 @@ function Detail(props) {
             </Form.Item>
             <Tabs items={tabs} />
         </Form>
-      </Card>
     );
 }
 
