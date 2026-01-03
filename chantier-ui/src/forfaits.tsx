@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { Breadcrumb, Col, Row, Space, Table, Button, Input, Card, Avatar, Form, InputNumber, Select, Tabs, message, Popconfirm } from 'antd';
-import { HomeOutlined, PlusCircleOutlined, EditOutlined, DeleteOutlined, LeftCircleOutlined, FileDoneOutlined } from '@ant-design/icons';
+import React, { useState, useEffect, useRef } from 'react';
+import { Col, Row, Space, Table, Button, Input, Card, Avatar, Form, InputNumber, Select, Tabs, message, Popconfirm, Modal } from 'antd';
+import { PlusCircleOutlined, EditOutlined, DeleteOutlined, FileDoneOutlined } from '@ant-design/icons';
 import axios from 'axios';
 
 const style: React.CSSProperties = { padding: '8px 0' };
@@ -43,7 +42,7 @@ function List(props) {
 
     useEffect(() => {
         fetchForfaits();
-    }, []);
+    }, [props.refreshKey]);
 
     const handleSearch = (value: string) => {
         setSearchQuery(value);
@@ -128,7 +127,7 @@ function List(props) {
                             <Search 
                                 placeholder="Recherche" 
                                 enterButton 
-                                style={{ width: 350 }}
+                                style={{ width: 600 }}
                                 onSearch={handleSearch}
                                 allowClear
                                 onChange={(e) => {
@@ -138,7 +137,7 @@ function List(props) {
                                     }
                                 }}
                             />
-                            <Button type="primary" icon={<PlusCircleOutlined/>} onClick={handleNewForfait}>Nouveau forfait</Button>
+                            <Button type="primary" icon={<PlusCircleOutlined/>} onClick={handleNewForfait}/>
                         </Space>
                     </div>
                 </Col>
@@ -308,6 +307,19 @@ function Detail(props) {
         }
     }, [props.forfait?.id]);
 
+    useEffect(() => {
+        if (props.onSubmitRef) {
+            props.onSubmitRef.current = async () => {
+                try {
+                    await form.validateFields();
+                    form.submit();
+                } catch (error) {
+                    // Form validation errors are handled by antd
+                }
+            };
+        }
+    }, [form, props.onSubmitRef]);
+
     const fetchForfait = async () => {
         if (!props.forfait?.id) return;
         setLoading(true);
@@ -329,20 +341,18 @@ function Detail(props) {
                 await axios.put(`/forfaits/${props.forfait.id}`, values);
                 message.success('Forfait mis à jour');
                 fetchForfait();
+                props.onSaveSuccess?.();
             } else {
                 // Create
                 const res = await axios.post('/forfaits', values);
                 message.success('Forfait créé');
+                props.onSaveSuccess?.();
                 props.setForfait(res.data);
             }
         } catch (error) {
             message.error('Erreur lors de l\'enregistrement');
         }
         setLoading(false);
-    };
-
-    const handleCancel = () => {
-        props.setForfait(null);
     };
 
     const tabs = [
@@ -386,11 +396,6 @@ function Detail(props) {
     }
 
     return(
-      <>
-      <Breadcrumb items={[
-        { title: <Link to="/"><HomeOutlined/></Link> },
-        { title: <Button type="text" size="small" onClick={() => props.setForfait(null) }>Forfaits</Button> }
-      ]} />
       <Card 
         title={<Space><Avatar size="large" icon={<FileDoneOutlined/>} /> {forfaitDetail?.nom || 'Nouveau forfait'}</Space>} 
         style={{ width: '100%' }}
@@ -401,7 +406,7 @@ function Detail(props) {
             name="forfaitDetailForm" 
             labelCol={{ span: 8 }}
             wrapperCol={{ span: 16 }}
-            style={{ width: '80%' }}
+            style={{ width: '100%' }}
             initialValues={forfaitDetail || undefined}
             onFinish={handleSave}
         >
@@ -421,29 +426,51 @@ function Detail(props) {
                 <InputNumber addonAfter="€" style={{ width: '100%' }} min={0} step={0.01} />
             </Form.Item>
             <Tabs items={tabs} />
-            <Form.Item label={null} style={{ marginTop: 16 }}>
-                <Space>
-                <Button type="primary" htmlType="submit" loading={loading}>Enregistrer</Button>
-                <Button onClick={handleCancel}>Annuler</Button>
-                </Space>
-            </Form.Item>
         </Form>
       </Card>
-      </>
     );
 }
 
 export default function Forfaits() {
+    const [forfait, setForfait] = useState<ForfaitEntity | null>(null);
+    const [listRefreshKey, setListRefreshKey] = useState(0);
+    const submitFormRef = useRef<(() => Promise<void>) | null>(null);
 
-    const [ forfait, setForfait ] = useState<ForfaitEntity | null>(null);
+    const handleModalOk = async () => {
+        if (submitFormRef.current) {
+            await submitFormRef.current();
+        }
+    };
 
-    if (forfait) {
-        return(
-            <Detail forfait={forfait} setForfait={setForfait} />
-        );
-    } else {
-        return(
-            <List setForfait={setForfait} />
-        );
-    }
+    const handleModalCancel = () => {
+        setForfait(null);
+    };
+
+    const handleSaveSuccess = () => {
+        setForfait(null);
+        setListRefreshKey(prev => prev + 1);
+    };
+
+    return(
+        <>
+            <List setForfait={setForfait} refreshKey={listRefreshKey} />
+            <Modal
+                open={forfait !== null}
+                title={forfait?.id ? "Modifier le forfait" : "Ajouter un forfait"}
+                onCancel={handleModalCancel}
+                onOk={handleModalOk}
+                okText="Enregistrer"
+                cancelText="Annuler"
+                destroyOnClose
+                width={1024}
+            >
+                <Detail 
+                    forfait={forfait} 
+                    setForfait={setForfait} 
+                    onSaveSuccess={handleSaveSuccess}
+                    onSubmitRef={submitFormRef}
+                />
+            </Modal>
+        </>
+    );
 }
