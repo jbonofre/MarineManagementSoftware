@@ -21,7 +21,7 @@
     <properties>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
-        <quarkus.version>3.30.4</quarkus.version>
+        <quarkus.version>3.30.5</quarkus.version>
     </properties>
 
     <dependencyManagement>
