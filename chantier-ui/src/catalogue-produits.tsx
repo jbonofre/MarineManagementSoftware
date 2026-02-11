@@ -52,7 +52,6 @@ const defaultProduit: ProduitCatalogueEntity = {
 };
 
 const CATEGORIES = [
-    { text: 'Service & Main d\'Oeuvre', value: 'Service & Main d\'Oeuvre', label: 'Service & Main d\'Oeuvre' },
     { text: 'Pièces Moteur', value: 'Pièces Moteur', label: 'Pièces Moteur' },
     { text: 'Pièces Remorque', value: 'Pièces Remorque', label: 'Pièces Remorque' },
     { text: 'Electronique', value: 'Electronique', label: 'Electronique' },
