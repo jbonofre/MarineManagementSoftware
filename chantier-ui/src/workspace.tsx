@@ -3,7 +3,7 @@ import { Layout, Input, Col, Row, Image, Menu, Button, message } from 'antd';
 import { Route, Switch } from 'react-router';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { Link } from 'react-router-dom';
-import { UserOutlined, TeamOutlined, HomeOutlined, AmazonOutlined, SettingOutlined, ToolOutlined, StockOutlined, FileOutlined, FileProtectOutlined, ReadOutlined, DesktopOutlined, DeploymentUnitOutlined, DisconnectOutlined, DashboardOutlined, CalendarOutlined, FileDoneOutlined, CheckSquareOutlined, BarsOutlined } from '@ant-design/icons';
+import { UserOutlined, TeamOutlined, HomeOutlined, AmazonOutlined, SettingOutlined, ToolOutlined, StockOutlined, FileOutlined, FileProtectOutlined, ReadOutlined, DesktopOutlined, DeploymentUnitOutlined, DisconnectOutlined, DashboardOutlined, CalendarOutlined, FileDoneOutlined, CheckSquareOutlined, BarsOutlined, RedoOutlined } from '@ant-design/icons';
 import Icon from '@ant-design/icons';
 import { ReactComponent as BoatOutlined } from './boat.svg';
 import { ReactComponent as EngineOutlined } from './moteur.svg';
@@ -26,6 +26,7 @@ import BateauxClients from './clients-bateaux.tsx';
 import ClientsMoteurs from './clients-moteurs.tsx';
 import RemorquesClients from './clients-remorques.tsx';
 import Techniciens from './techniciens.tsx';
+import Services from './services.tsx';
 
 export function demo() {
     message.warning("Vous êtes sur une version de démonstration de Marine Management Software. Il n'est pas possible d'ajouter ou supprimer des éléments.")
@@ -56,6 +57,7 @@ function SideMenu(props) {
         { key: 'transactions', label: <Link to="/transactions">Transactions</Link>, icon: <FileOutlined/> },
       ]},
       { key: 'atelier', label: 'Atelier', icon: <ToolOutlined/>, children: [
+        { key: 'services', label: <Link to="/services">Services & Main d'Oeuvre</Link>, icon: <RedoOutlined/> },
         { key: 'forfaits', label: <Link to="/forfaits">Forfaits</Link>, icon: <FileDoneOutlined/> },
         { key: 'prestations', label: <Link to="/prestations">Prestations</Link>, icon: <CheckSquareOutlined/> },
         { key: 'equipe', label: <Link to="/techniciens">Equipe</Link>, icon: <TeamOutlined/> },
@@ -170,6 +172,9 @@ export default function Workspace(props) {
                     </Route>
                     <Route path="/techniciens" key="techniciens">
                         <Techniciens />
+                    </Route>
+                    <Route path="/services" key="services">
+                        <Services />
                     </Route>
                 </Switch>
             </Layout.Content>
