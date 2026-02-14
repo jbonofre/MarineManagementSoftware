@@ -1,370 +1,533 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Col, Row, Space, Table, Button, Input, Form, InputNumber, Select, Tabs, message, Popconfirm, Modal } from 'antd';
-import { PlusCircleOutlined, EditOutlined, DeleteOutlined, FileDoneOutlined } from '@ant-design/icons';
+import React, { useEffect, useMemo, useState } from 'react';
+import {
+    Button,
+    Card,
+    Col,
+    Form,
+    Input,
+    InputNumber,
+    Modal,
+    Popconfirm,
+    Row,
+    Select,
+    Space,
+    Table,
+    Tag,
+    message
+} from 'antd';
+import { DeleteOutlined, EditOutlined, PlusCircleOutlined } from '@ant-design/icons';
 import axios from 'axios';
 
-const style: React.CSSProperties = { padding: '8px 0' };
-const { TextArea, Search } = Input;
+interface MoteurCatalogueEntity {
+    id: number;
+    modele: string;
+    marque: string;
+}
+
+interface BateauCatalogueEntity {
+    id: number;
+    modele: string;
+    marque: string;
+}
+
+interface ProduitCatalogueEntity {
+    id: number;
+    nom: string;
+    marque?: string;
+}
+
+interface ServiceEntity {
+    id: number;
+    nom: string;
+}
+
+interface ForfaitProduitEntity {
+    id?: number;
+    produit?: ProduitCatalogueEntity;
+    quantite: number;
+}
+
+interface ForfaitServiceEntity {
+    id?: number;
+    service?: ServiceEntity;
+    quantite: number;
+}
 
 interface ForfaitEntity {
     id?: number;
     nom: string;
-    moteurs?: any[];
-    bateaux?: any[];
-    heuresFonctionnement?: number;
-    joursFrequence?: number;
-    competences?: string[];
-    prixHT?: number;
-    tva?: number;
-    montantTVA?: number;
-    prixTTC?: number;
+    moteursAssocies: MoteurCatalogueEntity[];
+    bateauxAssocies: BateauCatalogueEntity[];
+    produits: ForfaitProduitEntity[];
+    services: ForfaitServiceEntity[];
+    heuresFonctionnement: number;
+    joursFrequence: number;
+    competences: string[];
+    prixHT: number;
+    tva: number;
+    montantTVA: number;
+    prixTTC: number;
 }
 
-function List(props) {
+interface ForfaitFormValues {
+    nom: string;
+    moteurIds: number[];
+    bateauIds: number[];
+    produits: Array<{ produitId: number; quantite: number }>;
+    services: Array<{ serviceId: number; quantite: number }>;
+    heuresFonctionnement: number;
+    joursFrequence: number;
+    competences: string[];
+    prixHT: number;
+    tva: number;
+    montantTVA: number;
+    prixTTC: number;
+}
+
+const defaultForfait: ForfaitFormValues = {
+    nom: '',
+    moteurIds: [],
+    bateauIds: [],
+    produits: [],
+    services: [],
+    heuresFonctionnement: 0,
+    joursFrequence: 0,
+    competences: [],
+    prixHT: 0,
+    tva: 0,
+    montantTVA: 0,
+    prixTTC: 0
+};
+
+const formatEuro = (value?: number) => `${(value || 0).toFixed(2)} €`;
+
+export default function Forfaits() {
     const [forfaits, setForfaits] = useState<ForfaitEntity[]>([]);
+    const [moteurs, setMoteurs] = useState<MoteurCatalogueEntity[]>([]);
+    const [bateaux, setBateaux] = useState<BateauCatalogueEntity[]>([]);
+    const [produits, setProduits] = useState<ProduitCatalogueEntity[]>([]);
+    const [services, setServices] = useState<ServiceEntity[]>([]);
     const [loading, setLoading] = useState(false);
+    const [modalVisible, setModalVisible] = useState(false);
+    const [isEdit, setIsEdit] = useState(false);
+    const [currentForfait, setCurrentForfait] = useState<ForfaitEntity | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
+    const [form] = Form.useForm<ForfaitFormValues>();
+
+    const moteurOptions = useMemo(
+        () => moteurs.map((moteur) => ({ value: moteur.id, label: `${moteur.marque} ${moteur.modele}` })),
+        [moteurs]
+    );
+
+    const bateauOptions = useMemo(
+        () => bateaux.map((bateau) => ({ value: bateau.id, label: `${bateau.marque} ${bateau.modele}` })),
+        [bateaux]
+    );
+
+    const produitOptions = useMemo(
+        () => produits.map((produit) => ({ value: produit.id, label: `${produit.nom}${produit.marque ? ` (${produit.marque})` : ''}` })),
+        [produits]
+    );
+
+    const serviceOptions = useMemo(
+        () => services.map((service) => ({ value: service.id, label: service.nom })),
+        [services]
+    );
 
     const fetchForfaits = async (query?: string) => {
         setLoading(true);
         try {
-            let url = '/forfaits';
-            if (query && query.trim()) {
-                url = `/forfaits/search?q=${encodeURIComponent(query)}`;
-            }
-            const res = await axios.get(url);
-            setForfaits(res.data);
-        } catch (error) {
-            message.error('Erreur lors du chargement des forfaits');
+            const endpoint = query && query.trim() ? '/forfaits/search' : '/forfaits';
+            const response = await axios.get(endpoint, { params: query && query.trim() ? { q: query } : {} });
+            setForfaits(response.data || []);
+        } catch {
+            message.error('Erreur lors du chargement des forfaits.');
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
+    };
+
+    const fetchOptions = async () => {
+        try {
+            const [moteursRes, bateauxRes, produitsRes, servicesRes] = await Promise.all([
+                axios.get('/catalogue/moteurs'),
+                axios.get('/catalogue/bateaux'),
+                axios.get('/catalogue/produits'),
+                axios.get('/services')
+            ]);
+            setMoteurs(moteursRes.data || []);
+            setBateaux(bateauxRes.data || []);
+            setProduits(produitsRes.data || []);
+            setServices(servicesRes.data || []);
+        } catch {
+            message.error('Erreur lors du chargement des listes de référence.');
+        }
     };
 
     useEffect(() => {
         fetchForfaits();
-    }, [props.refreshKey]);
+        fetchOptions();
+    }, []);
 
-    const handleSearch = (value: string) => {
-        setSearchQuery(value);
-        fetchForfaits(value);
+    const openModal = (forfait?: ForfaitEntity) => {
+        if (forfait) {
+            setIsEdit(true);
+            setCurrentForfait(forfait);
+            form.setFieldsValue({
+                nom: forfait.nom || '',
+                moteurIds: (forfait.moteursAssocies || []).map((m) => m.id),
+                bateauIds: (forfait.bateauxAssocies || []).map((b) => b.id),
+                produits: (forfait.produits || [])
+                    .filter((item) => item.produit?.id)
+                    .map((item) => ({ produitId: item.produit!.id, quantite: item.quantite || 1 })),
+                services: (forfait.services || [])
+                    .filter((item) => item.service?.id)
+                    .map((item) => ({ serviceId: item.service!.id, quantite: item.quantite || 1 })),
+                heuresFonctionnement: forfait.heuresFonctionnement || 0,
+                joursFrequence: forfait.joursFrequence || 0,
+                competences: forfait.competences || [],
+                prixHT: forfait.prixHT || 0,
+                tva: forfait.tva || 0,
+                montantTVA: forfait.montantTVA || 0,
+                prixTTC: forfait.prixTTC || 0
+            });
+        } else {
+            setIsEdit(false);
+            setCurrentForfait(null);
+            form.resetFields();
+            form.setFieldsValue(defaultForfait);
+        }
+        setModalVisible(true);
     };
 
-    const handleDelete = async (id: number) => {
+    const toPayload = (values: ForfaitFormValues): Partial<ForfaitEntity> => ({
+        nom: values.nom,
+        moteursAssocies: (values.moteurIds || [])
+            .map((id) => moteurs.find((moteur) => moteur.id === id))
+            .filter(Boolean) as MoteurCatalogueEntity[],
+        bateauxAssocies: (values.bateauIds || [])
+            .map((id) => bateaux.find((bateau) => bateau.id === id))
+            .filter(Boolean) as BateauCatalogueEntity[],
+        produits: (values.produits || [])
+            .filter((item) => item.produitId)
+            .map((item) => ({
+                produit: produits.find((produit) => produit.id === item.produitId),
+                quantite: item.quantite || 1
+            })),
+        services: (values.services || [])
+            .filter((item) => item.serviceId)
+            .map((item) => ({
+                service: services.find((service) => service.id === item.serviceId),
+                quantite: item.quantite || 1
+            })),
+        heuresFonctionnement: values.heuresFonctionnement || 0,
+        joursFrequence: values.joursFrequence || 0,
+        competences: values.competences || [],
+        prixHT: values.prixHT || 0,
+        tva: values.tva || 0,
+        montantTVA: values.montantTVA || 0,
+        prixTTC: values.prixTTC || 0
+    });
+
+    const handleSave = async () => {
         try {
-            await axios.delete(`/forfaits/${id}`);
-            message.success('Forfait supprimé');
+            const values = await form.validateFields();
+            const payload = toPayload(values);
+            if (isEdit && currentForfait?.id) {
+                await axios.put(`/forfaits/${currentForfait.id}`, { ...currentForfait, ...payload });
+                message.success('Forfait modifié avec succès');
+            } else {
+                await axios.post('/forfaits', payload);
+                message.success('Forfait ajouté avec succès');
+            }
+            setModalVisible(false);
+            form.resetFields();
             fetchForfaits(searchQuery);
-        } catch (error) {
-            message.error('Erreur lors de la suppression');
+        } catch {
+            // Les erreurs de validation sont affichées par le formulaire.
         }
     };
 
-    const handleNewForfait = () => {
-        props.setForfait({ nom: '' } as ForfaitEntity);
+    const handleDelete = async (id?: number) => {
+        if (!id) {
+            return;
+        }
+        try {
+            await axios.delete(`/forfaits/${id}`);
+            message.success('Forfait supprimé avec succès');
+            fetchForfaits(searchQuery);
+        } catch {
+            message.error('Erreur lors de la suppression du forfait.');
+        }
+    };
+
+    const onValuesChange = (changedValues: Partial<ForfaitFormValues>) => {
+        if (changedValues.prixHT !== undefined || changedValues.tva !== undefined) {
+            const prixHT = form.getFieldValue('prixHT') || 0;
+            const tva = form.getFieldValue('tva') || 0;
+            const montantTVA = Math.round(((prixHT * (tva / 100)) + Number.EPSILON) * 100) / 100;
+            const prixTTC = Math.round(((prixHT + montantTVA) + Number.EPSILON) * 100) / 100;
+            form.setFieldValue('montantTVA', montantTVA);
+            form.setFieldValue('prixTTC', prixTTC);
+        }
+
+        if (changedValues.prixTTC !== undefined) {
+            const prixTTC = form.getFieldValue('prixTTC') || 0;
+            const tva = form.getFieldValue('tva') || 0;
+            const montantTVA = Math.round((((prixTTC / (100 + tva)) * tva) + Number.EPSILON) * 100) / 100;
+            const prixHT = Math.round(((prixTTC - montantTVA) + Number.EPSILON) * 100) / 100;
+            form.setFieldValue('montantTVA', montantTVA);
+            form.setFieldValue('prixHT', prixHT);
+        }
     };
 
     const columns = [
         {
-            title: 'Forfait',
+            title: 'Nom',
             dataIndex: 'nom',
-            key: 'nom',
-            sorter: (a, b) => (a.nom || '').localeCompare(b.nom || ''),
-            render: (_, record) => (
-                <a onClick={() => props.setForfait(record)}>{record.nom}</a>
-            )
+            sorter: (a: ForfaitEntity, b: ForfaitEntity) => (a.nom || '').localeCompare(b.nom || '')
         },
         {
-            title: 'Compétences',
-            render: (_, record) => (
-                <>
-                    {record.competences && record.competences.length > 0 ? (
-                        record.competences.map((item, index) => (
-                            <span key={index}>{item} </span>
-                        ))
-                    ) : (
-                        <span>-</span>
-                    )}
-                </>
-            ),
+            title: 'Moteurs',
+            dataIndex: 'moteursAssocies',
+            render: (values: MoteurCatalogueEntity[]) => values?.length || 0
         },
         {
-            title: 'Application',
-            key: 'bateaux',
-            render: (_, record) => (
-                <>
-                    {record.bateaux && record.bateaux.length > 0
-                        ? record.bateaux.map((b, idx) => <span key={idx}>{b.nom}{idx < record.bateaux.length - 1 ? ', ' : ''}</span>)
-                        : <span>-</span>}
-                    {record.moteurs && record.moteurs.length > 0
-                        ? record.moteurs.map((m, idx) => <span key={idx}>{m.nom}{idx < record.moteurs.length - 1 ? ', ' : ''}</span>)
-                        : <span>-</span>}
-                </>
-            ),
+            title: 'Bateaux',
+            dataIndex: 'bateauxAssocies',
+            render: (values: BateauCatalogueEntity[]) => values?.length || 0
         },
         {
-            title: 'Programmation',
-            render: (_, record) => {
-                const parts: string[] = [];
-                if (record.heuresFonctionnement) {
-                    parts.push(`${record.heuresFonctionnement} heures`);
-                }
-                if (record.joursFrequence) {
-                    parts.push(`${record.joursFrequence} jours`);
-                }
-                return <div>{parts.length > 0 ? parts.join(' ou ') : '-'}</div>;
-            },
+            title: 'Produits',
+            dataIndex: 'produits',
+            render: (values: ForfaitProduitEntity[]) => values?.length || 0
         },
         {
-            title: '',
-            render: (_, record) => (
+            title: 'Services',
+            dataIndex: 'services',
+            render: (values: ForfaitServiceEntity[]) => values?.length || 0
+        },
+        {
+            title: 'Fréquence',
+            key: 'frequence',
+            render: (_: unknown, record: ForfaitEntity) =>
+                `${record.heuresFonctionnement || 0}h / ${record.joursFrequence || 0} jours`
+        },
+        {
+            title: 'Prix TTC',
+            dataIndex: 'prixTTC',
+            sorter: (a: ForfaitEntity, b: ForfaitEntity) => (a.prixTTC || 0) - (b.prixTTC || 0),
+            render: (value: number) => formatEuro(value)
+        },
+        {
+            title: 'Actions',
+            key: 'actions',
+            render: (_: unknown, record: ForfaitEntity) => (
                 <Space>
-                    <Button onClick={() => props.setForfait(record)}><EditOutlined/></Button>
+                    <Button icon={<EditOutlined />} onClick={() => openModal(record)} />
                     <Popconfirm
                         title="Supprimer ce forfait ?"
-                        onConfirm={() => handleDelete(record.id!)}
+                        onConfirm={() => handleDelete(record.id)}
                         okText="Oui"
                         cancelText="Non"
                     >
-                        <Button danger><DeleteOutlined/></Button>
+                        <Button danger icon={<DeleteOutlined />} />
                     </Popconfirm>
                 </Space>
             )
         }
     ];
 
-    return(
-        <>
-            <Row gutter={[16,16]}>
+    return (
+        <Card title="Forfaits">
+            <Row gutter={[16, 16]}>
                 <Col span={24}>
-                    <div style={style}>
-                        <Space>
-                            <Search 
-                                placeholder="Recherche" 
-                                enterButton 
-                                style={{ width: 600 }}
-                                onSearch={handleSearch}
-                                allowClear
-                                onChange={(e) => {
-                                    if (!e.target.value) {
-                                        setSearchQuery('');
-                                        fetchForfaits();
-                                    }
-                                }}
-                            />
-                            <Button type="primary" icon={<PlusCircleOutlined/>} onClick={handleNewForfait}/>
-                        </Space>
-                    </div>
-                </Col>
-            </Row>
-            <Row gutter={[16,16]}>
-                <Col span={24}>
-                    <Table 
-                        columns={columns} 
-                        dataSource={forfaits} 
-                        loading={loading}
-                        rowKey="id"
-                        onRow={(record) => {
-                            return {
-                                onClick: (event) => { 
-                                    if ((event.target as HTMLElement).tagName !== 'BUTTON' && 
-                                        !(event.target as HTMLElement).closest('button')) {
-                                        props.setForfait(record);
-                                    }
+                    <Space>
+                        <Input.Search
+                            placeholder="Recherche"
+                            enterButton
+                            allowClear
+                            style={{ width: 600 }}
+                            onSearch={(value) => {
+                                setSearchQuery(value);
+                                fetchForfaits(value);
+                            }}
+                            onChange={(event) => {
+                                if (!event.target.value) {
+                                    setSearchQuery('');
+                                    fetchForfaits();
                                 }
-                            };
-                        }} 
+                            }}
+                        />
+                        <Button type="primary" icon={<PlusCircleOutlined />} onClick={() => openModal()} />
+                    </Space>
+                </Col>
+            </Row>
+
+            <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+                <Col span={24}>
+                    <Table
+                        rowKey="id"
+                        dataSource={forfaits}
+                        columns={columns}
+                        loading={loading}
+                        pagination={{ pageSize: 10 }}
+                        bordered
                     />
                 </Col>
             </Row>
-        </>
-    );
-}
 
-function Detail(props) {
-    const [forfaitDetail, setForfaitDetail] = useState<ForfaitEntity | null>(null);
-    const [loading, setLoading] = useState(false);
-    const [form] = Form.useForm();
-
-    useEffect(() => {
-        if (props.forfait?.id) {
-            fetchForfait();
-        } else {
-            // New forfait
-            const newForfait: ForfaitEntity = {
-                nom: '',
-                competences: [],
-                moteurs: [],
-                bateaux: [],
-                heuresFonctionnement: 0,
-                joursFrequence: 0,
-                prixHT: 0,
-                tva: 0,
-                montantTVA: 0,
-                prixTTC: 0
-            };
-            setForfaitDetail(newForfait);
-            form.setFieldsValue(newForfait);
-        }
-    }, [props.forfait?.id]);
-
-    useEffect(() => {
-        if (props.onSubmitRef) {
-            props.onSubmitRef.current = async () => {
-                try {
-                    await form.validateFields();
-                    form.submit();
-                } catch (error) {
-                    // Form validation errors are handled by antd
-                }
-            };
-        }
-    }, [form, props.onSubmitRef]);
-
-    const fetchForfait = async () => {
-        if (!props.forfait?.id) return;
-        setLoading(true);
-        try {
-            const res = await axios.get(`/forfaits/${props.forfait.id}`);
-            setForfaitDetail(res.data);
-            form.setFieldsValue(res.data);
-        } catch (error) {
-            message.error('Erreur lors du chargement du forfait');
-        }
-        setLoading(false);
-    };
-
-    const handleSave = async (values: any) => {
-        setLoading(true);
-        try {
-            if (props.forfait?.id) {
-                // Update
-                await axios.put(`/forfaits/${props.forfait.id}`, values);
-                message.success('Forfait mis à jour');
-                fetchForfait();
-                props.onSaveSuccess?.();
-            } else {
-                // Create
-                const res = await axios.post('/forfaits', values);
-                message.success('Forfait créé');
-                props.onSaveSuccess?.();
-                props.setForfait(res.data);
-            }
-        } catch (error) {
-            message.error('Erreur lors de l\'enregistrement');
-        }
-        setLoading(false);
-    };
-
-    const tabs = [
-        {
-            key: 'catalogue',
-            label: 'Produits et Services',
-            children: (<div>TODO</div>),
-        },
-        {
-            key: 'competences',
-            label: 'Compétences Nécessaires',
-            children: (
-                <Form.Item name="competences" label="Compétences">
-                    <Select
-                        mode="tags"
-                        placeholder="Ajouter des compétences"
-                        style={{ width: '100%' }}
-                        tokenSeparators={[',']}
-                    />
-                </Form.Item>
-            )
-        },
-        {
-            key: 'programmation',
-            label: 'Maintenances Prévues',
-            children: (
-                <>
-                    <Form.Item name="heuresFonctionnement" label="Heures de fonctionnement">
-                        <InputNumber min={0} style={{ width: '100%' }} />
-                    </Form.Item>
-                    <Form.Item name="joursFrequence" label="Jours de fréquence">
-                        <InputNumber min={0} style={{ width: '100%' }} />
-                    </Form.Item>
-                </>
-            )
-        }
-    ];
-
-    if (!forfaitDetail && props.forfait?.id) {
-        return <div>Chargement...</div>;
-    }
-
-    return(
-        <Form 
-            form={form}
-            name="forfaitDetailForm" 
-            labelCol={{ span: 8 }}
-            wrapperCol={{ span: 16 }}
-            style={{ width: '100%' }}
-            initialValues={forfaitDetail || undefined}
-            onFinish={handleSave}
-        >
-            <Form.Item name="nom" label="Nom" required={true} rules={[{ required: true, message: 'Le nom du forfait est requis' }]}>
-                <Input allowClear={true} />
-            </Form.Item>
-            <Form.Item name="prixHT" label="Prix HT">
-                <InputNumber addonAfter="€" style={{ width: '100%' }} min={0} step={0.01} />
-            </Form.Item>
-            <Form.Item name="tva" label="Taux TVA (%)">
-                <InputNumber addonAfter="%" style={{ width: '100%' }} min={0} max={100} step={0.01} />
-            </Form.Item>
-            <Form.Item name="montantTVA" label="Montant TVA">
-                <InputNumber addonAfter="€" style={{ width: '100%' }} min={0} step={0.01} />
-            </Form.Item>
-            <Form.Item name="prixTTC" label="Prix TTC">
-                <InputNumber addonAfter="€" style={{ width: '100%' }} min={0} step={0.01} />
-            </Form.Item>
-            <Tabs items={tabs} />
-        </Form>
-    );
-}
-
-export default function Forfaits() {
-    const [forfait, setForfait] = useState<ForfaitEntity | null>(null);
-    const [listRefreshKey, setListRefreshKey] = useState(0);
-    const submitFormRef = useRef<(() => Promise<void>) | null>(null);
-
-    const handleModalOk = async () => {
-        if (submitFormRef.current) {
-            await submitFormRef.current();
-        }
-    };
-
-    const handleModalCancel = () => {
-        setForfait(null);
-    };
-
-    const handleSaveSuccess = () => {
-        setForfait(null);
-        setListRefreshKey(prev => prev + 1);
-    };
-
-    return(
-        <>
-            <List setForfait={setForfait} refreshKey={listRefreshKey} />
             <Modal
-                open={forfait !== null}
-                title={forfait?.id ? "Modifier le forfait" : "Ajouter un forfait"}
-                onCancel={handleModalCancel}
-                onOk={handleModalOk}
+                title={isEdit ? 'Modifier un forfait' : 'Ajouter un forfait'}
+                open={modalVisible}
+                onOk={handleSave}
+                onCancel={() => setModalVisible(false)}
                 okText="Enregistrer"
                 cancelText="Annuler"
-                destroyOnClose
+                maskClosable={false}
+                destroyOnHidden
                 width={1024}
             >
-                <Detail 
-                    forfait={forfait} 
-                    setForfait={setForfait} 
-                    onSaveSuccess={handleSaveSuccess}
-                    onSubmitRef={submitFormRef}
-                />
+                <Form form={form} layout="vertical" initialValues={defaultForfait} onValuesChange={onValuesChange}>
+                    <Form.Item
+                        name="nom"
+                        label="Nom"
+                        rules={[{ required: true, message: 'Le nom est requis' }]}
+                    >
+                        <Input allowClear />
+                    </Form.Item>
+
+                    <Form.Item name="competences" label="Compétences">
+                        <Select mode="tags" tokenSeparators={[',']} placeholder="Ajouter des compétences" />
+                    </Form.Item>
+
+                    <Row gutter={16}>
+                        <Col span={12}>
+                            <Form.Item name="moteurIds" label="Moteurs associés">
+                                <Select mode="multiple" allowClear options={moteurOptions} placeholder="Sélectionner les moteurs" />
+                            </Form.Item>
+                        </Col>
+                        <Col span={12}>
+                            <Form.Item name="bateauIds" label="Bateaux associés">
+                                <Select mode="multiple" allowClear options={bateauOptions} placeholder="Sélectionner les bateaux" />
+                            </Form.Item>
+                        </Col>
+                    </Row>
+
+                    <Row gutter={16}>
+                        <Col span={12}>
+                            <Form.Item name="heuresFonctionnement" label="Heures de fonctionnement">
+                                <InputNumber min={0} step={1} style={{ width: '100%' }} />
+                            </Form.Item>
+                        </Col>
+                        <Col span={12}>
+                            <Form.Item name="joursFrequence" label="Fréquence (jours)">
+                                <InputNumber min={0} step={1} style={{ width: '100%' }} />
+                            </Form.Item>
+                        </Col>
+                    </Row>
+
+                    <Form.Item label="Produits inclus">
+                        <Form.List name="produits">
+                            {(fields, { add, remove }) => (
+                                <>
+                                    {fields.map((field) => (
+                                        <Space key={field.key} align="baseline" style={{ display: 'flex', marginBottom: 8 }}>
+                                            <Form.Item
+                                                {...field}
+                                                name={[field.name, 'produitId']}
+                                                rules={[{ required: true, message: 'Produit requis' }]}
+                                                style={{ width: 520 }}
+                                            >
+                                                <Select allowClear showSearch options={produitOptions} placeholder="Produit" />
+                                            </Form.Item>
+                                            <Form.Item
+                                                {...field}
+                                                name={[field.name, 'quantite']}
+                                                rules={[{ required: true, message: 'Quantité requise' }]}
+                                                style={{ width: 180 }}
+                                            >
+                                                <InputNumber min={1} step={1} style={{ width: '100%' }} placeholder="Qté" />
+                                            </Form.Item>
+                                            <Button danger icon={<DeleteOutlined />} onClick={() => remove(field.name)} />
+                                        </Space>
+                                    ))}
+                                    <Button type="dashed" onClick={() => add({ quantite: 1 })} block icon={<PlusCircleOutlined />}>
+                                        Ajouter un produit
+                                    </Button>
+                                </>
+                            )}
+                        </Form.List>
+                    </Form.Item>
+
+                    <Form.Item label="Services inclus">
+                        <Form.List name="services">
+                            {(fields, { add, remove }) => (
+                                <>
+                                    {fields.map((field) => (
+                                        <Space key={field.key} align="baseline" style={{ display: 'flex', marginBottom: 8 }}>
+                                            <Form.Item
+                                                {...field}
+                                                name={[field.name, 'serviceId']}
+                                                rules={[{ required: true, message: 'Service requis' }]}
+                                                style={{ width: 520 }}
+                                            >
+                                                <Select allowClear showSearch options={serviceOptions} placeholder="Service" />
+                                            </Form.Item>
+                                            <Form.Item
+                                                {...field}
+                                                name={[field.name, 'quantite']}
+                                                rules={[{ required: true, message: 'Quantité requise' }]}
+                                                style={{ width: 180 }}
+                                            >
+                                                <InputNumber min={1} step={1} style={{ width: '100%' }} placeholder="Qté" />
+                                            </Form.Item>
+                                            <Button danger icon={<DeleteOutlined />} onClick={() => remove(field.name)} />
+                                        </Space>
+                                    ))}
+                                    <Button type="dashed" onClick={() => add({ quantite: 1 })} block icon={<PlusCircleOutlined />}>
+                                        Ajouter un service
+                                    </Button>
+                                </>
+                            )}
+                        </Form.List>
+                    </Form.Item>
+
+                    <Row gutter={16}>
+                        <Col span={12}>
+                            <Form.Item name="prixHT" label="Prix HT">
+                                <InputNumber addonAfter="€" min={0} step={0.01} style={{ width: '100%' }} />
+                            </Form.Item>
+                        </Col>
+                        <Col span={12}>
+                            <Form.Item name="tva" label="TVA (%)">
+                                <InputNumber addonAfter="%" min={0} max={100} step={0.01} style={{ width: '100%' }} />
+                            </Form.Item>
+                        </Col>
+                    </Row>
+
+                    <Row gutter={16}>
+                        <Col span={12}>
+                            <Form.Item name="montantTVA" label="Montant TVA">
+                                <InputNumber addonAfter="€" min={0} step={0.01} style={{ width: '100%' }} />
+                            </Form.Item>
+                        </Col>
+                        <Col span={12}>
+                            <Form.Item name="prixTTC" label="Prix TTC">
+                                <InputNumber addonAfter="€" min={0} step={0.01} style={{ width: '100%' }} />
+                            </Form.Item>
+                        </Col>
+                    </Row>
+
+                    {currentForfait && (
+                        <Space wrap>
+                            {(currentForfait.competences || []).map((competence) => (
+                                <Tag key={competence}>{competence}</Tag>
+                            ))}
+                        </Space>
+                    )}
+                </Form>
             </Modal>
-        </>
+        </Card>
     );
 }
