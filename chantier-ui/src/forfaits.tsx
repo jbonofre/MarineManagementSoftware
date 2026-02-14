@@ -180,120 +180,6 @@ function List(props) {
     );
 }
 
-function Catalogue(props: { forfait: ForfaitEntity | null }) {
-    const forfaitDetail = props.forfait;
-
-    if (!forfaitDetail) {
-        return <div>Aucun forfait sélectionné</div>;
-    }
-
-    const moteursColumns = [
-        {
-            title: 'Référence',
-            dataIndex: 'ref',
-            key: 'ref',
-            render: (_, record) => record.ref || record.nom || '-'
-        },
-        {
-            title: 'Type',
-            key: 'type',
-            render: () => 'Moteur'
-        },
-        {
-            title: null,
-            render: (_, record) => (
-                <Space>
-                    <Popconfirm
-                        title="Retirer ce moteur ?"
-                        onConfirm={() => {
-                            // TODO: Implement remove moteur from forfait
-                            message.info('Fonctionnalité à implémenter');
-                        }}
-                        okText="Oui"
-                        cancelText="Non"
-                    >
-                        <Button><DeleteOutlined/></Button>
-                    </Popconfirm>
-                </Space>
-            ),
-        }
-    ];
-
-    const bateauxColumns = [
-        {
-            title: 'Référence',
-            dataIndex: 'ref',
-            key: 'ref',
-            render: (_, record) => record.ref || record.nom || '-'
-        },
-        {
-            title: 'Type',
-            key: 'type',
-            render: () => 'Bateau'
-        },
-        {
-            title: null,
-            render: (_, record) => (
-                <Space>
-                    <Popconfirm
-                        title="Retirer ce bateau ?"
-                        onConfirm={() => {
-                            // TODO: Implement remove bateau from forfait
-                            message.info('Fonctionnalité à implémenter');
-                        }}
-                        okText="Oui"
-                        cancelText="Non"
-                    >
-                        <Button><DeleteOutlined/></Button>
-                    </Popconfirm>
-                </Space>
-            ),
-        }
-    ];
-
-    return(
-      <>
-      <Row gutter={[16,16]}>
-        <Col span={24}>
-            <div style={style}>
-                <Space>
-                    <Search placeholder="Recherche" enterButton style={{ width: 500 }}/>
-                    <InputNumber placeholder="Quantité" />
-                    <Button type="primary" icon={<PlusCircleOutlined/>} onClick={() => {
-                        message.info('Fonctionnalité d\'ajout à implémenter');
-                    }}/>
-                </Space>
-            </div>
-        </Col>
-      </Row>
-      {forfaitDetail.moteurs && forfaitDetail.moteurs.length > 0 && (
-        <Row gutter={[16,16]} style={{ marginTop: 16 }}>
-            <Col span={24}>
-                <h4>Moteurs</h4>
-                <Table columns={moteursColumns} dataSource={forfaitDetail.moteurs} rowKey="id" />
-            </Col>
-        </Row>
-      )}
-      {forfaitDetail.bateaux && forfaitDetail.bateaux.length > 0 && (
-        <Row gutter={[16,16]} style={{ marginTop: 16 }}>
-            <Col span={24}>
-                <h4>Bateaux</h4>
-                <Table columns={bateauxColumns} dataSource={forfaitDetail.bateaux} rowKey="id" />
-            </Col>
-        </Row>
-      )}
-      {(!forfaitDetail.moteurs || forfaitDetail.moteurs.length === 0) && 
-       (!forfaitDetail.bateaux || forfaitDetail.bateaux.length === 0) && (
-        <Row gutter={[16,16]} style={{ marginTop: 16 }}>
-            <Col span={24}>
-                <p>Aucun élément dans le catalogue</p>
-            </Col>
-        </Row>
-      )}
-      </>
-    );
-}
-
 function Detail(props) {
     const [forfaitDetail, setForfaitDetail] = useState<ForfaitEntity | null>(null);
     const [loading, setLoading] = useState(false);
@@ -372,12 +258,12 @@ function Detail(props) {
     const tabs = [
         {
             key: 'catalogue',
-            label: 'Catalogue',
-            children: (<Catalogue forfait={forfaitDetail || props.forfait} />),
+            label: 'Produits et Services',
+            children: (<div>TODO</div>),
         },
         {
             key: 'competences',
-            label: 'Compétences',
+            label: 'Compétences Nécessaires',
             children: (
                 <Form.Item name="competences" label="Compétences">
                     <Select
@@ -391,7 +277,7 @@ function Detail(props) {
         },
         {
             key: 'programmation',
-            label: 'Programmation',
+            label: 'Maintenances Prévues',
             children: (
                 <>
                     <Form.Item name="heuresFonctionnement" label="Heures de fonctionnement">

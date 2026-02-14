@@ -15,6 +15,11 @@ import java.util.List;
 @Consumes(MediaType.APPLICATION_JSON)
 public class UserResource {
 
+    public static class ChangePasswordRequest {
+        public String currentPassword;
+        public String newPassword;
+    }
+
     @POST
     @Path("/authenticate")
     public Response authenticate(UserEntity user) {
@@ -27,6 +32,29 @@ public class UserResource {
         }
         // You can return more data if needed (e.g., JWT token, user details, etc.)
         return Response.ok(entity).build();
+    }
+
+    @POST
+    @Path("/{name}/change-password")
+    @Transactional
+    public Response changePassword(@PathParam("name") String name, ChangePasswordRequest request) {
+        if (request == null || request.currentPassword == null || request.newPassword == null) {
+            return Response.status(Response.Status.BAD_REQUEST).entity("Mot de passe actuel et nouveau mot de passe requis.").build();
+        }
+        if (request.newPassword.trim().isEmpty()) {
+            return Response.status(Response.Status.BAD_REQUEST).entity("Le nouveau mot de passe ne peut pas être vide.").build();
+        }
+
+        UserEntity entity = UserEntity.findById(name);
+        if (entity == null) {
+            return Response.status(Response.Status.NOT_FOUND).entity("L'utilisateur " + name + " n'est pas trouvé").build();
+        }
+        if (!entity.password.equals(request.currentPassword)) {
+            return Response.status(Response.Status.UNAUTHORIZED).entity("Mot de passe actuel invalide.").build();
+        }
+
+        entity.password = request.newPassword;
+        return Response.noContent().build();
     }
 
     @GET

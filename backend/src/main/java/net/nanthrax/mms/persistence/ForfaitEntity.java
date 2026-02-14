@@ -19,6 +19,8 @@ public class ForfaitEntity extends PanacheEntity {
     public long heuresFonctionnement;
     public long joursFrequence;
 
+    // TODO ajouter les services et produits associés au forfait
+
     public List<String> competences;
 
     public double prixHT;

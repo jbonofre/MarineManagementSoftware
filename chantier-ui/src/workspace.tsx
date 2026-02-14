@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Layout, Input, Col, Row, Image, Menu, Button, message } from 'antd';
+import { Layout, Input, Col, Row, Image, Menu, Form, Modal, message } from 'antd';
 import { Route, Switch } from 'react-router';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { Link } from 'react-router-dom';
@@ -16,8 +16,6 @@ import CatalogueBateaux from './catalogue-bateaux.tsx';
 import CatalogueMoteurs from './catalogue-moteurs.tsx';
 import CatalogueHelices from './catalogue-helices.tsx';
 import Fournisseurs from './fournisseurs.tsx';
-import Transactions from './transactions.tsx';
-import Prestations from './prestations.tsx';
 import Societe from './societe.tsx';
 import Utilisateurs from './utilisateurs.tsx';
 import Forfaits from './forfaits.tsx';
@@ -54,12 +52,11 @@ function SideMenu(props) {
         { key: 'fournisseurs', label: <Link to="/catalogue/fournisseurs">Fournisseurs</Link>, icon: <FileProtectOutlined/> },
       ]},
       { key: 'Vente', label: 'Vente', icon: <StockOutlined/>, children: [
-        { key: 'transactions', label: <Link to="/transactions">Transactions</Link>, icon: <FileOutlined/> },
+        { key: 'prestations', label: <Link to="/prestations">Vente & Prestations</Link>, icon: <CheckSquareOutlined/> },
       ]},
       { key: 'atelier', label: 'Atelier', icon: <ToolOutlined/>, children: [
         { key: 'services', label: <Link to="/services">Services & Main d'Oeuvre</Link>, icon: <RedoOutlined/> },
         { key: 'forfaits', label: <Link to="/forfaits">Forfaits</Link>, icon: <FileDoneOutlined/> },
-        { key: 'prestations', label: <Link to="/prestations">Prestations</Link>, icon: <CheckSquareOutlined/> },
         { key: 'equipe', label: <Link to="/techniciens">Equipe</Link>, icon: <TeamOutlined/> },
         { key: 'planning', label: 'Planning', icon: <CalendarOutlined/> },
       ] },
@@ -85,6 +82,9 @@ function SideMenu(props) {
 function Header(props) {
 
     const { Search } = Input;
+    const [ preferencesVisible, setPreferencesVisible ] = useState(false);
+    const [ preferencesLoading, setPreferencesLoading ] = useState(false);
+    const [ preferencesForm ] = Form.useForm();
 
     const menuUser = [
               { key: 'user', label: props.user, icon: <UserOutlined />, children: [
@@ -103,10 +103,92 @@ function Header(props) {
                         props.setUser(null);
                     }
                     if (e.key === 'preferences') {
-                        console.log(e);
+                        setPreferencesVisible(true);
                     }
                 }} /></Col>
             </Row>
+            <Modal
+                open={preferencesVisible}
+                title="Préférences"
+                okText="Enregistrer"
+                cancelText="Annuler"
+                confirmLoading={preferencesLoading}
+                onOk={() => preferencesForm.submit()}
+                onCancel={() => {
+                    preferencesForm.resetFields();
+                    setPreferencesVisible(false);
+                }}
+                destroyOnHidden
+            >
+                <Form
+                    form={preferencesForm}
+                    layout="vertical"
+                    onFinish={(values) => {
+                        setPreferencesLoading(true);
+                        fetch(`/users/${encodeURIComponent(props.user)}/change-password`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                currentPassword: values.currentPassword,
+                                newPassword: values.newPassword
+                            })
+                        })
+                            .then(async (response) => {
+                                if (!response.ok) {
+                                    const errorText = await response.text();
+                                    throw new Error(errorText || ('Erreur (code ' + response.status + ')'));
+                                }
+                                message.success('Mot de passe mis à jour.');
+                                preferencesForm.resetFields();
+                                setPreferencesVisible(false);
+                            })
+                            .catch((error) => {
+                                message.error('Une erreur est survenue: ' + error.message);
+                            })
+                            .finally(() => {
+                                setPreferencesLoading(false);
+                            });
+                    }}
+                >
+                    <Form.Item
+                        name="currentPassword"
+                        label="Mot de passe actuel"
+                        rules={[{ required: true, message: 'Le mot de passe actuel est requis.' }]}
+                    >
+                        <Input.Password autoComplete="current-password" />
+                    </Form.Item>
+                    <Form.Item
+                        name="newPassword"
+                        label="Nouveau mot de passe"
+                        rules={[
+                            { required: true, message: 'Le nouveau mot de passe est requis.' },
+                            { min: 6, message: 'Le mot de passe doit contenir au moins 6 caractères.' }
+                        ]}
+                    >
+                        <Input.Password autoComplete="new-password" />
+                    </Form.Item>
+                    <Form.Item
+                        name="confirmPassword"
+                        label="Confirmation du mot de passe"
+                        dependencies={['newPassword']}
+                        rules={[
+                            { required: true, message: 'La confirmation du mot de passe est requise.' },
+                            ({ getFieldValue }) => ({
+                                validator(_, value) {
+                                    if (!value || getFieldValue('newPassword') === value) {
+                                        return Promise.resolve();
+                                    }
+                                    return Promise.reject(new Error('La confirmation ne correspond pas au nouveau mot de passe.'));
+                                }
+                            })
+                        ]}
+                    >
+                        <Input.Password autoComplete="new-password" />
+                    </Form.Item>
+                </Form>
+            </Modal>
         </Layout.Header>
     );
 
@@ -155,9 +237,6 @@ export default function Workspace(props) {
                     <Route path="/catalogue/fournisseurs" key="fournisseurs">
                         <Fournisseurs />
                     </Route>
-                    <Route path="/transactions" key="transactions">
-                        <Transactions />
-                    </Route>
                     <Route path="/societe" key="societe">
                         <Societe />
                     </Route>
@@ -165,7 +244,7 @@ export default function Workspace(props) {
                         <Utilisateurs />
                     </Route>
                     <Route path="/prestations" key="prestations">
-                        <Prestations />
+                        
                     </Route>
                     <Route path="/forfaits" key="forfaits">
                         <Forfaits />
@@ -180,7 +259,7 @@ export default function Workspace(props) {
             </Layout.Content>
             </Router>
           </Layout>
-          <Layout.Footer>Copyright © 2025 - Jean-Baptiste Onofré - Tous droits réservés</Layout.Footer>
+          <Layout.Footer>Copyright © 2026 - Jean-Baptiste Onofré - Tous droits réservés</Layout.Footer>
         </Layout>
     );
 
