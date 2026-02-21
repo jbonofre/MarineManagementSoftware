@@ -82,8 +82,14 @@ public class ForfaitResource {
         entity.nom = forfait.nom;
         entity.moteursAssocies = forfait.moteursAssocies;
         entity.bateauxAssocies = forfait.bateauxAssocies;
-        entity.produits = forfait.produits;
-        entity.services = forfait.services;
+        entity.produits.clear();
+        if (forfait.produits != null) {
+            entity.produits.addAll(forfait.produits);
+        }
+        entity.services.clear();
+        if (forfait.services != null) {
+            entity.services.addAll(forfait.services);
+        }
         entity.heuresFonctionnement = forfait.heuresFonctionnement;
         entity.joursFrequence = forfait.joursFrequence;
         entity.competences = forfait.competences;
