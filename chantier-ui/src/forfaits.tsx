@@ -34,11 +34,13 @@ interface ProduitCatalogueEntity {
     id: number;
     nom: string;
     marque?: string;
+    prixVenteTTC?: number;
 }
 
 interface ServiceEntity {
     id: number;
     nom: string;
+    prixTTC?: number;
 }
 
 interface ForfaitProduitEntity {
@@ -449,6 +451,25 @@ export default function Forfaits() {
                                             >
                                                 <InputNumber min={1} step={1} style={{ width: '100%' }} placeholder="Qté" />
                                             </Form.Item>
+                                            <Form.Item noStyle shouldUpdate>
+                                                {({ getFieldValue }) => {
+                                                    const produitId = getFieldValue(['produits', field.name, 'produitId']);
+                                                    const quantite = getFieldValue(['produits', field.name, 'quantite']) || 0;
+                                                    const prixUnitaireTTC = produits.find((produit) => produit.id === produitId)?.prixVenteTTC || 0;
+                                                    const prixTTC = Math.round(((prixUnitaireTTC * quantite) + Number.EPSILON) * 100) / 100;
+
+                                                    return (
+                                                        <Form.Item style={{ width: 180 }}>
+                                                            <InputNumber
+                                                                addonAfter="€"
+                                                                value={prixTTC}
+                                                                style={{ width: '100%' }}
+                                                                disabled
+                                                            />
+                                                        </Form.Item>
+                                                    );
+                                                }}
+                                            </Form.Item>
                                             <Button danger icon={<DeleteOutlined />} onClick={() => remove(field.name)} />
                                         </Space>
                                     ))}
@@ -481,6 +502,25 @@ export default function Forfaits() {
                                                 style={{ width: 180 }}
                                             >
                                                 <InputNumber min={1} step={1} style={{ width: '100%' }} placeholder="Qté" />
+                                            </Form.Item>
+                                            <Form.Item noStyle shouldUpdate>
+                                                {({ getFieldValue }) => {
+                                                    const serviceId = getFieldValue(['services', field.name, 'serviceId']);
+                                                    const quantite = getFieldValue(['services', field.name, 'quantite']) || 0;
+                                                    const prixUnitaireTTC = services.find((service) => service.id === serviceId)?.prixTTC || 0;
+                                                    const prixTTC = Math.round(((prixUnitaireTTC * quantite) + Number.EPSILON) * 100) / 100;
+
+                                                    return (
+                                                        <Form.Item style={{ width: 180 }}>
+                                                            <InputNumber
+                                                                addonAfter="€"
+                                                                value={prixTTC}
+                                                                style={{ width: '100%' }}
+                                                                disabled
+                                                            />
+                                                        </Form.Item>
+                                                    );
+                                                }}
                                             </Form.Item>
                                             <Button danger icon={<DeleteOutlined />} onClick={() => remove(field.name)} />
                                         </Space>
