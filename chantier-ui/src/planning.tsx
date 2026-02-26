@@ -130,6 +130,11 @@ export default function Planning() {
         return grouped;
     }, [ventes]);
 
+    const weekDates = useMemo(() => {
+        const start = dayjs(selectedDate).startOf('week');
+        return Array.from({ length: 7 }, (_, index) => start.add(index, 'day'));
+    }, [selectedDate]);
+
     const handleSavePlanning = async () => {
         if (!currentVente?.id) {
             return;
@@ -212,7 +217,7 @@ export default function Planning() {
         }
     ];
 
-    const dateCellRender = (value: Dayjs) => {
+    const renderDayContent = (value: Dayjs) => {
         const isoDate = value.format('YYYY-MM-DD');
         const dayVentes = (ventesByDate[isoDate] || [])
             .filter((vente) => !selectedStatus || vente.status === selectedStatus)
@@ -244,13 +249,31 @@ export default function Planning() {
         <Card title="Planning">
             <Row gutter={[16, 16]}>
                 <Col span={16}>
-                    <Card size="small" title="Vue calendrier">
-                        <Calendar
-                            fullscreen={false}
-                            value={dayjs(selectedDate)}
-                            onSelect={(value) => setSelectedDate(value.format('YYYY-MM-DD'))}
-                            cellRender={(current, info) => (info.type === 'date' ? dateCellRender(current) : info.originNode)}
-                        />
+                    <Card size="small" title="Vue semaine">
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: 8 }}>
+                            {weekDates.map((date) => {
+                                const isoDate = date.format('YYYY-MM-DD');
+                                const isSelected = isoDate === selectedDate;
+                                return (
+                                    <Card
+                                        key={isoDate}
+                                        size="small"
+                                        hoverable
+                                        onClick={() => setSelectedDate(isoDate)}
+                                        style={{
+                                            borderColor: isSelected ? '#1677ff' : undefined,
+                                            backgroundColor: isSelected ? '#e6f4ff' : undefined
+                                        }}
+                                        bodyStyle={{ padding: 8 }}
+                                    >
+                                        <Typography.Text strong style={{ display: 'block', marginBottom: 6 }}>
+                                            {date.format('ddd DD/MM')}
+                                        </Typography.Text>
+                                        {renderDayContent(date)}
+                                    </Card>
+                                );
+                            })}
+                        </div>
                     </Card>
                 </Col>
                 <Col span={8}>

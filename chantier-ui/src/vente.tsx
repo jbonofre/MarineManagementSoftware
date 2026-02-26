@@ -15,13 +15,14 @@ import {
     Tag,
     message
 } from 'antd';
-import { DeleteOutlined, EditOutlined, PlusCircleOutlined } from '@ant-design/icons';
+import { DeleteOutlined, EditOutlined, MailOutlined, PlusCircleOutlined, PrinterOutlined } from '@ant-design/icons';
 import axios from 'axios';
 
 interface ClientEntity {
     id: number;
     prenom?: string;
     nom: string;
+    email?: string;
 }
 
 interface BateauClientEntity {
@@ -42,6 +43,7 @@ interface RemorqueClientEntity {
 
 interface ForfaitEntity {
     id: number;
+    reference?: string;
     nom: string;
     prixTTC?: number;
 }
@@ -92,6 +94,7 @@ interface VenteFormValues {
     date?: string;
     montantHT: number;
     remise: number;
+    remisePourcentage: number;
     tva: number;
     montantTVA: number;
     montantTTC: number;
@@ -126,6 +129,7 @@ const defaultVente: VenteFormValues = {
     services: [],
     montantHT: 0,
     remise: 0,
+    remisePourcentage: 0,
     tva: 20,
     montantTVA: 0,
     montantTTC: 0,
@@ -133,6 +137,14 @@ const defaultVente: VenteFormValues = {
 };
 
 const formatEuro = (value?: number) => `${(value || 0).toFixed(2)} EUR`;
+const formatDate = (value?: string) => value || '-';
+const escapeHtml = (value: string) =>
+    value
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
 
 const getClientLabel = (client?: ClientEntity) => {
     if (!client) {
@@ -180,7 +192,11 @@ export default function Vente() {
     );
 
     const forfaitOptions = useMemo(
-        () => forfaits.map((forfait) => ({ value: forfait.id, label: forfait.nom })),
+        () =>
+            forfaits.map((forfait) => ({
+                value: forfait.id,
+                label: forfait.reference ? `${forfait.reference} - ${forfait.nom}` : forfait.nom
+            })),
         [forfaits]
     );
 
@@ -273,6 +289,7 @@ export default function Vente() {
                 date: vente.date || undefined,
                 montantHT: vente.montantHT || 0,
                 remise: vente.remise || 0,
+                remisePourcentage: vente.montantTTC ? Math.round((((vente.remise || 0) / vente.montantTTC) * 100 + Number.EPSILON) * 100) / 100 : 0,
                 tva: vente.tva || 0,
                 montantTVA: vente.montantTVA || 0,
                 montantTTC: vente.montantTTC || 0,
@@ -357,11 +374,93 @@ export default function Vente() {
         }
     };
 
-    const recalculateFromLines = () => {
+    const handlePrint = (vente: VenteEntity) => {
+        const popup = window.open('', '_blank', 'width=900,height=700,noopener,noreferrer');
+        if (!popup) {
+            message.error("Impossible d'ouvrir la fenetre d'impression.");
+            return;
+        }
+
+        const title = `Vente #${vente.id || '-'}`;
+        const forfaitLines = (vente.forfaits || []).map((item) => item.reference ? `${item.reference} - ${item.nom}` : item.nom);
+        const produitLines = (vente.produits || []).map((item) => `${item.nom}${item.marque ? ` (${item.marque})` : ''}`);
+        const serviceLines = (vente.services || []).map((item) => item.nom);
+        const listToHtml = (items: string[]) =>
+            items.length > 0
+                ? `<ul>${items.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul>`
+                : '<p>Aucun element</p>';
+
+        popup.document.write(`
+            <html>
+            <head>
+                <title>${escapeHtml(title)}</title>
+                <style>
+                    body { font-family: Arial, sans-serif; margin: 24px; color: #1f1f1f; }
+                    h1 { margin-bottom: 8px; }
+                    .meta { margin-bottom: 20px; color: #595959; }
+                    .row { margin-bottom: 8px; }
+                    .section { margin-top: 20px; }
+                    ul { margin: 8px 0 0 20px; }
+                </style>
+            </head>
+            <body>
+                <h1>${escapeHtml(title)}</h1>
+                <div class="meta">Date: ${escapeHtml(formatDate(vente.date))}</div>
+                <div class="row"><strong>Statut:</strong> ${escapeHtml(vente.status || '-')}</div>
+                <div class="row"><strong>Client:</strong> ${escapeHtml(getClientLabel(vente.client))}</div>
+                <div class="row"><strong>Montant TTC:</strong> ${escapeHtml(formatEuro(vente.montantTTC))}</div>
+                <div class="row"><strong>Remise:</strong> ${escapeHtml(formatEuro(vente.remise))}</div>
+                <div class="row"><strong>Prix vente TTC:</strong> ${escapeHtml(formatEuro(vente.prixVenteTTC))}</div>
+
+                <div class="section">
+                    <h3>Forfaits</h3>
+                    ${listToHtml(forfaitLines)}
+                </div>
+                <div class="section">
+                    <h3>Produits</h3>
+                    ${listToHtml(produitLines)}
+                </div>
+                <div class="section">
+                    <h3>Services</h3>
+                    ${listToHtml(serviceLines)}
+                </div>
+            </body>
+            </html>
+        `);
+        popup.document.close();
+        popup.focus();
+        popup.print();
+    };
+
+    const handleEmail = (vente: VenteEntity) => {
+        const email = vente.client?.email || '';
+        if (!email) {
+            message.warning("Aucun email client n'est renseigne pour cette vente.");
+        }
+
+        const subject = encodeURIComponent(`Vente #${vente.id || '-'}`);
+        const body = encodeURIComponent(
+            [
+                `Bonjour ${getClientLabel(vente.client)},`,
+                '',
+                `Veuillez trouver les informations de votre vente #${vente.id || '-'}.`,
+                `Date: ${formatDate(vente.date)}`,
+                `Statut: ${vente.status || '-'}`,
+                `Prix vente TTC: ${formatEuro(vente.prixVenteTTC)}`,
+                '',
+                'Cordialement,'
+            ].join('\n')
+        );
+
+        window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
+    };
+
+    const recalculateFromLines = (remiseSource: 'amount' | 'percentage' | 'auto' = 'auto') => {
         const forfaitLines = form.getFieldValue('forfaits') || [];
         const produitLines = form.getFieldValue('produits') || [];
         const serviceLines = form.getFieldValue('services') || [];
-        const remise = form.getFieldValue('remise') || 0;
+        let remise = form.getFieldValue('remise') || 0;
+        let remisePourcentage = form.getFieldValue('remisePourcentage') || 0;
         const tva = form.getFieldValue('tva') || 0;
 
         const forfaitsTTC = forfaitLines.reduce((sum: number, line: { forfaitId?: number; quantite?: number }) => {
@@ -383,11 +482,22 @@ export default function Vente() {
         const montantTTC = Math.round(((forfaitsTTC + produitsTTC + servicesTTC) + Number.EPSILON) * 100) / 100;
         const montantTVA = Math.round((((montantTTC / (100 + tva)) * tva) + Number.EPSILON) * 100) / 100;
         const montantHT = Math.round(((montantTTC - montantTVA) + Number.EPSILON) * 100) / 100;
+
+        if (remiseSource === 'percentage') {
+            remise = Math.round((((montantTTC * remisePourcentage) / 100) + Number.EPSILON) * 100) / 100;
+        } else {
+            remisePourcentage = montantTTC > 0
+                ? Math.round((((remise / montantTTC) * 100) + Number.EPSILON) * 100) / 100
+                : 0;
+        }
+
         const prixVenteTTC = Math.round(((montantTTC - remise) + Number.EPSILON) * 100) / 100;
 
         form.setFieldValue('montantHT', montantHT);
         form.setFieldValue('montantTVA', montantTVA);
         form.setFieldValue('montantTTC', montantTTC);
+        form.setFieldValue('remise', remise);
+        form.setFieldValue('remisePourcentage', remisePourcentage);
         form.setFieldValue('prixVenteTTC', prixVenteTTC);
     };
 
@@ -397,9 +507,18 @@ export default function Vente() {
             changedValues.produits !== undefined ||
             changedValues.services !== undefined ||
             changedValues.tva !== undefined ||
+            changedValues.remisePourcentage !== undefined ||
             changedValues.remise !== undefined
         ) {
-            recalculateFromLines();
+            if (changedValues.remisePourcentage !== undefined) {
+                recalculateFromLines('percentage');
+                return;
+            }
+            if (changedValues.remise !== undefined) {
+                recalculateFromLines('amount');
+                return;
+            }
+            recalculateFromLines('auto');
         }
     };
 
@@ -448,6 +567,8 @@ export default function Vente() {
             key: 'actions',
             render: (_: unknown, record: VenteEntity) => (
                 <Space>
+                    <Button title="Imprimer" icon={<PrinterOutlined />} onClick={() => handlePrint(record)} />
+                    <Button title="Envoyer par email" icon={<MailOutlined />} onClick={() => handleEmail(record)} />
                     <Button icon={<EditOutlined />} onClick={() => openModal(record)} />
                     <Popconfirm
                         title="Supprimer cette vente ?"
@@ -716,18 +837,23 @@ export default function Vente() {
                     </Form.Item>
 
                     <Row gutter={16}>
-                        <Col span={8}>
+                        <Col span={6}>
                             <Form.Item name="montantHT" label="Montant HT">
                                 <InputNumber addonAfter="EUR" min={0} step={0.01} style={{ width: '100%' }} disabled />
                             </Form.Item>
                         </Col>
-                        <Col span={8}>
+                        <Col span={6}>
                             <Form.Item name="tva" label="TVA (%)">
                                 <InputNumber addonAfter="%" min={0} max={100} step={0.01} style={{ width: '100%' }} />
                             </Form.Item>
                         </Col>
-                        <Col span={8}>
-                            <Form.Item name="remise" label="Remise">
+                        <Col span={6}>
+                            <Form.Item name="remisePourcentage" label="Remise (%)">
+                                <InputNumber addonAfter="%" min={0} max={100} step={0.01} style={{ width: '100%' }} />
+                            </Form.Item>
+                        </Col>
+                        <Col span={6}>
+                            <Form.Item name="remise" label="Remise (EUR)">
                                 <InputNumber addonAfter="EUR" min={0} step={0.01} style={{ width: '100%' }} />
                             </Form.Item>
                         </Col>

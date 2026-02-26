@@ -37,7 +37,7 @@ public class ForfaitResource {
         }
 
         String likePattern = "%" + q.toLowerCase() + "%";
-        return ForfaitEntity.list("LOWER(nom) LIKE ?1", likePattern);
+        return ForfaitEntity.list("LOWER(nom) LIKE ?1 OR LOWER(reference) LIKE ?1", likePattern);
     }
 
     @POST
@@ -97,6 +97,7 @@ public class ForfaitResource {
         entity.tva = forfait.tva;
         entity.montantTVA = forfait.montantTVA;
         entity.prixTTC = forfait.prixTTC;
+        entity.reference = forfait.reference;
 
         return entity;
     }

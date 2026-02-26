@@ -57,6 +57,7 @@ interface ForfaitServiceEntity {
 
 interface ForfaitEntity {
     id?: number;
+    reference?: string;
     nom: string;
     moteursAssocies: MoteurCatalogueEntity[];
     bateauxAssocies: BateauCatalogueEntity[];
@@ -72,6 +73,7 @@ interface ForfaitEntity {
 }
 
 interface ForfaitFormValues {
+    reference: string;
     nom: string;
     moteurIds: number[];
     bateauIds: number[];
@@ -82,11 +84,14 @@ interface ForfaitFormValues {
     competences: string[];
     prixHT: number;
     tva: number;
+    remise: number;
+    remiseEuros: number;
     montantTVA: number;
     prixTTC: number;
 }
 
 const defaultForfait: ForfaitFormValues = {
+    reference: '',
     nom: '',
     moteurIds: [],
     bateauIds: [],
@@ -97,6 +102,8 @@ const defaultForfait: ForfaitFormValues = {
     competences: [],
     prixHT: 0,
     tva: 0,
+    remise: 0,
+    remiseEuros: 0,
     montantTVA: 0,
     prixTTC: 0
 };
@@ -176,6 +183,7 @@ export default function Forfaits() {
             setIsEdit(true);
             setCurrentForfait(forfait);
             form.setFieldsValue({
+                reference: forfait.reference || '',
                 nom: forfait.nom || '',
                 moteurIds: (forfait.moteursAssocies || []).map((m) => m.id),
                 bateauIds: (forfait.bateauxAssocies || []).map((b) => b.id),
@@ -190,6 +198,8 @@ export default function Forfaits() {
                 competences: forfait.competences || [],
                 prixHT: forfait.prixHT || 0,
                 tva: forfait.tva || 0,
+                remise: 0,
+                remiseEuros: 0,
                 montantTVA: forfait.montantTVA || 0,
                 prixTTC: forfait.prixTTC || 0
             });
@@ -203,6 +213,7 @@ export default function Forfaits() {
     };
 
     const toPayload = (values: ForfaitFormValues): Partial<ForfaitEntity> => ({
+        reference: values.reference,
         nom: values.nom,
         moteursAssocies: (values.moteurIds || [])
             .map((id) => moteurs.find((moteur) => moteur.id === id))
@@ -264,11 +275,65 @@ export default function Forfaits() {
     };
 
     const onValuesChange = (changedValues: Partial<ForfaitFormValues>) => {
-        if (changedValues.prixHT !== undefined || changedValues.tva !== undefined) {
+        if (changedValues.produits !== undefined || changedValues.services !== undefined) {
+            const round2 = (value: number) => Math.round((value + Number.EPSILON) * 100) / 100;
+            const produitsValues = form.getFieldValue('produits') || [];
+            const servicesValues = form.getFieldValue('services') || [];
+
+            const totalProduitsTTC = produitsValues.reduce((total: number, item: { produitId?: number; quantite?: number }) => {
+                const prixUnitaireTTC = produits.find((produit) => produit.id === item.produitId)?.prixVenteTTC || 0;
+                const quantite = item.quantite || 0;
+                return total + (prixUnitaireTTC * quantite);
+            }, 0);
+
+            const totalServicesTTC = servicesValues.reduce((total: number, item: { serviceId?: number; quantite?: number }) => {
+                const prixUnitaireTTC = services.find((service) => service.id === item.serviceId)?.prixTTC || 0;
+                const quantite = item.quantite || 0;
+                return total + (prixUnitaireTTC * quantite);
+            }, 0);
+
+            const prixTTC = round2(totalProduitsTTC + totalServicesTTC);
+            const tva = form.getFieldValue('tva') || 0;
+            const remise = form.getFieldValue('remise') || 0;
+            const remiseEuros = form.getFieldValue('remiseEuros') || 0;
+            const coefficientRemise = 1 - (remise / 100);
+            const prixAvantRemiseTTC = coefficientRemise > 0
+                ? ((prixTTC + remiseEuros) / coefficientRemise)
+                : 0;
+            const montantTVA = round2((prixAvantRemiseTTC / (100 + tva)) * tva);
+            const prixHT = round2(prixAvantRemiseTTC - montantTVA);
+
+            form.setFieldValue('prixTTC', prixTTC);
+            form.setFieldValue('montantTVA', montantTVA);
+            form.setFieldValue('prixHT', prixHT);
+        }
+
+        if (
+            changedValues.prixHT !== undefined
+            || changedValues.tva !== undefined
+            || changedValues.remise !== undefined
+            || changedValues.remiseEuros !== undefined
+        ) {
             const prixHT = form.getFieldValue('prixHT') || 0;
             const tva = form.getFieldValue('tva') || 0;
             const montantTVA = Math.round(((prixHT * (tva / 100)) + Number.EPSILON) * 100) / 100;
-            const prixTTC = Math.round(((prixHT + montantTVA) + Number.EPSILON) * 100) / 100;
+            const prixAvantRemiseTTC = prixHT + montantTVA;
+            const round2 = (value: number) => Math.round((value + Number.EPSILON) * 100) / 100;
+            let remise = form.getFieldValue('remise') || 0;
+            let remiseEuros = form.getFieldValue('remiseEuros') || 0;
+
+            if (changedValues.remise !== undefined && changedValues.remiseEuros === undefined) {
+                remiseEuros = round2(prixAvantRemiseTTC * (remise / 100));
+                form.setFieldValue('remiseEuros', remiseEuros);
+            } else if (changedValues.remiseEuros !== undefined && changedValues.remise === undefined) {
+                remise = prixAvantRemiseTTC > 0 ? round2((remiseEuros / prixAvantRemiseTTC) * 100) : 0;
+                form.setFieldValue('remise', remise);
+            }
+
+            const prixTTC = Math.max(
+                0,
+                round2(prixAvantRemiseTTC - remiseEuros)
+            );
             form.setFieldValue('montantTVA', montantTVA);
             form.setFieldValue('prixTTC', prixTTC);
         }
@@ -276,14 +341,26 @@ export default function Forfaits() {
         if (changedValues.prixTTC !== undefined) {
             const prixTTC = form.getFieldValue('prixTTC') || 0;
             const tva = form.getFieldValue('tva') || 0;
-            const montantTVA = Math.round((((prixTTC / (100 + tva)) * tva) + Number.EPSILON) * 100) / 100;
-            const prixHT = Math.round(((prixTTC - montantTVA) + Number.EPSILON) * 100) / 100;
+            const remise = form.getFieldValue('remise') || 0;
+            const remiseEuros = form.getFieldValue('remiseEuros') || 0;
+            const coefficientRemise = 1 - (remise / 100);
+            const prixAvantRemiseTTC = coefficientRemise > 0
+                ? ((prixTTC + remiseEuros) / coefficientRemise)
+                : 0;
+            const montantTVA = Math.round((((prixAvantRemiseTTC / (100 + tva)) * tva) + Number.EPSILON) * 100) / 100;
+            const prixHT = Math.round(((prixAvantRemiseTTC - montantTVA) + Number.EPSILON) * 100) / 100;
             form.setFieldValue('montantTVA', montantTVA);
             form.setFieldValue('prixHT', prixHT);
         }
     };
 
     const columns = [
+        {
+            title: 'Reference',
+            dataIndex: 'reference',
+            sorter: (a: ForfaitEntity, b: ForfaitEntity) => (a.reference || '').localeCompare(b.reference || ''),
+            render: (value: string) => value || '-'
+        },
         {
             title: 'Nom',
             dataIndex: 'nom',
@@ -391,6 +468,9 @@ export default function Forfaits() {
                 width={1024}
             >
                 <Form form={form} layout="vertical" initialValues={defaultForfait} onValuesChange={onValuesChange}>
+                    <Form.Item name="reference" label="Reference">
+                        <Input allowClear />
+                    </Form.Item>
                     <Form.Item
                         name="nom"
                         label="Nom"
@@ -534,14 +614,24 @@ export default function Forfaits() {
                     </Form.Item>
 
                     <Row gutter={16}>
-                        <Col span={12}>
+                        <Col span={6}>
                             <Form.Item name="prixHT" label="Prix HT">
                                 <InputNumber addonAfter="€" min={0} step={0.01} style={{ width: '100%' }} />
                             </Form.Item>
                         </Col>
-                        <Col span={12}>
+                        <Col span={6}>
                             <Form.Item name="tva" label="TVA (%)">
                                 <InputNumber addonAfter="%" min={0} max={100} step={0.01} style={{ width: '100%' }} />
+                            </Form.Item>
+                        </Col>
+                        <Col span={6}>
+                            <Form.Item name="remise" label="Remise (%)">
+                                <InputNumber addonAfter="%" min={0} max={100} step={0.01} style={{ width: '100%' }} />
+                            </Form.Item>
+                        </Col>
+                        <Col span={6}>
+                            <Form.Item name="remiseEuros" label="Remise (€)">
+                                <InputNumber addonAfter="€" min={0} step={0.01} style={{ width: '100%' }} />
                             </Form.Item>
                         </Col>
                     </Row>

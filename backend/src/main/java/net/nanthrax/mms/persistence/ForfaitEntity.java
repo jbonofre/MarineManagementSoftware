@@ -41,4 +41,6 @@ public class ForfaitEntity extends PanacheEntity {
 
     public double prixTTC;
 
+    public String reference;
+
 }
