@@ -13,6 +13,7 @@ interface TechnicienEntity {
     email: string;
     telephone?: string;
     competences?: string[];
+    couleur?: string;
 }
 
 const defaultTechnicien: TechnicienEntity = {
@@ -20,7 +21,8 @@ const defaultTechnicien: TechnicienEntity = {
     prenom: '',
     email: '',
     telephone: '',
-    competences: []
+    competences: [],
+    couleur: '#1677ff'
 };
 
 // --- Component ---
@@ -75,6 +77,7 @@ const Techniciens: React.FC = () => {
         try {
             const values = await form.validateFields();
             values.competences = values.competences || [];
+            values.couleur = values.couleur || defaultTechnicien.couleur;
             
             if (isEdit && currentTechnicien && currentTechnicien.id) {
                 await axios.put(`/techniciens/${currentTechnicien.id}`, { ...currentTechnicien, ...values });
@@ -114,7 +117,9 @@ const Techniciens: React.FC = () => {
             dataIndex: '',
             key: 'avatar',
             width: 50,
-            render: () => <UserOutlined style={{ fontSize: 20 }} />
+            render: (_: unknown, record: TechnicienEntity) => (
+                <UserOutlined style={{ fontSize: 20, color: record.couleur || defaultTechnicien.couleur }} />
+            )
         },
         {
             title: 'Nom',
@@ -153,6 +158,28 @@ const Techniciens: React.FC = () => {
                           </span>
                       ))
                     : '-',
+        },
+        {
+            title: 'Couleur',
+            dataIndex: 'couleur',
+            key: 'couleur',
+            render: (couleur?: string) => {
+                const color = couleur || defaultTechnicien.couleur;
+                return (
+                    <Space size={8}>
+                        <span
+                            style={{
+                                display: 'inline-block',
+                                width: 12,
+                                height: 12,
+                                borderRadius: '50%',
+                                backgroundColor: color,
+                                border: '1px solid #d9d9d9'
+                            }}
+                        />
+                    </Space>
+                );
+            }
         },
         {
             title: 'Actions',
@@ -287,6 +314,15 @@ const Techniciens: React.FC = () => {
                                         style={{ width: '100%' }}
                                         tokenSeparators={[',']}
                                     />
+                                </Form.Item>
+                                <Form.Item
+                                    name="couleur"
+                                    label="Couleur"
+                                    rules={[
+                                        { pattern: /^#[0-9A-Fa-f]{6}$/, message: 'Format attendu: #RRGGBB' }
+                                    ]}
+                                >
+                                    <Input type="color" />
                                 </Form.Item>
                             </Form>
                         </Modal>

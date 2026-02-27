@@ -74,6 +74,7 @@ public class TechnicienResource {
         entity.email = technicien.email;
         entity.telephone = technicien.telephone;
         entity.competences = technicien.competences;
+        entity.couleur = technicien.couleur;
 
         return entity;
     }

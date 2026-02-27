@@ -20,4 +20,6 @@ public class TechnicienEntity extends PanacheEntity {
 
     public List<String> competences;
 
+    public String couleur;
+
 }
