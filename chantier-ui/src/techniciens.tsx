@@ -12,11 +12,28 @@ interface TechnicienEntity {
     motDePasse?: string;
     email: string;
     telephone?: string;
-    competences?: string[];
+    competences?: CompetenceEntity[];
     couleur?: string;
 }
 
-const defaultTechnicien: TechnicienEntity = {
+interface CompetenceEntity {
+    id: number;
+    nom: string;
+    description?: string;
+    couleur?: string;
+}
+
+interface TechnicienFormValues {
+    nom: string;
+    prenom: string;
+    motDePasse?: string;
+    email: string;
+    telephone?: string;
+    competences?: number[];
+    couleur?: string;
+}
+
+const defaultTechnicien: TechnicienFormValues = {
     nom: '',
     prenom: '',
     email: '',
@@ -29,6 +46,7 @@ const defaultTechnicien: TechnicienEntity = {
 
 const Techniciens: React.FC = () => {
     const [techniciens, setTechniciens] = useState<TechnicienEntity[]>([]);
+    const [competences, setCompetences] = useState<CompetenceEntity[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
     const [modalVisible, setModalVisible] = useState<boolean>(false);
     const [isEdit, setIsEdit] = useState<boolean>(false);
@@ -51,6 +69,9 @@ const Techniciens: React.FC = () => {
 
     useEffect(() => {
         fetchTechniciens();
+        axios.get('/competences')
+            .then((res) => setCompetences(res.data || []))
+            .catch(() => message.error('Erreur lors du chargement des compétences.'));
     }, []);
 
     const openModal = (technicien?: TechnicienEntity) => {
@@ -61,7 +82,7 @@ const Techniciens: React.FC = () => {
                 ...defaultTechnicien,
                 ...technicien,
                 competences: technicien.competences && technicien.competences.length > 0
-                    ? technicien.competences
+                    ? technicien.competences.map((competence) => competence.id)
                     : [],
             });
         } else {
@@ -76,14 +97,19 @@ const Techniciens: React.FC = () => {
     const handleModalOk = async () => {
         try {
             const values = await form.validateFields();
-            values.competences = values.competences || [];
-            values.couleur = values.couleur || defaultTechnicien.couleur;
+            const payload = {
+                ...values,
+                competences: (values.competences || [])
+                    .map((id) => competences.find((competence) => competence.id === id))
+                    .filter(Boolean),
+                couleur: values.couleur || defaultTechnicien.couleur
+            };
             
             if (isEdit && currentTechnicien && currentTechnicien.id) {
-                await axios.put(`/techniciens/${currentTechnicien.id}`, { ...currentTechnicien, ...values });
+                await axios.put(`/techniciens/${currentTechnicien.id}`, { ...currentTechnicien, ...payload });
                 message.success('Technicien modifié avec succès');
             } else {
-                await axios.post('/techniciens', values);
+                await axios.post('/techniciens', payload);
                 message.success('Technicien ajouté avec succès');
             }
             setModalVisible(false);
@@ -148,12 +174,12 @@ const Techniciens: React.FC = () => {
             title: 'Compétences',
             dataIndex: 'competences',
             key: 'competences',
-            render: (competences: string[]) =>
+            render: (competences: CompetenceEntity[]) =>
                 competences && Array.isArray(competences) && competences.length > 0
                     ? competences.map((comp, idx) => (
                           <span key={idx} style={{ marginRight: 4 }}>
                               <Button size="small" type="dashed" disabled>
-                                  {comp}
+                                  {comp.nom}
                               </Button>
                           </span>
                       ))
@@ -309,10 +335,10 @@ const Techniciens: React.FC = () => {
                                     label="Compétences"
                                 >
                                     <Select
-                                        mode="tags"
-                                        placeholder="Ajouter des compétences"
+                                        mode="multiple"
+                                        options={competences.map((competence) => ({ value: competence.id, label: competence.nom }))}
+                                        placeholder="Sélectionner des compétences"
                                         style={{ width: '100%' }}
-                                        tokenSeparators={[',']}
                                     />
                                 </Form.Item>
                                 <Form.Item

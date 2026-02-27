@@ -11,10 +11,27 @@ interface ServiceEntity {
     tva?: number;
     montantTVA?: number;
     prixTTC?: number;
-    competences?: string[];
+    competences?: CompetenceEntity[];
 }
 
-const defaultService: ServiceEntity = {
+interface CompetenceEntity {
+    id: number;
+    nom: string;
+    description?: string;
+    couleur?: string;
+}
+
+interface ServiceFormValues {
+    nom: string;
+    description?: string;
+    prixHT?: number;
+    tva?: number;
+    montantTVA?: number;
+    prixTTC?: number;
+    competences?: number[];
+}
+
+const defaultService: ServiceFormValues = {
     nom: '',
     description: '',
     prixHT: 0,
@@ -26,6 +43,7 @@ const defaultService: ServiceEntity = {
 
 export default function Services() {
     const [services, setServices] = useState<ServiceEntity[]>([]);
+    const [competences, setCompetences] = useState<CompetenceEntity[]>([]);
     const [loading, setLoading] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
     const [isEdit, setIsEdit] = useState(false);
@@ -50,6 +68,9 @@ export default function Services() {
 
     useEffect(() => {
         fetchServices();
+        axios.get('/competences')
+            .then((response) => setCompetences(response.data || []))
+            .catch(() => message.error('Erreur lors du chargement des compétences.'));
     }, []);
 
     const openModal = (service?: ServiceEntity) => {
@@ -59,7 +80,7 @@ export default function Services() {
             form.setFieldsValue({
                 ...defaultService,
                 ...service,
-                competences: service.competences || []
+                competences: (service.competences || []).map((competence) => competence.id)
             });
         } else {
             setIsEdit(false);
@@ -86,12 +107,17 @@ export default function Services() {
     const handleModalOk = async () => {
         try {
             const values = await form.validateFields();
-            values.competences = values.competences || [];
+            const payload = {
+                ...values,
+                competences: (values.competences || [])
+                    .map((id) => competences.find((competence) => competence.id === id))
+                    .filter(Boolean)
+            };
             if (isEdit && currentService?.id) {
-                await axios.put(`/services/${currentService.id}`, { ...currentService, ...values });
+                await axios.put(`/services/${currentService.id}`, { ...currentService, ...payload });
                 message.success('Service modifié avec succès');
             } else {
-                await axios.post('/services', values);
+                await axios.post('/services', payload);
                 message.success('Service ajouté avec succès');
             }
             setModalVisible(false);
@@ -136,10 +162,10 @@ export default function Services() {
         {
             title: 'Compétences',
             dataIndex: 'competences',
-            render: (values: string[]) => (
+            render: (values: CompetenceEntity[]) => (
                 <Space size={[0, 8]} wrap>
                     {values && values.length > 0 ? values.map((item) => (
-                        <Tag key={item}>{item}</Tag>
+                        <Tag key={item.id}>{item.nom}</Tag>
                     )) : '-'}
                 </Space>
             )
@@ -235,9 +261,9 @@ export default function Services() {
                     </Form.Item>
                     <Form.Item name="competences" label="Compétences">
                         <Select
-                            mode="tags"
-                            placeholder="Ajouter des compétences"
-                            tokenSeparators={[',']}
+                            mode="multiple"
+                            options={competences.map((competence) => ({ value: competence.id, label: competence.nom }))}
+                            placeholder="Sélectionner des compétences"
                             style={{ width: '100%' }}
                         />
                     </Form.Item>

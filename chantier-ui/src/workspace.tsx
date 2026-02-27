@@ -27,6 +27,7 @@ import Techniciens from './techniciens.tsx';
 import Services from './services.tsx';
 import Vente from './vente.tsx';
 import Planning from './planning.tsx';
+import Competences from './competence.tsx';
 
 export function demo() {
     message.warning("Vous êtes sur une version de démonstration de Marine Management Software. Il n'est pas possible d'ajouter ou supprimer des éléments.")
@@ -59,6 +60,7 @@ function SideMenu(props) {
       { key: 'atelier', label: 'Atelier', icon: <ToolOutlined/>, children: [
         { key: 'services', label: <Link to="/services">Services & Main d'Oeuvre</Link>, icon: <RedoOutlined/> },
         { key: 'forfaits', label: <Link to="/forfaits">Forfaits</Link>, icon: <FileDoneOutlined/> },
+        { key: 'competences', label: <Link to="/competences">Compétences</Link>, icon: <BarsOutlined/> },
         { key: 'equipe', label: <Link to="/techniciens">Equipe</Link>, icon: <TeamOutlined/> },
         { key: 'planning', label: <Link to="/planning">Planning</Link>, icon: <CalendarOutlined/> },
       ] },
@@ -256,6 +258,9 @@ export default function Workspace(props) {
                     </Route>
                     <Route path="/services" key="services">
                         <Services />
+                    </Route>
+                    <Route path="/competences" key="competences">
+                        <Competences />
                     </Route>
                     <Route path="/planning" key="planning">
                         <Planning />

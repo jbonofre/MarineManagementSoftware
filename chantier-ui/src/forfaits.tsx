@@ -65,7 +65,7 @@ interface ForfaitEntity {
     services: ForfaitServiceEntity[];
     heuresFonctionnement: number;
     joursFrequence: number;
-    competences: string[];
+    competences: CompetenceEntity[];
     prixHT: number;
     tva: number;
     montantTVA: number;
@@ -81,13 +81,20 @@ interface ForfaitFormValues {
     services: Array<{ serviceId: number; quantite: number }>;
     heuresFonctionnement: number;
     joursFrequence: number;
-    competences: string[];
+    competences: number[];
     prixHT: number;
     tva: number;
     remise: number;
     remiseEuros: number;
     montantTVA: number;
     prixTTC: number;
+}
+
+interface CompetenceEntity {
+    id: number;
+    nom: string;
+    description?: string;
+    couleur?: string;
 }
 
 const defaultForfait: ForfaitFormValues = {
@@ -116,6 +123,7 @@ export default function Forfaits() {
     const [bateaux, setBateaux] = useState<BateauCatalogueEntity[]>([]);
     const [produits, setProduits] = useState<ProduitCatalogueEntity[]>([]);
     const [services, setServices] = useState<ServiceEntity[]>([]);
+    const [competences, setCompetences] = useState<CompetenceEntity[]>([]);
     const [loading, setLoading] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
     const [isEdit, setIsEdit] = useState(false);
@@ -143,6 +151,11 @@ export default function Forfaits() {
         [services]
     );
 
+    const competenceOptions = useMemo(
+        () => competences.map((competence) => ({ value: competence.id, label: competence.nom })),
+        [competences]
+    );
+
     const fetchForfaits = async (query?: string) => {
         setLoading(true);
         try {
@@ -158,16 +171,18 @@ export default function Forfaits() {
 
     const fetchOptions = async () => {
         try {
-            const [moteursRes, bateauxRes, produitsRes, servicesRes] = await Promise.all([
+            const [moteursRes, bateauxRes, produitsRes, servicesRes, competencesRes] = await Promise.all([
                 axios.get('/catalogue/moteurs'),
                 axios.get('/catalogue/bateaux'),
                 axios.get('/catalogue/produits'),
-                axios.get('/services')
+                axios.get('/services'),
+                axios.get('/competences')
             ]);
             setMoteurs(moteursRes.data || []);
             setBateaux(bateauxRes.data || []);
             setProduits(produitsRes.data || []);
             setServices(servicesRes.data || []);
+            setCompetences(competencesRes.data || []);
         } catch {
             message.error('Erreur lors du chargement des listes de référence.');
         }
@@ -195,7 +210,7 @@ export default function Forfaits() {
                     .map((item) => ({ serviceId: item.service!.id, quantite: item.quantite || 1 })),
                 heuresFonctionnement: forfait.heuresFonctionnement || 0,
                 joursFrequence: forfait.joursFrequence || 0,
-                competences: forfait.competences || [],
+                competences: (forfait.competences || []).map((competence) => competence.id),
                 prixHT: forfait.prixHT || 0,
                 tva: forfait.tva || 0,
                 remise: 0,
@@ -235,7 +250,9 @@ export default function Forfaits() {
             })),
         heuresFonctionnement: values.heuresFonctionnement || 0,
         joursFrequence: values.joursFrequence || 0,
-        competences: values.competences || [],
+        competences: (values.competences || [])
+            .map((id) => competences.find((competence) => competence.id === id))
+            .filter(Boolean) as CompetenceEntity[],
         prixHT: values.prixHT || 0,
         tva: values.tva || 0,
         montantTVA: values.montantTVA || 0,
@@ -484,7 +501,7 @@ export default function Forfaits() {
                     </Form.Item>
 
                     <Form.Item name="competences" label="Compétences">
-                        <Select mode="tags" tokenSeparators={[',']} placeholder="Ajouter des compétences" />
+                        <Select mode="multiple" options={competenceOptions} placeholder="Sélectionner des compétences" />
                     </Form.Item>
 
                     <Row gutter={16}>
@@ -656,7 +673,7 @@ export default function Forfaits() {
                     {currentForfait && (
                         <Space wrap>
                             {(currentForfait.competences || []).map((competence) => (
-                                <Tag key={competence}>{competence}</Tag>
+                                <Tag key={competence.id}>{competence.nom}</Tag>
                             ))}
                         </Space>
                     )}
