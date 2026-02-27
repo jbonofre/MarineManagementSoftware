@@ -195,7 +195,8 @@ export default function Vente() {
         () =>
             forfaits.map((forfait) => ({
                 value: forfait.id,
-                label: forfait.reference ? `${forfait.reference} - ${forfait.nom}` : forfait.nom
+                label: forfait.reference ? `${forfait.reference} - ${forfait.nom}` : forfait.nom,
+                searchText: (forfait.reference || '').toLowerCase()
             })),
         [forfaits]
     );
@@ -707,7 +708,15 @@ export default function Vente() {
                                                 rules={[{ required: true, message: 'Forfait requis' }]}
                                                 style={{ width: 520 }}
                                             >
-                                                <Select allowClear showSearch options={forfaitOptions} placeholder="Forfait" />
+                                                <Select
+                                                    allowClear
+                                                    showSearch
+                                                    options={forfaitOptions}
+                                                    placeholder="Forfait"
+                                                    filterOption={(input, option) =>
+                                                        (((option as { searchText?: string } | undefined)?.searchText) || '').includes(input.toLowerCase())
+                                                    }
+                                                />
                                             </Form.Item>
                                             <Form.Item
                                                 {...field}

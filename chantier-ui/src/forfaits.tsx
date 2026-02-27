@@ -468,7 +468,11 @@ export default function Forfaits() {
                 width={1024}
             >
                 <Form form={form} layout="vertical" initialValues={defaultForfait} onValuesChange={onValuesChange}>
-                    <Form.Item name="reference" label="Reference">
+                    <Form.Item
+                        name="reference"
+                        label="Reference"
+                        rules={[{ required: true, message: 'La référence est requise' }]}
+                    >
                         <Input allowClear />
                     </Form.Item>
                     <Form.Item
