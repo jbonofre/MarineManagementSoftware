@@ -269,7 +269,7 @@ export default function Workspace(props) {
             </Layout.Content>
             </Router>
           </Layout>
-          <Layout.Footer>Copyright © 2026 - Jean-Baptiste Onofré - Tous droits réservés</Layout.Footer>
+          <Layout.Footer>Copyright © 2025-2026 - NOSE Experts - Tous droits réservés</Layout.Footer>
         </Layout>
     );
 

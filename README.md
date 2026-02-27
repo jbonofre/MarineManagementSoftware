@@ -13,3 +13,11 @@ Il permet:
 
 Pilotez l'ensemble des métiers d'un chantier naval via une seule applications, en simplifiant et optimisant les opérations.
 
+# License
+
+Apache 2.0 - See LICENSE for more information.
+
+# Copyright
+
+Marine Management Software
+Copyright 2025-2026 NOSE Experts
