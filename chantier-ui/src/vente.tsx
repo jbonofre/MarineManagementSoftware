@@ -61,11 +61,14 @@ interface ServiceEntity {
     prixTTC?: number;
 }
 
-type VenteStatus = 'DEVIS' | 'COMMANDEE' | 'PAYEE' | 'TERMINEE' | 'ANNULEE';
+type VenteStatus = 'EN_ATTENTE' | 'EN_COURS' | 'PAYEE' | 'ANNULEE';
+type VenteType = 'DEVIS' | 'FACTURE' | 'COMMANDE' | 'LIVRAISON';
+type ModePaiement = 'CHEQUE' | 'VIREMENT' | 'CARTE' | 'ESPÈCES';
 
 interface VenteEntity {
     id?: number;
     status: VenteStatus;
+    type: VenteType;
     client?: ClientEntity;
     bateau?: BateauClientEntity;
     moteur?: MoteurClientEntity;
@@ -80,10 +83,12 @@ interface VenteEntity {
     tva?: number;
     montantTVA?: number;
     prixVenteTTC?: number;
+    modePaiement?: ModePaiement;
 }
 
 interface VenteFormValues {
     status: VenteStatus;
+    type: VenteType;
     clientId?: number;
     bateauId?: number;
     moteurId?: number;
@@ -99,31 +104,46 @@ interface VenteFormValues {
     montantTVA: number;
     montantTTC: number;
     prixVenteTTC: number;
+    modePaiement?: ModePaiement;
 }
 
 interface SearchFilters {
     status?: VenteStatus;
+    type?: VenteType;
     clientId?: number;
 }
 
 const statusOptions: Array<{ value: VenteStatus; label: string }> = [
-    { value: 'DEVIS', label: 'Devis' },
-    { value: 'COMMANDEE', label: 'Commandee' },
+    { value: 'EN_ATTENTE', label: 'En attente' },
+    { value: 'EN_COURS', label: 'En cours' },
     { value: 'PAYEE', label: 'Payee' },
-    { value: 'TERMINEE', label: 'Terminee' },
     { value: 'ANNULEE', label: 'Annulee' }
 ];
 
+const typeOptions: Array<{ value: VenteType; label: string }> = [
+    { value: 'DEVIS', label: 'Devis' },
+    { value: 'FACTURE', label: 'Facture' },
+    { value: 'COMMANDE', label: 'Commande' },
+    { value: 'LIVRAISON', label: 'Livraison' }
+];
+
+const modePaiementOptions: Array<{ value: ModePaiement; label: string }> = [
+    { value: 'CHEQUE', label: 'Cheque' },
+    { value: 'VIREMENT', label: 'Virement' },
+    { value: 'CARTE', label: 'Carte' },
+    { value: 'ESPÈCES', label: 'Especes' }
+];
+
 const statusColor: Record<VenteStatus, string> = {
-    DEVIS: 'default',
-    COMMANDEE: 'blue',
+    EN_ATTENTE: 'default',
+    EN_COURS: 'blue',
     PAYEE: 'green',
-    TERMINEE: 'purple',
     ANNULEE: 'red'
 };
 
 const defaultVente: VenteFormValues = {
-    status: 'DEVIS',
+    status: 'EN_ATTENTE',
+    type: 'DEVIS',
     forfaits: [],
     produits: [],
     services: [],
@@ -216,11 +236,13 @@ export default function Vente() {
         try {
             const activeFilters = nextFilters || {};
             const hasStatus = !!activeFilters.status;
+            const hasType = !!activeFilters.type;
             const hasClient = activeFilters.clientId !== undefined;
-            const endpoint = hasStatus || hasClient ? '/ventes/search' : '/ventes';
+            const endpoint = hasStatus || hasType || hasClient ? '/ventes/search' : '/ventes';
             const response = await axios.get(endpoint, {
                 params: {
                     ...(hasStatus ? { status: activeFilters.status } : {}),
+                    ...(hasType ? { type: activeFilters.type } : {}),
                     ...(hasClient ? { clientId: activeFilters.clientId } : {})
                 }
             });
@@ -273,7 +295,8 @@ export default function Vente() {
             setIsEdit(true);
             setCurrentVente(vente);
             form.setFieldsValue({
-                status: vente.status || 'DEVIS',
+                status: vente.status || 'EN_ATTENTE',
+                type: vente.type || 'DEVIS',
                 clientId: vente.client?.id,
                 bateauId: vente.bateau?.id,
                 moteurId: vente.moteur?.id,
@@ -294,7 +317,8 @@ export default function Vente() {
                 tva: vente.tva || 0,
                 montantTVA: vente.montantTVA || 0,
                 montantTTC: vente.montantTTC || 0,
-                prixVenteTTC: vente.prixVenteTTC || 0
+                prixVenteTTC: vente.prixVenteTTC || 0,
+                modePaiement: vente.modePaiement
             });
         } else {
             setIsEdit(false);
@@ -312,6 +336,7 @@ export default function Vente() {
 
     const toPayload = (values: VenteFormValues): VenteEntity => ({
         status: values.status,
+        type: values.type,
         client: clients.find((client) => client.id === values.clientId),
         bateau: bateaux.find((bateau) => bateau.id === values.bateauId),
         moteur: moteurs.find((moteur) => moteur.id === values.moteurId),
@@ -340,7 +365,8 @@ export default function Vente() {
         tva: values.tva || 0,
         montantTVA: values.montantTVA || 0,
         montantTTC: values.montantTTC || 0,
-        prixVenteTTC: values.prixVenteTTC || 0
+        prixVenteTTC: values.prixVenteTTC || 0,
+        modePaiement: values.modePaiement
     });
 
     const handleSave = async () => {
@@ -407,11 +433,13 @@ export default function Vente() {
             <body>
                 <h1>${escapeHtml(title)}</h1>
                 <div class="meta">Date: ${escapeHtml(formatDate(vente.date))}</div>
+                <div class="row"><strong>Type:</strong> ${escapeHtml(vente.type || '-')}</div>
                 <div class="row"><strong>Statut:</strong> ${escapeHtml(vente.status || '-')}</div>
                 <div class="row"><strong>Client:</strong> ${escapeHtml(getClientLabel(vente.client))}</div>
                 <div class="row"><strong>Montant TTC:</strong> ${escapeHtml(formatEuro(vente.montantTTC))}</div>
                 <div class="row"><strong>Remise:</strong> ${escapeHtml(formatEuro(vente.remise))}</div>
                 <div class="row"><strong>Prix vente TTC:</strong> ${escapeHtml(formatEuro(vente.prixVenteTTC))}</div>
+                <div class="row"><strong>Mode de paiement:</strong> ${escapeHtml(vente.modePaiement || '-')}</div>
 
                 <div class="section">
                     <h3>Forfaits</h3>
@@ -446,8 +474,10 @@ export default function Vente() {
                 '',
                 `Veuillez trouver les informations de votre vente #${vente.id || '-'}.`,
                 `Date: ${formatDate(vente.date)}`,
+                `Type: ${vente.type || '-'}`,
                 `Statut: ${vente.status || '-'}`,
                 `Prix vente TTC: ${formatEuro(vente.prixVenteTTC)}`,
+                `Mode de paiement: ${vente.modePaiement || '-'}`,
                 '',
                 'Cordialement,'
             ].join('\n')
@@ -530,6 +560,11 @@ export default function Vente() {
             render: (value: string) => value || '-'
         },
         {
+            title: 'Type',
+            dataIndex: 'type',
+            render: (value: VenteType) => typeOptions.find((item) => item.value === value)?.label || value
+        },
+        {
             title: 'Statut',
             dataIndex: 'status',
             render: (value: VenteStatus) => {
@@ -556,6 +591,11 @@ export default function Vente() {
             title: 'Services',
             dataIndex: 'services',
             render: (values: ServiceEntity[]) => values?.length || 0
+        },
+        {
+            title: 'Mode paiement',
+            dataIndex: 'modePaiement',
+            render: (value: ModePaiement) => modePaiementOptions.find((item) => item.value === value)?.label || value || '-'
         },
         {
             title: 'Prix vente TTC',
@@ -585,14 +625,15 @@ export default function Vente() {
     ];
 
     return (
-        <Card title="Vente & Prestations">
+        <Card title="Prestations">
             <Form
                 form={searchForm}
                 layout="vertical"
-                initialValues={{ status: undefined, clientId: undefined }}
+                initialValues={{ status: undefined, type: undefined, clientId: undefined }}
                 onFinish={(values) => {
                     const nextFilters: SearchFilters = {
                         status: values.status,
+                        type: values.type,
                         clientId: values.clientId
                     };
                     setFilters(nextFilters);
@@ -600,17 +641,22 @@ export default function Vente() {
                 }}
             >
                 <Row gutter={16}>
-                    <Col span={8}>
+                    <Col span={6}>
                         <Form.Item name="status" label="Statut">
                             <Select allowClear options={statusOptions} placeholder="Tous les statuts" />
                         </Form.Item>
                     </Col>
-                    <Col span={10}>
+                    <Col span={6}>
+                        <Form.Item name="type" label="Type">
+                            <Select allowClear options={typeOptions} placeholder="Tous les types" />
+                        </Form.Item>
+                    </Col>
+                    <Col span={8}>
                         <Form.Item name="clientId" label="Client">
                             <Select allowClear showSearch options={clientOptions} placeholder="Tous les clients" />
                         </Form.Item>
                     </Col>
-                    <Col span={6} style={{ display: 'flex', alignItems: 'end' }}>
+                    <Col span={4} style={{ display: 'flex', alignItems: 'end' }}>
                         <Space>
                             <Button type="primary" htmlType="submit">Rechercher</Button>
                             <Button
@@ -654,7 +700,16 @@ export default function Vente() {
             >
                 <Form form={form} layout="vertical" initialValues={defaultVente} onValuesChange={onValuesChange}>
                     <Row gutter={16}>
-                        <Col span={8}>
+                        <Col span={6}>
+                            <Form.Item
+                                name="type"
+                                label="Type"
+                                rules={[{ required: true, message: 'Le type est requis' }]}
+                            >
+                                <Select options={typeOptions} />
+                            </Form.Item>
+                        </Col>
+                        <Col span={6}>
                             <Form.Item
                                 name="status"
                                 label="Statut"
@@ -663,9 +718,14 @@ export default function Vente() {
                                 <Select options={statusOptions} />
                             </Form.Item>
                         </Col>
-                        <Col span={8}>
+                        <Col span={6}>
                             <Form.Item name="date" label="Date">
                                 <Input type="date" />
+                            </Form.Item>
+                        </Col>
+                        <Col span={6}>
+                            <Form.Item name="modePaiement" label="Mode de paiement">
+                                <Select allowClear options={modePaiementOptions} />
                             </Form.Item>
                         </Col>
                     </Row>

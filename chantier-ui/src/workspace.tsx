@@ -55,7 +55,7 @@ function SideMenu(props) {
         { key: 'fournisseurs', label: <Link to="/catalogue/fournisseurs">Fournisseurs</Link>, icon: <FileProtectOutlined/> },
       ]},
       { key: 'Vente', label: 'Vente', icon: <StockOutlined/>, children: [
-        { key: 'prestations', label: <Link to="/prestations">Vente & Prestations</Link>, icon: <CheckSquareOutlined/> },
+        { key: 'prestations', label: <Link to="/prestations">Prestations</Link>, icon: <CheckSquareOutlined/> },
       ]},
       { key: 'atelier', label: 'Atelier', icon: <ToolOutlined/>, children: [
         { key: 'services', label: <Link to="/services">Services & Main d'Oeuvre</Link>, icon: <RedoOutlined/> },

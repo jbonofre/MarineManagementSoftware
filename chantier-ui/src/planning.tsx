@@ -4,7 +4,9 @@ import { CalendarOutlined, EditOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import dayjs, { Dayjs } from 'dayjs';
 
-type VenteStatus = 'DEVIS' | 'COMMANDEE' | 'PAYEE' | 'TERMINEE' | 'ANNULEE';
+type VenteStatus = 'EN_ATTENTE' | 'EN_COURS' | 'PAYEE' | 'ANNULEE';
+type VenteType = 'DEVIS' | 'FACTURE' | 'COMPTOIR';
+type ModePaiement = 'CHEQUE' | 'VIREMENT' | 'CARTE' | 'ESPÈCES';
 
 interface ClientEntity {
     id: number;
@@ -27,12 +29,14 @@ interface ServiceEntity {
 interface VenteEntity {
     id?: number;
     status: VenteStatus;
+    type?: VenteType;
     client?: ClientEntity;
     forfaits?: ForfaitEntity[];
     produits?: ProduitCatalogueEntity[];
     services?: ServiceEntity[];
     date?: string;
     prixVenteTTC?: number;
+    modePaiement?: ModePaiement;
 }
 
 interface PlanningFormValues {
@@ -41,18 +45,29 @@ interface PlanningFormValues {
 }
 
 const statusOptions: Array<{ value: VenteStatus; label: string }> = [
-    { value: 'DEVIS', label: 'Devis' },
-    { value: 'COMMANDEE', label: 'Commandee' },
+    { value: 'EN_ATTENTE', label: 'En attente' },
+    { value: 'EN_COURS', label: 'En cours' },
     { value: 'PAYEE', label: 'Payee' },
-    { value: 'TERMINEE', label: 'Terminee' },
     { value: 'ANNULEE', label: 'Annulee' }
 ];
 
+const typeOptions: Array<{ value: VenteType; label: string }> = [
+    { value: 'DEVIS', label: 'Devis' },
+    { value: 'FACTURE', label: 'Facture' },
+    { value: 'COMPTOIR', label: 'Comptoir' }
+];
+
+const modePaiementOptions: Array<{ value: ModePaiement; label: string }> = [
+    { value: 'CHEQUE', label: 'Cheque' },
+    { value: 'VIREMENT', label: 'Virement' },
+    { value: 'CARTE', label: 'Carte' },
+    { value: 'ESPÈCES', label: 'Especes' }
+];
+
 const statusColor: Record<VenteStatus, string> = {
-    DEVIS: 'default',
-    COMMANDEE: 'blue',
+    EN_ATTENTE: 'default',
+    EN_COURS: 'blue',
     PAYEE: 'green',
-    TERMINEE: 'purple',
     ANNULEE: 'red'
 };
 
@@ -98,7 +113,7 @@ export default function Planning() {
         setCurrentVente(vente);
         form.setFieldsValue({
             date: forcedDate || vente.date || selectedDate || todayIso(),
-            status: vente.status || 'COMMANDEE'
+            status: vente.status || 'EN_ATTENTE'
         });
         setModalVisible(true);
     };
@@ -171,6 +186,11 @@ export default function Planning() {
             render: (value: ClientEntity) => getClientLabel(value)
         },
         {
+            title: 'Type',
+            dataIndex: 'type',
+            render: (value: VenteType) => typeOptions.find((item) => item.value === value)?.label || value || '-'
+        },
+        {
             title: 'Statut',
             dataIndex: 'status',
             render: (value: VenteStatus) => {
@@ -188,6 +208,11 @@ export default function Planning() {
             title: 'Prix vente TTC',
             dataIndex: 'prixVenteTTC',
             render: (value: number) => formatEuro(value)
+        },
+        {
+            title: 'Mode paiement',
+            dataIndex: 'modePaiement',
+            render: (value: ModePaiement) => modePaiementOptions.find((item) => item.value === value)?.label || value || '-'
         }
     ];
 

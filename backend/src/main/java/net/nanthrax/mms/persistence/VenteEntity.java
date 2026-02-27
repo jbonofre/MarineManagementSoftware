@@ -12,14 +12,23 @@ import jakarta.persistence.ManyToOne;
 public class VenteEntity extends PanacheEntity {
 
     public enum Status {
-        DEVIS,
-        COMMANDEE,
+        EN_ATTENTE,
+        EN_COURS,
         PAYEE,
-        TERMINEE,
         ANNULEE
     }
 
     public Status status;
+
+    public enum Type {
+        DEVIS,
+        COMMANDE,
+        FACTURE,
+        LIVRAISON,
+        COMPTOIR,
+    }
+
+    public Type type;
 
     @ManyToOne
     public ClientEntity client;
@@ -55,5 +64,14 @@ public class VenteEntity extends PanacheEntity {
     public double montantTVA;
     
     public double prixVenteTTC;
+
+    public enum ModePaiement {
+        CHEQUE,
+        VIREMENT,
+        CARTE,
+        ESPÈCES,
+    }
+
+    public ModePaiement modePaiement;
     
 }

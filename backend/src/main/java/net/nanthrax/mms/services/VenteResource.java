@@ -31,15 +31,34 @@ public class VenteResource {
 
     @GET
     @Path("/search")
-    public List<VenteEntity> search(@QueryParam("status") String status, @QueryParam("clientId") Long clientId) {
-        boolean hasStatus = status != null && !status.trim().isEmpty();
+    public List<VenteEntity> search(
+            @QueryParam("status") String status,
+            @QueryParam("type") String type,
+            @QueryParam("clientId") Long clientId
+    ) {
+        VenteEntity.Status parsedStatus = parseStatus(status);
+        VenteEntity.Type parsedType = parseType(type);
+        boolean hasStatus = parsedStatus != null;
+        boolean hasType = parsedType != null;
         boolean hasClientId = clientId != null;
 
+        if (hasStatus && hasType && hasClientId) {
+            return VenteEntity.list("status = ?1 and type = ?2 and client.id = ?3", parsedStatus, parsedType, clientId);
+        }
+        if (hasStatus && hasType) {
+            return VenteEntity.list("status = ?1 and type = ?2", parsedStatus, parsedType);
+        }
         if (hasStatus && hasClientId) {
-            return VenteEntity.list("status = ?1 and client.id = ?2", status, clientId);
+            return VenteEntity.list("status = ?1 and client.id = ?2", parsedStatus, clientId);
+        }
+        if (hasType && hasClientId) {
+            return VenteEntity.list("type = ?1 and client.id = ?2", parsedType, clientId);
         }
         if (hasStatus) {
-            return VenteEntity.list("status = ?1", status);
+            return VenteEntity.list("status = ?1", parsedStatus);
+        }
+        if (hasType) {
+            return VenteEntity.list("type = ?1", parsedType);
         }
         if (hasClientId) {
             return VenteEntity.list("client.id = ?1", clientId);
@@ -88,6 +107,7 @@ public class VenteResource {
         }
 
         entity.status = vente.status;
+        entity.type = vente.type;
         entity.client = vente.client;
         entity.bateau = vente.bateau;
         entity.moteur = vente.moteur;
@@ -133,7 +153,30 @@ public class VenteResource {
         entity.tva = vente.tva;
         entity.montantTVA = vente.montantTVA;
         entity.prixVenteTTC = vente.prixVenteTTC;
+        entity.modePaiement = vente.modePaiement;
 
         return entity;
+    }
+
+    private VenteEntity.Status parseStatus(String status) {
+        if (status == null || status.trim().isEmpty()) {
+            return null;
+        }
+        try {
+            return VenteEntity.Status.valueOf(status.trim());
+        } catch (IllegalArgumentException ex) {
+            throw new WebApplicationException("Statut de vente invalide: " + status, 400);
+        }
+    }
+
+    private VenteEntity.Type parseType(String type) {
+        if (type == null || type.trim().isEmpty()) {
+            return null;
+        }
+        try {
+            return VenteEntity.Type.valueOf(type.trim());
+        } catch (IllegalArgumentException ex) {
+            throw new WebApplicationException("Type de vente invalide: " + type, 400);
+        }
     }
 }
