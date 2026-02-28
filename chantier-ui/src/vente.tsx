@@ -62,7 +62,7 @@ interface ServiceEntity {
 }
 
 type VenteStatus = 'EN_ATTENTE' | 'EN_COURS' | 'PAYEE' | 'ANNULEE';
-type VenteType = 'DEVIS' | 'FACTURE' | 'COMMANDE' | 'LIVRAISON';
+type VenteType = 'DEVIS' | 'FACTURE' | 'COMMANDE' | 'LIVRAISON' | 'COMPTOIR';
 type ModePaiement = 'CHEQUE' | 'VIREMENT' | 'CARTE' | 'ESPÈCES';
 
 interface VenteEntity {
@@ -93,9 +93,9 @@ interface VenteFormValues {
     bateauId?: number;
     moteurId?: number;
     remorqueId?: number;
-    forfaits: Array<{ forfaitId?: number; quantite: number }>;
-    produits: Array<{ produitId?: number; quantite: number }>;
-    services: Array<{ serviceId?: number; quantite: number }>;
+    forfaits: Array<{ forfaitId?: number; quantite?: number }>;
+    produits: Array<{ produitId?: number; quantite?: number }>;
+    services: Array<{ serviceId?: number; quantite?: number }>;
     date?: string;
     montantHT: number;
     remise: number;
@@ -124,7 +124,8 @@ const typeOptions: Array<{ value: VenteType; label: string }> = [
     { value: 'DEVIS', label: 'Devis' },
     { value: 'FACTURE', label: 'Facture' },
     { value: 'COMMANDE', label: 'Commande' },
-    { value: 'LIVRAISON', label: 'Livraison' }
+    { value: 'LIVRAISON', label: 'Livraison' },
+    { value: 'COMPTOIR', label: 'Comptoir' }
 ];
 
 const modePaiementOptions: Array<{ value: ModePaiement; label: string }> = [
@@ -141,12 +142,47 @@ const statusColor: Record<VenteStatus, string> = {
     ANNULEE: 'red'
 };
 
+const getTodayIsoDate = () => {
+    const now = new Date();
+    const timezoneOffsetMs = now.getTimezoneOffset() * 60000;
+    return new Date(now.getTime() - timezoneOffsetMs).toISOString().split('T')[0];
+};
+
+const toDateInputValue = (value?: string) => {
+    if (!value) {
+        return undefined;
+    }
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+        return value;
+    }
+    const parsedDate = new Date(value);
+    if (Number.isNaN(parsedDate.getTime())) {
+        return undefined;
+    }
+    const timezoneOffsetMs = parsedDate.getTimezoneOffset() * 60000;
+    return new Date(parsedDate.getTime() - timezoneOffsetMs).toISOString().split('T')[0];
+};
+
+const toBackendDateValue = (value?: string) => {
+    if (!value) {
+        return undefined;
+    }
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+        return value;
+    }
+    const parsedDate = new Date(value);
+    if (Number.isNaN(parsedDate.getTime())) {
+        return undefined;
+    }
+    return parsedDate.toISOString().split('T')[0];
+};
+
 const defaultVente: VenteFormValues = {
     status: 'EN_ATTENTE',
     type: 'DEVIS',
-    forfaits: [],
-    produits: [],
-    services: [],
+    forfaits: [{}],
+    produits: [{}],
+    services: [{}],
     montantHT: 0,
     remise: 0,
     remisePourcentage: 0,
@@ -294,6 +330,30 @@ export default function Vente() {
         if (vente) {
             setIsEdit(true);
             setCurrentVente(vente);
+            const forfaitLinesMap = (vente.forfaits || []).reduce((acc, item) => {
+                if (!item?.id) {
+                    return acc;
+                }
+                acc.set(item.id, (acc.get(item.id) || 0) + 1);
+                return acc;
+            }, new Map<number, number>());
+            const produitLinesMap = (vente.produits || []).reduce((acc, item) => {
+                if (!item?.id) {
+                    return acc;
+                }
+                acc.set(item.id, (acc.get(item.id) || 0) + 1);
+                return acc;
+            }, new Map<number, number>());
+            const serviceLinesMap = (vente.services || []).reduce((acc, item) => {
+                if (!item?.id) {
+                    return acc;
+                }
+                acc.set(item.id, (acc.get(item.id) || 0) + 1);
+                return acc;
+            }, new Map<number, number>());
+            const forfaitLines = Array.from(forfaitLinesMap.entries()).map(([forfaitId, quantite]) => ({ forfaitId, quantite }));
+            const produitLines = Array.from(produitLinesMap.entries()).map(([produitId, quantite]) => ({ produitId, quantite }));
+            const serviceLines = Array.from(serviceLinesMap.entries()).map(([serviceId, quantite]) => ({ serviceId, quantite }));
             form.setFieldsValue({
                 status: vente.status || 'EN_ATTENTE',
                 type: vente.type || 'DEVIS',
@@ -301,16 +361,10 @@ export default function Vente() {
                 bateauId: vente.bateau?.id,
                 moteurId: vente.moteur?.id,
                 remorqueId: vente.remorque?.id,
-                forfaits: (vente.forfaits || [])
-                    .filter((item) => !!item?.id)
-                    .map((item) => ({ forfaitId: item.id, quantite: 1 })),
-                produits: (vente.produits || [])
-                    .filter((item) => !!item?.id)
-                    .map((item) => ({ produitId: item.id, quantite: 1 })),
-                services: (vente.services || [])
-                    .filter((item) => !!item?.id)
-                    .map((item) => ({ serviceId: item.id, quantite: 1 })),
-                date: vente.date || undefined,
+                forfaits: [...forfaitLines, {}],
+                produits: [...produitLines, {}],
+                services: [...serviceLines, {}],
+                date: toDateInputValue(vente.date),
                 montantHT: vente.montantHT || 0,
                 remise: vente.remise || 0,
                 remisePourcentage: vente.montantTTC ? Math.round((((vente.remise || 0) / vente.montantTTC) * 100 + Number.EPSILON) * 100) / 100 : 0,
@@ -324,7 +378,7 @@ export default function Vente() {
             setIsEdit(false);
             setCurrentVente(null);
             form.resetFields();
-            form.setFieldsValue(defaultVente);
+            form.setFieldsValue({ ...defaultVente, date: getTodayIsoDate() });
         }
         setModalVisible(true);
     };
@@ -345,21 +399,21 @@ export default function Vente() {
             .filter((line) => line.forfaitId)
             .flatMap((line) => {
                 const item = forfaits.find((forfait) => forfait.id === line.forfaitId);
-                return item ? expandByQuantity([item], line.quantite) : [];
+                return item ? expandByQuantity([item], line.quantite || 1) : [];
             }) as ForfaitEntity[],
         produits: (values.produits || [])
             .filter((line) => line.produitId)
             .flatMap((line) => {
                 const item = produits.find((produit) => produit.id === line.produitId);
-                return item ? expandByQuantity([item], line.quantite) : [];
+                return item ? expandByQuantity([item], line.quantite || 1) : [];
             }) as ProduitCatalogueEntity[],
         services: (values.services || [])
             .filter((line) => line.serviceId)
             .flatMap((line) => {
                 const item = services.find((service) => service.id === line.serviceId);
-                return item ? expandByQuantity([item], line.quantite) : [];
+                return item ? expandByQuantity([item], line.quantite || 1) : [];
             }) as ServiceEntity[],
-        date: values.date,
+        date: toBackendDateValue(values.date),
         montantHT: values.montantHT || 0,
         remise: values.remise || 0,
         tva: values.tva || 0,
@@ -401,23 +455,108 @@ export default function Vente() {
         }
     };
 
-    const handlePrint = (vente: VenteEntity) => {
-        const popup = window.open('', '_blank', 'width=900,height=700,noopener,noreferrer');
-        if (!popup) {
-            message.error("Impossible d'ouvrir la fenetre d'impression.");
+    const openPrintDocument = (_title: string, contentHtml: string, _width: number = 900) => {
+        // Print through a hidden iframe to avoid opening a new tab/window.
+        const iframe = document.createElement('iframe');
+        iframe.style.position = 'fixed';
+        iframe.style.right = '0';
+        iframe.style.bottom = '0';
+        iframe.style.width = '0';
+        iframe.style.height = '0';
+        iframe.style.border = '0';
+        document.body.appendChild(iframe);
+
+        const cleanup = () => {
+            if (iframe.parentNode) {
+                iframe.parentNode.removeChild(iframe);
+            }
+        };
+
+        const iframeWindow = iframe.contentWindow;
+        if (!iframeWindow) {
+            cleanup();
+            message.error("Impossible de lancer l'impression.");
             return;
         }
 
-        const title = `Vente #${vente.id || '-'}`;
-        const forfaitLines = (vente.forfaits || []).map((item) => item.reference ? `${item.reference} - ${item.nom}` : item.nom);
-        const produitLines = (vente.produits || []).map((item) => `${item.nom}${item.marque ? ` (${item.marque})` : ''}`);
-        const serviceLines = (vente.services || []).map((item) => item.nom);
-        const listToHtml = (items: string[]) =>
-            items.length > 0
-                ? `<ul>${items.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul>`
-                : '<p>Aucun element</p>';
+        iframeWindow.document.open();
+        iframeWindow.document.write(contentHtml);
+        iframeWindow.document.close();
+        iframeWindow.focus();
+        iframeWindow.print();
 
-        popup.document.write(`
+        setTimeout(cleanup, 1000);
+    };
+
+    const handlePrint = (vente: VenteEntity) => {
+        const title = `Vente #${vente.id || '-'}`;
+        const forfaitLines = Array.from(
+            (vente.forfaits || []).reduce((acc, item) => {
+                const label = item.reference ? `${item.reference} - ${item.nom}` : item.nom;
+                const key = item.id ? `id-${item.id}` : `label-${label}`;
+                const current = acc.get(key) || { type: 'Forfait', label, quantite: 0, totalPrixTTC: 0 };
+                current.quantite += 1;
+                current.totalPrixTTC += item.prixTTC || 0;
+                acc.set(key, current);
+                return acc;
+            }, new Map<string, { type: string; label: string; quantite: number; totalPrixTTC: number }>())
+                .values()
+        );
+        const produitLines = Array.from(
+            (vente.produits || []).reduce((acc, item) => {
+                const label = `${item.nom}${item.marque ? ` (${item.marque})` : ''}`;
+                const key = item.id ? `id-${item.id}` : `label-${label}`;
+                const current = acc.get(key) || { type: 'Produit', label, quantite: 0, totalPrixTTC: 0 };
+                current.quantite += 1;
+                current.totalPrixTTC += item.prixVenteTTC || 0;
+                acc.set(key, current);
+                return acc;
+            }, new Map<string, { type: string; label: string; quantite: number; totalPrixTTC: number }>())
+                .values()
+        );
+        const serviceLines = Array.from(
+            (vente.services || []).reduce((acc, item) => {
+                const label = item.nom;
+                const key = item.id ? `id-${item.id}` : `label-${label}`;
+                const current = acc.get(key) || { type: 'Service', label, quantite: 0, totalPrixTTC: 0 };
+                current.quantite += 1;
+                current.totalPrixTTC += item.prixTTC || 0;
+                acc.set(key, current);
+                return acc;
+            }, new Map<string, { type: string; label: string; quantite: number; totalPrixTTC: number }>())
+                .values()
+        );
+        const invoiceLines = [...forfaitLines, ...produitLines, ...serviceLines];
+        const invoiceRowsHtml = invoiceLines.length > 0
+            ? `
+                <table class="invoice-table">
+                    <thead>
+                        <tr>
+                            <th>Type</th>
+                            <th>Designation</th>
+                            <th>Qte</th>
+                            <th>Prix total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${invoiceLines
+                            .map((line) => `
+                                <tr>
+                                    <td>${escapeHtml(line.type)}</td>
+                                    <td>${escapeHtml(line.label)}</td>
+                                    <td>${line.quantite}</td>
+                                    <td>${escapeHtml(formatEuro(line.totalPrixTTC))}</td>
+                                </tr>
+                            `)
+                            .join('')}
+                    </tbody>
+                </table>
+            `
+            : '<p>Aucun element</p>';
+
+        openPrintDocument(
+            title,
+            `
             <html>
             <head>
                 <title>${escapeHtml(title)}</title>
@@ -427,7 +566,9 @@ export default function Vente() {
                     .meta { margin-bottom: 20px; color: #595959; }
                     .row { margin-bottom: 8px; }
                     .section { margin-top: 20px; }
-                    ul { margin: 8px 0 0 20px; }
+                    .invoice-table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+                    .invoice-table th, .invoice-table td { border: 1px solid #d9d9d9; padding: 6px 8px; }
+                    .invoice-table th { background: #fafafa; text-align: left; }
                 </style>
             </head>
             <body>
@@ -442,48 +583,101 @@ export default function Vente() {
                 <div class="row"><strong>Mode de paiement:</strong> ${escapeHtml(vente.modePaiement || '-')}</div>
 
                 <div class="section">
-                    <h3>Forfaits</h3>
-                    ${listToHtml(forfaitLines)}
-                </div>
-                <div class="section">
-                    <h3>Produits</h3>
-                    ${listToHtml(produitLines)}
-                </div>
-                <div class="section">
-                    <h3>Services</h3>
-                    ${listToHtml(serviceLines)}
+                    <h3>Lignes</h3>
+                    ${invoiceRowsHtml}
                 </div>
             </body>
             </html>
-        `);
-        popup.document.close();
-        popup.focus();
-        popup.print();
+        `
+        );
     };
 
     const handleEmail = (vente: VenteEntity) => {
-        const email = vente.client?.email || '';
+        const selectedClientId = form.getFieldValue('clientId');
+        const fallbackClient = clients.find((client) => client.id === vente.client?.id || client.id === selectedClientId);
+        const email = vente.client?.email || fallbackClient?.email || '';
         if (!email) {
             message.warning("Aucun email client n'est renseigne pour cette vente.");
+            return;
         }
+
+        const forfaitLines = Array.from(
+            (vente.forfaits || []).reduce((acc, item) => {
+                const label = item.reference ? `${item.reference} - ${item.nom}` : item.nom;
+                const key = item.id ? `id-${item.id}` : `label-${label}`;
+                const current = acc.get(key) || { type: 'Forfait', label, quantite: 0, totalPrixTTC: 0 };
+                current.quantite += 1;
+                current.totalPrixTTC += item.prixTTC || 0;
+                acc.set(key, current);
+                return acc;
+            }, new Map<string, { type: string; label: string; quantite: number; totalPrixTTC: number }>())
+                .values()
+        );
+        const produitLines = Array.from(
+            (vente.produits || []).reduce((acc, item) => {
+                const label = `${item.nom}${item.marque ? ` (${item.marque})` : ''}`;
+                const key = item.id ? `id-${item.id}` : `label-${label}`;
+                const current = acc.get(key) || { type: 'Produit', label, quantite: 0, totalPrixTTC: 0 };
+                current.quantite += 1;
+                current.totalPrixTTC += item.prixVenteTTC || 0;
+                acc.set(key, current);
+                return acc;
+            }, new Map<string, { type: string; label: string; quantite: number; totalPrixTTC: number }>())
+                .values()
+        );
+        const serviceLines = Array.from(
+            (vente.services || []).reduce((acc, item) => {
+                const label = item.nom;
+                const key = item.id ? `id-${item.id}` : `label-${label}`;
+                const current = acc.get(key) || { type: 'Service', label, quantite: 0, totalPrixTTC: 0 };
+                current.quantite += 1;
+                current.totalPrixTTC += item.prixTTC || 0;
+                acc.set(key, current);
+                return acc;
+            }, new Map<string, { type: string; label: string; quantite: number; totalPrixTTC: number }>())
+                .values()
+        );
+        const invoiceLines = [...forfaitLines, ...produitLines, ...serviceLines];
+        const formatColumn = (value: string, width: number, align: 'left' | 'right' = 'left') => {
+            const truncated = value.length > width ? `${value.slice(0, width - 1)}.` : value;
+            return align === 'right' ? truncated.padStart(width) : truncated.padEnd(width);
+        };
+        const typeWidth = 8;
+        const designationWidth = 38;
+        const qtyWidth = 5;
+        const priceWidth = 13;
+        const rowSeparator = '-'.repeat(typeWidth + designationWidth + qtyWidth + priceWidth + 9);
+        const invoiceTableLines = invoiceLines.length > 0
+            ? [
+                `${formatColumn('Type', typeWidth)} | ${formatColumn('Designation', designationWidth)} | ${formatColumn('Qte', qtyWidth, 'right')} | ${formatColumn('Prix total', priceWidth, 'right')}`,
+                rowSeparator,
+                ...invoiceLines.map((line) =>
+                    `${formatColumn(line.type, typeWidth)} | ${formatColumn(line.label, designationWidth)} | ${formatColumn(String(line.quantite), qtyWidth, 'right')} | ${formatColumn(formatEuro(line.totalPrixTTC), priceWidth, 'right')}`
+                )
+            ]
+            : ['Aucun element'];
 
         const subject = encodeURIComponent(`Vente #${vente.id || '-'}`);
         const body = encodeURIComponent(
             [
-                `Bonjour ${getClientLabel(vente.client)},`,
+                `Bonjour ${getClientLabel(vente.client || fallbackClient)},`,
                 '',
                 `Veuillez trouver les informations de votre vente #${vente.id || '-'}.`,
-                `Date: ${formatDate(vente.date)}`,
-                `Type: ${vente.type || '-'}`,
-                `Statut: ${vente.status || '-'}`,
-                `Prix vente TTC: ${formatEuro(vente.prixVenteTTC)}`,
-                `Mode de paiement: ${vente.modePaiement || '-'}`,
+                '',
+                `Date             : ${formatDate(vente.date)}`,
+                `Type             : ${vente.type || '-'}`,
+                `Statut           : ${vente.status || '-'}`,
+                `Prix vente TTC   : ${formatEuro(vente.prixVenteTTC)}`,
+                `Mode de paiement : ${vente.modePaiement || '-'}`,
+                '',
+                'Lignes:',
+                ...invoiceTableLines,
                 '',
                 'Cordialement,'
             ].join('\n')
         );
 
-        window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
+        window.open(`mailto:${email}?subject=${subject}&body=${body}`, '_blank', 'noopener,noreferrer');
     };
 
     const recalculateFromLines = (remiseSource: 'amount' | 'percentage' | 'auto' = 'auto') => {
@@ -532,7 +726,49 @@ export default function Vente() {
         form.setFieldValue('prixVenteTTC', prixVenteTTC);
     };
 
-    const onValuesChange = (changedValues: Partial<VenteFormValues>) => {
+    const onValuesChange = (changedValues: Partial<VenteFormValues>, allValues: VenteFormValues) => {
+        if (changedValues.forfaits !== undefined) {
+            const currentForfaitLines = allValues.forfaits || [];
+            if (currentForfaitLines.length === 0) {
+                form.setFieldValue('forfaits', [{}]);
+                return;
+            }
+            const lastForfaitLine = currentForfaitLines[currentForfaitLines.length - 1];
+            const isLastLineComplete = !!lastForfaitLine?.forfaitId && (lastForfaitLine?.quantite || 0) > 0;
+            if (isLastLineComplete) {
+                form.setFieldValue('forfaits', [...currentForfaitLines, {}]);
+                return;
+            }
+        }
+
+        if (changedValues.produits !== undefined) {
+            const currentProduitLines = allValues.produits || [];
+            if (currentProduitLines.length === 0) {
+                form.setFieldValue('produits', [{}]);
+                return;
+            }
+            const lastProduitLine = currentProduitLines[currentProduitLines.length - 1];
+            const isLastLineComplete = !!lastProduitLine?.produitId && (lastProduitLine?.quantite || 0) > 0;
+            if (isLastLineComplete) {
+                form.setFieldValue('produits', [...currentProduitLines, {}]);
+                return;
+            }
+        }
+
+        if (changedValues.services !== undefined) {
+            const currentServiceLines = allValues.services || [];
+            if (currentServiceLines.length === 0) {
+                form.setFieldValue('services', [{}]);
+                return;
+            }
+            const lastServiceLine = currentServiceLines[currentServiceLines.length - 1];
+            const isLastLineComplete = !!lastServiceLine?.serviceId && (lastServiceLine?.quantite || 0) > 0;
+            if (isLastLineComplete) {
+                form.setFieldValue('services', [...currentServiceLines, {}]);
+                return;
+            }
+        }
+
         if (
             changedValues.forfaits !== undefined ||
             changedValues.produits !== undefined ||
@@ -690,10 +926,31 @@ export default function Vente() {
             <Modal
                 title={isEdit ? 'Modifier une vente' : 'Ajouter une vente'}
                 open={modalVisible}
-                onOk={handleSave}
                 onCancel={() => setModalVisible(false)}
-                okText="Enregistrer"
-                cancelText="Annuler"
+                footer={[
+                    <Button
+                        key="print"
+                        icon={<PrinterOutlined />}
+                        disabled={!currentVente}
+                        onClick={() => currentVente && handlePrint(currentVente)}
+                    >
+                        Imprimer
+                    </Button>,
+                    <Button
+                        key="email"
+                        icon={<MailOutlined />}
+                        disabled={!currentVente}
+                        onClick={() => currentVente && handleEmail(currentVente)}
+                    >
+                        Envoyer par email
+                    </Button>,
+                    <Button key="cancel" onClick={() => setModalVisible(false)}>
+                        Annuler
+                    </Button>,
+                    <Button key="save" type="primary" onClick={handleSave}>
+                        Enregistrer
+                    </Button>
+                ]}
                 maskClosable={false}
                 destroyOnHidden
                 width={1100}
@@ -758,14 +1015,24 @@ export default function Vente() {
 
                     <Form.Item label="Forfaits">
                         <Form.List name="forfaits">
-                            {(fields, { add, remove }) => (
+                            {(fields, { remove }) => (
                                 <>
                                     {fields.map((field) => (
                                         <Space key={field.key} align="baseline" style={{ display: 'flex', marginBottom: 8 }}>
                                             <Form.Item
                                                 {...field}
                                                 name={[field.name, 'forfaitId']}
-                                                rules={[{ required: true, message: 'Forfait requis' }]}
+                                                rules={[
+                                                    {
+                                                        validator: async (_, value) => {
+                                                            const line = form.getFieldValue(['forfaits', field.name]);
+                                                            const quantite = Number(line?.quantite || 0);
+                                                            if (!value && quantite > 0) {
+                                                                throw new Error('Forfait requis');
+                                                            }
+                                                        }
+                                                    }
+                                                ]}
                                                 style={{ width: 520 }}
                                             >
                                                 <Select
@@ -781,7 +1048,19 @@ export default function Vente() {
                                             <Form.Item
                                                 {...field}
                                                 name={[field.name, 'quantite']}
-                                                rules={[{ required: true, message: 'Quantite requise' }]}
+                                                rules={[
+                                                    {
+                                                        validator: async (_, value) => {
+                                                            const line = form.getFieldValue(['forfaits', field.name]);
+                                                            if (!line?.forfaitId && (value === undefined || value === null)) {
+                                                                return;
+                                                            }
+                                                            if (!value || value <= 0) {
+                                                                throw new Error('Quantite requise');
+                                                            }
+                                                        }
+                                                    }
+                                                ]}
                                                 style={{ width: 180 }}
                                             >
                                                 <InputNumber min={1} step={1} style={{ width: '100%' }} placeholder="Qte" />
@@ -803,9 +1082,6 @@ export default function Vente() {
                                             <Button danger icon={<DeleteOutlined />} onClick={() => remove(field.name)} />
                                         </Space>
                                     ))}
-                                    <Button type="dashed" onClick={() => add({ quantite: 1 })} block icon={<PlusCircleOutlined />}>
-                                        Ajouter un forfait
-                                    </Button>
                                 </>
                             )}
                         </Form.List>
@@ -813,14 +1089,24 @@ export default function Vente() {
 
                     <Form.Item label="Produits">
                         <Form.List name="produits">
-                            {(fields, { add, remove }) => (
+                            {(fields, { remove }) => (
                                 <>
                                     {fields.map((field) => (
                                         <Space key={field.key} align="baseline" style={{ display: 'flex', marginBottom: 8 }}>
                                             <Form.Item
                                                 {...field}
                                                 name={[field.name, 'produitId']}
-                                                rules={[{ required: true, message: 'Produit requis' }]}
+                                                rules={[
+                                                    {
+                                                        validator: async (_, value) => {
+                                                            const line = form.getFieldValue(['produits', field.name]);
+                                                            const quantite = Number(line?.quantite || 0);
+                                                            if (!value && quantite > 0) {
+                                                                throw new Error('Produit requis');
+                                                            }
+                                                        }
+                                                    }
+                                                ]}
                                                 style={{ width: 520 }}
                                             >
                                                 <Select allowClear showSearch options={produitOptions} placeholder="Produit" />
@@ -828,7 +1114,19 @@ export default function Vente() {
                                             <Form.Item
                                                 {...field}
                                                 name={[field.name, 'quantite']}
-                                                rules={[{ required: true, message: 'Quantite requise' }]}
+                                                rules={[
+                                                    {
+                                                        validator: async (_, value) => {
+                                                            const line = form.getFieldValue(['produits', field.name]);
+                                                            if (!line?.produitId && (value === undefined || value === null)) {
+                                                                return;
+                                                            }
+                                                            if (!value || value <= 0) {
+                                                                throw new Error('Quantite requise');
+                                                            }
+                                                        }
+                                                    }
+                                                ]}
                                                 style={{ width: 180 }}
                                             >
                                                 <InputNumber min={1} step={1} style={{ width: '100%' }} placeholder="Qte" />
@@ -850,9 +1148,6 @@ export default function Vente() {
                                             <Button danger icon={<DeleteOutlined />} onClick={() => remove(field.name)} />
                                         </Space>
                                     ))}
-                                    <Button type="dashed" onClick={() => add({ quantite: 1 })} block icon={<PlusCircleOutlined />}>
-                                        Ajouter un produit
-                                    </Button>
                                 </>
                             )}
                         </Form.List>
@@ -860,14 +1155,24 @@ export default function Vente() {
 
                     <Form.Item label="Services">
                         <Form.List name="services">
-                            {(fields, { add, remove }) => (
+                            {(fields, { remove }) => (
                                 <>
                                     {fields.map((field) => (
                                         <Space key={field.key} align="baseline" style={{ display: 'flex', marginBottom: 8 }}>
                                             <Form.Item
                                                 {...field}
                                                 name={[field.name, 'serviceId']}
-                                                rules={[{ required: true, message: 'Service requis' }]}
+                                                rules={[
+                                                    {
+                                                        validator: async (_, value) => {
+                                                            const line = form.getFieldValue(['services', field.name]);
+                                                            const quantite = Number(line?.quantite || 0);
+                                                            if (!value && quantite > 0) {
+                                                                throw new Error('Service requis');
+                                                            }
+                                                        }
+                                                    }
+                                                ]}
                                                 style={{ width: 520 }}
                                             >
                                                 <Select allowClear showSearch options={serviceOptions} placeholder="Service" />
@@ -875,7 +1180,19 @@ export default function Vente() {
                                             <Form.Item
                                                 {...field}
                                                 name={[field.name, 'quantite']}
-                                                rules={[{ required: true, message: 'Quantite requise' }]}
+                                                rules={[
+                                                    {
+                                                        validator: async (_, value) => {
+                                                            const line = form.getFieldValue(['services', field.name]);
+                                                            if (!line?.serviceId && (value === undefined || value === null)) {
+                                                                return;
+                                                            }
+                                                            if (!value || value <= 0) {
+                                                                throw new Error('Quantite requise');
+                                                            }
+                                                        }
+                                                    }
+                                                ]}
                                                 style={{ width: 180 }}
                                             >
                                                 <InputNumber min={1} step={1} style={{ width: '100%' }} placeholder="Qte" />
@@ -897,9 +1214,6 @@ export default function Vente() {
                                             <Button danger icon={<DeleteOutlined />} onClick={() => remove(field.name)} />
                                         </Space>
                                     ))}
-                                    <Button type="dashed" onClick={() => add({ quantite: 1 })} block icon={<PlusCircleOutlined />}>
-                                        Ajouter un service
-                                    </Button>
                                 </>
                             )}
                         </Form.List>
