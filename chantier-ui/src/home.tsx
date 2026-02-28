@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { Typography, Row, Col, Card, Input, Button, Space, Divider, Tag, Select } from 'antd';
-import { SmileOutlined, RobotOutlined, SendOutlined } from '@ant-design/icons';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Typography, Row, Col, Card, Input, Button, Space, Divider, Tag, Modal } from 'antd';
+import { SmileOutlined, RobotOutlined, SendOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 
 const { Title, Paragraph } = Typography;
 const { TextArea } = Input;
@@ -27,7 +27,7 @@ type ParsedInstruction = {
     translatedCommand: string;
 };
 
-type AiProvider = 'openai' | 'anthropic';
+type AiProvider = 'anthropic';
 type AiMcpDirective = {
     action: 'reply' | 'mcp_call';
     message?: string;
@@ -39,32 +39,21 @@ type AiMcpDirective = {
 
 export default function Home() {
     const initialAssistantMessage =
-        "Bonjour, je suis l'assistant IA MMS.\n" +
-        "Provider IA actuel: Claude (Anthropic).\n\n" +
-        "Commandes directes:\n" +
-        "- resources\n" +
-        "- GET /clients/search {\"q\":\"dupont\"}\n" +
-        "- POST /clients {\"prenom\":\"Jean\",\"nom\":\"Dupont\"}\n" +
-        "- PUT /clients/1 {...}\n" +
-        "- DELETE /clients/1\n\n" +
-        "Langage naturel (FR):\n" +
-        "- liste les clients\n" +
-        "- cherche dupont dans les clients\n" +
-        "- supprime le client 12\n" +
-        "- crée un client {\"prenom\":\"Jean\",\"nom\":\"Dupont\"}\n\n" +
-        "Si ce n'est pas une commande API, je réponds via ChatGPT ou Claude.\n" +
-        "Claude peut aussi déclencher des appels MCP automatiquement.";
+        "Bonjour, je suis l'assistant MMS.\n\n" +
+        "Comment puis-je vous aider aujourd'hui ?\n\n";
 
     const [ prompt, setPrompt ] = useState('');
     const [ loading, setLoading ] = useState(false);
     const [ mcpReady, setMcpReady ] = useState(false);
-    const [ aiProvider, setAiProvider ] = useState<AiProvider>('anthropic');
+    const aiProvider: AiProvider = 'anthropic';
+    const [ isHelpOpen, setIsHelpOpen ] = useState(false);
     const [ messages, setMessages ] = useState<ChatMessage[]>([
         {
             role: 'assistant',
             content: initialAssistantMessage
         }
     ]);
+    const chatMessagesRef = useRef<HTMLDivElement | null>(null);
 
     const mcpStatusColor = useMemo(() => mcpReady ? 'green' : 'orange', [ mcpReady ]);
 
@@ -90,6 +79,13 @@ export default function Home() {
             mounted = false;
         };
     }, []);
+
+    useEffect(() => {
+        if (!chatMessagesRef.current) {
+            return;
+        }
+        chatMessagesRef.current.scrollTop = chatMessagesRef.current.scrollHeight;
+    }, [ messages ]);
 
     const appendAssistantMessage = (content: string) => {
         setMessages((prev) => [ ...prev, { role: 'assistant', content } ]);
@@ -143,6 +139,56 @@ export default function Home() {
         return json.result;
     };
 
+    const extractAiText = (payload: any): string => {
+        if (!payload) {
+            return '';
+        }
+
+        if (typeof payload === 'string') {
+            return payload;
+        }
+
+        if (typeof payload.answer === 'string' && payload.answer.trim()) {
+            return payload.answer;
+        }
+
+        if (typeof payload.message === 'string' && payload.message.trim()) {
+            return payload.message;
+        }
+
+        // Anthropic-like shape: { content: [{ type: "text", text: "..." }] }
+        if (Array.isArray(payload.content)) {
+            const textParts = payload.content
+                .map((part: any) => {
+                    if (typeof part === 'string') {
+                        return part;
+                    }
+                    if (part && typeof part.text === 'string') {
+                        return part.text;
+                    }
+                    return '';
+                })
+                .filter((part: string) => part.trim());
+            if (textParts.length > 0) {
+                return textParts.join('\n');
+            }
+        }
+
+        // OpenAI-like shape: { choices: [{ message: { content: "..." } }] }
+        if (Array.isArray(payload.choices) && payload.choices.length > 0) {
+            const content = payload.choices[0]?.message?.content;
+            if (typeof content === 'string' && content.trim()) {
+                return content;
+            }
+        }
+
+        try {
+            return JSON.stringify(payload, null, 2);
+        } catch (_err) {
+            return String(payload);
+        }
+    };
+
     const callAiChat = async (provider: AiProvider, message: string) => {
         const response = await fetch('/ai/chat', {
             method: 'POST',
@@ -157,17 +203,29 @@ export default function Home() {
 
         if (!response.ok) {
             const text = await response.text();
-            throw new Error(text || ('Erreur IA HTTP ' + response.status));
+            if (text && text.trim()) {
+                throw new Error(text);
+            }
+            if (response.status >= 500) {
+                throw new Error('Service IA indisponible temporairement (HTTP ' + response.status + ').');
+            }
+            throw new Error('Erreur IA HTTP ' + response.status);
         }
 
-        const payload = await response.json();
-        return payload?.answer || '';
+        const raw = await response.text();
+        if (!raw.trim()) {
+            return '';
+        }
+
+        try {
+            const payload = JSON.parse(raw);
+            return extractAiText(payload);
+        } catch (_err) {
+            return raw;
+        }
     };
 
-    const getFallbackProvider = (provider: AiProvider): AiProvider =>
-        provider === 'anthropic' ? 'openai' : 'anthropic';
-
-    const askPlannerWithFallback = async (userInput: string) => {
+    const askPlanner = async (userInput: string) => {
         const plannerPrompt = buildPlannerPrompt(userInput);
         try {
             const answer = await callAiChat(aiProvider, plannerPrompt);
@@ -178,26 +236,12 @@ export default function Home() {
                 errors: [] as string[]
             };
         } catch (primaryError: any) {
-            const fallbackProvider = getFallbackProvider(aiProvider);
-            try {
-                const answer = await callAiChat(fallbackProvider, plannerPrompt);
-                return {
-                    answer,
-                    providerUsed: fallbackProvider,
-                    fallbackUsed: true,
-                    errors: [ primaryError?.message || 'Erreur IA inconnue' ]
-                };
-            } catch (fallbackError: any) {
-                return {
-                    answer: '',
-                    providerUsed: aiProvider,
-                    fallbackUsed: false,
-                    errors: [
-                        primaryError?.message || 'Erreur IA principale inconnue',
-                        fallbackError?.message || 'Erreur IA secours inconnue'
-                    ]
-                };
-            }
+            return {
+                answer: '',
+                providerUsed: aiProvider,
+                fallbackUsed: false,
+                errors: [ primaryError?.message || 'Erreur Claude inconnue' ]
+            };
         }
     };
 
@@ -467,51 +511,43 @@ export default function Home() {
                 return;
             }
 
-            const plannerRun = await askPlannerWithFallback(input);
+            const plannerRun = await askPlanner(input);
             const plannerAnswer = plannerRun.answer;
-            if (plannerAnswer && plannerRun.fallbackUsed) {
-                appendAssistantMessage(
-                    "Le provider sélectionné est indisponible, bascule automatique vers " +
-                    (plannerRun.providerUsed === 'anthropic' ? 'Claude' : 'ChatGPT') + "."
-                );
-            }
 
-            try {
-                const directive = parseAiDirective(plannerAnswer);
-                if (directive && directive.action === 'mcp_call' && directive.method && directive.path) {
-                    await executeApiInstruction({
-                        method: directive.method,
-                        path: directive.path,
-                        query: directive.query,
-                        body: directive.body,
-                        translatedCommand: directive.method + ' ' + directive.path
-                    });
-                    return;
-                }
-                if (directive && directive.action === 'reply' && directive.message) {
-                    appendAssistantMessage(directive.message);
-                    return;
-                }
-                if (plannerAnswer && plannerAnswer.trim()) {
-                    appendAssistantMessage(plannerAnswer);
-                    return;
-                }
-            } catch (_aiError) {
-                if (!plannerAnswer || !plannerAnswer.trim()) {
-                    const details = plannerRun.errors.filter(Boolean).join(" | ");
-                    appendAssistantMessage(
-                        "Commande non reconnue et IA indisponible.\n" +
-                        "Détail: " + (details || "Aucune réponse des providers") + "\n" +
-                        "Vérifiez vos clés API backend ou utilisez GET/POST explicite."
-                    );
-                    return;
-                }
+            if (!plannerAnswer || !plannerAnswer.trim()) {
+                const details = plannerRun.errors.filter(Boolean).join(" | ");
                 appendAssistantMessage(
-                    "La réponse IA n'a pas pu être interprétée.\n" +
-                    "Essayez une commande GET/POST explicite."
+                    "Commande non reconnue et IA indisponible.\n" +
+                    "Détail: " + (details || "Aucune réponse de Claude") + "\n" +
+                    "Vérifiez la configuration backend Claude (clé API, endpoint, réseau) ou utilisez GET/POST explicite."
                 );
                 return;
             }
+
+            const directive = parseAiDirective(plannerAnswer);
+            if (directive && directive.action === 'mcp_call' && directive.method && directive.path) {
+                await executeApiInstruction({
+                    method: directive.method,
+                    path: directive.path,
+                    query: directive.query,
+                    body: directive.body,
+                    translatedCommand: directive.method + ' ' + directive.path
+                });
+                return;
+            }
+            if (directive && directive.action === 'reply' && directive.message) {
+                appendAssistantMessage(directive.message);
+                return;
+            }
+            if (plannerAnswer.trim()) {
+                appendAssistantMessage(plannerAnswer);
+                return;
+            }
+
+            appendAssistantMessage(
+                "La réponse IA n'a pas pu être interprétée.\n" +
+                "Essayez une commande GET/POST explicite."
+            );
             return;
         }
 
@@ -557,15 +593,6 @@ export default function Home() {
         }
     };
 
-    const onClearChat = () => {
-        setMessages([
-            {
-                role: 'assistant',
-                content: initialAssistantMessage
-            }
-        ]);
-    };
-
     return (
         <>
             <Card bordered={false} style={{ marginBottom: 24, background: '#fafafa' }}>
@@ -589,22 +616,23 @@ export default function Home() {
                     <Space>
                         <RobotOutlined />
                         Assistant IA
-                        <Tag color={mcpStatusColor}>{mcpReady ? 'MCP connecté' : 'MCP en attente'}</Tag>
+                        <Tag color={mcpStatusColor}>{mcpReady ? 'Connecté' : 'En attente'}</Tag>
                     </Space>
                 }
             >
-                <Paragraph type="secondary">
-                    Le chat utilise ChatGPT ou Claude pour les questions libres, et MCP (`/mcp`) pour les commandes API.
-                </Paragraph>
 
-                <div style={{
-                    maxHeight: 320,
-                    overflowY: 'auto',
-                    border: '1px solid #f0f0f0',
-                    borderRadius: 8,
-                    padding: 12,
-                    background: '#fff'
-                }}>
+                <div
+                    ref={chatMessagesRef}
+                    style={{
+                        height: 350,
+                        maxHeight: 350,
+                        overflowY: 'auto',
+                        border: '1px solid #f0f0f0',
+                        borderRadius: 8,
+                        padding: 12,
+                        background: '#fff'
+                    }}
+                >
                     {messages.map((message, index) => (
                         <div
                             key={index}
@@ -628,15 +656,7 @@ export default function Home() {
                 <Space direction="vertical" style={{ width: '100%' }}>
                     <Space>
                         <Tag>Provider IA</Tag>
-                        <Select
-                            value={aiProvider}
-                            onChange={(value: AiProvider) => setAiProvider(value)}
-                            style={{ width: 180 }}
-                            options={[
-                                { value: 'openai', label: 'ChatGPT (OpenAI)' },
-                                { value: 'anthropic', label: 'Claude (Anthropic)' }
-                            ]}
-                        />
+                        <Tag color="purple">Claude (Anthropic)</Tag>
                     </Space>
                     <TextArea
                         value={prompt}
@@ -651,15 +671,43 @@ export default function Home() {
                         }}
                     />
                     <Space>
-                        <Button onClick={onClearChat}>Effacer le chat</Button>
+                        <Button icon={<QuestionCircleOutlined />} onClick={() => setIsHelpOpen(true)}>
+                            Help
+                        </Button>
                         <Button onClick={() => setPrompt('resources')}>Resources</Button>
-                        <Button onClick={() => setPrompt('GET /clients')}>GET /clients</Button>
                         <Button type="primary" icon={<SendOutlined />} loading={loading} onClick={onSend}>
                             Envoyer
                         </Button>
                     </Space>
                 </Space>
             </Card>
+
+            <Modal
+                title="Aide du chatbot MMS"
+                open={isHelpOpen}
+                onCancel={() => setIsHelpOpen(false)}
+                onOk={() => setIsHelpOpen(false)}
+                okText="Fermer"
+                cancelButtonProps={{ style: { display: 'none' } }}
+            >
+                <Paragraph>
+                    Le chatbot accepte des commandes API directes, du langage naturel et des questions libres.
+                </Paragraph>
+                <Paragraph style={{ whiteSpace: 'pre-wrap', marginBottom: 0 }}>
+                    {"Commandes directes:\n" +
+                        "- resources\n" +
+                        "- GET /clients/search {\"q\":\"dupont\"}\n" +
+                        "- POST /clients {\"prenom\":\"Jean\",\"nom\":\"Dupont\"}\n" +
+                        "- PUT /clients/1 {...}\n" +
+                        "- DELETE /clients/1\n\n" +
+                        "Langage naturel (FR):\n" +
+                        "- liste les clients\n" +
+                        "- cherche dupont dans les clients\n" +
+                        "- supprime le client 12\n" +
+                        "- crée un client {\"prenom\":\"Jean\",\"nom\":\"Dupont\"}\n\n" +
+                        "Conseil: utilisez Shift+Entrée pour un retour à la ligne et Entrée pour envoyer."}
+                </Paragraph>
+            </Modal>
         </>
     );
 }
