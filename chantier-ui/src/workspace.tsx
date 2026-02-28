@@ -28,6 +28,7 @@ import Services from './services.tsx';
 import Vente from './vente.tsx';
 import Planning from './planning.tsx';
 import Competences from './competence.tsx';
+import Comptoir from './comptoir.tsx';
 
 export function demo() {
     message.warning("Vous êtes sur une version de démonstration de Marine Management Software. Il n'est pas possible d'ajouter ou supprimer des éléments.")
@@ -55,6 +56,7 @@ function SideMenu(props) {
         { key: 'fournisseurs', label: <Link to="/catalogue/fournisseurs">Fournisseurs</Link>, icon: <FileProtectOutlined/> },
       ]},
       { key: 'Vente', label: 'Vente', icon: <StockOutlined/>, children: [
+        { key: 'comptoir', label: <Link to="/comptoir">Comptoir</Link>, icon: <DesktopOutlined/> },
         { key: 'prestations', label: <Link to="/prestations">Prestations</Link>, icon: <CheckSquareOutlined/> },
       ]},
       { key: 'atelier', label: 'Atelier', icon: <ToolOutlined/>, children: [
@@ -249,6 +251,9 @@ export default function Workspace(props) {
                     </Route>
                     <Route path="/prestations" key="prestations">
                         <Vente />
+                    </Route>
+                    <Route path="/comptoir" key="comptoir">
+                        <Comptoir />
                     </Route>
                     <Route path="/forfaits" key="forfaits">
                         <Forfaits />
