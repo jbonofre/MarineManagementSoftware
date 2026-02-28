@@ -77,8 +77,8 @@ interface ForfaitFormValues {
     nom: string;
     moteurIds: number[];
     bateauIds: number[];
-    produits: Array<{ produitId: number; quantite: number }>;
-    services: Array<{ serviceId: number; quantite: number }>;
+    produits: Array<{ produitId?: number; quantite?: number }>;
+    services: Array<{ serviceId?: number; quantite?: number }>;
     heuresFonctionnement: number;
     joursFrequence: number;
     competences: number[];
@@ -102,8 +102,8 @@ const defaultForfait: ForfaitFormValues = {
     nom: '',
     moteurIds: [],
     bateauIds: [],
-    produits: [],
-    services: [],
+    produits: [{}],
+    services: [{}],
     heuresFonctionnement: 0,
     joursFrequence: 0,
     competences: [],
@@ -204,10 +204,12 @@ export default function Forfaits() {
                 bateauIds: (forfait.bateauxAssocies || []).map((b) => b.id),
                 produits: (forfait.produits || [])
                     .filter((item) => item.produit?.id)
-                    .map((item) => ({ produitId: item.produit!.id, quantite: item.quantite || 1 })),
+                    .map((item) => ({ produitId: item.produit!.id, quantite: item.quantite || 1 }))
+                    .concat({}),
                 services: (forfait.services || [])
                     .filter((item) => item.service?.id)
-                    .map((item) => ({ serviceId: item.service!.id, quantite: item.quantite || 1 })),
+                    .map((item) => ({ serviceId: item.service!.id, quantite: item.quantite || 1 }))
+                    .concat({}),
                 heuresFonctionnement: forfait.heuresFonctionnement || 0,
                 joursFrequence: forfait.joursFrequence || 0,
                 competences: (forfait.competences || []).map((competence) => competence.id),
@@ -291,7 +293,35 @@ export default function Forfaits() {
         }
     };
 
-    const onValuesChange = (changedValues: Partial<ForfaitFormValues>) => {
+    const onValuesChange = (changedValues: Partial<ForfaitFormValues>, allValues: ForfaitFormValues) => {
+        if (changedValues.produits !== undefined) {
+            const currentProduitLines = allValues.produits || [];
+            if (currentProduitLines.length === 0) {
+                form.setFieldValue('produits', [{}]);
+                return;
+            }
+            const lastProduitLine = currentProduitLines[currentProduitLines.length - 1];
+            const isLastLineComplete = !!lastProduitLine?.produitId && (lastProduitLine?.quantite || 0) > 0;
+            if (isLastLineComplete) {
+                form.setFieldValue('produits', [...currentProduitLines, {}]);
+                return;
+            }
+        }
+
+        if (changedValues.services !== undefined) {
+            const currentServiceLines = allValues.services || [];
+            if (currentServiceLines.length === 0) {
+                form.setFieldValue('services', [{}]);
+                return;
+            }
+            const lastServiceLine = currentServiceLines[currentServiceLines.length - 1];
+            const isLastLineComplete = !!lastServiceLine?.serviceId && (lastServiceLine?.quantite || 0) > 0;
+            if (isLastLineComplete) {
+                form.setFieldValue('services', [...currentServiceLines, {}]);
+                return;
+            }
+        }
+
         if (changedValues.produits !== undefined || changedValues.services !== undefined) {
             const round2 = (value: number) => Math.round((value + Number.EPSILON) * 100) / 100;
             const produitsValues = form.getFieldValue('produits') || [];
@@ -532,14 +562,24 @@ export default function Forfaits() {
 
                     <Form.Item label="Produits inclus">
                         <Form.List name="produits">
-                            {(fields, { add, remove }) => (
+                            {(fields, { remove }) => (
                                 <>
                                     {fields.map((field) => (
                                         <Space key={field.key} align="baseline" style={{ display: 'flex', marginBottom: 8 }}>
                                             <Form.Item
                                                 {...field}
                                                 name={[field.name, 'produitId']}
-                                                rules={[{ required: true, message: 'Produit requis' }]}
+                                                rules={[
+                                                    {
+                                                        validator: async (_, value) => {
+                                                            const line = form.getFieldValue(['produits', field.name]);
+                                                            const quantite = Number(line?.quantite || 0);
+                                                            if (!value && quantite > 0) {
+                                                                throw new Error('Produit requis');
+                                                            }
+                                                        }
+                                                    }
+                                                ]}
                                                 style={{ width: 520 }}
                                             >
                                                 <Select allowClear showSearch options={produitOptions} placeholder="Produit" />
@@ -547,10 +587,22 @@ export default function Forfaits() {
                                             <Form.Item
                                                 {...field}
                                                 name={[field.name, 'quantite']}
-                                                rules={[{ required: true, message: 'Quantité requise' }]}
+                                                rules={[
+                                                    {
+                                                        validator: async (_, value) => {
+                                                            const line = form.getFieldValue(['produits', field.name]);
+                                                            if (!line?.produitId && (value === undefined || value === null)) {
+                                                                return;
+                                                            }
+                                                            if (!value || value <= 0) {
+                                                                throw new Error('Quantite requise');
+                                                            }
+                                                        }
+                                                    }
+                                                ]}
                                                 style={{ width: 180 }}
                                             >
-                                                <InputNumber min={1} step={1} style={{ width: '100%' }} placeholder="Qté" />
+                                                <InputNumber min={1} step={1} style={{ width: '100%' }} placeholder="Qte" />
                                             </Form.Item>
                                             <Form.Item noStyle shouldUpdate>
                                                 {({ getFieldValue }) => {
@@ -562,9 +614,10 @@ export default function Forfaits() {
                                                     return (
                                                         <Form.Item style={{ width: 180 }}>
                                                             <InputNumber
-                                                                addonAfter="€"
+                                                                addonAfter="EUR"
                                                                 value={prixTTC}
                                                                 style={{ width: '100%' }}
+                                                                disabled
                                                             />
                                                         </Form.Item>
                                                     );
@@ -573,9 +626,6 @@ export default function Forfaits() {
                                             <Button danger icon={<DeleteOutlined />} onClick={() => remove(field.name)} />
                                         </Space>
                                     ))}
-                                    <Button type="dashed" onClick={() => add({ quantite: 1 })} block icon={<PlusCircleOutlined />}>
-                                        Ajouter un produit
-                                    </Button>
                                 </>
                             )}
                         </Form.List>
@@ -583,14 +633,24 @@ export default function Forfaits() {
 
                     <Form.Item label="Services inclus">
                         <Form.List name="services">
-                            {(fields, { add, remove }) => (
+                            {(fields, { remove }) => (
                                 <>
                                     {fields.map((field) => (
                                         <Space key={field.key} align="baseline" style={{ display: 'flex', marginBottom: 8 }}>
                                             <Form.Item
                                                 {...field}
                                                 name={[field.name, 'serviceId']}
-                                                rules={[{ required: true, message: 'Service requis' }]}
+                                                rules={[
+                                                    {
+                                                        validator: async (_, value) => {
+                                                            const line = form.getFieldValue(['services', field.name]);
+                                                            const quantite = Number(line?.quantite || 0);
+                                                            if (!value && quantite > 0) {
+                                                                throw new Error('Service requis');
+                                                            }
+                                                        }
+                                                    }
+                                                ]}
                                                 style={{ width: 520 }}
                                             >
                                                 <Select allowClear showSearch options={serviceOptions} placeholder="Service" />
@@ -598,10 +658,22 @@ export default function Forfaits() {
                                             <Form.Item
                                                 {...field}
                                                 name={[field.name, 'quantite']}
-                                                rules={[{ required: true, message: 'Quantité requise' }]}
+                                                rules={[
+                                                    {
+                                                        validator: async (_, value) => {
+                                                            const line = form.getFieldValue(['services', field.name]);
+                                                            if (!line?.serviceId && (value === undefined || value === null)) {
+                                                                return;
+                                                            }
+                                                            if (!value || value <= 0) {
+                                                                throw new Error('Quantite requise');
+                                                            }
+                                                        }
+                                                    }
+                                                ]}
                                                 style={{ width: 180 }}
                                             >
-                                                <InputNumber min={1} step={1} style={{ width: '100%' }} placeholder="Qté" />
+                                                <InputNumber min={1} step={1} style={{ width: '100%' }} placeholder="Qte" />
                                             </Form.Item>
                                             <Form.Item noStyle shouldUpdate>
                                                 {({ getFieldValue }) => {
@@ -613,9 +685,10 @@ export default function Forfaits() {
                                                     return (
                                                         <Form.Item style={{ width: 180 }}>
                                                             <InputNumber
-                                                                addonAfter="€"
+                                                                addonAfter="EUR"
                                                                 value={prixTTC}
                                                                 style={{ width: '100%' }}
+                                                                disabled
                                                             />
                                                         </Form.Item>
                                                     );
@@ -624,13 +697,23 @@ export default function Forfaits() {
                                             <Button danger icon={<DeleteOutlined />} onClick={() => remove(field.name)} />
                                         </Space>
                                     ))}
-                                    <Button type="dashed" onClick={() => add({ quantite: 1 })} block icon={<PlusCircleOutlined />}>
-                                        Ajouter un service
-                                    </Button>
                                 </>
                             )}
                         </Form.List>
                     </Form.Item>
+
+                    <Row gutter={16}>
+                        <Col span={12}>
+                            <Form.Item name="remise" label="Remise">
+                                <InputNumber addonAfter="%" min={0} max={100} step={0.01} style={{ width: '100%' }} />
+                            </Form.Item>
+                        </Col>
+                        <Col span={12}>
+                            <Form.Item name="remiseEuros" label="Remise">
+                                <InputNumber addonAfter="€" min={0} step={0.01} style={{ width: '100%' }} />
+                            </Form.Item>
+                        </Col>
+                    </Row>
 
                     <Row gutter={16}>
                         <Col span={6}>
@@ -644,24 +727,11 @@ export default function Forfaits() {
                             </Form.Item>
                         </Col>
                         <Col span={6}>
-                            <Form.Item name="remise" label="Remise">
-                                <InputNumber addonAfter="%" min={0} max={100} step={0.01} style={{ width: '100%' }} />
-                            </Form.Item>
-                        </Col>
-                        <Col span={6}>
-                            <Form.Item name="remiseEuros" label="Remise">
-                                <InputNumber addonAfter="€" min={0} step={0.01} style={{ width: '100%' }} />
-                            </Form.Item>
-                        </Col>
-                    </Row>
-
-                    <Row gutter={16}>
-                        <Col span={12}>
                             <Form.Item name="montantTVA" label="Montant TVA">
                                 <InputNumber addonAfter="€" min={0} step={0.01} style={{ width: '100%' }} />
                             </Form.Item>
                         </Col>
-                        <Col span={12}>
+                        <Col span={6}>
                             <Form.Item name="prixTTC" label="Prix TTC">
                                 <InputNumber addonAfter="€" min={0} step={0.01} style={{ width: '100%' }} />
                             </Form.Item>
