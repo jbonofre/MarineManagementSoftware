@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Typography, Row, Col, Card, Input, Button, Space, Divider, Tag, Modal } from 'antd';
 import { SmileOutlined, RobotOutlined, SendOutlined, QuestionCircleOutlined } from '@ant-design/icons';
+import { useHistory } from 'react-router-dom';
 
 const { Title, Paragraph } = Typography;
 const { TextArea } = Input;
@@ -37,7 +38,89 @@ type AiMcpDirective = {
     body?: any;
 };
 
+const extractJsonCandidate = (raw: string) => {
+    const trimmed = (raw || '').trim();
+    if (!trimmed) {
+        return '';
+    }
+    const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
+    if (fenced && fenced[1]) {
+        return fenced[1].trim();
+    }
+    return trimmed;
+};
+
+const tryParseJsonForDisplay = (content: string) => {
+    const candidate = extractJsonCandidate(content);
+    if (!candidate.startsWith('{') && !candidate.startsWith('[')) {
+        return null;
+    }
+    try {
+        return JSON.parse(candidate);
+    } catch (_err) {
+        return null;
+    }
+};
+
+const renderJsonNode = (value: any, depth = 0): React.ReactNode => {
+    const nestedContainerStyle: React.CSSProperties = {
+        marginLeft: depth > 0 ? 14 : 0,
+        borderLeft: depth > 0 ? '2px solid #f0f0f0' : 'none',
+        paddingLeft: depth > 0 ? 10 : 0
+    };
+
+    if (value === null) {
+        return <span style={{ color: '#8c8c8c' }}>null</span>;
+    }
+
+    if (typeof value === 'string') {
+        return <span style={{ color: '#1677ff' }}>"{value}"</span>;
+    }
+
+    if (typeof value === 'number') {
+        return <span style={{ color: '#722ed1' }}>{value}</span>;
+    }
+
+    if (typeof value === 'boolean') {
+        return <span style={{ color: '#d46b08' }}>{String(value)}</span>;
+    }
+
+    if (Array.isArray(value)) {
+        if (value.length === 0) {
+            return <span>[]</span>;
+        }
+        return (
+            <div style={nestedContainerStyle}>
+                {value.map((item, index) => (
+                    <div key={index} style={{ marginTop: 4 }}>
+                        <span style={{ color: '#595959', marginRight: 6 }}>[{index}]</span>
+                        {renderJsonNode(item, depth + 1)}
+                    </div>
+                ))}
+            </div>
+        );
+    }
+
+    const entries = Object.entries(value || {});
+    if (entries.length === 0) {
+        return <span>{'{}'}</span>;
+    }
+
+    return (
+        <div style={nestedContainerStyle}>
+            {entries.map(([ key, nestedValue ]) => (
+                <div key={key} style={{ marginTop: 4 }}>
+                    <span style={{ fontWeight: 600, color: '#262626' }}>{key}</span>
+                    <span style={{ color: '#8c8c8c', margin: '0 6px' }}>:</span>
+                    {renderJsonNode(nestedValue, depth + 1)}
+                </div>
+            ))}
+        </div>
+    );
+};
+
 export default function Home() {
+    const history = useHistory();
     const initialAssistantMessage =
         "Bonjour, je suis l'assistant MMS.\n\n" +
         "Comment puis-je vous aider aujourd'hui ?\n\n";
@@ -243,18 +326,6 @@ export default function Home() {
                 errors: [ primaryError?.message || 'Erreur Claude inconnue' ]
             };
         }
-    };
-
-    const extractJsonCandidate = (raw: string) => {
-        const trimmed = (raw || '').trim();
-        if (!trimmed) {
-            return '';
-        }
-        const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
-        if (fenced && fenced[1]) {
-            return fenced[1].trim();
-        }
-        return trimmed;
     };
 
     const parseAiDirective = (aiOutput: string): AiMcpDirective | null => {
@@ -466,9 +537,34 @@ export default function Home() {
         const firstContent = toolResult?.content?.[0]?.text;
         if (firstContent) {
             appendAssistantMessage(firstContent);
+            const destination = resolveUiRouteFromApiPath(instruction.path);
+            if (destination) {
+                history.push(destination);
+            }
             return;
         }
         appendAssistantMessage(JSON.stringify(toolResult || {}, null, 2));
+        const destination = resolveUiRouteFromApiPath(instruction.path);
+        if (destination) {
+            history.push(destination);
+        }
+    };
+
+    const resolveUiRouteFromApiPath = (apiPath: string) => {
+        const normalized = (apiPath || '').toLowerCase();
+        const map: Array<{ match: string; route: string }> = [
+            { match: '/clients', route: '/clients' },
+            { match: '/bateaux', route: '/clients/bateaux' },
+            { match: '/moteurs', route: '/clients/moteurs' },
+            { match: '/remorques', route: '/clients/remorques' },
+            { match: '/forfaits', route: '/forfaits' },
+            { match: '/services', route: '/services' },
+            { match: '/ventes', route: '/prestations' },
+            { match: '/techniciens', route: '/techniciens' },
+            { match: '/competences', route: '/competences' }
+        ];
+        const found = map.find((item) => normalized.includes(item.match));
+        return found ? found.route : null;
     };
 
     const handleCommand = async (rawInput: string) => {
@@ -644,9 +740,33 @@ export default function Home() {
                             <Tag color={message.role === 'user' ? 'blue' : 'purple'}>
                                 {message.role === 'user' ? 'Vous' : 'Assistant'}
                             </Tag>
-                            <div style={{ whiteSpace: 'pre-wrap', marginTop: 4 }}>
-                                {message.content}
-                            </div>
+                            {(() => {
+                                const parsedJson = message.role === 'assistant'
+                                    ? tryParseJsonForDisplay(message.content)
+                                    : null;
+                                if (parsedJson) {
+                                    return (
+                                        <div
+                                            style={{
+                                                marginTop: 6,
+                                                marginBottom: 0,
+                                                padding: 10,
+                                                borderRadius: 8,
+                                                background: '#fafafa',
+                                                border: '1px solid #f0f0f0',
+                                                lineHeight: 1.5
+                                            }}
+                                        >
+                                            {renderJsonNode(parsedJson)}
+                                        </div>
+                                    );
+                                }
+                                return (
+                                    <div style={{ whiteSpace: 'pre-wrap', marginTop: 4 }}>
+                                        {message.content}
+                                    </div>
+                                );
+                            })()}
                         </div>
                     ))}
                 </div>
@@ -661,7 +781,7 @@ export default function Home() {
                     <TextArea
                         value={prompt}
                         onChange={(e) => setPrompt(e.target.value)}
-                        placeholder={"Posez une question, ou tapez une commande API (GET/POST/PUT/DELETE)."}
+                        placeholder={"Posez une question."}
                         autoSize={{ minRows: 2, maxRows: 6 }}
                         onPressEnter={(e) => {
                             if (!e.shiftKey) {

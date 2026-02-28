@@ -29,6 +29,7 @@ import Vente from './vente.tsx';
 import Planning from './planning.tsx';
 import Competences from './competence.tsx';
 import Comptoir from './comptoir.tsx';
+import Dashboard from './dashboard.tsx';
 
 export function demo() {
     message.warning("Vous êtes sur une version de démonstration de Marine Management Software. Il n'est pas possible d'ajouter ou supprimer des éléments.")
@@ -40,7 +41,7 @@ function SideMenu(props) {
 
     const menuItems = [
       { key: 'home', label: <Link to="/">Accueil</Link>, icon: <HomeOutlined/> },
-      { key: 'dashboard', label: 'Tableau de Bord', icon: <DashboardOutlined/> },
+      { key: 'dashboard', label: <Link to="/dashboard">Tableau de Bord</Link>, icon: <DashboardOutlined/> },
       { key: 'parc', label: 'Parc', icon: <Icon component={ ParcOutlined } />, children: [
         { key: 'clients', label: <Link to="/clients">Clients</Link>, icon: <TeamOutlined /> },
         { key: 'bateaux', label: <Link to="/clients/bateaux">Bateaux</Link>, icon: <Icon component={ BoatOutlined } />},
@@ -212,6 +213,9 @@ export default function Workspace(props) {
                 <Switch>
                     <Route path="/" key="home" exact={true}>
                         <Home/>
+                    </Route>
+                    <Route path="/dashboard" key="dashboard" exact={true}>
+                        <Dashboard />
                     </Route>
                     <Route path="/clients" key="clients" exact={true}>
                         <Clients />
