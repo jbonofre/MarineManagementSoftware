@@ -83,7 +83,7 @@ const defaultMoteur: Moteur = {
   tauxMarge: 0,
   tauxMarque: 0,
   prixVenteHT: 0,
-  tva: 0,
+  tva: 20,
   montantTVA: 0,
   prixVenteTTC: 0,
 };
@@ -107,6 +107,10 @@ const attachMoteursToHelices = (helicesList: Helice[], moteursList: Moteur[]) =>
   });
 
 const MoteurCatalogue = () => {
+  const CV_TO_KW_FACTOR = 0.735499;
+
+  const roundPower = (value: number) => Math.round((value + Number.EPSILON) * 100) / 100;
+
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [moteurs, setMoteurs] = useState<Moteur[]>([]);
@@ -255,6 +259,18 @@ const MoteurCatalogue = () => {
   ];
 
   const onValuesChange = (changedValues, allValues) => {
+    if (Object.prototype.hasOwnProperty.call(changedValues, 'puissanceCv')
+      && !Object.prototype.hasOwnProperty.call(changedValues, 'puissanceKw')) {
+      const puissanceCv = Number(form.getFieldValue('puissanceCv')) || 0;
+      form.setFieldValue('puissanceKw', roundPower(puissanceCv * CV_TO_KW_FACTOR));
+    }
+
+    if (Object.prototype.hasOwnProperty.call(changedValues, 'puissanceKw')
+      && !Object.prototype.hasOwnProperty.call(changedValues, 'puissanceCv')) {
+      const puissanceKw = Number(form.getFieldValue('puissanceKw')) || 0;
+      form.setFieldValue('puissanceCv', roundPower(puissanceKw / CV_TO_KW_FACTOR));
+    }
+
     if (changedValues.prixVenteHT || changedValues.tva) {
       const prixVenteHT = form.getFieldValue('prixVenteHT');
       const tva = form.getFieldValue('tva');
@@ -396,13 +412,13 @@ const MoteurCatalogue = () => {
               </Form.Item>
               <Row gutter={16}>
                 <Col span={12}>
-                  <Form.Item name="puissanceCv" label="Puissance (CV)">
-                    <InputNumber min={0} step={0.1} style={{ width: '100%' }} />
+                  <Form.Item name="puissanceCv" label="Puissance">
+                    <InputNumber min={0} step={0.1} style={{ width: '100%' }} addonAfter="cv" />
                   </Form.Item>
                 </Col>
                 <Col span={12}>
-                  <Form.Item name="puissanceKw" label="Puissance (kW)">
-                    <InputNumber min={0} step={0.1} style={{ width: '100%' }} />
+                  <Form.Item name="puissanceKw" label="Puissance">
+                    <InputNumber min={0} step={0.1} style={{ width: '100%' }} addonAfter="kW"/>
                   </Form.Item>
                 </Col>
               </Row>
@@ -413,8 +429,8 @@ const MoteurCatalogue = () => {
                   </Form.Item>
                 </Col>
                 <Col span={12}>
-                  <Form.Item name="arbre" label="Arbre (cm)">
-                    <InputNumber min={0} step={0.1} style={{ width: '100%' }} />
+                  <Form.Item name="arbre" label="Arbre">
+                    <InputNumber min={0} step={0.1} style={{ width: '100%' }} addonAfter="cm" />
                   </Form.Item>
                 </Col>
               </Row>
@@ -438,14 +454,14 @@ const MoteurCatalogue = () => {
                 </Col>
                 <Col span={12}>
                   <Form.Item name="cylindree" label="Cylindrée">
-                    <InputNumber min={0} step={1} style={{ width: '100%' }} />
+                    <InputNumber min={0} step={1} style={{ width: '100%' }} addonAfter="cm3"/>
                   </Form.Item>
                 </Col>
               </Row>
               <Row gutter={16}>
                 <Col span={12}>
                   <Form.Item name="regime" label="Régime Max">
-                    <Input />
+                    <InputNumber min={0} step={1} style={{ width: '100%' }} addonAfter="tr/min"/>
                   </Form.Item>
                 </Col>
                 <Col span={12}>
@@ -481,48 +497,48 @@ const MoteurCatalogue = () => {
               <Row gutter={16}>
                 <Col span={12}>
                   <Form.Item name="prixPublic" label="Prix public">
-                    <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+                    <InputNumber min={0} step={0.01} style={{ width: '100%' }} addonAfter="€"/>
                   </Form.Item>
                 </Col>
                 <Col span={12}>
                   <Form.Item name="frais" label="Frais">
-                    <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+                    <InputNumber min={0} step={0.01} style={{ width: '100%' }} addonAfter="€"/>
                   </Form.Item>
                 </Col>
               </Row>
               <Row gutter={16}>
                 <Col span={12}>
                   <Form.Item name="tauxMarge" label="Taux de marge">
-                    <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+                    <InputNumber min={0} step={0.01} style={{ width: '100%' }} addonAfter="%" />
                   </Form.Item>
                 </Col>
                 <Col span={12}>
                   <Form.Item name="tauxMarque" label="Taux de marque">
-                    <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+                    <InputNumber min={0} step={0.01} style={{ width: '100%' }} addonAfter="%" />
                   </Form.Item>
                 </Col>
               </Row>
               <Row gutter={16}>
                 <Col span={12}>
                   <Form.Item name="prixVenteHT" label="Prix de vente HT">
-                    <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+                    <InputNumber min={0} step={0.01} style={{ width: '100%' }} addonAfter="€"/>
                   </Form.Item>
                 </Col>
                 <Col span={12}>
                   <Form.Item name="tva" label="TVA">
-                    <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+                    <InputNumber min={0} step={0.01} style={{ width: '100%' }} addonAfter="%" />
                   </Form.Item>
                 </Col>
               </Row>
               <Row gutter={16}>
                 <Col span={12}>
                   <Form.Item name="montantTVA" label="Montant TVA">
-                    <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+                    <InputNumber min={0} step={0.01} style={{ width: '100%' }} addonAfter="€"/>
                   </Form.Item>
                 </Col>
                 <Col span={12}>
                   <Form.Item name="prixVenteTTC" label="Prix de vente TTC">
-                    <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+                    <InputNumber min={0} step={0.01} style={{ width: '100%' }} addonAfter="€"/>
                   </Form.Item>
                 </Col>
               </Row>

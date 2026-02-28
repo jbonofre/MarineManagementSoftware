@@ -35,7 +35,7 @@ const defaultService: ServiceFormValues = {
     nom: '',
     description: '',
     prixHT: 0,
-    tva: 0,
+    tva: 20,
     montantTVA: 0,
     prixTTC: 0,
     competences: []
@@ -196,7 +196,7 @@ export default function Services() {
     ];
 
     return (
-        <Card title="Services & Main d'Oeuvre">
+        <Card title="Service & Main d'Oeuvre">
             <Row gutter={[16, 16]}>
                 <Col span={24}>
                     <Space>

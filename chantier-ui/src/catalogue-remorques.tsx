@@ -63,6 +63,25 @@ const rouesList = [
   { label: "Double", value: "Double" },
 ];
 
+const roundAmount = (value: number) => Math.round((value + Number.EPSILON) * 100) / 100;
+
+const getPricingFromHT = (prixVenteHT: number, tva: number) => {
+  const montantTVA = roundAmount(prixVenteHT * (tva / 100));
+  const prixVenteTTC = roundAmount(prixVenteHT + montantTVA);
+  return { prixVenteHT, tva, montantTVA, prixVenteTTC };
+};
+
+const getPricingFromTTC = (prixVenteTTC: number, tva: number) => {
+  const montantTVA = roundAmount((prixVenteTTC / (100 + tva)) * tva);
+  const prixVenteHT = roundAmount(prixVenteTTC - montantTVA);
+  return { prixVenteHT, tva, montantTVA, prixVenteTTC };
+};
+
+const toNumber = (value: unknown, fallback = 0) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+};
+
 const RemorqueCatalogue: React.FC = () => {
   const [remorques, setRemorques] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
@@ -116,13 +135,13 @@ const RemorqueCatalogue: React.FC = () => {
   const handleModalOk = async () => {
     try {
       const values = await form.validateFields();
-      // Calcul TVA & prixVenteHT
-      if (!values.tva) values.tva = 20;
-      const prixVenteTTC = values.prixVenteTTC || 0;
-      const tva = values.tva;
-      const montantTVA = Math.round((((prixVenteTTC / (100 + tva)) * tva) + Number.EPSILON) * 100) / 100;
-      values.montantTVA = montantTVA;
-      values.prixVenteHT = Math.round(((prixVenteTTC - montantTVA) + Number.EPSILON) * 100) / 100;
+      const tva = toNumber(values.tva, 20);
+      const prixVenteHT = toNumber(values.prixVenteHT, 0);
+      const synchronizedPricing = getPricingFromHT(prixVenteHT, tva);
+      values.tva = synchronizedPricing.tva;
+      values.prixVenteHT = synchronizedPricing.prixVenteHT;
+      values.montantTVA = synchronizedPricing.montantTVA;
+      values.prixVenteTTC = synchronizedPricing.prixVenteTTC;
 
       setLoading(true);
       if (editingRemorque && editingRemorque.id) {
@@ -144,12 +163,45 @@ const RemorqueCatalogue: React.FC = () => {
 
   // When change TTC/TVA
   const onValuesChange = (changed: any, all: any) => {
-    if (typeof changed.prixVenteTTC !== "undefined" || typeof changed.tva !== "undefined") {
-      const prixVenteTTC = all.prixVenteTTC ?? 0;
-      const tva = all.tva ?? 20;
-      const montantTVA = Math.round((((prixVenteTTC / (100 + tva)) * tva) + Number.EPSILON) * 100) / 100;
-      form.setFieldsValue({ montantTVA });
-      form.setFieldsValue({ prixVenteHT: Math.round(((prixVenteTTC - montantTVA) + Number.EPSILON) * 100) / 100 });
+    const hasChanged = (key: string) => Object.prototype.hasOwnProperty.call(changed, key);
+    const currentTva = toNumber(all.tva, 20);
+    const currentHT = toNumber(all.prixVenteHT, 0);
+    const currentTTC = toNumber(all.prixVenteTTC, 0);
+    const currentMontantTVA = toNumber(all.montantTVA, 0);
+
+    let pricingUpdate: { prixVenteHT: number; tva: number; montantTVA: number; prixVenteTTC: number } | null = null;
+
+    if (hasChanged("prixVenteHT")) {
+      pricingUpdate = getPricingFromHT(currentHT, currentTva);
+    } else if (hasChanged("prixVenteTTC")) {
+      pricingUpdate = getPricingFromTTC(currentTTC, currentTva);
+    } else if (hasChanged("montantTVA")) {
+      const prixVenteTTC = roundAmount(currentHT + currentMontantTVA);
+      const tva = currentHT > 0 ? roundAmount((currentMontantTVA / currentHT) * 100) : 0;
+      pricingUpdate = {
+        prixVenteHT: currentHT,
+        tva,
+        montantTVA: currentMontantTVA,
+        prixVenteTTC,
+      };
+    } else if (hasChanged("tva")) {
+      pricingUpdate = currentHT > 0 || currentTTC === 0
+        ? getPricingFromHT(currentHT, currentTva)
+        : getPricingFromTTC(currentTTC, currentTva);
+    }
+
+    if (!pricingUpdate) {
+      return;
+    }
+
+    const fieldsToSync: any = {};
+    if (toNumber(all.prixVenteHT, 0) !== pricingUpdate.prixVenteHT) fieldsToSync.prixVenteHT = pricingUpdate.prixVenteHT;
+    if (toNumber(all.tva, 20) !== pricingUpdate.tva) fieldsToSync.tva = pricingUpdate.tva;
+    if (toNumber(all.montantTVA, 0) !== pricingUpdate.montantTVA) fieldsToSync.montantTVA = pricingUpdate.montantTVA;
+    if (toNumber(all.prixVenteTTC, 0) !== pricingUpdate.prixVenteTTC) fieldsToSync.prixVenteTTC = pricingUpdate.prixVenteTTC;
+
+    if (Object.keys(fieldsToSync).length > 0) {
+      form.setFieldsValue(fieldsToSync);
     }
   };
 
@@ -290,49 +342,49 @@ const RemorqueCatalogue: React.FC = () => {
           </Form.Item>
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item name="ptac" label="PTAC (kg)">
-                <InputNumber min={0} style={{ width: "100%" }} />
+              <Form.Item name="ptac" label="PTAC">
+                <InputNumber min={0} style={{ width: "100%" }} addonAfter="kg"/>
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item name="chargeAVide" label="Charge à vide (kg)">
-                <InputNumber min={0} style={{ width: "100%" }} />
-              </Form.Item>
-            </Col>
-          </Row>
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item name="chargeUtile" label="Charge utile (kg)">
-                <InputNumber min={0} style={{ width: "100%" }} />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item name="longueur" label="Longueur (mm)">
-                <InputNumber min={0} style={{ width: "100%" }} />
+              <Form.Item name="chargeAVide" label="Charge à vide">
+                <InputNumber min={0} style={{ width: "100%" }} addonAfter="kg"  />
               </Form.Item>
             </Col>
           </Row>
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item name="largeur" label="Largeur (mm)">
-                <InputNumber min={0} style={{ width: "100%" }} />
+              <Form.Item name="chargeUtile" label="Charge utile">
+                <InputNumber min={0} style={{ width: "100%" }} addonAfter="kg" />
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item name="longueurMaxBateau" label="Long. Max. Bateau (mm)">
-                <InputNumber min={0} style={{ width: "100%" }} />
+              <Form.Item name="longueur" label="Longueur">
+                <InputNumber min={0} style={{ width: "100%" }} addonAfter="mm" />
               </Form.Item>
             </Col>
           </Row>
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item name="largeurMaxBateau" label="Larg. Max. Bateau (mm)">
-                <InputNumber min={0} style={{ width: "100%" }} />
+              <Form.Item name="largeur" label="Largeur">
+                <InputNumber min={0} style={{ width: "100%" }} addonAfter="mm" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="longueurMaxBateau" label="Long. Max. Bateau">
+                <InputNumber min={0} style={{ width: "100%" }} addonAfter="mm" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="largeurMaxBateau" label="Larg. Max. Bateau"> 
+                <InputNumber min={0} style={{ width: "100%" }} addonAfter="mm" />
               </Form.Item>
             </Col>
             <Col span={12}>
               <Form.Item name="fleche" label="Flèche">
-                <Input />
+                <InputNumber min={0} style={{ width: "100%" }} addonAfter="mm" />
               </Form.Item>
             </Col>
           </Row>
@@ -374,49 +426,49 @@ const RemorqueCatalogue: React.FC = () => {
           </Row>
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item name="prixPublic" label="Prix public (€)">
-                <InputNumber min={0} style={{ width: "100%" }} step={100} />
+              <Form.Item name="prixPublic" label="Prix public">
+                <InputNumber min={0} style={{ width: "100%" }} step={100} addonAfter="€" />
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item name="frais" label="Frais (€)">
-                <InputNumber min={0} style={{ width: "100%" }} step={10} />
+              <Form.Item name="frais" label="Frais">
+                <InputNumber min={0} style={{ width: "100%" }} step={10} addonAfter="€" />
               </Form.Item>
             </Col>
           </Row>
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item name="tauxMarge" label="Taux de marge (%)">
-                <InputNumber min={0} max={100} style={{ width: "100%" }} />
+              <Form.Item name="tauxMarge" label="Taux de marge">
+                <InputNumber min={0} max={100} style={{ width: "100%" }} addonAfter="%" />
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item name="tauxMarque" label="Taux de marque (%)">
-                <InputNumber min={0} max={100} style={{ width: "100%" }} />
+              <Form.Item name="tauxMarque" label="Taux de marque">
+                <InputNumber min={0} max={100} style={{ width: "100%" }} addonAfter="%" />
               </Form.Item>
             </Col>
           </Row>
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item name="prixVenteHT" label="Prix Vente HT">
-                <InputNumber min={0} style={{ width: "100%" }} step={100} disabled />
+                <InputNumber min={0} style={{ width: "100%" }} step={100} addonAfter="€" />
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item name="tva" label="TVA (%)">
-                <InputNumber min={0} max={100} style={{ width: "100%" }} step={1} />
+              <Form.Item name="tva" label="TVA">
+                <InputNumber min={0} max={100} style={{ width: "100%" }} step={1} addonAfter="%" />
               </Form.Item>
             </Col>
           </Row>
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item name="montantTVA" label="Montant TVA">
-                <InputNumber min={0} style={{ width: "100%" }} step={1} disabled />
+                <InputNumber min={0} style={{ width: "100%" }} step={1} addonAfter="€" />
               </Form.Item>
             </Col>
             <Col span={12}>
               <Form.Item name="prixVenteTTC" label="Prix Vente TTC">
-                <InputNumber min={0} style={{ width: "100%" }} step={100} />
+                <InputNumber min={0} style={{ width: "100%" }} step={100} addonAfter="€" />
               </Form.Item>
             </Col>
           </Row>

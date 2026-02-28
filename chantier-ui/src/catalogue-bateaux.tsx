@@ -13,6 +13,9 @@ const bateauTypes = [
     { text: 'Bateau à Moteur', value: 'Bateau à Moteur', label: 'Bateau à Moteur' },
     { text: 'Voilier', value: 'Voilier', label: 'Voilier' },
     { text: 'Catamaran', value: 'Catamaran', label: 'Catamaran' },
+    { text: 'Péniche', value: 'Péniche', label: 'Péniche' },
+    { text: 'Pêche', value: 'Pêche', label: 'Pêche' },
+    { text: 'Annexe', value: 'Annexe', label: 'Annexe' },
     { text: 'Autre', value: 'Autre', label: 'Autre' },
 ];
 
@@ -61,6 +64,19 @@ const defaultBateau: BateauCatalogueEntity = {
     reservoirCarburant: 0,
     nombrePassagersMax: 0,
     categorieCe: '',
+    tva: 20,
+    montantTVA: 0,
+    prixVenteTTC: 0,
+    prixVenteHT: 0,
+    tauxMarge: 0,
+    tauxMarque: 0,
+    prixPublic: 0,
+    frais: 0,
+    stock: 0,
+    stockAlerte: 0,
+    emplacement: '',
+    evaluation: 0,
+    description: ''
 };
 
 const CatalogueBateaux: React.FC = () => {
@@ -338,56 +354,56 @@ const CatalogueBateaux: React.FC = () => {
                             </Form.Item>
                             <Row gutter={16}>
                                 <Col span={12}>
-                                    <Form.Item name="longueurExterieure" label="Longueur extérieure (m)">
-                                        <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+                                    <Form.Item name="longueurExterieure" label="Longueur extérieure">
+                                        <InputNumber min={0} step={0.01} style={{ width: '100%' }} addonAfter="m" />
                                     </Form.Item>
                                 </Col>
                                 <Col span={12}>
-                                    <Form.Item name="longueurCoque" label="Longueur coque (m)">
-                                        <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
-                                    </Form.Item>
-                                </Col>
-                            </Row>
-                            <Row gutter={16}>
-                                <Col span={12}>
-                                    <Form.Item name="hauteur" label="Hauteur (m)">
-                                        <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
-                                    </Form.Item>
-                                </Col>
-                                <Col span={12}>
-                                    <Form.Item name="largeur" label="Largeur (m)">
-                                        <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+                                    <Form.Item name="longueurCoque" label="Longueur coque">
+                                        <InputNumber min={0} step={0.01} style={{ width: '100%' }} addonAfter="m" />
                                     </Form.Item>
                                 </Col>
                             </Row>
                             <Row gutter={16}>
                                 <Col span={12}>
-                                    <Form.Item name="tirantAir" label="Tirant d'air (m)">
-                                        <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+                                    <Form.Item name="hauteur" label="Hauteur">
+                                        <InputNumber min={0} step={0.01} style={{ width: '100%' }} addonAfter="m" />
                                     </Form.Item>
                                 </Col>
                                 <Col span={12}>
-                                    <Form.Item name="tirantEau" label="Tirant d'eau (m)">
-                                        <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
-                                    </Form.Item>
-                                </Col>
-                            </Row>
-                            <Row gutter={16}>
-                                <Col span={12}>
-                                    <Form.Item name="poidsVide" label="Poids à vide (kg)">
-                                        <InputNumber min={0} step={1} style={{ width: '100%' }} />
-                                    </Form.Item>
-                                </Col>
-                                <Col span={12}>
-                                    <Form.Item name="poidsMoteurMax" label="Poids moteur max (kg)">
-                                        <InputNumber min={0} step={1} style={{ width: '100%' }} />
+                                    <Form.Item name="largeur" label="Largeur">
+                                        <InputNumber min={0} step={0.01} style={{ width: '100%' }} addonAfter="m" />
                                     </Form.Item>
                                 </Col>
                             </Row>
                             <Row gutter={16}>
                                 <Col span={12}>
-                                    <Form.Item name="chargeMax" label="Charge max (kg)">
-                                        <InputNumber min={0} step={1} style={{ width: '100%' }} />
+                                    <Form.Item name="tirantAir" label="Tirant d'air">
+                                        <InputNumber min={0} step={0.01} style={{ width: '100%' }} addonAfter="m" />
+                                    </Form.Item>
+                                </Col>
+                                <Col span={12}>
+                                    <Form.Item name="tirantEau" label="Tirant d'eau">
+                                        <InputNumber min={0} step={0.01} style={{ width: '100%' }} addonAfter="m" />
+                                    </Form.Item>
+                                </Col>
+                            </Row>
+                            <Row gutter={16}>
+                                <Col span={12}>
+                                    <Form.Item name="poidsVide" label="Poids à vide">
+                                        <InputNumber min={0} step={1} style={{ width: '100%' }} addonAfter="kg" />
+                                    </Form.Item>
+                                </Col>
+                                <Col span={12}>
+                                    <Form.Item name="poidsMoteurMax" label="Poids moteur max">
+                                        <InputNumber min={0} step={1} style={{ width: '100%' }} addonAfter="kg" />
+                                    </Form.Item>
+                                </Col>
+                            </Row>
+                            <Row gutter={16}>
+                                <Col span={12}>
+                                    <Form.Item name="chargeMax" label="Charge max">
+                                        <InputNumber min={0} step={1} style={{ width: '100%' }} addonAfter="kg" />
                                     </Form.Item>
                                 </Col>
                                 <Col span={12}>
@@ -403,15 +419,15 @@ const CatalogueBateaux: React.FC = () => {
                                     </Form.Item>
                                 </Col>
                                 <Col span={12}>
-                                    <Form.Item name="reservoirEau" label="Réservoir eau (L)">
-                                        <InputNumber min={0} step={1} style={{ width: '100%' }} />
+                                    <Form.Item name="reservoirEau" label="Réservoir eau">
+                                        <InputNumber min={0} step={1} style={{ width: '100%' }} addonAfter="l" />
                                     </Form.Item>
                                 </Col>
                             </Row>
                             <Row gutter={16}>
                                 <Col span={12}>
-                                    <Form.Item name="reservoirCarburant" label="Réservoir carburant (L)">
-                                        <InputNumber min={0} step={1} style={{ width: '100%' }} />
+                                    <Form.Item name="reservoirCarburant" label="Réservoir carburant">
+                                        <InputNumber min={0} step={1} style={{ width: '100%' }} addonAfter="l" />
                                     </Form.Item>
                                 </Col>
                                 <Col span={12}>
@@ -447,48 +463,48 @@ const CatalogueBateaux: React.FC = () => {
                             <Row gutter={16}>
                                 <Col span={12}>
                                     <Form.Item name="prixPublic" label="Prix public">
-                                        <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+                                        <InputNumber min={0} step={0.01} style={{ width: '100%' }} addonAfter="€" />
                                     </Form.Item>
                                 </Col>
                                 <Col span={12}>
                                     <Form.Item name="frais" label="Frais">
-                                        <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+                                        <InputNumber min={0} step={0.01} style={{ width: '100%' }} addonAfter="€" />
                                     </Form.Item>
                                 </Col>
                             </Row>
                             <Row gutter={16}>
                                 <Col span={12}>
                                     <Form.Item name="tauxMarge" label="Taux de marge">
-                                        <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+                                        <InputNumber min={0} step={0.01} style={{ width: '100%' }} addonAfter="%" />
                                     </Form.Item>
                                 </Col>
                                 <Col span={12}>
                                     <Form.Item name="tauxMarque" label="Taux de marque">
-                                        <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+                                        <InputNumber min={0} step={0.01} style={{ width: '100%' }} addonAfter="%" />
                                     </Form.Item>
                                 </Col>
                             </Row>
                             <Row gutter={16}>
                                 <Col span={12}>
                                     <Form.Item name="prixVenteHT" label="Prix de vente HT">
-                                        <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+                                        <InputNumber min={0} step={0.01} style={{ width: '100%' }} addonAfter="€" />
                                     </Form.Item>
                                 </Col>
                                 <Col span={12}>
                                     <Form.Item name="tva" label="TVA">
-                                        <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+                                        <InputNumber min={0} step={0.01} style={{ width: '100%' }} addonAfter="%" />
                                     </Form.Item>
                                 </Col>
                             </Row>
                             <Row gutter={16}>
                                 <Col span={12}>
                                     <Form.Item name="montantTVA" label="Montant TVA">
-                                        <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+                                        <InputNumber min={0} step={0.01} style={{ width: '100%' }} addonAfter="€" />
                                     </Form.Item>
                                 </Col>
                                 <Col span={12}>
                                     <Form.Item name="prixVenteTTC" label="Prix de vente TTC">
-                                        <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+                                        <InputNumber min={0} step={0.01} style={{ width: '100%' }} addonAfter="€" />
                                     </Form.Item>
                                 </Col>
                             </Row>

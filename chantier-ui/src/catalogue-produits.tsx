@@ -46,7 +46,7 @@ const defaultProduit: ProduitCatalogueEntity = {
     tauxMarge: 0,
     tauxMarque: 0,
     prixVenteHT: 0,
-    tva: 0,
+    tva: 20,
     montantTVA: 0,
     prixVenteTTC: 0
 };
@@ -393,48 +393,48 @@ const CatalogueProduits: React.FC = () => {
                                 <Row gutter={16}>
                                     <Col span={12}>
                                         <Form.Item name="prixPublic" label="Prix public">
-                                            <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+                                            <InputNumber min={0} step={0.01} style={{ width: '100%' }} addonAfter="€"/>
                                         </Form.Item>
                                     </Col>
                                     <Col span={12}>
                                         <Form.Item name="frais" label="Frais">
-                                            <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+                                            <InputNumber min={0} step={0.01} style={{ width: '100%' }} addonAfter="€"/>
                                         </Form.Item>
                                     </Col>
                                 </Row>
                                 <Row gutter={16}>
                                     <Col span={12}>
                                         <Form.Item name="tauxMarge" label="Taux de marge (%)">
-                                            <InputNumber min={0} max={100} step={0.01} style={{ width: '100%' }} />
+                                            <InputNumber min={0} max={100} step={0.01} style={{ width: '100%' }} addonAfter="%" />
                                         </Form.Item>
                                     </Col>
                                     <Col span={12}>
                                         <Form.Item name="tauxMarque" label="Taux de marque (%)">
-                                            <InputNumber min={0} max={100} step={0.01} style={{ width: '100%' }} />
+                                            <InputNumber min={0} max={100} step={0.01} style={{ width: '100%' }} addonAfter="%" />
                                         </Form.Item>
                                     </Col>
                                 </Row>
                                 <Row gutter={16}>
                                     <Col span={12}>
                                         <Form.Item name="prixVenteHT" label="Prix de vente HT">
-                                            <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+                                            <InputNumber min={0} step={0.01} style={{ width: '100%' }} addonAfter="€"/>
                                         </Form.Item>
                                     </Col>
                                     <Col span={12}>
                                         <Form.Item name="tva" label="TVA (%)">
-                                            <InputNumber min={0} max={100} step={0.01} style={{ width: '100%' }} />
+                                            <InputNumber min={0} max={100} step={0.01} style={{ width: '100%' }} addonAfter="%" />
                                         </Form.Item>
                                     </Col>
                                 </Row>
                                 <Row gutter={16}>
                                     <Col span={12}>
                                         <Form.Item name="montantTVA" label="Montant TVA">
-                                            <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+                                            <InputNumber min={0} step={0.01} style={{ width: '100%' }} addonAfter="€"/>
                                         </Form.Item>
                                     </Col>
                                     <Col span={12}>
                                         <Form.Item name="prixVenteTTC" label="Prix de vente TTC">
-                                            <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+                                            <InputNumber min={0} step={0.01} style={{ width: '100%' }} addonAfter="€"/>
                                         </Form.Item>
                                     </Col>
                                 </Row>

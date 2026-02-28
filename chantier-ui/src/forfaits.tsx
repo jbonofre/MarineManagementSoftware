@@ -108,7 +108,7 @@ const defaultForfait: ForfaitFormValues = {
     joursFrequence: 0,
     competences: [],
     prixHT: 0,
-    tva: 0,
+    tva: 20,
     remise: 0,
     remiseEuros: 0,
     montantTVA: 0,
@@ -565,7 +565,6 @@ export default function Forfaits() {
                                                                 addonAfter="€"
                                                                 value={prixTTC}
                                                                 style={{ width: '100%' }}
-                                                                disabled
                                                             />
                                                         </Form.Item>
                                                     );
@@ -617,7 +616,6 @@ export default function Forfaits() {
                                                                 addonAfter="€"
                                                                 value={prixTTC}
                                                                 style={{ width: '100%' }}
-                                                                disabled
                                                             />
                                                         </Form.Item>
                                                     );
@@ -641,17 +639,17 @@ export default function Forfaits() {
                             </Form.Item>
                         </Col>
                         <Col span={6}>
-                            <Form.Item name="tva" label="TVA (%)">
+                            <Form.Item name="tva" label="TVA">
                                 <InputNumber addonAfter="%" min={0} max={100} step={0.01} style={{ width: '100%' }} />
                             </Form.Item>
                         </Col>
                         <Col span={6}>
-                            <Form.Item name="remise" label="Remise (%)">
+                            <Form.Item name="remise" label="Remise">
                                 <InputNumber addonAfter="%" min={0} max={100} step={0.01} style={{ width: '100%' }} />
                             </Form.Item>
                         </Col>
                         <Col span={6}>
-                            <Form.Item name="remiseEuros" label="Remise (€)">
+                            <Form.Item name="remiseEuros" label="Remise">
                                 <InputNumber addonAfter="€" min={0} step={0.01} style={{ width: '100%' }} />
                             </Form.Item>
                         </Col>

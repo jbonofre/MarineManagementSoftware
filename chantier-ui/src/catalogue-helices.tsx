@@ -54,7 +54,7 @@ const defaultHelice: HeliceCatalogueEntity = {
     tauxMarge: 0,
     tauxMarque: 0,
     prixVenteHT: 0,
-    tva: 0,
+    tva: 20,
     montantTVA: 0,
     prixVenteTTC: 0,
 };
@@ -431,8 +431,8 @@ const HeliceCatalogueView: React.FC = () => {
                                     </Form.Item>
                                 </Col>
                                 <Col span={12}>
-                                    <Form.Item name="diametre" label="Diamètre (mm)">
-                                        <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+                                    <Form.Item name="diametre" label="Diamètre">
+                                        <InputNumber min={0} step={0.01} style={{ width: '100%' }} addonAfter="mm" />
                                     </Form.Item>
                                 </Col>
                             </Row>
@@ -474,12 +474,12 @@ const HeliceCatalogueView: React.FC = () => {
                             </Row>
                             <Row gutter={16}>
                                 <Col span={12}>
-                                    <Form.Item name="tauxMarge" label="Taux Marge (%)">
+                                    <Form.Item name="tauxMarge" label="Taux Marge">
                                         <InputNumber min={0} max={100} step={0.01} addonAfter="%" style={{ width: '100%' }} />
                                     </Form.Item>
                                 </Col>
                                 <Col span={12}>
-                                    <Form.Item name="tauxMarque" label="Taux Marque (%)">
+                                    <Form.Item name="tauxMarque" label="Taux Marque">
                                         <InputNumber min={0} max={100} step={0.01} addonAfter="%" style={{ width: '100%' }} />
                                     </Form.Item>
                                 </Col>
@@ -491,7 +491,7 @@ const HeliceCatalogueView: React.FC = () => {
                                     </Form.Item>
                                 </Col>
                                 <Col span={12}>
-                                    <Form.Item name="tva" label="TVA (%)">
+                                    <Form.Item name="tva" label="TVA">
                                         <InputNumber min={0} max={100} step={0.01} addonAfter="%" style={{ width: '100%' }} />
                                     </Form.Item>
                                 </Col>
