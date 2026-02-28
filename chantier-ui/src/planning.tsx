@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Badge, Button, Calendar, Card, Col, Empty, Form, Input, Modal, Row, Select, Space, Table, Tag, Typography, message } from 'antd';
+import { Badge, Button, Card, Col, Empty, Form, Input, Modal, Row, Select, Space, Table, Tag, Typography, message } from 'antd';
 import { CalendarOutlined, EditOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import dayjs, { Dayjs } from 'dayjs';
+import { WeeklyCalendar } from 'antd-weekly-calendar';
 
 type VenteStatus = 'EN_ATTENTE' | 'EN_COURS' | 'PAYEE' | 'ANNULEE';
 type VenteType = 'DEVIS' | 'FACTURE' | 'COMPTOIR';
@@ -42,6 +43,15 @@ interface VenteEntity {
 interface PlanningFormValues {
     date: string;
     status: VenteStatus;
+}
+
+interface WeeklyCalendarEvent {
+    eventId: string;
+    startTime: Date;
+    endTime: Date;
+    title: string;
+    backgroundColor?: string;
+    textColor?: string;
 }
 
 const statusOptions: Array<{ value: VenteStatus; label: string }> = [
@@ -145,10 +155,31 @@ export default function Planning() {
         return grouped;
     }, [ventes]);
 
-    const weekDates = useMemo(() => {
-        const start = dayjs(selectedDate).startOf('week');
-        return Array.from({ length: 7 }, (_, index) => start.add(index, 'day'));
-    }, [selectedDate]);
+    const weeklyEvents = useMemo<WeeklyCalendarEvent[]>(
+        () =>
+            ventes
+                .filter((vente) => Boolean(vente.date))
+                .filter((vente) => !selectedStatus || vente.status === selectedStatus)
+                .map((vente) => {
+                    const eventDate = dayjs(vente.date);
+                    const statusLabel = statusOptions.find((item) => item.value === vente.status)?.label || vente.status;
+                    return {
+                        eventId: String(vente.id || ''),
+                        startTime: eventDate.hour(8).minute(0).second(0).millisecond(0).toDate(),
+                        endTime: eventDate.hour(9).minute(0).second(0).millisecond(0).toDate(),
+                        title: `#${vente.id} ${getClientLabel(vente.client)} (${statusLabel})`,
+                        backgroundColor:
+                            vente.status === 'PAYEE'
+                                ? '#52c41a'
+                                : vente.status === 'EN_COURS'
+                                    ? '#1677ff'
+                                    : vente.status === 'ANNULEE'
+                                        ? '#ff4d4f'
+                                        : undefined
+                    };
+                }),
+        [ventes, selectedStatus]
+    );
 
     const handleSavePlanning = async () => {
         if (!currentVente?.id) {
@@ -275,30 +306,19 @@ export default function Planning() {
             <Row gutter={[16, 16]}>
                 <Col span={16}>
                     <Card size="small" title="Vue semaine">
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: 8 }}>
-                            {weekDates.map((date) => {
-                                const isoDate = date.format('YYYY-MM-DD');
-                                const isSelected = isoDate === selectedDate;
-                                return (
-                                    <Card
-                                        key={isoDate}
-                                        size="small"
-                                        hoverable
-                                        onClick={() => setSelectedDate(isoDate)}
-                                        style={{
-                                            borderColor: isSelected ? '#1677ff' : undefined,
-                                            backgroundColor: isSelected ? '#e6f4ff' : undefined
-                                        }}
-                                        bodyStyle={{ padding: 8 }}
-                                    >
-                                        <Typography.Text strong style={{ display: 'block', marginBottom: 6 }}>
-                                            {date.format('ddd DD/MM')}
-                                        </Typography.Text>
-                                        {renderDayContent(date)}
-                                    </Card>
-                                );
-                            })}
-                        </div>
+                        <WeeklyCalendar
+                            events={weeklyEvents}
+                            weekends
+                            onSelectDate={(date) => {
+                                setSelectedDate(dayjs(date).format('YYYY-MM-DD'));
+                            }}
+                            onEventClick={(event: WeeklyCalendarEvent) => {
+                                const matchedVente = ventes.find((vente) => String(vente.id) === event.eventId);
+                                if (matchedVente) {
+                                    openPlanningModal(matchedVente);
+                                }
+                            }}
+                        />
                     </Card>
                 </Col>
                 <Col span={8}>
