@@ -15,7 +15,7 @@ import {
     Tag,
     message
 } from 'antd';
-import { DeleteOutlined, EditOutlined, PlusCircleOutlined } from '@ant-design/icons';
+import { DeleteOutlined, EditOutlined, PlusCircleOutlined, PrinterOutlined, FileTextOutlined } from '@ant-design/icons';
 import axios from 'axios';
 
 interface ClientEntity {
@@ -164,6 +164,23 @@ const toBackendDateValue = (value?: string) => {
 };
 
 const formatEuro = (value?: number) => `${(value || 0).toFixed(2)} EUR`;
+const formatDate = (value?: string) => {
+    if (!value) {
+        return '-';
+    }
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) {
+        return value;
+    }
+    return parsed.toLocaleDateString('fr-FR');
+};
+const escapeHtml = (value: string) =>
+    value
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
 
 const getClientLabel = (client?: ClientEntity) => {
     if (!client) {
@@ -397,6 +414,147 @@ export default function Comptoir() {
         }
     };
 
+    const getProduitLines = (vente: VenteEntity) => {
+        const quantites = (vente.produits || []).reduce((acc, produit) => {
+            const key = `${produit.id}`;
+            const current = acc.get(key) || { ...produit, quantite: 0 };
+            current.quantite += 1;
+            acc.set(key, current);
+            return acc;
+        }, new Map<string, (ProduitCatalogueEntity & { quantite: number })>());
+
+        return Array.from(quantites.values());
+    };
+
+    const openPrintDocument = (_title: string, contentHtml: string, _width: number = 900) => {
+        // Print through a hidden iframe to avoid opening a new tab/window.
+        const iframe = document.createElement('iframe');
+        iframe.style.position = 'fixed';
+        iframe.style.right = '0';
+        iframe.style.bottom = '0';
+        iframe.style.width = '0';
+        iframe.style.height = '0';
+        iframe.style.border = '0';
+        document.body.appendChild(iframe);
+
+        const cleanup = () => {
+            if (iframe.parentNode) {
+                iframe.parentNode.removeChild(iframe);
+            }
+        };
+
+        const iframeWindow = iframe.contentWindow;
+        if (!iframeWindow) {
+            cleanup();
+            message.error("Impossible de lancer l'impression.");
+            return;
+        }
+
+        iframeWindow.document.open();
+        iframeWindow.document.write(contentHtml);
+        iframeWindow.document.close();
+        iframeWindow.focus();
+        iframeWindow.print();
+
+        setTimeout(cleanup, 1000);
+    };
+
+    const handlePrintInvoice = (vente: VenteEntity) => {
+        const title = `Facture #${vente.id || '-'}`;
+        const produitRows = getProduitLines(vente)
+            .map((produit) => `
+                <tr>
+                    <td>${escapeHtml(`${produit.nom}${produit.marque ? ` (${produit.marque})` : ''}`)}</td>
+                    <td style="text-align:right;">${produit.quantite}</td>
+                </tr>
+            `)
+            .join('');
+
+        openPrintDocument(
+            title,
+            `
+                <html>
+                <head>
+                    <title>${escapeHtml(title)}</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; margin: 24px; color: #1f1f1f; }
+                        h1 { margin-bottom: 8px; }
+                        .meta { margin-bottom: 16px; color: #595959; }
+                        .row { margin-bottom: 6px; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+                        th, td { border: 1px solid #d9d9d9; padding: 8px; }
+                        th { background: #fafafa; text-align: left; }
+                    </style>
+                </head>
+                <body>
+                    <h1>${escapeHtml(title)}</h1>
+                    <div class="meta">Date: ${escapeHtml(formatDate(vente.date))}</div>
+                    <div class="row"><strong>Client:</strong> ${escapeHtml(getClientLabel(vente.client))}</div>
+                    <div class="row"><strong>Mode de paiement:</strong> ${escapeHtml(vente.modePaiement || '-')}</div>
+                    <div class="row"><strong>Montant HT:</strong> ${escapeHtml(formatEuro(vente.montantHT))}</div>
+                    <div class="row"><strong>Montant TVA:</strong> ${escapeHtml(formatEuro(vente.montantTVA))}</div>
+                    <div class="row"><strong>Montant TTC:</strong> ${escapeHtml(formatEuro(vente.montantTTC))}</div>
+                    <div class="row"><strong>Remise:</strong> ${escapeHtml(formatEuro(vente.remise))}</div>
+                    <div class="row"><strong>Total a payer:</strong> ${escapeHtml(formatEuro(vente.prixVenteTTC))}</div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Produit</th>
+                                <th style="text-align:right;">Quantite</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${produitRows || '<tr><td colspan="2">Aucun produit</td></tr>'}
+                        </tbody>
+                    </table>
+                </body>
+                </html>
+            `
+        );
+    };
+
+    const handlePrintReceipt = (vente: VenteEntity) => {
+        const title = `Ticket #${vente.id || '-'}`;
+        const produitRows = getProduitLines(vente)
+            .map((produit) => `
+                <div class="line">
+                    <span>${escapeHtml(`${produit.nom}${produit.marque ? ` (${produit.marque})` : ''}`)}</span>
+                    <span>x${produit.quantite}</span>
+                </div>
+            `)
+            .join('');
+
+        openPrintDocument(
+            title,
+            `
+                <html>
+                <head>
+                    <title>${escapeHtml(title)}</title>
+                    <style>
+                        body { font-family: "Courier New", monospace; width: 320px; margin: 16px auto; color: #000; }
+                        h2 { text-align: center; margin: 0 0 8px; }
+                        .line { display: flex; justify-content: space-between; margin: 4px 0; }
+                        .separator { border-top: 1px dashed #000; margin: 10px 0; }
+                        .center { text-align: center; }
+                    </style>
+                </head>
+                <body>
+                    <h2>${escapeHtml(title)}</h2>
+                    <div class="center">${escapeHtml(formatDate(vente.date))}</div>
+                    <div class="center">${escapeHtml(getClientLabel(vente.client))}</div>
+                    <div class="separator"></div>
+                    ${produitRows || '<div class="line"><span>Aucun produit</span><span>-</span></div>'}
+                    <div class="separator"></div>
+                    <div class="line"><strong>TOTAL TTC</strong><strong>${escapeHtml(formatEuro(vente.prixVenteTTC))}</strong></div>
+                    <div class="line"><span>Paiement</span><span>${escapeHtml(vente.modePaiement || '-')}</span></div>
+                    <div class="center" style="margin-top:12px;">Merci de votre visite</div>
+                </body>
+                </html>
+            `,
+            420
+        );
+    };
+
     const recalculateFromLines = (remiseSource: 'amount' | 'percentage' | 'auto' = 'auto') => {
         const forfaitLines = form.getFieldValue('forfaits') || [];
         const produitLines = form.getFieldValue('produits') || [];
@@ -502,6 +660,8 @@ export default function Comptoir() {
             key: 'actions',
             render: (_: unknown, record: VenteEntity) => (
                 <Space>
+                    <Button title="Imprimer facture" icon={<FileTextOutlined />} onClick={() => handlePrintInvoice(record)} />
+                    <Button title="Imprimer ticket de caisse" icon={<PrinterOutlined />} onClick={() => handlePrintReceipt(record)} />
                     <Button icon={<EditOutlined />} onClick={() => openModal(record)} />
                     <Popconfirm
                         title="Supprimer cette vente comptoir ?"
@@ -564,10 +724,31 @@ export default function Comptoir() {
             <Modal
                 title={isEdit ? 'Modifier une vente comptoir' : 'Ajouter une vente comptoir'}
                 open={modalVisible}
-                onOk={handleSave}
                 onCancel={() => setModalVisible(false)}
-                okText="Enregistrer"
-                cancelText="Annuler"
+                footer={[
+                    <Button
+                        key="print-invoice"
+                        icon={<FileTextOutlined />}
+                        disabled={!currentVente}
+                        onClick={() => currentVente && handlePrintInvoice(currentVente)}
+                    >
+                        Imprimer facture
+                    </Button>,
+                    <Button
+                        key="print-receipt"
+                        icon={<PrinterOutlined />}
+                        disabled={!currentVente}
+                        onClick={() => currentVente && handlePrintReceipt(currentVente)}
+                    >
+                        Imprimer ticket
+                    </Button>,
+                    <Button key="cancel" onClick={() => setModalVisible(false)}>
+                        Annuler
+                    </Button>,
+                    <Button key="save" type="primary" onClick={handleSave}>
+                        Enregistrer
+                    </Button>
+                ]}
                 maskClosable={false}
                 destroyOnHidden
                 width={1100}
