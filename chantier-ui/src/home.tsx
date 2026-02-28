@@ -1,25 +1,665 @@
-import React from 'react';
-import { Typography, Row, Col, Card } from 'antd';
-import { SmileOutlined } from '@ant-design/icons';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Typography, Row, Col, Card, Input, Button, Space, Divider, Tag, Select } from 'antd';
+import { SmileOutlined, RobotOutlined, SendOutlined } from '@ant-design/icons';
 
 const { Title, Paragraph } = Typography;
+const { TextArea } = Input;
+
+type ChatMessage = {
+    role: 'user' | 'assistant';
+    content: string;
+};
+
+type JsonRpcResponse = {
+    result?: any;
+    error?: {
+        code: number;
+        message: string;
+        data?: any;
+    };
+};
+
+type ParsedInstruction = {
+    method: 'GET' | 'POST' | 'PUT' | 'DELETE';
+    path: string;
+    query?: any;
+    body?: any;
+    translatedCommand: string;
+};
+
+type AiProvider = 'openai' | 'anthropic';
+type AiMcpDirective = {
+    action: 'reply' | 'mcp_call';
+    message?: string;
+    method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
+    path?: string;
+    query?: any;
+    body?: any;
+};
 
 export default function Home() {
+    const initialAssistantMessage =
+        "Bonjour, je suis l'assistant IA MMS.\n" +
+        "Provider IA actuel: Claude (Anthropic).\n\n" +
+        "Commandes directes:\n" +
+        "- resources\n" +
+        "- GET /clients/search {\"q\":\"dupont\"}\n" +
+        "- POST /clients {\"prenom\":\"Jean\",\"nom\":\"Dupont\"}\n" +
+        "- PUT /clients/1 {...}\n" +
+        "- DELETE /clients/1\n\n" +
+        "Langage naturel (FR):\n" +
+        "- liste les clients\n" +
+        "- cherche dupont dans les clients\n" +
+        "- supprime le client 12\n" +
+        "- crée un client {\"prenom\":\"Jean\",\"nom\":\"Dupont\"}\n\n" +
+        "Si ce n'est pas une commande API, je réponds via ChatGPT ou Claude.\n" +
+        "Claude peut aussi déclencher des appels MCP automatiquement.";
+
+    const [ prompt, setPrompt ] = useState('');
+    const [ loading, setLoading ] = useState(false);
+    const [ mcpReady, setMcpReady ] = useState(false);
+    const [ aiProvider, setAiProvider ] = useState<AiProvider>('anthropic');
+    const [ messages, setMessages ] = useState<ChatMessage[]>([
+        {
+            role: 'assistant',
+            content: initialAssistantMessage
+        }
+    ]);
+
+    const mcpStatusColor = useMemo(() => mcpReady ? 'green' : 'orange', [ mcpReady ]);
+
+    useEffect(() => {
+        let mounted = true;
+        initializeMcp()
+            .then(() => {
+                if (mounted) {
+                    setMcpReady(true);
+                }
+            })
+            .catch((error) => {
+                if (!mounted) {
+                    return;
+                }
+                setMcpReady(false);
+                appendAssistantMessage(
+                    "Connexion MCP impossible pour le moment: " +
+                    (error?.message || 'erreur inconnue')
+                );
+            });
+        return () => {
+            mounted = false;
+        };
+    }, []);
+
+    const appendAssistantMessage = (content: string) => {
+        setMessages((prev) => [ ...prev, { role: 'assistant', content } ]);
+    };
+
+    const appendUserMessage = (content: string) => {
+        setMessages((prev) => [ ...prev, { role: 'user', content } ]);
+    };
+
+    const initializeMcp = async () => {
+        await mcpRequest('initialize', {
+            protocolVersion: '2024-11-05',
+            capabilities: {},
+            clientInfo: {
+                name: 'mms-chantier-ui',
+                version: '0.9-SNAPSHOT'
+            }
+        });
+    };
+
+    const mcpRequest = async (method: string, params: any): Promise<JsonRpcResponse> => {
+        const response = await fetch('/mcp', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                jsonrpc: '2.0',
+                id: Date.now(),
+                method,
+                params
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error('Erreur HTTP ' + response.status);
+        }
+
+        const json = await response.json() as JsonRpcResponse;
+        if (json.error) {
+            throw new Error(json.error.message + (json.error.data ? ' - ' + JSON.stringify(json.error.data) : ''));
+        }
+        return json;
+    };
+
+    const callMcpTool = async (name: string, args: any) => {
+        const json = await mcpRequest('tools/call', {
+            name,
+            arguments: args
+        });
+        return json.result;
+    };
+
+    const callAiChat = async (provider: AiProvider, message: string) => {
+        const response = await fetch('/ai/chat', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                provider,
+                message
+            })
+        });
+
+        if (!response.ok) {
+            const text = await response.text();
+            throw new Error(text || ('Erreur IA HTTP ' + response.status));
+        }
+
+        const payload = await response.json();
+        return payload?.answer || '';
+    };
+
+    const getFallbackProvider = (provider: AiProvider): AiProvider =>
+        provider === 'anthropic' ? 'openai' : 'anthropic';
+
+    const askPlannerWithFallback = async (userInput: string) => {
+        const plannerPrompt = buildPlannerPrompt(userInput);
+        try {
+            const answer = await callAiChat(aiProvider, plannerPrompt);
+            return {
+                answer,
+                providerUsed: aiProvider,
+                fallbackUsed: false,
+                errors: [] as string[]
+            };
+        } catch (primaryError: any) {
+            const fallbackProvider = getFallbackProvider(aiProvider);
+            try {
+                const answer = await callAiChat(fallbackProvider, plannerPrompt);
+                return {
+                    answer,
+                    providerUsed: fallbackProvider,
+                    fallbackUsed: true,
+                    errors: [ primaryError?.message || 'Erreur IA inconnue' ]
+                };
+            } catch (fallbackError: any) {
+                return {
+                    answer: '',
+                    providerUsed: aiProvider,
+                    fallbackUsed: false,
+                    errors: [
+                        primaryError?.message || 'Erreur IA principale inconnue',
+                        fallbackError?.message || 'Erreur IA secours inconnue'
+                    ]
+                };
+            }
+        }
+    };
+
+    const extractJsonCandidate = (raw: string) => {
+        const trimmed = (raw || '').trim();
+        if (!trimmed) {
+            return '';
+        }
+        const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
+        if (fenced && fenced[1]) {
+            return fenced[1].trim();
+        }
+        return trimmed;
+    };
+
+    const parseAiDirective = (aiOutput: string): AiMcpDirective | null => {
+        const candidate = extractJsonCandidate(aiOutput);
+        if (!candidate.startsWith('{')) {
+            return null;
+        }
+        try {
+            const parsed = JSON.parse(candidate) as AiMcpDirective;
+            if (!parsed || !parsed.action) {
+                return null;
+            }
+            if (parsed.action === 'mcp_call' && parsed.method && parsed.path) {
+                return parsed;
+            }
+            if (parsed.action === 'reply' && parsed.message) {
+                return parsed;
+            }
+            return null;
+        } catch (_err) {
+            return null;
+        }
+    };
+
+    const buildPlannerPrompt = (userInput: string) =>
+        "Tu es un orchestrateur de tools pour MMS.\n" +
+        "Réponds UNIQUEMENT en JSON valide, sans texte hors JSON.\n" +
+        "Si une action API est utile, renvoie:\n" +
+        "{\"action\":\"mcp_call\",\"method\":\"GET|POST|PUT|DELETE\",\"path\":\"/...\",\"query\":{...},\"body\":{...}}\n" +
+        "Sinon renvoie:\n" +
+        "{\"action\":\"reply\",\"message\":\"...\"}\n" +
+        "Règles: path doit commencer par '/'. N'invente pas de clé sensible.\n" +
+        "Question utilisateur: " + userInput;
+
+    const parseJsonInput = (value: string | undefined, errorPrefix: string) => {
+        if (!value || !value.trim()) {
+            return undefined;
+        }
+        try {
+            return JSON.parse(value);
+        } catch (_err) {
+            throw new Error(errorPrefix + " invalide. Utilisez un JSON objet valide.");
+        }
+    };
+
+    const resolveResourcePath = (input: string) => {
+        const normalized = input.toLowerCase();
+        if (normalized.includes('client')) {
+            return '/clients';
+        }
+        if (normalized.includes('bateau')) {
+            return '/bateaux';
+        }
+        if (normalized.includes('moteur')) {
+            return '/moteurs';
+        }
+        if (normalized.includes('remorque')) {
+            return '/remorques';
+        }
+        if (normalized.includes('forfait')) {
+            return '/forfaits';
+        }
+        if (normalized.includes('service')) {
+            return '/services';
+        }
+        if (normalized.includes('vente')) {
+            return '/ventes';
+        }
+        if (normalized.includes('technicien') || normalized.includes('techniciens')) {
+            return '/techniciens';
+        }
+        if (normalized.includes('competence') || normalized.includes('compétence')) {
+            return '/competences';
+        }
+        return null;
+    };
+
+    const extractJsonBlock = (input: string) => {
+        const start = input.indexOf('{');
+        if (start < 0) {
+            return null;
+        }
+        const jsonCandidate = input.slice(start).trim();
+        return jsonCandidate || null;
+    };
+
+    const tryParseNaturalLanguage = (input: string): ParsedInstruction | null => {
+        const lower = input.toLowerCase().trim();
+
+        if (!lower) {
+            return null;
+        }
+
+        if (lower === 'resources' || lower === 'ressources' || lower.includes('liste des ressources')) {
+            return {
+                method: 'GET',
+                path: '/_resources',
+                translatedCommand: 'resources'
+            };
+        }
+
+        const resourcePath = resolveResourcePath(lower);
+        if (!resourcePath) {
+            return null;
+        }
+
+        const idMatch = lower.match(/\b(\d+)\b/);
+        const id = idMatch ? idMatch[1] : null;
+
+        const isDelete = /\b(supprime|supprimer|delete|efface|retire)\b/.test(lower);
+        if (isDelete && id) {
+            return {
+                method: 'DELETE',
+                path: resourcePath + '/' + id,
+                translatedCommand: 'DELETE ' + resourcePath + '/' + id
+            };
+        }
+
+        const isCreate = /\b(cr[eé]e|ajoute|nouveau|nouvelle|insert)\b/.test(lower);
+        if (isCreate) {
+            const jsonBlock = extractJsonBlock(input);
+            if (!jsonBlock) {
+                throw new Error("Pour une création, ajoutez un JSON, ex: crée un client {\"prenom\":\"Jean\"}");
+            }
+            return {
+                method: 'POST',
+                path: resourcePath,
+                body: parseJsonInput(jsonBlock, 'Le body'),
+                translatedCommand: 'POST ' + resourcePath + ' ' + jsonBlock
+            };
+        }
+
+        const isUpdate = /\b(modifie|modifier|mets?\s+a\s+jour|update)\b/.test(lower);
+        if (isUpdate) {
+            if (!id) {
+                throw new Error('Pour une mise à jour, précisez un id, ex: modifie le client 12 {...}');
+            }
+            const jsonBlock = extractJsonBlock(input);
+            if (!jsonBlock) {
+                throw new Error("Pour une mise à jour, ajoutez un JSON, ex: modifie le client 12 {\"nom\":\"Dupont\"}");
+            }
+            return {
+                method: 'PUT',
+                path: resourcePath + '/' + id,
+                body: parseJsonInput(jsonBlock, 'Le body'),
+                translatedCommand: 'PUT ' + resourcePath + '/' + id + ' ' + jsonBlock
+            };
+        }
+
+        const searchMatch = lower.match(/\b(cherche|recherche|trouve|filtre)\b/);
+        if (searchMatch) {
+            const explicitTerm = lower.match(/(?:cherche|recherche|trouve|filtre)\s+(.+)/);
+            let q = explicitTerm ? explicitTerm[1] : '';
+            q = q.replace(/\bdans\b.*$/, '').trim();
+            q = q.replace(/\bles?\b|\bla\b|\ble\b|\bdes?\b|\bdu\b|\bde\b/g, ' ').replace(/\s+/g, ' ').trim();
+            if (!q) {
+                throw new Error("Précisez un terme de recherche, ex: cherche dupont dans les clients");
+            }
+            return {
+                method: 'GET',
+                path: resourcePath + '/search',
+                query: { q },
+                translatedCommand: 'GET ' + resourcePath + '/search ' + JSON.stringify({ q })
+            };
+        }
+
+        const isList = /\b(liste|affiche|montre|voir|consulte)\b/.test(lower);
+        if (isList) {
+            return {
+                method: 'GET',
+                path: resourcePath,
+                translatedCommand: 'GET ' + resourcePath
+            };
+        }
+
+        if (id) {
+            return {
+                method: 'GET',
+                path: resourcePath + '/' + id,
+                translatedCommand: 'GET ' + resourcePath + '/' + id
+            };
+        }
+
+        return null;
+    };
+
+    const executeApiInstruction = async (instruction: ParsedInstruction) => {
+        if (instruction.path === '/_resources') {
+            const toolResult = await callMcpTool('mms_list_api_resources', {});
+            const firstContent = toolResult?.content?.[0]?.text || '{}';
+            appendAssistantMessage(firstContent);
+            return;
+        }
+
+        appendAssistantMessage('Interprétation: `' + instruction.translatedCommand + '`');
+
+        const args: any = {
+            method: instruction.method,
+            path: instruction.path
+        };
+        if (instruction.query !== undefined) {
+            args.query = instruction.query;
+        }
+        if (instruction.body !== undefined) {
+            args.body = instruction.body;
+        }
+
+        const toolResult = await callMcpTool('mms_call_api_resource', args);
+        const firstContent = toolResult?.content?.[0]?.text;
+        if (firstContent) {
+            appendAssistantMessage(firstContent);
+            return;
+        }
+        appendAssistantMessage(JSON.stringify(toolResult || {}, null, 2));
+    };
+
+    const handleCommand = async (rawInput: string) => {
+        const input = rawInput.trim();
+        if (!input) {
+            return;
+        }
+
+        appendUserMessage(input);
+
+        const lower = input.toLowerCase();
+        if (lower === 'help') {
+            appendAssistantMessage(
+                "Exemples:\n" +
+                "- resources\n" +
+                "- GET /clients\n" +
+                "- GET /clients/search {\"q\":\"dupont\"}\n" +
+                "- POST /clients {\"prenom\":\"Jean\",\"nom\":\"Dupont\"}\n" +
+                "- liste les clients\n" +
+                "- cherche dupont dans les clients\n" +
+                "- supprime le client 12"
+            );
+            return;
+        }
+
+        if (lower === 'resources') {
+            await executeApiInstruction({
+                method: 'GET',
+                path: '/_resources',
+                translatedCommand: 'resources'
+            });
+            return;
+        }
+
+        const match = input.match(/^(GET|POST|PUT|DELETE)\s+(\S+)(?:\s+(.+))?$/i);
+        if (!match) {
+            const naturalLanguageInstruction = tryParseNaturalLanguage(input);
+            if (naturalLanguageInstruction) {
+                await executeApiInstruction(naturalLanguageInstruction);
+                return;
+            }
+
+            const plannerRun = await askPlannerWithFallback(input);
+            const plannerAnswer = plannerRun.answer;
+            if (plannerAnswer && plannerRun.fallbackUsed) {
+                appendAssistantMessage(
+                    "Le provider sélectionné est indisponible, bascule automatique vers " +
+                    (plannerRun.providerUsed === 'anthropic' ? 'Claude' : 'ChatGPT') + "."
+                );
+            }
+
+            try {
+                const directive = parseAiDirective(plannerAnswer);
+                if (directive && directive.action === 'mcp_call' && directive.method && directive.path) {
+                    await executeApiInstruction({
+                        method: directive.method,
+                        path: directive.path,
+                        query: directive.query,
+                        body: directive.body,
+                        translatedCommand: directive.method + ' ' + directive.path
+                    });
+                    return;
+                }
+                if (directive && directive.action === 'reply' && directive.message) {
+                    appendAssistantMessage(directive.message);
+                    return;
+                }
+                if (plannerAnswer && plannerAnswer.trim()) {
+                    appendAssistantMessage(plannerAnswer);
+                    return;
+                }
+            } catch (_aiError) {
+                if (!plannerAnswer || !plannerAnswer.trim()) {
+                    const details = plannerRun.errors.filter(Boolean).join(" | ");
+                    appendAssistantMessage(
+                        "Commande non reconnue et IA indisponible.\n" +
+                        "Détail: " + (details || "Aucune réponse des providers") + "\n" +
+                        "Vérifiez vos clés API backend ou utilisez GET/POST explicite."
+                    );
+                    return;
+                }
+                appendAssistantMessage(
+                    "La réponse IA n'a pas pu être interprétée.\n" +
+                    "Essayez une commande GET/POST explicite."
+                );
+                return;
+            }
+            return;
+        }
+
+        const method = match[1].toUpperCase();
+        const path = match[2];
+        const payloadPart = match[3];
+
+        const args: any = { method, path };
+        if (method === 'GET' || method === 'DELETE') {
+            const query = parseJsonInput(payloadPart, "Le parametre query");
+            if (query !== undefined) {
+                args.query = query;
+            }
+        } else {
+            const body = parseJsonInput(payloadPart, 'Le body');
+            if (body !== undefined) {
+                args.body = body;
+            }
+        }
+
+        await executeApiInstruction({
+            method: args.method,
+            path: args.path,
+            query: args.query,
+            body: args.body,
+            translatedCommand: input
+        });
+    };
+
+    const onSend = async () => {
+        if (!prompt.trim() || loading) {
+            return;
+        }
+        const currentPrompt = prompt;
+        setPrompt('');
+        setLoading(true);
+        try {
+            await handleCommand(currentPrompt);
+        } catch (error: any) {
+            appendAssistantMessage("Erreur: " + (error?.message || 'inconnue'));
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const onClearChat = () => {
+        setMessages([
+            {
+                role: 'assistant',
+                content: initialAssistantMessage
+            }
+        ]);
+    };
+
     return (
-        <Card bordered={false} style={{ marginBottom: 24, background: '#fafafa' }}>
-            <Row align="middle">
-                <Col flex="40px">
-                    <SmileOutlined style={{ fontSize: 40, color: '#1890ff' }} />
-                </Col>
-                <Col flex="auto" style={{ paddingLeft: 16 }}>
-                    <Title level={2} style={{ marginBottom: 0 }}>Bienvenue sur Marine Management Software</Title>
-                    <Paragraph type="secondary" style={{ marginBottom: 0 }}>
-                        Gérez vos clients, bateaux, moteurs, remorques et plus encore en toute simplicité.<br />
-                        Utilisez le menu latéral pour naviguer entre les différentes fonctionnalités.<br />
-                        Nous vous souhaitons une excellente expérience sur notre plateforme.
-                    </Paragraph>
-                </Col>
-            </Row>
-        </Card>
+        <>
+            <Card bordered={false} style={{ marginBottom: 24, background: '#fafafa' }}>
+                <Row align="middle">
+                    <Col flex="40px">
+                        <SmileOutlined style={{ fontSize: 40, color: '#1890ff' }} />
+                    </Col>
+                    <Col flex="auto" style={{ paddingLeft: 16 }}>
+                        <Title level={2} style={{ marginBottom: 0 }}>Bienvenue sur Marine Management Software</Title>
+                        <Paragraph type="secondary" style={{ marginBottom: 0 }}>
+                            Gérez vos clients, bateaux, moteurs, remorques et plus encore en toute simplicité.<br />
+                            Utilisez le menu latéral pour naviguer entre les différentes fonctionnalités.<br />
+                            Nous vous souhaitons une excellente expérience sur notre plateforme.
+                        </Paragraph>
+                    </Col>
+                </Row>
+            </Card>
+
+            <Card
+                title={
+                    <Space>
+                        <RobotOutlined />
+                        Assistant IA
+                        <Tag color={mcpStatusColor}>{mcpReady ? 'MCP connecté' : 'MCP en attente'}</Tag>
+                    </Space>
+                }
+            >
+                <Paragraph type="secondary">
+                    Le chat utilise ChatGPT ou Claude pour les questions libres, et MCP (`/mcp`) pour les commandes API.
+                </Paragraph>
+
+                <div style={{
+                    maxHeight: 320,
+                    overflowY: 'auto',
+                    border: '1px solid #f0f0f0',
+                    borderRadius: 8,
+                    padding: 12,
+                    background: '#fff'
+                }}>
+                    {messages.map((message, index) => (
+                        <div
+                            key={index}
+                            style={{
+                                marginBottom: 12,
+                                textAlign: message.role === 'user' ? 'right' : 'left'
+                            }}
+                        >
+                            <Tag color={message.role === 'user' ? 'blue' : 'purple'}>
+                                {message.role === 'user' ? 'Vous' : 'Assistant'}
+                            </Tag>
+                            <div style={{ whiteSpace: 'pre-wrap', marginTop: 4 }}>
+                                {message.content}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                <Divider style={{ margin: '16px 0' }} />
+
+                <Space direction="vertical" style={{ width: '100%' }}>
+                    <Space>
+                        <Tag>Provider IA</Tag>
+                        <Select
+                            value={aiProvider}
+                            onChange={(value: AiProvider) => setAiProvider(value)}
+                            style={{ width: 180 }}
+                            options={[
+                                { value: 'openai', label: 'ChatGPT (OpenAI)' },
+                                { value: 'anthropic', label: 'Claude (Anthropic)' }
+                            ]}
+                        />
+                    </Space>
+                    <TextArea
+                        value={prompt}
+                        onChange={(e) => setPrompt(e.target.value)}
+                        placeholder={"Posez une question, ou tapez une commande API (GET/POST/PUT/DELETE)."}
+                        autoSize={{ minRows: 2, maxRows: 6 }}
+                        onPressEnter={(e) => {
+                            if (!e.shiftKey) {
+                                e.preventDefault();
+                                onSend();
+                            }
+                        }}
+                    />
+                    <Space>
+                        <Button onClick={onClearChat}>Effacer le chat</Button>
+                        <Button onClick={() => setPrompt('resources')}>Resources</Button>
+                        <Button onClick={() => setPrompt('GET /clients')}>GET /clients</Button>
+                        <Button type="primary" icon={<SendOutlined />} loading={loading} onClick={onSend}>
+                            Envoyer
+                        </Button>
+                    </Space>
+                </Space>
+            </Card>
+        </>
     );
 }
