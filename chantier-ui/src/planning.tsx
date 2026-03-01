@@ -15,6 +15,12 @@ interface ClientEntity {
     nom: string;
 }
 
+interface TechnicienEntity {
+    id: number;
+    prenom?: string;
+    nom?: string;
+}
+
 interface TaskEntity {
     id?: number;
     nom?: string;
@@ -22,6 +28,8 @@ interface TaskEntity {
     dateDebut?: string;
     dateFin?: string;
     statusDate?: string;
+    dureeEstimee?: number;
+    technicien?: TechnicienEntity;
 }
 
 interface ForfaitEntity {
@@ -53,6 +61,7 @@ interface VenteEntity {
 interface PlanningFormValues {
     date: string;
     status: TaskStatus;
+    technicienId?: number;
 }
 
 interface WeeklyCalendarEvent {
@@ -93,6 +102,17 @@ const statusColor: Record<TaskStatus, string> = {
     ANNULEE: 'red'
 };
 
+const technicienPalette = [
+    '#1677ff',
+    '#13c2c2',
+    '#52c41a',
+    '#faad14',
+    '#722ed1',
+    '#eb2f96',
+    '#fa541c',
+    '#2f54eb'
+];
+
 const todayIso = () => new Date().toISOString().slice(0, 10);
 
 const getClientLabel = (client?: ClientEntity) => {
@@ -125,9 +145,18 @@ const toDateTimeLocalValue = (value?: string) => {
     return parsed.format('YYYY-MM-DDTHH:mm');
 };
 
+const getTechnicienColor = (technicien?: TechnicienEntity) => {
+    if (!technicien?.id) {
+        return '#8c8c8c';
+    }
+    const index = Math.abs(technicien.id) % technicienPalette.length;
+    return technicienPalette[index];
+};
+
 export default function Planning() {
     const history = useHistory();
     const [ventes, setVentes] = useState<VenteEntity[]>([]);
+    const [techniciens, setTechniciens] = useState<TechnicienEntity[]>([]);
     const [loading, setLoading] = useState(false);
     const [selectedDate, setSelectedDate] = useState(todayIso());
     const [selectedStatus, setSelectedStatus] = useState<TaskStatus | undefined>(undefined);
@@ -148,9 +177,28 @@ export default function Planning() {
         }
     };
 
+    const fetchTechniciens = async () => {
+        try {
+            const response = await axios.get('/techniciens');
+            setTechniciens(response.data || []);
+        } catch {
+            message.error('Erreur lors du chargement des techniciens.');
+        }
+    };
+
     useEffect(() => {
         fetchVentes();
+        fetchTechniciens();
     }, []);
+
+    const technicienOptions = useMemo(
+        () =>
+            techniciens.map((technicien) => ({
+                value: technicien.id,
+                label: `${technicien.prenom || ''} ${technicien.nom || ''}`.trim() || `Technicien #${technicien.id}`
+            })),
+        [techniciens]
+    );
 
     const openPlanningModal = (taskRow: PendingTaskRow, forcedDate?: string) => {
         setCurrentTaskRow(taskRow);
@@ -159,7 +207,8 @@ export default function Planning() {
                 toDateTimeLocalValue(taskRow.task.statusDate)
                 || (forcedDate ? `${forcedDate}T08:00` : undefined)
                 || `${selectedDate || todayIso()}T08:00`,
-            status: taskRow.task.status || 'EN_ATTENTE'
+            status: taskRow.task.status || 'EN_ATTENTE',
+            technicienId: taskRow.task.technicien?.id
         });
         setModalVisible(true);
     };
@@ -215,16 +264,21 @@ export default function Planning() {
                     }
 
                     const endSource = task.dateFin;
+                    const estimatedDurationMinutes = Math.max(
+                        1,
+                        Math.round(((task.dureeEstimee || 0) > 0 ? (task.dureeEstimee || 0) * 60 : 60))
+                    );
                     const endDate = endSource && dayjs(endSource).isValid()
                         ? dayjs(endSource)
-                        : startDate.add(1, 'hour');
+                        : startDate.add(estimatedDurationMinutes, 'minute');
 
                     return {
                         eventId: row.key,
                         startTime: startDate.toDate(),
                         endTime: endDate.toDate(),
                         title: `#${vente.id} ${task.nom || 'Tache sans nom'} (${getClientLabel(vente.client)})`,
-                        backgroundColor: '#1677ff'
+                        backgroundColor: getTechnicienColor(task.technicien),
+                        textColor: '#ffffff'
                     } as WeeklyCalendarEvent;
                 })
                 .filter(Boolean) as WeeklyCalendarEvent[],
@@ -258,7 +312,8 @@ export default function Planning() {
             latestTasks[taskToUpdateIndex] = {
                 ...latestTasks[taskToUpdateIndex],
                 status: values.status,
-                statusDate: values.date
+                statusDate: values.date,
+                technicien: techniciens.find((technicien) => technicien.id === values.technicienId)
             };
 
             const updatedVente: VenteEntity = {
@@ -488,6 +543,9 @@ export default function Planning() {
                         rules={[{ required: true, message: 'Le statut est requis' }]}
                     >
                         <Select options={taskStatusOptions} />
+                    </Form.Item>
+                    <Form.Item name="technicienId" label="Technicien">
+                        <Select allowClear showSearch options={technicienOptions} placeholder="Selectionner un technicien" />
                     </Form.Item>
                 </Form>
             </Modal>
