@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Layout, Input, Col, Row, Image, Menu, Form, Modal, message } from 'antd';
+import React, { useEffect, useState } from 'react';
+import { Layout, Input, Col, Row, Image, Menu, Form, Modal, message, ConfigProvider, theme as antdTheme, Switch as AntSwitch } from 'antd';
 import { Route, Switch } from 'react-router';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { Link } from 'react-router-dom';
@@ -34,6 +34,8 @@ import Dashboard from './dashboard.tsx';
 export function demo() {
     message.warning("Vous êtes sur une version de démonstration de moussAIllon. Il n'est pas possible d'ajouter ou supprimer des éléments.")
 }
+
+type UserTheme = 'LIGHT' | 'DARK';
 
 function SideMenu(props) {
 
@@ -79,8 +81,18 @@ function SideMenu(props) {
     ];
 
     return(
-        <Layout.Sider collapsible={true} collapsed={collapsed} onCollapse={newValue => setCollapsed(newValue)}>
-            <Menu items={menuItems} mode="inline" />
+        <Layout.Sider
+            theme={props.theme === 'DARK' ? 'dark' : 'light'}
+            style={props.theme === 'DARK' ? { background: '#141414' } : { background: '#fff' }}
+            collapsible={true}
+            collapsed={collapsed}
+            onCollapse={newValue => setCollapsed(newValue)}
+        >
+            <Menu
+                theme={props.theme === 'DARK' ? 'dark' : 'light'}
+                items={menuItems}
+                mode="inline"
+            />
         </Layout.Sider>
     );
 
@@ -92,6 +104,7 @@ function Header(props) {
     const [ preferencesVisible, setPreferencesVisible ] = useState(false);
     const [ preferencesLoading, setPreferencesLoading ] = useState(false);
     const [ preferencesForm ] = Form.useForm();
+    const [ selectedTheme, setSelectedTheme ] = useState<UserTheme>(props.theme || 'LIGHT');
 
     const menuUser = [
               { key: 'user', label: props.user, icon: <UserOutlined />, children: [
@@ -101,7 +114,14 @@ function Header(props) {
     ];
 
     return(
-        <Layout.Header style={{ height: "80px", background: "#fff", padding: "5px", margin: "10px" }}>
+        <Layout.Header style={{
+            height: "80px",
+            background: props.theme === 'DARK' ? '#1f1f1f' : '#fff',
+            color: props.theme === 'DARK' ? '#f5f5f5' : undefined,
+            padding: "5px",
+            margin: "10px",
+            borderRadius: 8
+        }}>
             <Row align="middle" justify="center" wrap={false}>
                 <Col span={3}><Image src="/logo.png" preview={false} width={75}/></Col>
                 <Col span={19}><Search /></Col>
@@ -110,6 +130,12 @@ function Header(props) {
                         props.setUser(null);
                     }
                     if (e.key === 'preferences') {
+                        setSelectedTheme(props.theme || 'LIGHT');
+                        preferencesForm.setFieldsValue({
+                            currentPassword: '',
+                            newPassword: '',
+                            confirmPassword: ''
+                        });
                         setPreferencesVisible(true);
                     }
                 }} /></Col>
@@ -131,23 +157,81 @@ function Header(props) {
                     form={preferencesForm}
                     layout="vertical"
                     onFinish={(values) => {
+                        const shouldChangePassword = !!values.newPassword;
+                        const shouldChangeTheme = selectedTheme !== props.theme;
+
+                        if (!shouldChangePassword && !shouldChangeTheme) {
+                            message.info('Aucune modification à enregistrer.');
+                            return;
+                        }
+
                         setPreferencesLoading(true);
-                        fetch(`/users/${encodeURIComponent(props.user)}/change-password`, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                currentPassword: values.currentPassword,
-                                newPassword: values.newPassword
-                            })
-                        })
-                            .then(async (response) => {
+
+                        const updatePassword = () => {
+                            if (!shouldChangePassword) {
+                                return Promise.resolve();
+                            }
+                            return fetch(`/users/${encodeURIComponent(props.user)}/change-password`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    currentPassword: values.currentPassword,
+                                    newPassword: values.newPassword
+                                })
+                            }).then(async (response) => {
                                 if (!response.ok) {
                                     const errorText = await response.text();
                                     throw new Error(errorText || ('Erreur (code ' + response.status + ')'));
                                 }
-                                message.success('Mot de passe mis à jour.');
+                            });
+                        };
+
+                        const updateTheme = () => {
+                            if (!shouldChangeTheme) {
+                                return Promise.resolve();
+                            }
+                            return fetch(`/users/${encodeURIComponent(props.user)}`)
+                                .then(async (response) => {
+                                    if (!response.ok) {
+                                        const errorText = await response.text();
+                                        throw new Error(errorText || ('Erreur (code ' + response.status + ')'));
+                                    }
+                                    return response.json();
+                                })
+                                .then((userData) => {
+                                    return fetch(`/users/${encodeURIComponent(props.user)}`, {
+                                        method: 'PUT',
+                                        headers: {
+                                            'Content-Type': 'application/json'
+                                        },
+                                        body: JSON.stringify({
+                                            ...userData,
+                                            theme: selectedTheme
+                                        })
+                                    });
+                                })
+                                .then(async (response) => {
+                                    if (!response.ok) {
+                                        const errorText = await response.text();
+                                        throw new Error(errorText || ('Erreur (code ' + response.status + ')'));
+                                    }
+                                });
+                        };
+
+                        Promise.all([ updatePassword(), updateTheme() ])
+                            .then(() => {
+                                if (shouldChangePassword && shouldChangeTheme) {
+                                    message.success('Préférences mises à jour.');
+                                } else if (shouldChangePassword) {
+                                    message.success('Mot de passe mis à jour.');
+                                } else {
+                                    message.success('Thème mis à jour.');
+                                }
+                                if (shouldChangeTheme) {
+                                    props.setTheme(selectedTheme);
+                                }
                                 preferencesForm.resetFields();
                                 setPreferencesVisible(false);
                             })
@@ -162,7 +246,17 @@ function Header(props) {
                     <Form.Item
                         name="currentPassword"
                         label="Mot de passe actuel"
-                        rules={[{ required: true, message: 'Le mot de passe actuel est requis.' }]}
+                        rules={[
+                            ({ getFieldValue }) => ({
+                                validator(_, value) {
+                                    const hasNewPassword = !!getFieldValue('newPassword');
+                                    if (!hasNewPassword || (value && value.trim())) {
+                                        return Promise.resolve();
+                                    }
+                                    return Promise.reject(new Error('Le mot de passe actuel est requis pour modifier le mot de passe.'));
+                                }
+                            })
+                        ]}
                     >
                         <Input.Password autoComplete="current-password" />
                     </Form.Item>
@@ -170,8 +264,21 @@ function Header(props) {
                         name="newPassword"
                         label="Nouveau mot de passe"
                         rules={[
-                            { required: true, message: 'Le nouveau mot de passe est requis.' },
-                            { min: 6, message: 'Le mot de passe doit contenir au moins 6 caractères.' }
+                            ({ getFieldValue }) => ({
+                                validator(_, value) {
+                                    const hasCurrentPassword = !!getFieldValue('currentPassword');
+                                    if (!value && !hasCurrentPassword) {
+                                        return Promise.resolve();
+                                    }
+                                    if (!value) {
+                                        return Promise.reject(new Error('Le nouveau mot de passe est requis.'));
+                                    }
+                                    if (value.length < 6) {
+                                        return Promise.reject(new Error('Le mot de passe doit contenir au moins 6 caractères.'));
+                                    }
+                                    return Promise.resolve();
+                                }
+                            })
                         ]}
                     >
                         <Input.Password autoComplete="new-password" />
@@ -181,10 +288,16 @@ function Header(props) {
                         label="Confirmation du mot de passe"
                         dependencies={['newPassword']}
                         rules={[
-                            { required: true, message: 'La confirmation du mot de passe est requise.' },
                             ({ getFieldValue }) => ({
                                 validator(_, value) {
-                                    if (!value || getFieldValue('newPassword') === value) {
+                                    const nextPassword = getFieldValue('newPassword');
+                                    if (!nextPassword && !value) {
+                                        return Promise.resolve();
+                                    }
+                                    if (!value) {
+                                        return Promise.reject(new Error('La confirmation du mot de passe est requise.'));
+                                    }
+                                    if (nextPassword === value) {
                                         return Promise.resolve();
                                     }
                                     return Promise.reject(new Error('La confirmation ne correspond pas au nouveau mot de passe.'));
@@ -194,6 +307,14 @@ function Header(props) {
                     >
                         <Input.Password autoComplete="new-password" />
                     </Form.Item>
+                    <Form.Item label="Thème">
+                        <AntSwitch
+                            checked={selectedTheme === 'DARK'}
+                            checkedChildren="Sombre"
+                            unCheckedChildren="Clair"
+                            onChange={(checked) => setSelectedTheme(checked ? 'DARK' : 'LIGHT')}
+                        />
+                    </Form.Item>
                 </Form>
             </Modal>
         </Layout.Header>
@@ -202,84 +323,111 @@ function Header(props) {
 }
 
 export default function Workspace(props) {
+    const [ theme, setTheme ] = useState<UserTheme>('LIGHT');
+
+    useEffect(() => {
+        fetch(`/users/${encodeURIComponent(props.user)}`)
+            .then((response) => {
+                if (!response.ok) {
+                    return null;
+                }
+                return response.json();
+            })
+            .then((userData) => {
+                if (!userData || !userData.theme) {
+                    return;
+                }
+                const nextTheme = userData.theme === 'DARK' ? 'DARK' : 'LIGHT';
+                setTheme(nextTheme);
+            })
+            .catch(() => {
+                // Keep default LIGHT theme when user preferences cannot be loaded.
+            });
+    }, [ props.user ]);
+
+    const isDarkTheme = theme === 'DARK';
 
     return(
-        <Layout style={{ height: "105vh" }}>
-          <Header user={props.user} setUser={props.setUser} />
-          <Layout hasSider={true}>
-            <Router>
-            <SideMenu user={props.user}/>
-            <Layout.Content style={{ margin: "15px" }}>
-                <Switch>
-                    <Route path="/" key="home" exact={true}>
-                        <Home/>
-                    </Route>
-                    <Route path="/dashboard" key="dashboard" exact={true}>
-                        <Dashboard />
-                    </Route>
-                    <Route path="/clients" key="clients" exact={true}>
-                        <Clients />
-                    </Route>
-                    <Route path="/clients/bateaux" key="clients-bateaux">
-                        <BateauxClients />
-                    </Route>
-                    <Route path="/clients/moteurs" key="clients-moteurs">
-                        <ClientsMoteurs />
-                    </Route>
-                    <Route path="/clients/remorques" key="clients-remorques">
-                        <RemorquesClients />
-                    </Route>
-                    <Route path="/catalogue/produits" key="produits">
-                        <Produits />
-                    </Route>
-                    <Route path="/catalogue/bateaux" key="catalogue-bateaux">
-                        <CatalogueBateaux />
-                    </Route>
-                    <Route path="/catalogue/moteurs" key="catalogue-moteurs">
-                        <CatalogueMoteurs />
-                    </Route>
-                    <Route path="/catalogue/helices" key="helices">
-                        <CatalogueHelices />
-                    </Route>
-                    <Route path="/catalogue/remorques" key="catalogue-remorques">
-                        <CatalogueRemorques />
-                    </Route>
-                    <Route path="/catalogue/fournisseurs" key="fournisseurs">
-                        <Fournisseurs />
-                    </Route>
-                    <Route path="/societe" key="societe">
-                        <Societe />
-                    </Route>
-                    <Route path="/utilisateurs" key="utilisateurs">
-                        <Utilisateurs />
-                    </Route>
-                    <Route path="/prestations" key="prestations">
-                        <Vente />
-                    </Route>
-                    <Route path="/comptoir" key="comptoir">
-                        <Comptoir />
-                    </Route>
-                    <Route path="/forfaits" key="forfaits">
-                        <Forfaits />
-                    </Route>
-                    <Route path="/techniciens" key="techniciens">
-                        <Techniciens />
-                    </Route>
-                    <Route path="/services" key="services">
-                        <Services />
-                    </Route>
-                    <Route path="/competences" key="competences">
-                        <Competences />
-                    </Route>
-                    <Route path="/planning" key="planning">
-                        <Planning />
-                    </Route>
-                </Switch>
-            </Layout.Content>
-            </Router>
-          </Layout>
-          <Layout.Footer>Copyright © 2025-2026 - NOSE Experts - Tous droits réservés</Layout.Footer>
-        </Layout>
+        <ConfigProvider theme={{ algorithm: isDarkTheme ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm }}>
+            <Layout style={{ height: "105vh", background: isDarkTheme ? '#101010' : '#f5f5f5' }}>
+              <Header user={props.user} setUser={props.setUser} theme={theme} setTheme={setTheme} />
+              <Layout hasSider={true}>
+                <Router>
+                <SideMenu user={props.user} theme={theme} />
+                <Layout.Content style={{ margin: "15px", color: isDarkTheme ? '#f5f5f5' : undefined }}>
+                    <Switch>
+                        <Route path="/" key="home" exact={true}>
+                            <Home/>
+                        </Route>
+                        <Route path="/dashboard" key="dashboard" exact={true}>
+                            <Dashboard />
+                        </Route>
+                        <Route path="/clients" key="clients" exact={true}>
+                            <Clients />
+                        </Route>
+                        <Route path="/clients/bateaux" key="clients-bateaux">
+                            <BateauxClients />
+                        </Route>
+                        <Route path="/clients/moteurs" key="clients-moteurs">
+                            <ClientsMoteurs />
+                        </Route>
+                        <Route path="/clients/remorques" key="clients-remorques">
+                            <RemorquesClients />
+                        </Route>
+                        <Route path="/catalogue/produits" key="produits">
+                            <Produits />
+                        </Route>
+                        <Route path="/catalogue/bateaux" key="catalogue-bateaux">
+                            <CatalogueBateaux />
+                        </Route>
+                        <Route path="/catalogue/moteurs" key="catalogue-moteurs">
+                            <CatalogueMoteurs />
+                        </Route>
+                        <Route path="/catalogue/helices" key="helices">
+                            <CatalogueHelices />
+                        </Route>
+                        <Route path="/catalogue/remorques" key="catalogue-remorques">
+                            <CatalogueRemorques />
+                        </Route>
+                        <Route path="/catalogue/fournisseurs" key="fournisseurs">
+                            <Fournisseurs />
+                        </Route>
+                        <Route path="/societe" key="societe">
+                            <Societe />
+                        </Route>
+                        <Route path="/utilisateurs" key="utilisateurs">
+                            <Utilisateurs />
+                        </Route>
+                        <Route path="/prestations" key="prestations">
+                            <Vente />
+                        </Route>
+                        <Route path="/comptoir" key="comptoir">
+                            <Comptoir />
+                        </Route>
+                        <Route path="/forfaits" key="forfaits">
+                            <Forfaits />
+                        </Route>
+                        <Route path="/techniciens" key="techniciens">
+                            <Techniciens />
+                        </Route>
+                        <Route path="/services" key="services">
+                            <Services />
+                        </Route>
+                        <Route path="/competences" key="competences">
+                            <Competences />
+                        </Route>
+                        <Route path="/planning" key="planning">
+                            <Planning />
+                        </Route>
+                    </Switch>
+                </Layout.Content>
+                </Router>
+              </Layout>
+              <Layout.Footer style={{ background: isDarkTheme ? '#141414' : undefined, color: isDarkTheme ? '#f5f5f5' : undefined }}>
+                  Copyright © 2025-2026 - NOSE Experts - Tous droits réservés
+              </Layout.Footer>
+            </Layout>
+        </ConfigProvider>
     );
 
 }

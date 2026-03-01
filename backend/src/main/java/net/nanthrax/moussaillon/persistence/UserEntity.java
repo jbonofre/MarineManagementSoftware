@@ -20,4 +20,11 @@ public class UserEntity extends PanacheEntityBase {
     @Column(nullable = false)
     public String email;
 
+    public enum Theme {
+        LIGHT,
+        DARK
+    }
+
+    public Theme theme;
+
 }

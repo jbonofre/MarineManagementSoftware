@@ -114,6 +114,7 @@ public class UserResource {
         entity.email = user.email;
         entity.roles = user.roles;
         entity.password = user.password;
+        entity.theme = user.theme;
 
         return entity;
     }

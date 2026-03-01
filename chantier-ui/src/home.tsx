@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Typography, Row, Col, Card, Input, Button, Space, Divider, Tag, Modal } from 'antd';
+import { Typography, Row, Col, Card, Input, Button, Space, Divider, Tag, Modal, theme } from 'antd';
 import { SmileOutlined, RobotOutlined, SendOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import { useHistory } from 'react-router-dom';
 
@@ -62,27 +62,40 @@ const tryParseJsonForDisplay = (content: string) => {
     }
 };
 
-const renderJsonNode = (value: any, depth = 0): React.ReactNode => {
+const renderJsonNode = (
+    value: any,
+    depth = 0,
+    colors: {
+        border: string;
+        nullValue: string;
+        stringValue: string;
+        numberValue: string;
+        booleanValue: string;
+        indexValue: string;
+        keyValue: string;
+        separatorValue: string;
+    }
+): React.ReactNode => {
     const nestedContainerStyle: React.CSSProperties = {
         marginLeft: depth > 0 ? 14 : 0,
-        borderLeft: depth > 0 ? '2px solid #f0f0f0' : 'none',
+        borderLeft: depth > 0 ? `2px solid ${colors.border}` : 'none',
         paddingLeft: depth > 0 ? 10 : 0
     };
 
     if (value === null) {
-        return <span style={{ color: '#8c8c8c' }}>null</span>;
+        return <span style={{ color: colors.nullValue }}>null</span>;
     }
 
     if (typeof value === 'string') {
-        return <span style={{ color: '#1677ff' }}>"{value}"</span>;
+        return <span style={{ color: colors.stringValue }}>"{value}"</span>;
     }
 
     if (typeof value === 'number') {
-        return <span style={{ color: '#722ed1' }}>{value}</span>;
+        return <span style={{ color: colors.numberValue }}>{value}</span>;
     }
 
     if (typeof value === 'boolean') {
-        return <span style={{ color: '#d46b08' }}>{String(value)}</span>;
+        return <span style={{ color: colors.booleanValue }}>{String(value)}</span>;
     }
 
     if (Array.isArray(value)) {
@@ -93,8 +106,8 @@ const renderJsonNode = (value: any, depth = 0): React.ReactNode => {
             <div style={nestedContainerStyle}>
                 {value.map((item, index) => (
                     <div key={index} style={{ marginTop: 4 }}>
-                        <span style={{ color: '#595959', marginRight: 6 }}>[{index}]</span>
-                        {renderJsonNode(item, depth + 1)}
+                        <span style={{ color: colors.indexValue, marginRight: 6 }}>[{index}]</span>
+                        {renderJsonNode(item, depth + 1, colors)}
                     </div>
                 ))}
             </div>
@@ -110,9 +123,9 @@ const renderJsonNode = (value: any, depth = 0): React.ReactNode => {
         <div style={nestedContainerStyle}>
             {entries.map(([ key, nestedValue ]) => (
                 <div key={key} style={{ marginTop: 4 }}>
-                    <span style={{ fontWeight: 600, color: '#262626' }}>{key}</span>
-                    <span style={{ color: '#8c8c8c', margin: '0 6px' }}>:</span>
-                    {renderJsonNode(nestedValue, depth + 1)}
+                    <span style={{ fontWeight: 600, color: colors.keyValue }}>{key}</span>
+                    <span style={{ color: colors.separatorValue, margin: '0 6px' }}>:</span>
+                    {renderJsonNode(nestedValue, depth + 1, colors)}
                 </div>
             ))}
         </div>
@@ -121,6 +134,7 @@ const renderJsonNode = (value: any, depth = 0): React.ReactNode => {
 
 export default function Home() {
     const history = useHistory();
+    const { token } = theme.useToken();
     const initialAssistantMessage =
         "Bonjour, je suis moussAIllon, votre assistant de gestion de chantier naval.\n\n" +
         "Comment puis-je vous aider aujourd'hui ?\n\n";
@@ -139,6 +153,16 @@ export default function Home() {
     const chatMessagesRef = useRef<HTMLDivElement | null>(null);
 
     const mcpStatusColor = useMemo(() => mcpReady ? 'green' : 'orange', [ mcpReady ]);
+    const jsonColors = useMemo(() => ({
+        border: token.colorBorderSecondary,
+        nullValue: token.colorTextDescription,
+        stringValue: token.colorPrimary,
+        numberValue: token.colorInfo,
+        booleanValue: token.colorWarning,
+        indexValue: token.colorTextSecondary,
+        keyValue: token.colorText,
+        separatorValue: token.colorTextDescription
+    }), [ token ]);
 
     useEffect(() => {
         let mounted = true;
@@ -691,10 +715,10 @@ export default function Home() {
 
     return (
         <>
-            <Card bordered={false} style={{ marginBottom: 24, background: '#fafafa' }}>
+            <Card bordered={false} style={{ marginBottom: 24, background: token.colorFillTertiary }}>
                 <Row align="middle">
                     <Col flex="40px">
-                        <SmileOutlined style={{ fontSize: 40, color: '#1890ff' }} />
+                        <SmileOutlined style={{ fontSize: 40, color: token.colorPrimary }} />
                     </Col>
                     <Col flex="auto" style={{ paddingLeft: 16 }}>
                         <Title level={2} style={{ marginBottom: 0 }}>Bienvenue moussAIllon</Title>
@@ -708,6 +732,7 @@ export default function Home() {
             </Card>
 
             <Card
+                style={{ background: token.colorBgContainer }}
                 title={
                     <Space>
                         <RobotOutlined />
@@ -723,10 +748,10 @@ export default function Home() {
                         height: 350,
                         maxHeight: 350,
                         overflowY: 'auto',
-                        border: '1px solid #f0f0f0',
+                        border: `1px solid ${token.colorBorderSecondary}`,
                         borderRadius: 8,
                         padding: 12,
-                        background: '#fff'
+                        background: token.colorBgElevated
                     }}
                 >
                     {messages.map((message, index) => (
@@ -752,12 +777,12 @@ export default function Home() {
                                                 marginBottom: 0,
                                                 padding: 10,
                                                 borderRadius: 8,
-                                                background: '#fafafa',
-                                                border: '1px solid #f0f0f0',
+                                                background: token.colorFillTertiary,
+                                                border: `1px solid ${token.colorBorderSecondary}`,
                                                 lineHeight: 1.5
                                             }}
                                         >
-                                            {renderJsonNode(parsedJson)}
+                                            {renderJsonNode(parsedJson, 0, jsonColors)}
                                         </div>
                                     );
                                 }
@@ -783,6 +808,7 @@ export default function Home() {
                         onChange={(e) => setPrompt(e.target.value)}
                         placeholder={"Posez une question."}
                         autoSize={{ minRows: 2, maxRows: 6 }}
+                        style={{ background: token.colorBgContainer, color: token.colorText }}
                         onPressEnter={(e) => {
                             if (!e.shiftKey) {
                                 e.preventDefault();
