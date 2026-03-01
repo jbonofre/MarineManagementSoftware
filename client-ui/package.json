@@ -1,5 +1,5 @@
 {
-  "name": "mms-client-ui",
+  "name": "moussaillon-client-ui",
   "version": "0.9-SNAPSHOT",
   "main": "/index.tsx",
   "dependencies": {

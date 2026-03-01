@@ -32,7 +32,7 @@ import Comptoir from './comptoir.tsx';
 import Dashboard from './dashboard.tsx';
 
 export function demo() {
-    message.warning("Vous êtes sur une version de démonstration de Marine Management Software. Il n'est pas possible d'ajouter ou supprimer des éléments.")
+    message.warning("Vous êtes sur une version de démonstration de moussAIllon. Il n'est pas possible d'ajouter ou supprimer des éléments.")
 }
 
 function SideMenu(props) {

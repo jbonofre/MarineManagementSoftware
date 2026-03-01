@@ -4,12 +4,12 @@
 
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>net.nanthrax.mms</groupId>
-    <artifactId>mms</artifactId>
+    <groupId>net.nanthrax.moussaillon</groupId>
+    <artifactId>moussaillon</artifactId>
     <version>0.9-SNAPSHOT</version>
-    <name>MarineManagementSoftware</name>
+    <name>moussAIllon</name>
     <description>
-        MarineManagementSoftware (MMS) est une plateforme logicielle de gestion de chantier naval.
+        moussAIllon est une plateforme logicielle de gestion de chantier naval, avec des fonctionnalités de type IA.
     </description>
     <inceptionYear>2025</inceptionYear>
     <packaging>pom</packaging>
@@ -21,7 +21,7 @@
     <properties>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
-        <quarkus.version>3.32.0</quarkus.version>
+        <quarkus.version>3.32.1</quarkus.version>
     </properties>
 
     <dependencyManagement>

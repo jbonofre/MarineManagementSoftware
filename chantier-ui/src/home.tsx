@@ -122,7 +122,7 @@ const renderJsonNode = (value: any, depth = 0): React.ReactNode => {
 export default function Home() {
     const history = useHistory();
     const initialAssistantMessage =
-        "Bonjour, je suis l'assistant MMS.\n\n" +
+        "Bonjour, je suis moussAIllon, votre assistant de gestion de chantier naval.\n\n" +
         "Comment puis-je vous aider aujourd'hui ?\n\n";
 
     const [ prompt, setPrompt ] = useState('');
@@ -183,7 +183,7 @@ export default function Home() {
             protocolVersion: '2024-11-05',
             capabilities: {},
             clientInfo: {
-                name: 'mms-chantier-ui',
+                name: 'moussaillon-chantier-ui',
                 version: '0.9-SNAPSHOT'
             }
         });
@@ -351,7 +351,7 @@ export default function Home() {
     };
 
     const buildPlannerPrompt = (userInput: string) =>
-        "Tu es un orchestrateur de tools pour MMS.\n" +
+        "Tu es un moussAIllon, un assistant de gestion de chantier naval.\n" +
         "Réponds UNIQUEMENT en JSON valide, sans texte hors JSON.\n" +
         "Si une action API est utile, renvoie:\n" +
         "{\"action\":\"mcp_call\",\"method\":\"GET|POST|PUT|DELETE\",\"path\":\"/...\",\"query\":{...},\"body\":{...}}\n" +
@@ -514,7 +514,7 @@ export default function Home() {
 
     const executeApiInstruction = async (instruction: ParsedInstruction) => {
         if (instruction.path === '/_resources') {
-            const toolResult = await callMcpTool('mms_list_api_resources', {});
+            const toolResult = await callMcpTool('moussaillon_list_api_resources', {});
             const firstContent = toolResult?.content?.[0]?.text || '{}';
             appendAssistantMessage(firstContent);
             return;
@@ -533,7 +533,7 @@ export default function Home() {
             args.body = instruction.body;
         }
 
-        const toolResult = await callMcpTool('mms_call_api_resource', args);
+        const toolResult = await callMcpTool('moussaillon_call_api_resource', args);
         const firstContent = toolResult?.content?.[0]?.text;
         if (firstContent) {
             appendAssistantMessage(firstContent);
@@ -697,7 +697,7 @@ export default function Home() {
                         <SmileOutlined style={{ fontSize: 40, color: '#1890ff' }} />
                     </Col>
                     <Col flex="auto" style={{ paddingLeft: 16 }}>
-                        <Title level={2} style={{ marginBottom: 0 }}>Bienvenue sur Marine Management Software</Title>
+                        <Title level={2} style={{ marginBottom: 0 }}>Bienvenue moussAIllon</Title>
                         <Paragraph type="secondary" style={{ marginBottom: 0 }}>
                             Gérez vos clients, bateaux, moteurs, remorques et plus encore en toute simplicité.<br />
                             Utilisez le menu latéral pour naviguer entre les différentes fonctionnalités.<br />
@@ -803,7 +803,7 @@ export default function Home() {
             </Card>
 
             <Modal
-                title="Aide du chatbot MMS"
+                title="Aide du chatbot moussAIllon"
                 open={isHelpOpen}
                 onCancel={() => setIsHelpOpen(false)}
                 onOk={() => setIsHelpOpen(false)}

@@ -1,8 +1,8 @@
-# Marine Management Software
+# moussAIllon
 
-Bienvenue sur Marine Management Software !
+Bienvenue moussAIllon !
 
-Marine Management Software (MMS) est un logiciel de gestion de chantier naval.
+MoussAIllon est un logiciel de gestion de chantier naval.
 
 Il permet:
 * une gestion des clients
@@ -13,7 +13,9 @@ Il permet:
 
 Pilotez l'ensemble des métiers d'un chantier naval via une seule applications, en simplifiant et optimisant les opérations.
 
-# MCP Server (AI)
+# Developpement
+
+## MCP Server (AI)
 
 Le backend expose un endpoint MCP JSON-RPC sur `POST /mcp`.
 
@@ -52,7 +54,7 @@ curl -s http://localhost:8080/mcp \
   }'
 ```
 
-## Exemple 3: tools/call -> mms_list_api_resources
+## Exemple 3: tools/call -> moussaillon_list_api_resources
 
 ```bash
 curl -s http://localhost:8080/mcp \
@@ -62,13 +64,13 @@ curl -s http://localhost:8080/mcp \
     "id": 3,
     "method": "tools/call",
     "params": {
-      "name": "mms_list_api_resources",
+      "name": "moussaillon_list_api_resources",
       "arguments": {}
     }
   }'
 ```
 
-## Exemple 4: tools/call -> mms_call_api_resource (GET avec query)
+## Exemple 4: tools/call -> moussaillon_call_api_resource (GET avec query)
 
 ```bash
 curl -s http://localhost:8080/mcp \
@@ -78,7 +80,7 @@ curl -s http://localhost:8080/mcp \
     "id": 4,
     "method": "tools/call",
     "params": {
-      "name": "mms_call_api_resource",
+      "name": "moussaillon_call_api_resource",
       "arguments": {
         "method": "GET",
         "path": "/clients/search",
@@ -90,7 +92,7 @@ curl -s http://localhost:8080/mcp \
   }'
 ```
 
-## Exemple 5: tools/call -> mms_call_api_resource (POST avec body)
+## Exemple 5: tools/call -> moussaillon_call_api_resource (POST avec body)
 
 ```bash
 curl -s http://localhost:8080/mcp \
@@ -100,7 +102,7 @@ curl -s http://localhost:8080/mcp \
     "id": 5,
     "method": "tools/call",
     "params": {
-      "name": "mms_call_api_resource",
+      "name": "moussaillon_call_api_resource",
       "arguments": {
         "method": "POST",
         "path": "/clients",
@@ -117,8 +119,8 @@ curl -s http://localhost:8080/mcp \
 
 ## Outils MCP exposes
 
-- `mms_list_api_resources`: liste les racines d'API autorisees depuis `net.nanthrax.mms.services`.
-- `mms_call_api_resource`: appelle une ressource API existante (methodes supportees: `GET`, `POST`, `PUT`, `DELETE`) avec filtrage par whitelist de chemins.
+- `moussaillon_list_api_resources`: liste les racines d'API autorisees depuis `net.nanthrax.moussaillon.services`.
+- `moussaillon_call_api_resource`: appelle une ressource API existante (methodes supportees: `GET`, `POST`, `PUT`, `DELETE`) avec filtrage par whitelist de chemins.
 
 ## IA Chat (ChatGPT / Claude)
 
@@ -147,5 +149,5 @@ Apache 2.0 - See LICENSE for more information.
 
 # Copyright
 
-Marine Management Software
+moussAIllon
 Copyright 2025-2026 NOSE Experts
