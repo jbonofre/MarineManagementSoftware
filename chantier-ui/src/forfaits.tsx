@@ -11,6 +11,7 @@ import {
     Row,
     Select,
     Space,
+    Tabs,
     Table,
     Tag,
     message
@@ -55,6 +56,28 @@ interface ForfaitServiceEntity {
     quantite: number;
 }
 
+interface TaskEntity {
+    id?: number;
+    nom?: string;
+    status?: TaskStatus;
+    dateDebut?: string;
+    dateFin?: string;
+    statusDate?: string;
+    description?: string;
+    notes?: string;
+    technicien?: TechnicienEntity;
+    dureeEstimee?: number;
+    dureeReelle?: number;
+}
+
+type TaskStatus = 'EN_ATTENTE' | 'EN_COURS' | 'TERMINEE' | 'INCIDENT' | 'ANNULEE';
+
+interface TechnicienEntity {
+    id: number;
+    prenom?: string;
+    nom?: string;
+}
+
 interface ForfaitEntity {
     id?: number;
     reference?: string;
@@ -70,6 +93,7 @@ interface ForfaitEntity {
     tva: number;
     montantTVA: number;
     prixTTC: number;
+    taches?: TaskEntity[];
 }
 
 interface ForfaitFormValues {
@@ -79,6 +103,19 @@ interface ForfaitFormValues {
     bateauIds: number[];
     produits: Array<{ produitId?: number; quantite?: number }>;
     services: Array<{ serviceId?: number; quantite?: number }>;
+    taches: Array<{
+        id?: number;
+        nom?: string;
+        status?: TaskStatus;
+        dateDebut?: string;
+        dateFin?: string;
+        statusDate?: string;
+        description?: string;
+        notes?: string;
+        technicienId?: number;
+        dureeEstimee?: number;
+        dureeReelle?: number;
+    }>;
     heuresFonctionnement: number;
     joursFrequence: number;
     competences: number[];
@@ -104,6 +141,7 @@ const defaultForfait: ForfaitFormValues = {
     bateauIds: [],
     produits: [{}],
     services: [{}],
+    taches: [{}],
     heuresFonctionnement: 0,
     joursFrequence: 0,
     competences: [],
@@ -116,6 +154,28 @@ const defaultForfait: ForfaitFormValues = {
 };
 
 const formatEuro = (value?: number) => `${(value || 0).toFixed(2)} €`;
+const toDateInputValue = (value?: string) => {
+    if (!value) {
+        return undefined;
+    }
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+        return value;
+    }
+    const parsedDate = new Date(value);
+    if (Number.isNaN(parsedDate.getTime())) {
+        return undefined;
+    }
+    const timezoneOffsetMs = parsedDate.getTimezoneOffset() * 60000;
+    return new Date(parsedDate.getTime() - timezoneOffsetMs).toISOString().split('T')[0];
+};
+
+const taskStatusOptions: Array<{ value: TaskStatus; label: string }> = [
+    { value: 'EN_ATTENTE', label: 'En attente' },
+    { value: 'EN_COURS', label: 'En cours' },
+    { value: 'TERMINEE', label: 'Terminee' },
+    { value: 'INCIDENT', label: 'Incident' },
+    { value: 'ANNULEE', label: 'Annulee' }
+];
 
 export default function Forfaits() {
     const [forfaits, setForfaits] = useState<ForfaitEntity[]>([]);
@@ -123,6 +183,7 @@ export default function Forfaits() {
     const [bateaux, setBateaux] = useState<BateauCatalogueEntity[]>([]);
     const [produits, setProduits] = useState<ProduitCatalogueEntity[]>([]);
     const [services, setServices] = useState<ServiceEntity[]>([]);
+    const [techniciens, setTechniciens] = useState<TechnicienEntity[]>([]);
     const [competences, setCompetences] = useState<CompetenceEntity[]>([]);
     const [loading, setLoading] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
@@ -156,6 +217,15 @@ export default function Forfaits() {
         [competences]
     );
 
+    const technicienOptions = useMemo(
+        () =>
+            techniciens.map((technicien) => ({
+                value: technicien.id,
+                label: `${technicien.prenom || ''} ${technicien.nom || ''}`.trim() || `Technicien #${technicien.id}`
+            })),
+        [techniciens]
+    );
+
     const fetchForfaits = async (query?: string) => {
         setLoading(true);
         try {
@@ -171,18 +241,20 @@ export default function Forfaits() {
 
     const fetchOptions = async () => {
         try {
-            const [moteursRes, bateauxRes, produitsRes, servicesRes, competencesRes] = await Promise.all([
+            const [moteursRes, bateauxRes, produitsRes, servicesRes, competencesRes, techniciensRes] = await Promise.all([
                 axios.get('/catalogue/moteurs'),
                 axios.get('/catalogue/bateaux'),
                 axios.get('/catalogue/produits'),
                 axios.get('/services'),
-                axios.get('/competences')
+                axios.get('/competences'),
+                axios.get('/techniciens')
             ]);
             setMoteurs(moteursRes.data || []);
             setBateaux(bateauxRes.data || []);
             setProduits(produitsRes.data || []);
             setServices(servicesRes.data || []);
             setCompetences(competencesRes.data || []);
+            setTechniciens(techniciensRes.data || []);
         } catch {
             message.error('Erreur lors du chargement des listes de référence.');
         }
@@ -204,11 +276,26 @@ export default function Forfaits() {
                 bateauIds: (forfait.bateauxAssocies || []).map((b) => b.id),
                 produits: (forfait.produits || [])
                     .filter((item) => item.produit?.id)
-                    .map((item) => ({ produitId: item.produit!.id, quantite: item.quantite || 1 }))
+                    .map<ForfaitFormValues['produits'][number]>((item) => ({ produitId: item.produit!.id, quantite: item.quantite || 1 }))
                     .concat({}),
                 services: (forfait.services || [])
                     .filter((item) => item.service?.id)
-                    .map((item) => ({ serviceId: item.service!.id, quantite: item.quantite || 1 }))
+                    .map<ForfaitFormValues['services'][number]>((item) => ({ serviceId: item.service!.id, quantite: item.quantite || 1 }))
+                    .concat({}),
+                taches: (forfait.taches || [])
+                    .map<ForfaitFormValues['taches'][number]>((tache) => ({
+                        id: tache.id,
+                        nom: tache.nom || '',
+                        status: tache.status || 'EN_ATTENTE',
+                        dateDebut: toDateInputValue(tache.dateDebut),
+                        dateFin: toDateInputValue(tache.dateFin),
+                        statusDate: toDateInputValue(tache.statusDate),
+                        description: tache.description || '',
+                        notes: tache.notes || '',
+                        technicienId: tache.technicien?.id,
+                        dureeEstimee: tache.dureeEstimee || 0,
+                        dureeReelle: tache.dureeReelle || 0
+                    }))
                     .concat({}),
                 heuresFonctionnement: forfait.heuresFonctionnement || 0,
                 joursFrequence: forfait.joursFrequence || 0,
@@ -249,6 +336,34 @@ export default function Forfaits() {
             .map((item) => ({
                 service: services.find((service) => service.id === item.serviceId),
                 quantite: item.quantite || 1
+            })),
+        taches: (values.taches || [])
+            .filter((tache) =>
+                Boolean(
+                    tache.nom
+                    || tache.description
+                    || tache.notes
+                    || tache.status
+                    || tache.technicienId
+                    || tache.dateDebut
+                    || tache.dateFin
+                    || tache.statusDate
+                    || (tache.dureeEstimee || 0) > 0
+                    || (tache.dureeReelle || 0) > 0
+                )
+            )
+            .map((tache) => ({
+                id: tache.id,
+                nom: tache.nom || '',
+                status: tache.status || 'EN_ATTENTE',
+                dateDebut: tache.dateDebut,
+                dateFin: tache.dateFin,
+                statusDate: tache.statusDate,
+                description: tache.description || '',
+                notes: tache.notes || '',
+                technicien: techniciens.find((technicien) => technicien.id === tache.technicienId),
+                dureeEstimee: tache.dureeEstimee || 0,
+                dureeReelle: tache.dureeReelle || 0
             })),
         heuresFonctionnement: values.heuresFonctionnement || 0,
         joursFrequence: values.joursFrequence || 0,
@@ -318,6 +433,20 @@ export default function Forfaits() {
             const isLastLineComplete = !!lastServiceLine?.serviceId && (lastServiceLine?.quantite || 0) > 0;
             if (isLastLineComplete) {
                 form.setFieldValue('services', [...currentServiceLines, {}]);
+                return;
+            }
+        }
+
+        if (changedValues.taches !== undefined) {
+            const currentTaskLines = allValues.taches || [];
+            if (currentTaskLines.length === 0) {
+                form.setFieldValue('taches', [{}]);
+                return;
+            }
+            const lastTaskLine = currentTaskLines[currentTaskLines.length - 1];
+            const isLastLineComplete = !!lastTaskLine?.nom?.trim();
+            if (isLastLineComplete) {
+                form.setFieldValue('taches', [...currentTaskLines, {}]);
                 return;
             }
         }
@@ -560,147 +689,202 @@ export default function Forfaits() {
                         </Col>
                     </Row>
 
-                    <Form.Item label="Produits inclus">
-                        <Form.List name="produits">
-                            {(fields, { remove }) => (
-                                <>
-                                    {fields.map((field) => (
-                                        <Space key={field.key} align="baseline" style={{ display: 'flex', marginBottom: 8 }}>
-                                            <Form.Item
-                                                {...field}
-                                                name={[field.name, 'produitId']}
-                                                rules={[
-                                                    {
-                                                        validator: async (_, value) => {
-                                                            const line = form.getFieldValue(['produits', field.name]);
-                                                            const quantite = Number(line?.quantite || 0);
-                                                            if (!value && quantite > 0) {
-                                                                throw new Error('Produit requis');
-                                                            }
-                                                        }
-                                                    }
-                                                ]}
-                                                style={{ width: 520 }}
-                                            >
-                                                <Select allowClear showSearch options={produitOptions} placeholder="Produit" />
-                                            </Form.Item>
-                                            <Form.Item
-                                                {...field}
-                                                name={[field.name, 'quantite']}
-                                                rules={[
-                                                    {
-                                                        validator: async (_, value) => {
-                                                            const line = form.getFieldValue(['produits', field.name]);
-                                                            if (!line?.produitId && (value === undefined || value === null)) {
-                                                                return;
-                                                            }
-                                                            if (!value || value <= 0) {
-                                                                throw new Error('Quantite requise');
-                                                            }
-                                                        }
-                                                    }
-                                                ]}
-                                                style={{ width: 180 }}
-                                            >
-                                                <InputNumber min={1} step={1} style={{ width: '100%' }} placeholder="Qte" />
-                                            </Form.Item>
-                                            <Form.Item noStyle shouldUpdate>
-                                                {({ getFieldValue }) => {
-                                                    const produitId = getFieldValue(['produits', field.name, 'produitId']);
-                                                    const quantite = getFieldValue(['produits', field.name, 'quantite']) || 0;
-                                                    const prixUnitaireTTC = produits.find((produit) => produit.id === produitId)?.prixVenteTTC || 0;
-                                                    const prixTTC = Math.round(((prixUnitaireTTC * quantite) + Number.EPSILON) * 100) / 100;
+                    <Tabs
+                        defaultActiveKey="contenu"
+                        items={[
+                            {
+                                key: 'contenu',
+                                label: 'Produits & Services',
+                                children: (
+                                    <>
+                                        <Form.Item label="Produits inclus">
+                                            <Form.List name="produits">
+                                                {(fields, { remove }) => (
+                                                    <>
+                                                        {fields.map((field) => (
+                                                            <Space key={field.key} align="baseline" style={{ display: 'flex', marginBottom: 8 }}>
+                                                                <Form.Item
+                                                                    {...field}
+                                                                    name={[field.name, 'produitId']}
+                                                                    rules={[
+                                                                        {
+                                                                            validator: async (_, value) => {
+                                                                                const line = form.getFieldValue(['produits', field.name]);
+                                                                                const quantite = Number(line?.quantite || 0);
+                                                                                if (!value && quantite > 0) {
+                                                                                    throw new Error('Produit requis');
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    ]}
+                                                                    style={{ width: 520 }}
+                                                                >
+                                                                    <Select allowClear showSearch options={produitOptions} placeholder="Produit" />
+                                                                </Form.Item>
+                                                                <Form.Item
+                                                                    {...field}
+                                                                    name={[field.name, 'quantite']}
+                                                                    rules={[
+                                                                        {
+                                                                            validator: async (_, value) => {
+                                                                                const line = form.getFieldValue(['produits', field.name]);
+                                                                                if (!line?.produitId && (value === undefined || value === null)) {
+                                                                                    return;
+                                                                                }
+                                                                                if (!value || value <= 0) {
+                                                                                    throw new Error('Quantite requise');
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    ]}
+                                                                    style={{ width: 180 }}
+                                                                >
+                                                                    <InputNumber min={1} step={1} style={{ width: '100%' }} placeholder="Qte" />
+                                                                </Form.Item>
+                                                                <Form.Item noStyle shouldUpdate>
+                                                                    {({ getFieldValue }) => {
+                                                                        const produitId = getFieldValue(['produits', field.name, 'produitId']);
+                                                                        const quantite = getFieldValue(['produits', field.name, 'quantite']) || 0;
+                                                                        const prixUnitaireTTC = produits.find((produit) => produit.id === produitId)?.prixVenteTTC || 0;
+                                                                        const prixTTC = Math.round(((prixUnitaireTTC * quantite) + Number.EPSILON) * 100) / 100;
 
-                                                    return (
-                                                        <Form.Item style={{ width: 180 }}>
-                                                            <InputNumber
-                                                                addonAfter="EUR"
-                                                                value={prixTTC}
-                                                                style={{ width: '100%' }}
-                                                                disabled
-                                                            />
+                                                                        return (
+                                                                            <Form.Item style={{ width: 180 }}>
+                                                                                <InputNumber
+                                                                                    addonAfter="EUR"
+                                                                                    value={prixTTC}
+                                                                                    style={{ width: '100%' }}
+                                                                                    disabled
+                                                                                />
+                                                                            </Form.Item>
+                                                                        );
+                                                                    }}
+                                                                </Form.Item>
+                                                                <Button danger icon={<DeleteOutlined />} onClick={() => remove(field.name)} />
+                                                            </Space>
+                                                        ))}
+                                                    </>
+                                                )}
+                                            </Form.List>
+                                        </Form.Item>
+
+                                        <Form.Item label="Services inclus">
+                                            <Form.List name="services">
+                                                {(fields, { remove }) => (
+                                                    <>
+                                                        {fields.map((field) => (
+                                                            <Space key={field.key} align="baseline" style={{ display: 'flex', marginBottom: 8 }}>
+                                                                <Form.Item
+                                                                    {...field}
+                                                                    name={[field.name, 'serviceId']}
+                                                                    rules={[
+                                                                        {
+                                                                            validator: async (_, value) => {
+                                                                                const line = form.getFieldValue(['services', field.name]);
+                                                                                const quantite = Number(line?.quantite || 0);
+                                                                                if (!value && quantite > 0) {
+                                                                                    throw new Error('Service requis');
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    ]}
+                                                                    style={{ width: 520 }}
+                                                                >
+                                                                    <Select allowClear showSearch options={serviceOptions} placeholder="Service" />
+                                                                </Form.Item>
+                                                                <Form.Item
+                                                                    {...field}
+                                                                    name={[field.name, 'quantite']}
+                                                                    rules={[
+                                                                        {
+                                                                            validator: async (_, value) => {
+                                                                                const line = form.getFieldValue(['services', field.name]);
+                                                                                if (!line?.serviceId && (value === undefined || value === null)) {
+                                                                                    return;
+                                                                                }
+                                                                                if (!value || value <= 0) {
+                                                                                    throw new Error('Quantite requise');
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    ]}
+                                                                    style={{ width: 180 }}
+                                                                >
+                                                                    <InputNumber min={1} step={1} style={{ width: '100%' }} placeholder="Qte" />
+                                                                </Form.Item>
+                                                                <Form.Item noStyle shouldUpdate>
+                                                                    {({ getFieldValue }) => {
+                                                                        const serviceId = getFieldValue(['services', field.name, 'serviceId']);
+                                                                        const quantite = getFieldValue(['services', field.name, 'quantite']) || 0;
+                                                                        const prixUnitaireTTC = services.find((service) => service.id === serviceId)?.prixTTC || 0;
+                                                                        const prixTTC = Math.round(((prixUnitaireTTC * quantite) + Number.EPSILON) * 100) / 100;
+
+                                                                        return (
+                                                                            <Form.Item style={{ width: 180 }}>
+                                                                                <InputNumber
+                                                                                    addonAfter="EUR"
+                                                                                    value={prixTTC}
+                                                                                    style={{ width: '100%' }}
+                                                                                    disabled
+                                                                                />
+                                                                            </Form.Item>
+                                                                        );
+                                                                    }}
+                                                                </Form.Item>
+                                                                <Button danger icon={<DeleteOutlined />} onClick={() => remove(field.name)} />
+                                                            </Space>
+                                                        ))}
+                                                    </>
+                                                )}
+                                            </Form.List>
+                                        </Form.Item>
+                                    </>
+                                )
+                            },
+                            {
+                                key: 'taches',
+                                label: 'Tâches Associées',
+                                children: (
+                                    <Form.List name="taches">
+                                        {(fields, { remove }) => (
+                                            <Space direction="vertical" style={{ width: '100%' }} size={12}>
+                                                {fields.map((field) => (
+                                                    <Card
+                                                        key={field.key}
+                                                        size="small"
+                                                        title={`Tâche ${field.name + 1}`}
+                                                        extra={<Button danger icon={<DeleteOutlined />} onClick={() => remove(field.name)} />}
+                                                    >
+                                                        <Row gutter={12}>
+                                                            <Col span={12}>
+                                                                <Form.Item {...field} name={[field.name, 'nom']} label="Nom">
+                                                                    <Input allowClear />
+                                                                </Form.Item>
+                                                            </Col>
+                                                            <Col span={12}>
+                                                                <Form.Item {...field} name={[field.name, 'dureeEstimee']} label="Durée estimée">
+                                                                    <InputNumber
+                                                                        min={0}
+                                                                        step={0.25}
+                                                                        precision={2}
+                                                                        style={{ width: '100%' }}
+                                                                        addonAfter="h"
+                                                                    />
+                                                                </Form.Item>
+                                                            </Col>
+                                                        </Row>
+                                                        <Form.Item {...field} name={[field.name, 'description']} label="Description">
+                                                            <Input.TextArea rows={2} />
                                                         </Form.Item>
-                                                    );
-                                                }}
-                                            </Form.Item>
-                                            <Button danger icon={<DeleteOutlined />} onClick={() => remove(field.name)} />
-                                        </Space>
-                                    ))}
-                                </>
-                            )}
-                        </Form.List>
-                    </Form.Item>
-
-                    <Form.Item label="Services inclus">
-                        <Form.List name="services">
-                            {(fields, { remove }) => (
-                                <>
-                                    {fields.map((field) => (
-                                        <Space key={field.key} align="baseline" style={{ display: 'flex', marginBottom: 8 }}>
-                                            <Form.Item
-                                                {...field}
-                                                name={[field.name, 'serviceId']}
-                                                rules={[
-                                                    {
-                                                        validator: async (_, value) => {
-                                                            const line = form.getFieldValue(['services', field.name]);
-                                                            const quantite = Number(line?.quantite || 0);
-                                                            if (!value && quantite > 0) {
-                                                                throw new Error('Service requis');
-                                                            }
-                                                        }
-                                                    }
-                                                ]}
-                                                style={{ width: 520 }}
-                                            >
-                                                <Select allowClear showSearch options={serviceOptions} placeholder="Service" />
-                                            </Form.Item>
-                                            <Form.Item
-                                                {...field}
-                                                name={[field.name, 'quantite']}
-                                                rules={[
-                                                    {
-                                                        validator: async (_, value) => {
-                                                            const line = form.getFieldValue(['services', field.name]);
-                                                            if (!line?.serviceId && (value === undefined || value === null)) {
-                                                                return;
-                                                            }
-                                                            if (!value || value <= 0) {
-                                                                throw new Error('Quantite requise');
-                                                            }
-                                                        }
-                                                    }
-                                                ]}
-                                                style={{ width: 180 }}
-                                            >
-                                                <InputNumber min={1} step={1} style={{ width: '100%' }} placeholder="Qte" />
-                                            </Form.Item>
-                                            <Form.Item noStyle shouldUpdate>
-                                                {({ getFieldValue }) => {
-                                                    const serviceId = getFieldValue(['services', field.name, 'serviceId']);
-                                                    const quantite = getFieldValue(['services', field.name, 'quantite']) || 0;
-                                                    const prixUnitaireTTC = services.find((service) => service.id === serviceId)?.prixTTC || 0;
-                                                    const prixTTC = Math.round(((prixUnitaireTTC * quantite) + Number.EPSILON) * 100) / 100;
-
-                                                    return (
-                                                        <Form.Item style={{ width: 180 }}>
-                                                            <InputNumber
-                                                                addonAfter="EUR"
-                                                                value={prixTTC}
-                                                                style={{ width: '100%' }}
-                                                                disabled
-                                                            />
-                                                        </Form.Item>
-                                                    );
-                                                }}
-                                            </Form.Item>
-                                            <Button danger icon={<DeleteOutlined />} onClick={() => remove(field.name)} />
-                                        </Space>
-                                    ))}
-                                </>
-                            )}
-                        </Form.List>
-                    </Form.Item>
+                                                    </Card>
+                                                ))}
+                                            </Space>
+                                        )}
+                                    </Form.List>
+                                )
+                            }
+                        ]}
+                    />
 
                     <Row gutter={16}>
                         <Col span={12}>

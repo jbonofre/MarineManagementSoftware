@@ -44,4 +44,8 @@ public class ForfaitEntity extends PanacheEntity {
 
     public String reference;
 
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "forfait_id")
+    public List<TaskEntity> taches = new ArrayList<>();
+
 }

@@ -16,6 +16,7 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import net.nanthrax.moussaillon.persistence.TaskEntity;
 import net.nanthrax.moussaillon.persistence.VenteEntity;
 
 @Path("/ventes")
@@ -143,6 +144,29 @@ public class VenteResource {
                 entity.services = vente.services;
             } else {
                 entity.services.addAll(vente.services);
+            }
+        }
+
+        if (entity.taches != null) {
+            entity.taches.clear();
+        }
+        if (vente.taches != null) {
+            if (entity.taches == null) {
+                throw new IllegalStateException("La collection de taches n'est pas initialisee");
+            }
+            for (TaskEntity incomingTask : vente.taches) {
+                TaskEntity clonedTask = new TaskEntity();
+                clonedTask.nom = incomingTask.nom;
+                clonedTask.status = incomingTask.status;
+                clonedTask.dateDebut = incomingTask.dateDebut;
+                clonedTask.dateFin = incomingTask.dateFin;
+                clonedTask.statusDate = incomingTask.statusDate;
+                clonedTask.description = incomingTask.description;
+                clonedTask.notes = incomingTask.notes;
+                clonedTask.technicien = incomingTask.technicien;
+                clonedTask.dureeEstimee = incomingTask.dureeEstimee;
+                clonedTask.dureeReelle = incomingTask.dureeReelle;
+                entity.taches.add(clonedTask);
             }
         }
 

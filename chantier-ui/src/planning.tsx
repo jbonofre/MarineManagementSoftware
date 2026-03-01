@@ -2,17 +2,26 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Badge, Button, Card, Col, Empty, Form, Input, Modal, Row, Select, Space, Table, Tag, Typography, message } from 'antd';
 import { CalendarOutlined, EditOutlined } from '@ant-design/icons';
 import axios from 'axios';
-import dayjs, { Dayjs } from 'dayjs';
+import dayjs from 'dayjs';
 import { WeeklyCalendar } from 'antd-weekly-calendar';
+import { useHistory } from 'react-router-dom';
 
-type VenteStatus = 'EN_ATTENTE' | 'EN_COURS' | 'PAYEE' | 'ANNULEE';
 type VenteType = 'DEVIS' | 'FACTURE' | 'COMPTOIR';
-type ModePaiement = 'CHEQUE' | 'VIREMENT' | 'CARTE' | 'ESPÈCES';
+type TaskStatus = 'EN_ATTENTE' | 'EN_COURS' | 'TERMINEE' | 'INCIDENT' | 'ANNULEE';
 
 interface ClientEntity {
     id: number;
     prenom?: string;
     nom: string;
+}
+
+interface TaskEntity {
+    id?: number;
+    nom?: string;
+    status?: TaskStatus;
+    dateDebut?: string;
+    dateFin?: string;
+    statusDate?: string;
 }
 
 interface ForfaitEntity {
@@ -29,20 +38,21 @@ interface ServiceEntity {
 
 interface VenteEntity {
     id?: number;
-    status: VenteStatus;
+    status: string;
     type?: VenteType;
     client?: ClientEntity;
     forfaits?: ForfaitEntity[];
     produits?: ProduitCatalogueEntity[];
     services?: ServiceEntity[];
+    taches?: TaskEntity[];
     date?: string;
     prixVenteTTC?: number;
-    modePaiement?: ModePaiement;
+    modePaiement?: string;
 }
 
 interface PlanningFormValues {
     date: string;
-    status: VenteStatus;
+    status: TaskStatus;
 }
 
 interface WeeklyCalendarEvent {
@@ -54,10 +64,18 @@ interface WeeklyCalendarEvent {
     textColor?: string;
 }
 
-const statusOptions: Array<{ value: VenteStatus; label: string }> = [
+interface PendingTaskRow {
+    key: string;
+    vente: VenteEntity;
+    task: TaskEntity;
+    taskIndex: number;
+}
+
+const taskStatusOptions: Array<{ value: TaskStatus; label: string }> = [
     { value: 'EN_ATTENTE', label: 'En attente' },
     { value: 'EN_COURS', label: 'En cours' },
-    { value: 'PAYEE', label: 'Payee' },
+    { value: 'TERMINEE', label: 'Terminee' },
+    { value: 'INCIDENT', label: 'Incident' },
     { value: 'ANNULEE', label: 'Annulee' }
 ];
 
@@ -67,17 +85,11 @@ const typeOptions: Array<{ value: VenteType; label: string }> = [
     { value: 'COMPTOIR', label: 'Comptoir' }
 ];
 
-const modePaiementOptions: Array<{ value: ModePaiement; label: string }> = [
-    { value: 'CHEQUE', label: 'Cheque' },
-    { value: 'VIREMENT', label: 'Virement' },
-    { value: 'CARTE', label: 'Carte' },
-    { value: 'ESPÈCES', label: 'Especes' }
-];
-
-const statusColor: Record<VenteStatus, string> = {
+const statusColor: Record<TaskStatus, string> = {
     EN_ATTENTE: 'default',
     EN_COURS: 'blue',
-    PAYEE: 'green',
+    TERMINEE: 'green',
+    INCIDENT: 'volcano',
     ANNULEE: 'red'
 };
 
@@ -91,16 +103,37 @@ const getClientLabel = (client?: ClientEntity) => {
     return fullName || `Client #${client.id}`;
 };
 
-const formatEuro = (value?: number) => `${(value || 0).toFixed(2)} EUR`;
+const toIsoDay = (value?: string) => {
+    if (!value) {
+        return undefined;
+    }
+    const parsed = dayjs(value);
+    if (!parsed.isValid()) {
+        return undefined;
+    }
+    return parsed.format('YYYY-MM-DD');
+};
+
+const toDateTimeLocalValue = (value?: string) => {
+    if (!value) {
+        return undefined;
+    }
+    const parsed = dayjs(value);
+    if (!parsed.isValid()) {
+        return undefined;
+    }
+    return parsed.format('YYYY-MM-DDTHH:mm');
+};
 
 export default function Planning() {
+    const history = useHistory();
     const [ventes, setVentes] = useState<VenteEntity[]>([]);
     const [loading, setLoading] = useState(false);
     const [selectedDate, setSelectedDate] = useState(todayIso());
-    const [selectedStatus, setSelectedStatus] = useState<VenteStatus | undefined>(undefined);
+    const [selectedStatus, setSelectedStatus] = useState<TaskStatus | undefined>(undefined);
     const [modalVisible, setModalVisible] = useState(false);
     const [saving, setSaving] = useState(false);
-    const [currentVente, setCurrentVente] = useState<VenteEntity | null>(null);
+    const [currentTaskRow, setCurrentTaskRow] = useState<PendingTaskRow | null>(null);
     const [form] = Form.useForm<PlanningFormValues>();
 
     const fetchVentes = async () => {
@@ -119,87 +152,137 @@ export default function Planning() {
         fetchVentes();
     }, []);
 
-    const openPlanningModal = (vente: VenteEntity, forcedDate?: string) => {
-        setCurrentVente(vente);
+    const openPlanningModal = (taskRow: PendingTaskRow, forcedDate?: string) => {
+        setCurrentTaskRow(taskRow);
         form.setFieldsValue({
-            date: forcedDate || vente.date || selectedDate || todayIso(),
-            status: vente.status || 'EN_ATTENTE'
+            date:
+                toDateTimeLocalValue(taskRow.task.statusDate)
+                || (forcedDate ? `${forcedDate}T08:00` : undefined)
+                || `${selectedDate || todayIso()}T08:00`,
+            status: taskRow.task.status || 'EN_ATTENTE'
         });
         setModalVisible(true);
     };
 
-    const unscheduledVentes = useMemo(
-        () => ventes.filter((vente) => !vente.date),
+    const allTasks = useMemo<PendingTaskRow[]>(
+        () =>
+            ventes.flatMap((vente, venteIndex) =>
+                (vente.taches || []).map((task, taskIndex) => ({
+                    key: `${vente.id || venteIndex}-${task.id || taskIndex}-${taskIndex}`,
+                    vente,
+                    task,
+                    taskIndex
+                }))
+            ),
         [ventes]
     );
 
-    const plannedVentes = useMemo(
+    const pendingTasks = useMemo<PendingTaskRow[]>(
         () =>
-            ventes
-                .filter((vente) => vente.date === selectedDate)
-                .filter((vente) => !selectedStatus || vente.status === selectedStatus),
-        [ventes, selectedDate, selectedStatus]
+            allTasks
+                .filter((row) => !row.task.status || row.task.status === 'EN_ATTENTE')
+                .filter((row) => !selectedStatus || row.task.status === selectedStatus),
+        [allTasks, selectedStatus]
     );
 
-    const ventesByDate = useMemo(() => {
-        const grouped: Record<string, VenteEntity[]> = {};
-        ventes.forEach((vente) => {
-            if (!vente.date) {
-                return;
-            }
-            if (!grouped[vente.date]) {
-                grouped[vente.date] = [];
-            }
-            grouped[vente.date].push(vente);
-        });
-        return grouped;
-    }, [ventes]);
+    const pendingTasksForDay = useMemo<PendingTaskRow[]>(
+        () => pendingTasks.filter((row) => toIsoDay(row.task.statusDate) === selectedDate),
+        [pendingTasks, selectedDate]
+    );
+
+    const plannedTasks = useMemo<PendingTaskRow[]>(
+        () =>
+            allTasks
+                .filter((row) => row.task.status === 'EN_COURS')
+                .filter((row) => toIsoDay(row.task.statusDate) === selectedDate)
+                .filter((row) => !selectedStatus || row.task.status === selectedStatus),
+        [allTasks, selectedDate, selectedStatus]
+    );
 
     const weeklyEvents = useMemo<WeeklyCalendarEvent[]>(
         () =>
-            ventes
-                .filter((vente) => Boolean(vente.date))
-                .filter((vente) => !selectedStatus || vente.status === selectedStatus)
-                .map((vente) => {
-                    const eventDate = dayjs(vente.date);
-                    const statusLabel = statusOptions.find((item) => item.value === vente.status)?.label || vente.status;
+            allTasks
+                .filter((row) => row.task.status === 'EN_COURS')
+                .map((row) => {
+                    const { vente, task } = row;
+                    const startSource = task.dateDebut || task.statusDate || vente.date;
+                    if (!startSource) {
+                        return null;
+                    }
+                    const startDate = dayjs(startSource);
+                    if (!startDate.isValid()) {
+                        return null;
+                    }
+
+                    const endSource = task.dateFin;
+                    const endDate = endSource && dayjs(endSource).isValid()
+                        ? dayjs(endSource)
+                        : startDate.add(1, 'hour');
+
                     return {
-                        eventId: String(vente.id || ''),
-                        startTime: eventDate.hour(8).minute(0).second(0).millisecond(0).toDate(),
-                        endTime: eventDate.hour(9).minute(0).second(0).millisecond(0).toDate(),
-                        title: `#${vente.id} ${getClientLabel(vente.client)} (${statusLabel})`,
-                        backgroundColor:
-                            vente.status === 'PAYEE'
-                                ? '#52c41a'
-                                : vente.status === 'EN_COURS'
-                                    ? '#1677ff'
-                                    : vente.status === 'ANNULEE'
-                                        ? '#ff4d4f'
-                                        : undefined
-                    };
-                }),
-        [ventes, selectedStatus]
+                        eventId: row.key,
+                        startTime: startDate.toDate(),
+                        endTime: endDate.toDate(),
+                        title: `#${vente.id} ${task.nom || 'Tache sans nom'} (${getClientLabel(vente.client)})`,
+                        backgroundColor: '#1677ff'
+                    } as WeeklyCalendarEvent;
+                })
+                .filter(Boolean) as WeeklyCalendarEvent[],
+        [allTasks]
     );
 
     const handleSavePlanning = async () => {
-        if (!currentVente?.id) {
+        if (!currentTaskRow?.vente?.id) {
             return;
         }
         try {
             const values = await form.validateFields();
             setSaving(true);
-            await axios.put(`/ventes/${currentVente.id}`, {
-                ...currentVente,
-                date: values.date,
-                status: values.status
-            });
-            message.success('Planning de la vente mis a jour.');
+            const venteId = currentTaskRow.vente.id;
+            const latestVenteResponse = await axios.get(`/ventes/${venteId}`);
+            const latestVente = (latestVenteResponse.data || currentTaskRow.vente) as VenteEntity;
+            const latestTasks = [...(latestVente.taches || [])];
+
+            let taskToUpdateIndex = -1;
+            if (currentTaskRow.task.id !== undefined && currentTaskRow.task.id !== null) {
+                taskToUpdateIndex = latestTasks.findIndex((task) => task.id === currentTaskRow.task.id);
+            }
+            if (taskToUpdateIndex < 0) {
+                taskToUpdateIndex = Math.min(currentTaskRow.taskIndex, latestTasks.length - 1);
+            }
+            if (taskToUpdateIndex < 0 || !latestTasks[taskToUpdateIndex]) {
+                message.error("Impossible de trouver la tâche à mettre à jour.");
+                return;
+            }
+
+            latestTasks[taskToUpdateIndex] = {
+                ...latestTasks[taskToUpdateIndex],
+                status: values.status,
+                statusDate: values.date
+            };
+
+            const updatedVente: VenteEntity = {
+                ...latestVente,
+                taches: latestTasks
+            };
+
+            await axios.put(`/ventes/${venteId}`, updatedVente);
+            message.success('Planning de la tâche mis a jour.');
             setModalVisible(false);
-            setCurrentVente(null);
+            setCurrentTaskRow(null);
             form.resetFields();
             fetchVentes();
-        } catch {
-            // Les erreurs de validation sont affichees par le formulaire.
+        } catch (error) {
+            const formError = error as { errorFields?: unknown[] };
+            if (Array.isArray(formError.errorFields) && formError.errorFields.length > 0) {
+                // Les erreurs de validation sont affichees par le formulaire.
+                return;
+            }
+            if (axios.isAxiosError(error)) {
+                message.error(error.response?.data?.message || "Erreur lors de la mise à jour de la tâche.");
+                return;
+            }
+            message.error("Erreur lors de la mise à jour de la tâche.");
         } finally {
             setSaving(false);
         }
@@ -209,53 +292,57 @@ export default function Planning() {
         {
             title: 'Vente',
             dataIndex: 'id',
-            render: (value: number) => `#${value}`
+            render: (_: unknown, record: PendingTaskRow) => `#${record.vente.id}`
         },
         {
             title: 'Client',
             dataIndex: 'client',
-            render: (value: ClientEntity) => getClientLabel(value)
+            render: (_: unknown, record: PendingTaskRow) => getClientLabel(record.vente.client)
         },
         {
             title: 'Type',
             dataIndex: 'type',
-            render: (value: VenteType) => typeOptions.find((item) => item.value === value)?.label || value || '-'
+            render: (_: unknown, record: PendingTaskRow) => typeOptions.find((item) => item.value === record.vente.type)?.label || record.vente.type || '-'
         },
         {
-            title: 'Statut',
-            dataIndex: 'status',
-            render: (value: VenteStatus) => {
-                const label = statusOptions.find((item) => item.value === value)?.label || value;
-                return <Tag color={statusColor[value] || 'default'}>{label}</Tag>;
+            title: 'Statut tâche',
+            dataIndex: 'taskStatus',
+            render: (_: unknown, record: PendingTaskRow) => {
+                const status = record.task.status || 'EN_ATTENTE';
+                const label = taskStatusOptions.find((item) => item.value === status)?.label || status;
+                return <Tag color={statusColor[status] || 'default'}>{label}</Tag>;
             }
         },
         {
-            title: 'Prestations',
-            key: 'prestations',
-            render: (_: unknown, record: VenteEntity) =>
-                (record.forfaits?.length || 0) + (record.produits?.length || 0) + (record.services?.length || 0)
-        },
-        {
-            title: 'Prix vente TTC',
-            dataIndex: 'prixVenteTTC',
-            render: (value: number) => formatEuro(value)
-        },
-        {
-            title: 'Mode paiement',
-            dataIndex: 'modePaiement',
-            render: (value: ModePaiement) => modePaiementOptions.find((item) => item.value === value)?.label || value || '-'
+            title: 'Tâche',
+            key: 'taskName',
+            render: (_: unknown, record: PendingTaskRow) => record.task.nom || '(Sans nom)'
         }
     ];
 
-    const unscheduledColumns = [
+    const pendingTaskColumns = [
         ...commonColumns,
+        {
+            title: 'Date statut',
+            key: 'statusDate',
+            render: (_: unknown, record: PendingTaskRow) => toIsoDay(record.task.statusDate) || '-'
+        },
         {
             title: 'Actions',
             key: 'actions',
-            render: (_: unknown, record: VenteEntity) => (
-                <Button type="primary" icon={<CalendarOutlined />} onClick={() => openPlanningModal(record, selectedDate)}>
-                    Planifier
-                </Button>
+            render: (_: unknown, record: PendingTaskRow) => (
+                <Space>
+                    <Button type="primary" icon={<CalendarOutlined />} onClick={() => openPlanningModal(record, selectedDate)}>
+                        Planifier
+                    </Button>
+                    {record.vente.id ? (
+                        <Button onClick={() => history.push(`/prestations?venteId=${record.vente.id}`)}>
+                            Voir prestation
+                        </Button>
+                    ) : (
+                        <Typography.Text type="secondary">-</Typography.Text>
+                    )}
+                </Space>
             )
         }
     ];
@@ -263,43 +350,20 @@ export default function Planning() {
     const dayColumns = [
         ...commonColumns,
         {
+            title: 'Date statut',
+            key: 'statusDate',
+            render: (_: unknown, record: PendingTaskRow) => toIsoDay(record.task.statusDate) || '-'
+        },
+        {
             title: 'Actions',
             key: 'actions',
-            render: (_: unknown, record: VenteEntity) => (
+            render: (_: unknown, record: PendingTaskRow) => (
                 <Button icon={<EditOutlined />} onClick={() => openPlanningModal(record)}>
                     Replanifier
                 </Button>
             )
         }
     ];
-
-    const renderDayContent = (value: Dayjs) => {
-        const isoDate = value.format('YYYY-MM-DD');
-        const dayVentes = (ventesByDate[isoDate] || [])
-            .filter((vente) => !selectedStatus || vente.status === selectedStatus)
-            .slice(0, 3);
-        const remaining = Math.max(0, (ventesByDate[isoDate] || []).filter((vente) => !selectedStatus || vente.status === selectedStatus).length - dayVentes.length);
-
-        if (!dayVentes.length) {
-            return null;
-        }
-
-        return (
-            <Space direction="vertical" size={2} style={{ width: '100%' }}>
-                {dayVentes.map((vente) => (
-                    <Tag
-                        key={vente.id}
-                        color={statusColor[vente.status] || 'default'}
-                        style={{ marginInlineEnd: 0, cursor: 'pointer' }}
-                        onClick={() => openPlanningModal(vente)}
-                    >
-                        #{vente.id} {getClientLabel(vente.client)}
-                    </Tag>
-                ))}
-                {remaining > 0 && <Typography.Text type="secondary">+ {remaining} autre(s)</Typography.Text>}
-            </Space>
-        );
-    };
 
     return (
         <Card title="Planning">
@@ -313,9 +377,9 @@ export default function Planning() {
                                 setSelectedDate(dayjs(date).format('YYYY-MM-DD'));
                             }}
                             onEventClick={(event: WeeklyCalendarEvent) => {
-                                const matchedVente = ventes.find((vente) => String(vente.id) === event.eventId);
-                                if (matchedVente) {
-                                    openPlanningModal(matchedVente);
+                                const matchedTaskRow = allTasks.find((row) => row.key === event.eventId);
+                                if (matchedTaskRow) {
+                                    openPlanningModal(matchedTaskRow);
                                 }
                             }}
                         />
@@ -327,8 +391,8 @@ export default function Planning() {
                             <Input type="date" value={selectedDate} onChange={(event) => setSelectedDate(event.target.value || todayIso())} />
                             <Select
                                 allowClear
-                                options={statusOptions}
-                                placeholder="Tous les statuts"
+                                options={taskStatusOptions}
+                                placeholder="Tous les statuts de tâche"
                                 value={selectedStatus}
                                 onChange={(value) => setSelectedStatus(value)}
                             />
@@ -341,13 +405,13 @@ export default function Planning() {
                                 <Badge status="processing" /> Date selectionnee: <strong>{selectedDate}</strong>
                             </div>
                             <div>
-                                <Badge status="success" /> Ventes du jour: <strong>{plannedVentes.length}</strong>
+                                <Badge status="success" /> Taches EN_COURS du jour: <strong>{plannedTasks.length}</strong>
                             </div>
                             <div>
-                                <Badge status="warning" /> Total TTC: <strong>{formatEuro(plannedVentes.reduce((sum, item) => sum + (item.prixVenteTTC || 0), 0))}</strong>
+                                <Badge status="warning" /> Taches en attente (jour): <strong>{pendingTasksForDay.length}</strong>
                             </div>
                             <div>
-                                <Badge status="default" /> Ventes non planifiees: <strong>{unscheduledVentes.length}</strong>
+                                <Badge status="default" /> Taches en attente (total): <strong>{pendingTasks.length}</strong>
                             </div>
                         </Space>
                     </Card>
@@ -356,18 +420,18 @@ export default function Planning() {
 
             <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
                 <Col span={24}>
-                    <Card title={`Planifié le ${selectedDate}`} size="small" bodyStyle={{ padding: plannedVentes.length ? 12 : 24 }}>
-                        {plannedVentes.length ? (
+                    <Card title={`Planifié le ${selectedDate}`} size="small" bodyStyle={{ padding: plannedTasks.length ? 12 : 24 }}>
+                        {plannedTasks.length ? (
                             <Table
-                                rowKey="id"
+                                rowKey="key"
                                 loading={loading}
-                                dataSource={plannedVentes}
+                                dataSource={plannedTasks}
                                 columns={dayColumns}
                                 pagination={{ pageSize: 8 }}
                                 bordered
                             />
                         ) : (
-                            <Empty description="Aucune vente planifiee pour cette date." />
+                            <Empty description="Aucune tache EN_COURS avec date de statut pour cette date." />
                         )}
                     </Card>
                 </Col>
@@ -376,21 +440,21 @@ export default function Planning() {
             <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
                 <Col span={24}>
                     <Card
-                        title="A planifier"
+                        title="A planifier (taches en attente)"
                         size="small"
-                        bodyStyle={{ padding: unscheduledVentes.length ? 12 : 24 }}
+                        bodyStyle={{ padding: pendingTasks.length ? 12 : 24 }}
                     >
-                        {unscheduledVentes.length ? (
+                        {pendingTasks.length ? (
                             <Table
-                                rowKey="id"
+                                rowKey="key"
                                 loading={loading}
-                                dataSource={unscheduledVentes}
-                                columns={unscheduledColumns}
+                                dataSource={pendingTasks}
+                                columns={pendingTaskColumns}
                                 pagination={{ pageSize: 6 }}
                                 bordered
                             />
                         ) : (
-                            <Empty description="Toutes les ventes ont une date planifiee." />
+                            <Empty description="Aucune tache en attente." />
                         )}
                     </Card>
                 </Col>
@@ -398,14 +462,14 @@ export default function Planning() {
 
             <Modal
                 open={modalVisible}
-                title={currentVente?.id ? `Planifier la vente #${currentVente.id}` : 'Planifier la vente'}
+                title={currentTaskRow?.task?.nom ? `Planifier la tâche: ${currentTaskRow.task.nom}` : 'Planifier la tâche'}
                 onOk={handleSavePlanning}
                 okText="Enregistrer"
                 confirmLoading={saving}
                 cancelText="Annuler"
                 onCancel={() => {
                     setModalVisible(false);
-                    setCurrentVente(null);
+                    setCurrentTaskRow(null);
                     form.resetFields();
                 }}
                 destroyOnHidden
@@ -413,17 +477,17 @@ export default function Planning() {
                 <Form form={form} layout="vertical">
                     <Form.Item
                         name="date"
-                        label="Date planifiee"
+                        label="Date et heure planifiées"
                         rules={[{ required: true, message: 'La date est requise' }]}
                     >
-                        <Input type="date" />
+                        <Input type="datetime-local" />
                     </Form.Item>
                     <Form.Item
                         name="status"
                         label="Statut"
                         rules={[{ required: true, message: 'Le statut est requis' }]}
                     >
-                        <Select options={statusOptions} />
+                        <Select options={taskStatusOptions} />
                     </Form.Item>
                 </Form>
             </Modal>

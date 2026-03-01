@@ -1,12 +1,17 @@
 package net.nanthrax.moussaillon.persistence;
 
-import java.sql.Date;
+import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.List;
 
 import io.quarkus.hibernate.orm.panache.PanacheEntity;
+import jakarta.json.bind.annotation.JsonbTypeAdapter;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 
 @Entity
 public class VenteEntity extends PanacheEntity {
@@ -51,7 +56,8 @@ public class VenteEntity extends PanacheEntity {
     @ManyToMany
     public List<ServiceEntity> services;
     
-    public Date date;
+    @JsonbTypeAdapter(TimestampJsonbAdapter.class)
+    public Timestamp date;
     
     public double montantHT;
     
@@ -74,4 +80,8 @@ public class VenteEntity extends PanacheEntity {
 
     public ModePaiement modePaiement;
     
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "vente_id")
+    public List<TaskEntity> taches = new ArrayList<TaskEntity>();
+
 }

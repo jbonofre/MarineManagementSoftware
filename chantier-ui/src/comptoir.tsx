@@ -40,11 +40,17 @@ interface RemorqueClientEntity {
     immatriculation?: string;
 }
 
+interface TaskEntity {
+    id: number;
+    nom?: string;
+}
+
 interface ForfaitEntity {
     id: number;
     reference?: string;
     nom: string;
     prixTTC?: number;
+    taches?: TaskEntity[];
 }
 
 interface ProduitCatalogueEntity {
@@ -58,6 +64,11 @@ interface ServiceEntity {
     id: number;
     nom: string;
     prixTTC?: number;
+}
+
+interface TaskEntity {
+    id?: number;
+    nom?: string;
 }
 
 type VenteStatus = 'PAYEE';
@@ -75,6 +86,7 @@ interface VenteEntity {
     forfaits?: ForfaitEntity[];
     produits?: ProduitCatalogueEntity[];
     services?: ServiceEntity[];
+    taches?: TaskEntity[];
     date?: string;
     montantHT?: number;
     remise?: number;
