@@ -423,7 +423,43 @@ export default function Planning() {
     return (
         <Card title="Planning">
             <Row gutter={[16, 16]}>
-                <Col span={16}>
+                <Col span={6}>
+                    <Card size="small" title="Filtres">
+                        <Space direction="vertical" style={{ width: '100%' }}>
+                            <Input type="date" value={selectedDate} onChange={(event) => setSelectedDate(event.target.value || todayIso())} />
+                            <Select
+                                allowClear
+                                options={taskStatusOptions}
+                                placeholder="Tous les statuts de tâche"
+                                value={selectedStatus}
+                                onChange={(value) => setSelectedStatus(value)}
+                                style={{ width: '100%' }}
+                            />
+                        </Space>
+                    </Card>
+                </Col>
+                <Col span={6}>
+                    <Card size="small" title="Synthese">
+                        <Space direction="vertical" style={{ width: '100%' }}>
+                            <div>
+                                <Badge status="processing" /> Date: <strong>{selectedDate}</strong>
+                            </div>
+                            <div>
+                                <Badge status="success" /> EN_COURS (jour): <strong>{plannedTasks.length}</strong>
+                            </div>
+                            <div>
+                                <Badge status="warning" /> En attente (jour): <strong>{pendingTasksForDay.length}</strong>
+                            </div>
+                            <div>
+                                <Badge status="default" /> En attente (total): <strong>{pendingTasks.length}</strong>
+                            </div>
+                        </Space>
+                    </Card>
+                </Col>
+            </Row>
+
+            <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+                <Col span={24}>
                     <Card size="small" title="Vue semaine">
                         <WeeklyCalendar
                             events={weeklyEvents}
@@ -438,37 +474,6 @@ export default function Planning() {
                                 }
                             }}
                         />
-                    </Card>
-                </Col>
-                <Col span={8}>
-                    <Card size="small" title="Filtres">
-                        <Space direction="vertical" style={{ width: '100%' }}>
-                            <Input type="date" value={selectedDate} onChange={(event) => setSelectedDate(event.target.value || todayIso())} />
-                            <Select
-                                allowClear
-                                options={taskStatusOptions}
-                                placeholder="Tous les statuts de tâche"
-                                value={selectedStatus}
-                                onChange={(value) => setSelectedStatus(value)}
-                            />
-                        </Space>
-                    </Card>
-
-                    <Card size="small" title="Synthese" style={{ marginTop: 16 }}>
-                        <Space direction="vertical" style={{ width: '100%' }}>
-                            <div>
-                                <Badge status="processing" /> Date selectionnee: <strong>{selectedDate}</strong>
-                            </div>
-                            <div>
-                                <Badge status="success" /> Taches EN_COURS du jour: <strong>{plannedTasks.length}</strong>
-                            </div>
-                            <div>
-                                <Badge status="warning" /> Taches en attente (jour): <strong>{pendingTasksForDay.length}</strong>
-                            </div>
-                            <div>
-                                <Badge status="default" /> Taches en attente (total): <strong>{pendingTasks.length}</strong>
-                            </div>
-                        </Space>
                     </Card>
                 </Col>
             </Row>
