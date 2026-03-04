@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Typography, Row, Col, Card, Input, Button, Space, Divider, Tag, Modal, theme } from 'antd';
-import { SmileOutlined, RobotOutlined, SendOutlined, QuestionCircleOutlined } from '@ant-design/icons';
+import { SmileOutlined, RobotOutlined, SendOutlined, QuestionCircleOutlined, AudioOutlined, AudioMutedOutlined } from '@ant-design/icons';
 import { useHistory } from 'react-router-dom';
 
 const { Title, Paragraph } = Typography;
@@ -141,6 +141,8 @@ export default function Home() {
 
     const [ prompt, setPrompt ] = useState('');
     const [ loading, setLoading ] = useState(false);
+    const [ listening, setListening ] = useState(false);
+    const recognitionRef = useRef<any>(null);
     const [ mcpReady, setMcpReady ] = useState(false);
     const aiProvider: AiProvider = 'anthropic';
     const [ isHelpOpen, setIsHelpOpen ] = useState(false);
@@ -697,6 +699,30 @@ export default function Home() {
         });
     };
 
+    const onToggleVoice = () => {
+        const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            alert("La reconnaissance vocale n'est pas supportée par votre navigateur.");
+            return;
+        }
+        if (listening) {
+            recognitionRef.current?.stop();
+            return;
+        }
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'fr-FR';
+        recognition.interimResults = false;
+        recognition.onstart = () => setListening(true);
+        recognition.onend = () => setListening(false);
+        recognition.onerror = () => setListening(false);
+        recognition.onresult = (event: any) => {
+            const transcript = event.results[0][0].transcript;
+            setPrompt((prev) => prev ? prev + ' ' + transcript : transcript);
+        };
+        recognitionRef.current = recognition;
+        recognition.start();
+    };
+
     const onSend = async () => {
         if (!prompt.trim() || loading) {
             return;
@@ -821,6 +847,14 @@ export default function Home() {
                             Help
                         </Button>
                         <Button onClick={() => setPrompt('resources')}>Resources</Button>
+                        <Button
+                            icon={listening ? <AudioMutedOutlined /> : <AudioOutlined />}
+                            danger={listening}
+                            onClick={onToggleVoice}
+                            title={listening ? 'Arrêter l\'écoute' : 'Dicter un message'}
+                        >
+                            {listening ? 'Écoute...' : 'Voix'}
+                        </Button>
                         <Button type="primary" icon={<SendOutlined />} loading={loading} onClick={onSend}>
                             Envoyer
                         </Button>
