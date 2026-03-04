@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Card, Row, Col, Space, Input, Button, Table, Modal, Form, InputNumber, Select, Popconfirm, message, Tag } from 'antd';
+import { Card, Row, Col, Space, Input, Button, Table, Modal, Form, InputNumber, Popconfirm, message } from 'antd';
 import { PlusCircleOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import axios from 'axios';
 
@@ -11,14 +11,6 @@ interface ServiceEntity {
     tva?: number;
     montantTVA?: number;
     prixTTC?: number;
-    competences?: CompetenceEntity[];
-}
-
-interface CompetenceEntity {
-    id: number;
-    nom: string;
-    description?: string;
-    couleur?: string;
 }
 
 interface ServiceFormValues {
@@ -28,7 +20,6 @@ interface ServiceFormValues {
     tva?: number;
     montantTVA?: number;
     prixTTC?: number;
-    competences?: number[];
 }
 
 const defaultService: ServiceFormValues = {
@@ -37,13 +28,11 @@ const defaultService: ServiceFormValues = {
     prixHT: 0,
     tva: 20,
     montantTVA: 0,
-    prixTTC: 0,
-    competences: []
+    prixTTC: 0
 };
 
 export default function Services() {
     const [services, setServices] = useState<ServiceEntity[]>([]);
-    const [competences, setCompetences] = useState<CompetenceEntity[]>([]);
     const [loading, setLoading] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
     const [isEdit, setIsEdit] = useState(false);
@@ -68,9 +57,6 @@ export default function Services() {
 
     useEffect(() => {
         fetchServices();
-        axios.get('/competences')
-            .then((response) => setCompetences(response.data || []))
-            .catch(() => message.error('Erreur lors du chargement des compétences.'));
     }, []);
 
     const openModal = (service?: ServiceEntity) => {
@@ -79,8 +65,7 @@ export default function Services() {
             setCurrentService(service);
             form.setFieldsValue({
                 ...defaultService,
-                ...service,
-                competences: (service.competences || []).map((competence) => competence.id)
+                ...service
             });
         } else {
             setIsEdit(false);
@@ -108,10 +93,7 @@ export default function Services() {
         try {
             const values = await form.validateFields();
             const payload = {
-                ...values,
-                competences: (values.competences || [])
-                    .map((id) => competences.find((competence) => competence.id === id))
-                    .filter(Boolean)
+                ...values
             };
             if (isEdit && currentService?.id) {
                 await axios.put(`/services/${currentService.id}`, { ...currentService, ...payload });
@@ -158,17 +140,6 @@ export default function Services() {
             title: 'Description',
             dataIndex: 'description',
             render: (value: string) => value || '-'
-        },
-        {
-            title: 'Compétences',
-            dataIndex: 'competences',
-            render: (values: CompetenceEntity[]) => (
-                <Space size={[0, 8]} wrap>
-                    {values && values.length > 0 ? values.map((item) => (
-                        <Tag key={item.id}>{item.nom}</Tag>
-                    )) : '-'}
-                </Space>
-            )
         },
         {
             title: 'Prix TTC',
@@ -258,14 +229,6 @@ export default function Services() {
                     </Form.Item>
                     <Form.Item name="description" label="Description">
                         <Input.TextArea rows={3} allowClear />
-                    </Form.Item>
-                    <Form.Item name="competences" label="Compétences">
-                        <Select
-                            mode="multiple"
-                            options={competences.map((competence) => ({ value: competence.id, label: competence.nom }))}
-                            placeholder="Sélectionner des compétences"
-                            style={{ width: '100%' }}
-                        />
                     </Form.Item>
                     <Row gutter={16}>
                         <Col span={12}>

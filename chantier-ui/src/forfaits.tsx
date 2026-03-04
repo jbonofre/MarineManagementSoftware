@@ -13,7 +13,6 @@ import {
     Space,
     Tabs,
     Table,
-    Tag,
     message
 } from 'antd';
 import { DeleteOutlined, EditOutlined, PlusCircleOutlined } from '@ant-design/icons';
@@ -88,7 +87,6 @@ interface ForfaitEntity {
     services: ForfaitServiceEntity[];
     heuresFonctionnement: number;
     joursFrequence: number;
-    competences: CompetenceEntity[];
     prixHT: number;
     tva: number;
     montantTVA: number;
@@ -118,20 +116,12 @@ interface ForfaitFormValues {
     }>;
     heuresFonctionnement: number;
     joursFrequence: number;
-    competences: number[];
     prixHT: number;
     tva: number;
     remise: number;
     remiseEuros: number;
     montantTVA: number;
     prixTTC: number;
-}
-
-interface CompetenceEntity {
-    id: number;
-    nom: string;
-    description?: string;
-    couleur?: string;
 }
 
 const defaultForfait: ForfaitFormValues = {
@@ -144,7 +134,6 @@ const defaultForfait: ForfaitFormValues = {
     taches: [{}],
     heuresFonctionnement: 0,
     joursFrequence: 0,
-    competences: [],
     prixHT: 0,
     tva: 20,
     remise: 0,
@@ -184,7 +173,6 @@ export default function Forfaits() {
     const [produits, setProduits] = useState<ProduitCatalogueEntity[]>([]);
     const [services, setServices] = useState<ServiceEntity[]>([]);
     const [techniciens, setTechniciens] = useState<TechnicienEntity[]>([]);
-    const [competences, setCompetences] = useState<CompetenceEntity[]>([]);
     const [loading, setLoading] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
     const [isEdit, setIsEdit] = useState(false);
@@ -212,10 +200,6 @@ export default function Forfaits() {
         [services]
     );
 
-    const competenceOptions = useMemo(
-        () => competences.map((competence) => ({ value: competence.id, label: competence.nom })),
-        [competences]
-    );
 
     const technicienOptions = useMemo(
         () =>
@@ -241,19 +225,17 @@ export default function Forfaits() {
 
     const fetchOptions = async () => {
         try {
-            const [moteursRes, bateauxRes, produitsRes, servicesRes, competencesRes, techniciensRes] = await Promise.all([
+            const [moteursRes, bateauxRes, produitsRes, servicesRes, techniciensRes] = await Promise.all([
                 axios.get('/catalogue/moteurs'),
                 axios.get('/catalogue/bateaux'),
                 axios.get('/catalogue/produits'),
                 axios.get('/services'),
-                axios.get('/competences'),
                 axios.get('/techniciens')
             ]);
             setMoteurs(moteursRes.data || []);
             setBateaux(bateauxRes.data || []);
             setProduits(produitsRes.data || []);
             setServices(servicesRes.data || []);
-            setCompetences(competencesRes.data || []);
             setTechniciens(techniciensRes.data || []);
         } catch {
             message.error('Erreur lors du chargement des listes de référence.');
@@ -299,7 +281,6 @@ export default function Forfaits() {
                     .concat({}),
                 heuresFonctionnement: forfait.heuresFonctionnement || 0,
                 joursFrequence: forfait.joursFrequence || 0,
-                competences: (forfait.competences || []).map((competence) => competence.id),
                 prixHT: forfait.prixHT || 0,
                 tva: forfait.tva || 0,
                 remise: 0,
@@ -367,9 +348,6 @@ export default function Forfaits() {
             })),
         heuresFonctionnement: values.heuresFonctionnement || 0,
         joursFrequence: values.joursFrequence || 0,
-        competences: (values.competences || [])
-            .map((id) => competences.find((competence) => competence.id === id))
-            .filter(Boolean) as CompetenceEntity[],
         prixHT: values.prixHT || 0,
         tva: values.tva || 0,
         montantTVA: values.montantTVA || 0,
@@ -659,10 +637,6 @@ export default function Forfaits() {
                         <Input allowClear />
                     </Form.Item>
 
-                    <Form.Item name="competences" label="Compétences">
-                        <Select mode="multiple" options={competenceOptions} placeholder="Sélectionner des compétences" />
-                    </Form.Item>
-
                     <Row gutter={16}>
                         <Col span={12}>
                             <Form.Item name="moteurIds" label="Moteurs associés">
@@ -922,13 +896,6 @@ export default function Forfaits() {
                         </Col>
                     </Row>
 
-                    {currentForfait && (
-                        <Space wrap>
-                            {(currentForfait.competences || []).map((competence) => (
-                                <Tag key={competence.id}>{competence.nom}</Tag>
-                            ))}
-                        </Space>
-                    )}
                 </Form>
             </Modal>
         </Card>

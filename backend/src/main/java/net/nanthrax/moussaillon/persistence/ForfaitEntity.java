@@ -31,9 +31,6 @@ public class ForfaitEntity extends PanacheEntity {
     public long heuresFonctionnement;
     public long joursFrequence;
 
-    @ManyToMany
-    public List<CompetenceEntity> competences;
-
     public double prixHT;
 
     public double tva;

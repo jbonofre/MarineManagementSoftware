@@ -82,7 +82,6 @@ public class ServiceResource {
         entity.tva = service.tva;
         entity.montantTVA = service.montantTVA;
         entity.prixTTC = service.prixTTC;
-        entity.competences = service.competences;
 
         return entity;
     }

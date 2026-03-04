@@ -3,7 +3,7 @@ import { Layout, Input, Col, Row, Image, Menu, Form, Modal, message, ConfigProvi
 import { Route, Switch } from 'react-router';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { Link } from 'react-router-dom';
-import { UserOutlined, TeamOutlined, HomeOutlined, AmazonOutlined, SettingOutlined, ToolOutlined, StockOutlined, FileOutlined, FileProtectOutlined, ReadOutlined, DesktopOutlined, DeploymentUnitOutlined, DisconnectOutlined, DashboardOutlined, CalendarOutlined, FileDoneOutlined, CheckSquareOutlined, BarsOutlined, RedoOutlined } from '@ant-design/icons';
+import { UserOutlined, TeamOutlined, HomeOutlined, AmazonOutlined, SettingOutlined, ToolOutlined, StockOutlined, FileOutlined, FileProtectOutlined, ReadOutlined, DesktopOutlined, DeploymentUnitOutlined, DisconnectOutlined, DashboardOutlined, CalendarOutlined, FileDoneOutlined, CheckSquareOutlined, RedoOutlined } from '@ant-design/icons';
 import Icon from '@ant-design/icons';
 import { ReactComponent as BoatOutlined } from './boat.svg';
 import { ReactComponent as EngineOutlined } from './moteur.svg';
@@ -27,7 +27,6 @@ import Techniciens from './techniciens.tsx';
 import Services from './services.tsx';
 import Vente from './vente.tsx';
 import Planning from './planning.tsx';
-import Competences from './competence.tsx';
 import Comptoir from './comptoir.tsx';
 import Dashboard from './dashboard.tsx';
 
@@ -65,7 +64,6 @@ function SideMenu(props) {
       { key: 'atelier', label: 'Atelier', icon: <ToolOutlined/>, children: [
         { key: 'services', label: <Link to="/services">Services & Main d'Oeuvre</Link>, icon: <RedoOutlined/> },
         { key: 'forfaits', label: <Link to="/forfaits">Forfaits</Link>, icon: <FileDoneOutlined/> },
-        { key: 'competences', label: <Link to="/competences">Compétences</Link>, icon: <BarsOutlined/> },
         { key: 'equipe', label: <Link to="/techniciens">Equipe</Link>, icon: <TeamOutlined/> },
         { key: 'planning', label: <Link to="/planning">Planning</Link>, icon: <CalendarOutlined/> },
       ] },
@@ -412,9 +410,6 @@ export default function Workspace(props) {
                         </Route>
                         <Route path="/services" key="services">
                             <Services />
-                        </Route>
-                        <Route path="/competences" key="competences">
-                            <Competences />
                         </Route>
                         <Route path="/planning" key="planning">
                             <Planning />

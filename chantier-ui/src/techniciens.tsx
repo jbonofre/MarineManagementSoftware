@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Space, Table, Button, Input, Form, Modal, Card, Row, Col, Select, Popconfirm, message } from 'antd';
+import { Space, Table, Button, Input, Form, Modal, Card, Row, Col, Popconfirm, message } from 'antd';
 import { PlusCircleOutlined, EditOutlined, DeleteOutlined, UserOutlined } from '@ant-design/icons';
 import axios from 'axios';
 
@@ -12,14 +12,6 @@ interface TechnicienEntity {
     motDePasse?: string;
     email: string;
     telephone?: string;
-    competences?: CompetenceEntity[];
-    couleur?: string;
-}
-
-interface CompetenceEntity {
-    id: number;
-    nom: string;
-    description?: string;
     couleur?: string;
 }
 
@@ -29,7 +21,6 @@ interface TechnicienFormValues {
     motDePasse?: string;
     email: string;
     telephone?: string;
-    competences?: number[];
     couleur?: string;
 }
 
@@ -38,7 +29,6 @@ const defaultTechnicien: TechnicienFormValues = {
     prenom: '',
     email: '',
     telephone: '',
-    competences: [],
     couleur: '#1677ff'
 };
 
@@ -46,7 +36,6 @@ const defaultTechnicien: TechnicienFormValues = {
 
 const Techniciens: React.FC = () => {
     const [techniciens, setTechniciens] = useState<TechnicienEntity[]>([]);
-    const [competences, setCompetences] = useState<CompetenceEntity[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
     const [modalVisible, setModalVisible] = useState<boolean>(false);
     const [isEdit, setIsEdit] = useState<boolean>(false);
@@ -69,9 +58,6 @@ const Techniciens: React.FC = () => {
 
     useEffect(() => {
         fetchTechniciens();
-        axios.get('/competences')
-            .then((res) => setCompetences(res.data || []))
-            .catch(() => message.error('Erreur lors du chargement des compétences.'));
     }, []);
 
     const openModal = (technicien?: TechnicienEntity) => {
@@ -81,9 +67,6 @@ const Techniciens: React.FC = () => {
             form.setFieldsValue({
                 ...defaultTechnicien,
                 ...technicien,
-                competences: technicien.competences && technicien.competences.length > 0
-                    ? technicien.competences.map((competence) => competence.id)
-                    : [],
             });
         } else {
             setIsEdit(false);
@@ -99,9 +82,6 @@ const Techniciens: React.FC = () => {
             const values = await form.validateFields();
             const payload = {
                 ...values,
-                competences: (values.competences || [])
-                    .map((id) => competences.find((competence) => competence.id === id))
-                    .filter(Boolean),
                 couleur: values.couleur || defaultTechnicien.couleur
             };
             
@@ -169,21 +149,6 @@ const Techniciens: React.FC = () => {
             title: 'Téléphone',
             dataIndex: 'telephone',
             key: 'telephone',
-        },
-        {
-            title: 'Compétences',
-            dataIndex: 'competences',
-            key: 'competences',
-            render: (competences: CompetenceEntity[]) =>
-                competences && Array.isArray(competences) && competences.length > 0
-                    ? competences.map((comp, idx) => (
-                          <span key={idx} style={{ marginRight: 4 }}>
-                              <Button size="small" type="dashed" disabled>
-                                  {comp.nom}
-                              </Button>
-                          </span>
-                      ))
-                    : '-',
         },
         {
             title: 'Couleur',
@@ -329,17 +294,6 @@ const Techniciens: React.FC = () => {
                                     }
                                 >
                                     <Input.Password autoComplete="new-password" />
-                                </Form.Item>
-                                <Form.Item 
-                                    name="competences" 
-                                    label="Compétences"
-                                >
-                                    <Select
-                                        mode="multiple"
-                                        options={competences.map((competence) => ({ value: competence.id, label: competence.nom }))}
-                                        placeholder="Sélectionner des compétences"
-                                        style={{ width: '100%' }}
-                                    />
                                 </Form.Item>
                                 <Form.Item
                                     name="couleur"

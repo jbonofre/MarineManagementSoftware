@@ -423,9 +423,6 @@ export default function Home() {
         if (normalized.includes('technicien') || normalized.includes('techniciens')) {
             return '/techniciens';
         }
-        if (normalized.includes('competence') || normalized.includes('compétence')) {
-            return '/competences';
-        }
         return null;
     };
 
@@ -586,8 +583,7 @@ export default function Home() {
             { match: '/forfaits', route: '/forfaits' },
             { match: '/services', route: '/services' },
             { match: '/ventes', route: '/prestations' },
-            { match: '/techniciens', route: '/techniciens' },
-            { match: '/competences', route: '/competences' }
+            { match: '/techniciens', route: '/techniciens' }
         ];
         const found = map.find((item) => normalized.includes(item.match));
         return found ? found.route : null;

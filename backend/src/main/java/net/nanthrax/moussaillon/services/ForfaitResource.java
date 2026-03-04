@@ -92,7 +92,6 @@ public class ForfaitResource {
         }
         entity.heuresFonctionnement = forfait.heuresFonctionnement;
         entity.joursFrequence = forfait.joursFrequence;
-        entity.competences = forfait.competences;
         entity.prixHT = forfait.prixHT;
         entity.tva = forfait.tva;
         entity.montantTVA = forfait.montantTVA;
