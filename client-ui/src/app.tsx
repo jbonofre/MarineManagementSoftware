@@ -16,6 +16,8 @@ import MesMoteurs from './mes-moteurs.tsx';
 import MesRemorques from './mes-remorques.tsx';
 import MesFactures from './mes-factures.tsx';
 import MonProfil from './mon-profil.tsx';
+import MobileApp from './mobile-app.tsx';
+import useIsMobile from './use-is-mobile.tsx';
 
 import './app.css';
 
@@ -34,9 +36,14 @@ interface Client {
 export default function App() {
     const [user, setUser] = useState<Client | null>(null);
     const [currentPage, setCurrentPage] = useState('dashboard');
+    const isMobile = useIsMobile();
 
     if (!user) {
         return <Login setUser={setUser} />;
+    }
+
+    if (isMobile) {
+        return <MobileApp user={user} onLogout={() => { setUser(null); setCurrentPage('dashboard'); }} />;
     }
 
     const clientName = `${user.prenom || ''} ${user.nom}`.trim();

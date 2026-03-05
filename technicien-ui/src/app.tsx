@@ -7,6 +7,8 @@ import {
 } from '@ant-design/icons';
 import Login from './login.tsx';
 import Planning from './planning.tsx';
+import MobileApp from './mobile-app.tsx';
+import useIsMobile from './use-is-mobile.tsx';
 
 import './app.css';
 
@@ -23,9 +25,14 @@ interface Technicien {
 
 export default function App() {
     const [user, setUser] = useState<Technicien | null>(null);
+    const isMobile = useIsMobile();
 
     if (!user) {
         return <Login setUser={setUser} />;
+    }
+
+    if (isMobile) {
+        return <MobileApp user={user} onLogout={() => setUser(null)} />;
     }
 
     const technicienName = `${user.prenom || ''} ${user.nom}`.trim();
