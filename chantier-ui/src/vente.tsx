@@ -14,9 +14,10 @@ import {
     Tabs,
     Table,
     Tag,
+    Dropdown,
     message
 } from 'antd';
-import { DeleteOutlined, EditOutlined, MailOutlined, PlusCircleOutlined, PrinterOutlined } from '@ant-design/icons';
+import { CreditCardOutlined, DeleteOutlined, EditOutlined, MailOutlined, PlusCircleOutlined, PrinterOutlined } from '@ant-design/icons';
 import axios from 'axios';
 
 interface ClientEntity {
@@ -811,6 +812,24 @@ export default function Vente() {
         window.open(`mailto:${email}?subject=${subject}&body=${body}`, '_blank', 'noopener,noreferrer');
     };
 
+    const handlePayment = async (vente: VenteEntity, provider: 'stripe' | 'payplug') => {
+        if (!vente.id) {
+            message.warning('La vente doit etre enregistree avant de generer un lien de paiement.');
+            return;
+        }
+        try {
+            const res = await axios.post(`/ventes/${vente.id}/payment-link/${provider}`);
+            window.open(res.data.url, '_blank', 'noopener,noreferrer');
+        } catch {
+            message.error(`Erreur lors de la creation du lien de paiement ${provider === 'stripe' ? 'Stripe' : 'PayPlug'}`);
+        }
+    };
+
+    const paymentMenuItems = (vente: VenteEntity) => ([
+        { key: 'stripe', label: 'Payer via Stripe', onClick: () => handlePayment(vente, 'stripe') },
+        { key: 'payplug', label: 'Payer via PayPlug', onClick: () => handlePayment(vente, 'payplug') },
+    ]);
+
     const recalculateFromLines = (remiseSource: 'amount' | 'percentage' | 'auto' = 'auto') => {
         const forfaitLines = form.getFieldValue('forfaits') || [];
         const produitLines = form.getFieldValue('produits') || [];
@@ -1003,6 +1022,9 @@ export default function Vente() {
                 <Space>
                     <Button title="Imprimer" icon={<PrinterOutlined />} onClick={() => handlePrint(record)} />
                     <Button title="Envoyer par email" icon={<MailOutlined />} onClick={() => handleEmail(record)} />
+                    <Dropdown menu={{ items: paymentMenuItems(record) }} placement="bottomRight">
+                        <Button title="Lien de paiement" icon={<CreditCardOutlined />} />
+                    </Dropdown>
                     <Button icon={<EditOutlined />} onClick={() => openModal(record)} />
                     <Popconfirm
                         title="Supprimer cette vente ?"
@@ -1101,6 +1123,16 @@ export default function Vente() {
                     >
                         Envoyer par email
                     </Button>,
+                    <Dropdown
+                        key="payment"
+                        menu={{ items: currentVente ? paymentMenuItems(currentVente) : [] }}
+                        placement="topRight"
+                        disabled={!currentVente}
+                    >
+                        <Button icon={<CreditCardOutlined />}>
+                            Lien de paiement
+                        </Button>
+                    </Dropdown>,
                     <Button key="cancel" onClick={() => setModalVisible(false)}>
                         Annuler
                     </Button>,
