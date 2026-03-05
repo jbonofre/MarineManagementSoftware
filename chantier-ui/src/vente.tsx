@@ -63,6 +63,8 @@ interface TaskEntity {
     technicien?: TechnicienEntity;
     dureeEstimee?: number;
     dureeReelle?: number;
+    incidentDate?: string;
+    incidentDetails?: string;
 }
 
 interface ForfaitEntity {
@@ -134,6 +136,8 @@ interface VenteFormValues {
         technicienId?: number;
         dureeEstimee?: number;
         dureeReelle?: number;
+        incidentDate?: string;
+        incidentDetails?: string;
     }>;
     date?: string;
     montantHT: number;
@@ -530,6 +534,8 @@ export default function Vente() {
                     || tache.statusDate
                     || (tache.dureeEstimee || 0) > 0
                     || (tache.dureeReelle || 0) > 0
+                    || tache.incidentDate
+                    || tache.incidentDetails
                 )
             )
             .map<TaskEntity>((tache) => ({
@@ -543,7 +549,9 @@ export default function Vente() {
                 notes: tache.notes || '',
                 technicien: techniciens.find((technicien) => technicien.id === tache.technicienId),
                 dureeEstimee: tache.dureeEstimee || 0,
-                dureeReelle: tache.dureeReelle || 0
+                dureeReelle: tache.dureeReelle || 0,
+                incidentDate: tache.incidentDate,
+                incidentDetails: tache.incidentDetails
             })),
         date: toBackendDateValue(values.date),
         montantHT: values.montantHT || 0,
@@ -1495,6 +1503,28 @@ export default function Vente() {
                                                         </Form.Item>
                                                         <Form.Item {...field} name={[field.name, 'notes']} label="Notes">
                                                             <Input.TextArea rows={2} />
+                                                        </Form.Item>
+                                                        <Form.Item noStyle shouldUpdate={(prev, cur) => prev?.taches?.[field.name]?.status !== cur?.taches?.[field.name]?.status}>
+                                                            {({ getFieldValue }) => {
+                                                                const status = getFieldValue(['taches', field.name, 'status']);
+                                                                if (status !== 'INCIDENT') return null;
+                                                                return (
+                                                                    <Card size="small" title="Incident" style={{ marginBottom: 12, borderColor: '#ff4d4f' }}>
+                                                                        <Row gutter={12}>
+                                                                            <Col span={8}>
+                                                                                <Form.Item {...field} name={[field.name, 'incidentDate']} label="Date de l'incident">
+                                                                                    <Input type="date" />
+                                                                                </Form.Item>
+                                                                            </Col>
+                                                                            <Col span={16}>
+                                                                                <Form.Item {...field} name={[field.name, 'incidentDetails']} label="Details de l'incident">
+                                                                                    <Input.TextArea rows={2} />
+                                                                                </Form.Item>
+                                                                            </Col>
+                                                                        </Row>
+                                                                    </Card>
+                                                                );
+                                                            }}
                                                         </Form.Item>
                                                     </Card>
                                                 ))}

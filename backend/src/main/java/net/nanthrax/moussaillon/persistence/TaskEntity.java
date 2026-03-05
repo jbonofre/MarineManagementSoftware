@@ -41,4 +41,8 @@ public class TaskEntity extends PanacheEntity {
 
     public double dureeReelle;
 
+    public Date incidentDate;
+
+    public String incidentDetails;
+
 }

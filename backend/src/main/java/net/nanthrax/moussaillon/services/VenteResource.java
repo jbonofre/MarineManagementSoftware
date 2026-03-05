@@ -166,6 +166,8 @@ public class VenteResource {
                 clonedTask.technicien = incomingTask.technicien;
                 clonedTask.dureeEstimee = incomingTask.dureeEstimee;
                 clonedTask.dureeReelle = incomingTask.dureeReelle;
+                clonedTask.incidentDate = incomingTask.incidentDate;
+                clonedTask.incidentDetails = incomingTask.incidentDetails;
                 entity.taches.add(clonedTask);
             }
         }

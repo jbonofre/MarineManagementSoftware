@@ -30,6 +30,8 @@ interface TaskEntity {
     statusDate?: string;
     dureeEstimee?: number;
     technicien?: TechnicienEntity;
+    incidentDate?: string;
+    incidentDetails?: string;
 }
 
 interface ForfaitEntity {
@@ -208,7 +210,9 @@ export default function Planning() {
                 || (forcedDate ? `${forcedDate}T08:00` : undefined)
                 || `${selectedDate || todayIso()}T08:00`,
             status: taskRow.task.status || 'EN_ATTENTE',
-            technicienId: taskRow.task.technicien?.id
+            technicienId: taskRow.task.technicien?.id,
+            incidentDate: taskRow.task.incidentDate,
+            incidentDetails: taskRow.task.incidentDetails
         });
         setModalVisible(true);
     };
@@ -313,7 +317,9 @@ export default function Planning() {
                 ...latestTasks[taskToUpdateIndex],
                 status: values.status,
                 statusDate: values.date,
-                technicien: techniciens.find((technicien) => technicien.id === values.technicienId)
+                technicien: techniciens.find((technicien) => technicien.id === values.technicienId),
+                incidentDate: values.status === 'INCIDENT' ? values.incidentDate : latestTasks[taskToUpdateIndex].incidentDate,
+                incidentDetails: values.status === 'INCIDENT' ? values.incidentDetails : latestTasks[taskToUpdateIndex].incidentDetails
             };
 
             const updatedVente: VenteEntity = {
@@ -551,6 +557,21 @@ export default function Planning() {
                     </Form.Item>
                     <Form.Item name="technicienId" label="Technicien">
                         <Select allowClear showSearch options={technicienOptions} placeholder="Selectionner un technicien" />
+                    </Form.Item>
+                    <Form.Item noStyle shouldUpdate={(prev, cur) => prev?.status !== cur?.status}>
+                        {({ getFieldValue }) => {
+                            if (getFieldValue('status') !== 'INCIDENT') return null;
+                            return (
+                                <Card size="small" title="Incident" style={{ marginBottom: 12, borderColor: '#ff4d4f' }}>
+                                    <Form.Item name="incidentDate" label="Date de l'incident">
+                                        <Input type="date" />
+                                    </Form.Item>
+                                    <Form.Item name="incidentDetails" label="Details de l'incident">
+                                        <Input.TextArea rows={3} />
+                                    </Form.Item>
+                                </Card>
+                            );
+                        }}
                     </Form.Item>
                 </Form>
             </Modal>
