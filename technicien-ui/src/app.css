@@ -1,0 +1,22 @@
+.logo {
+    height: 48px;
+    margin: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-evenly;
+    color: white;
+    font-size: large;
+}
+
+.logo > a {
+    text-decoration: none;
+    color: white;
+}
+
+.layout {
+    min-height: 100vh !important;
+}
+
+.ant-layout-footer {
+    text-align: center !important;
+}
