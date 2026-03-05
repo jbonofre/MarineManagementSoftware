@@ -21,6 +21,9 @@ import {
     CreditCardOutlined,
     EyeOutlined,
     ReloadOutlined,
+    TagsOutlined,
+    PlusOutlined,
+    DeleteOutlined,
 } from '@ant-design/icons';
 import axios from 'axios';
 
@@ -82,7 +85,21 @@ interface MobileAppProps {
     onLogout: () => void;
 }
 
-type Page = 'dashboard' | 'bateaux' | 'moteurs' | 'remorques' | 'factures' | 'profil';
+interface Annonce {
+    id: number;
+    titre?: string;
+    description?: string;
+    prix?: number;
+    contact?: string;
+    telephone?: string;
+    photos?: string[];
+    status?: string;
+    dateCreation?: string;
+    client?: { id: number };
+    bateau?: BateauClientEntity;
+}
+
+type Page = 'dashboard' | 'bateaux' | 'moteurs' | 'remorques' | 'factures' | 'annonces' | 'profil';
 
 const formatDate = (value?: string) => {
     if (!value) return '-';
@@ -114,6 +131,9 @@ export default function MobileApp({ user, onLogout }: MobileAppProps) {
     const [remorques, setRemorques] = useState<RemorqueClientEntity[]>([]);
     const [ventes, setVentes] = useState<VenteEntity[]>([]);
     const [detailVente, setDetailVente] = useState<VenteEntity | null>(null);
+    const [annonces, setAnnonces] = useState<Annonce[]>([]);
+    const [detailAnnonce, setDetailAnnonce] = useState<Annonce | null>(null);
+    const [annonceFormOpen, setAnnonceFormOpen] = useState(false);
     const [profile, setProfile] = useState<Client | null>(null);
 
     const clientName = `${user.prenom || ''} ${user.nom}`.trim();
@@ -154,6 +174,11 @@ export default function MobileApp({ user, onLogout }: MobileAppProps) {
                 case 'factures': {
                     const res = await axios.get(`/portal/clients/${clientId}/ventes`);
                     setVentes(res.data || []);
+                    break;
+                }
+                case 'annonces': {
+                    const res = await axios.get('/annonces/active');
+                    setAnnonces(res.data || []);
                     break;
                 }
                 case 'profil': {
@@ -300,6 +325,140 @@ export default function MobileApp({ user, onLogout }: MobileAppProps) {
         </>
     );
 
+    const handleCreateAnnonce = async (values: any) => {
+        try {
+            const payload = {
+                titre: values.titre,
+                description: values.description,
+                prix: values.prix || 0,
+                contact: values.contact,
+                telephone: values.telephone,
+                photos: [],
+                status: 'ACTIVE',
+                client: { id: clientId },
+            };
+            await axios.post('/annonces', payload);
+            message.success('Annonce creee');
+            setAnnonceFormOpen(false);
+            fetchData('annonces');
+        } catch {
+            message.error('Erreur lors de la creation');
+        }
+    };
+
+    const handleDeleteAnnonce = async (id: number) => {
+        try {
+            await axios.delete(`/annonces/${id}`);
+            message.success('Annonce supprimee');
+            fetchData('annonces');
+        } catch {
+            message.error('Erreur lors de la suppression');
+        }
+    };
+
+    const bateauLabel = (b?: { name?: string; immatriculation?: string; modele?: { nom?: string; marque?: string }; id?: number }) => {
+        if (!b) return '-';
+        const model = b.modele ? `${b.modele.marque || ''} ${b.modele.nom || ''}`.trim() : '';
+        return b.name || model || b.immatriculation || `Bateau #${b.id}`;
+    };
+
+    const renderAnnonces = () => (
+        <>
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => setAnnonceFormOpen(true)} style={{ marginBottom: 12, width: '100%' }}>
+                Mettre en vente
+            </Button>
+            <List
+                dataSource={annonces}
+                renderItem={(a) => (
+                    <Card size="small" style={{ marginBottom: 8 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                            <span style={{ fontWeight: 'bold' }}>{a.titre || `Annonce #${a.id}`}</span>
+                            <Tag color={statusColor[a.status || '']}>{statusLabel[a.status || ''] || a.status}</Tag>
+                        </div>
+                        <p style={{ margin: 0 }}>Bateau: {bateauLabel(a.bateau as any)}</p>
+                        <p style={{ margin: 0, fontWeight: 'bold', color: '#1890ff' }}>Prix: {formatEuro(a.prix)}</p>
+                        <p style={{ margin: 0 }}>Contact: {a.contact || '-'}</p>
+                        <p style={{ margin: 0, fontSize: 12, color: '#999' }}>Publiee le {formatDate(a.dateCreation)}</p>
+                        <Space style={{ marginTop: 8 }} wrap>
+                            <Button size="small" icon={<EyeOutlined />} onClick={() => setDetailAnnonce(a)}>Detail</Button>
+                            {a.client?.id === clientId && (
+                                <Button size="small" icon={<DeleteOutlined />} danger onClick={() => handleDeleteAnnonce(a.id)}>Supprimer</Button>
+                            )}
+                        </Space>
+                    </Card>
+                )}
+            />
+            {/* Detail modal */}
+            <Modal
+                title={detailAnnonce?.titre || 'Detail'}
+                open={!!detailAnnonce}
+                onCancel={() => setDetailAnnonce(null)}
+                footer={null}
+                width="95vw"
+                style={{ top: 20 }}
+            >
+                {detailAnnonce && (
+                    <div>
+                        <p><strong>Bateau:</strong> {bateauLabel(detailAnnonce.bateau as any)}</p>
+                        <p><strong>Prix:</strong> <span style={{ fontSize: 18, color: '#1890ff' }}>{formatEuro(detailAnnonce.prix)}</span></p>
+                        <p><strong>Description:</strong></p>
+                        <p style={{ whiteSpace: 'pre-wrap', background: '#fafafa', padding: 12, borderRadius: 4 }}>
+                            {detailAnnonce.description || 'Pas de description'}
+                        </p>
+                        <p><strong>Contact:</strong> {detailAnnonce.contact || '-'}</p>
+                        <p><strong>Telephone:</strong> {detailAnnonce.telephone || '-'}</p>
+                        <p><strong>Date:</strong> {formatDate(detailAnnonce.dateCreation)}</p>
+                    </div>
+                )}
+            </Modal>
+            {/* Create modal */}
+            <Modal
+                title="Nouvelle annonce"
+                open={annonceFormOpen}
+                onCancel={() => setAnnonceFormOpen(false)}
+                footer={null}
+                width="95vw"
+                style={{ top: 20 }}
+            >
+                <form
+                    onSubmit={(e) => {
+                        e.preventDefault();
+                        const fd = new FormData(e.currentTarget);
+                        handleCreateAnnonce({
+                            titre: fd.get('titre'),
+                            description: fd.get('description'),
+                            prix: parseFloat(fd.get('prix') as string) || 0,
+                            contact: fd.get('contact'),
+                            telephone: fd.get('telephone'),
+                        });
+                    }}
+                >
+                    <div style={{ marginBottom: 12 }}>
+                        <label>Titre *</label>
+                        <input name="titre" required style={{ width: '100%', padding: 8 }} />
+                    </div>
+                    <div style={{ marginBottom: 12 }}>
+                        <label>Description</label>
+                        <textarea name="description" rows={3} style={{ width: '100%', padding: 8 }} />
+                    </div>
+                    <div style={{ marginBottom: 12 }}>
+                        <label>Prix (EUR) *</label>
+                        <input name="prix" type="number" min="0" required style={{ width: '100%', padding: 8 }} />
+                    </div>
+                    <div style={{ marginBottom: 12 }}>
+                        <label>Email de contact</label>
+                        <input name="contact" style={{ width: '100%', padding: 8 }} />
+                    </div>
+                    <div style={{ marginBottom: 12 }}>
+                        <label>Telephone</label>
+                        <input name="telephone" style={{ width: '100%', padding: 8 }} />
+                    </div>
+                    <Button type="primary" htmlType="submit" block>Publier</Button>
+                </form>
+            </Modal>
+        </>
+    );
+
     const renderProfil = () => (
         <Card size="small">
             {profile && (
@@ -329,6 +488,7 @@ export default function MobileApp({ user, onLogout }: MobileAppProps) {
         moteurs: 'Mes moteurs',
         remorques: 'Mes remorques',
         factures: 'Mes factures',
+        annonces: 'Petites annonces',
         profil: 'Mon profil',
     };
 
@@ -338,6 +498,7 @@ export default function MobileApp({ user, onLogout }: MobileAppProps) {
             case 'moteurs': return renderMoteurs();
             case 'remorques': return renderRemorques();
             case 'factures': return renderFactures();
+            case 'annonces': return renderAnnonces();
             case 'profil': return renderProfil();
             default: return renderDashboard();
         }
@@ -374,6 +535,7 @@ export default function MobileApp({ user, onLogout }: MobileAppProps) {
                         { value: 'moteurs', icon: <ToolOutlined />, label: '' },
                         { value: 'remorques', icon: <CarOutlined />, label: '' },
                         { value: 'factures', icon: <FileTextOutlined />, label: '' },
+                        { value: 'annonces', icon: <TagsOutlined />, label: '' },
                         { value: 'profil', icon: <UserOutlined />, label: '' },
                     ]}
                     style={{ borderRadius: 0 }}

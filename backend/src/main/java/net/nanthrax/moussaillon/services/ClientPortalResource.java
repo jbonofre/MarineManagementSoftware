@@ -12,6 +12,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import net.nanthrax.moussaillon.persistence.AnnonceEntity;
 import net.nanthrax.moussaillon.persistence.BateauClientEntity;
 import net.nanthrax.moussaillon.persistence.ClientEntity;
 import net.nanthrax.moussaillon.persistence.MoteurClientEntity;
@@ -74,5 +75,11 @@ public class ClientPortalResource {
     @Path("/clients/{id}/ventes")
     public List<VenteEntity> getClientVentes(@PathParam("id") long id) {
         return VenteEntity.list("client.id = ?1", id);
+    }
+
+    @GET
+    @Path("/clients/{id}/annonces")
+    public List<AnnonceEntity> getClientAnnonces(@PathParam("id") long id) {
+        return AnnonceEntity.list("client.id = ?1", id);
     }
 }

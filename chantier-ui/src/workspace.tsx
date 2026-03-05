@@ -29,6 +29,7 @@ import Vente from './vente.tsx';
 import Planning from './planning.tsx';
 import Comptoir from './comptoir.tsx';
 import Dashboard from './dashboard.tsx';
+import Annonces from './annonces.tsx';
 
 export function demo() {
     message.warning("Vous êtes sur une version de démonstration de moussAIllon. Il n'est pas possible d'ajouter ou supprimer des éléments.")
@@ -70,7 +71,8 @@ function SideMenu(props) {
       { key: 'market', label: 'Market', icon: <AmazonOutlined/>, children: [
         { key: 'marchands', label: 'Marchands' },
         { key: 'site', label: 'Site ecommerce' },
-        { key: 'marketing', label: 'Marketing' }
+        { key: 'marketing', label: 'Marketing' },
+        { key: 'annonces', label: <Link to="/annonces">Petites annonces</Link>, icon: <FileOutlined/> }
       ] },
       { key: 'parametrage', label: 'Paramétrage', icon: <SettingOutlined/>, children: [
         { key: 'societe', label: <Link to="/societe">Société</Link>, icon: <DeploymentUnitOutlined/> },
@@ -413,6 +415,9 @@ export default function Workspace(props) {
                         </Route>
                         <Route path="/planning" key="planning">
                             <Planning />
+                        </Route>
+                        <Route path="/annonces" key="annonces">
+                            <Annonces />
                         </Route>
                     </Switch>
                 </Layout.Content>
