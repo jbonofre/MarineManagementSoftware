@@ -15,6 +15,7 @@ import {
   Divider,
   Row,
   Col,
+  Checkbox,
 } from "antd";
 import {
   PlusCircleOutlined,
@@ -319,6 +320,11 @@ function Clients() {
             <Col span={12}>
               <Form.Item label="Remise (%)" name="remise" initialValue={0}>
                 <Input type="number" min={0} max={100}/>
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="consentement" valuePropName="checked">
+                <Checkbox>Consentement</Checkbox>
               </Form.Item>
             </Col>
           </Row>
