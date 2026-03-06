@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { ArrowDownOutlined, ArrowUpOutlined, ClockCircleOutlined, WarningOutlined } from '@ant-design/icons';
-import { Badge, Button, Card, Col, List, Progress, Row, Space, Statistic, Table, Tag, Typography } from 'antd';
+import { Badge, Button, Card, Col, List, Progress, Row, Space, Spin, Statistic, Table, Tag, Typography } from 'antd';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -11,6 +11,24 @@ type InterventionRow = {
     type: string;
     technicien: string;
     statut: 'A faire' | 'En cours' | 'Terminee';
+};
+
+type StockAlert = {
+    produit: string;
+    niveau: string;
+    color: string;
+};
+
+type DashboardData = {
+    caDuMois: number;
+    interventionsOuvertes: number;
+    retards48h: number;
+    alertesStock: number;
+    interventions: InterventionRow[];
+    stockAlerts: StockAlert[];
+    heuresAtelierPct: number;
+    ventesComptoirPct: number;
+    contratsMaintenancePct: number;
 };
 
 const interventionColumns = [
@@ -45,20 +63,21 @@ const interventionColumns = [
     }
 ];
 
-const interventions: InterventionRow[] = [
-    { key: '1', client: 'SAS Port Azur', unite: 'Beneteau Antares 9', type: 'Revision 200h', technicien: 'A. Martin', statut: 'En cours' },
-    { key: '2', client: 'M. Duval', unite: 'Jeanneau Cap Camarat', type: 'Diagnostic moteur', technicien: 'L. Simon', statut: 'A faire' },
-    { key: '3', client: 'Yacht Club Est', unite: 'Zodiac Pro 7', type: 'Maintenance annuelle', technicien: 'C. Roux', statut: 'Terminee' },
-    { key: '4', client: 'Nautic Services', unite: 'Quicksilver 805', type: 'Pose accessoires', technicien: 'M. Bernard', statut: 'A faire' }
-];
-
-const alerts = [
-    { produit: 'Huile 10W40', niveau: 'Critique', color: 'red' },
-    { produit: 'Filtre carburant Yamaha', niveau: 'Bas', color: 'orange' },
-    { produit: 'Kit turbine DF140', niveau: 'Bas', color: 'orange' }
-];
-
 export default function Dashboard() {
+    const [data, setData] = useState<DashboardData | null>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        fetch('/dashboard')
+            .then(res => res.json())
+            .then((d: DashboardData) => setData(d))
+            .finally(() => setLoading(false));
+    }, []);
+
+    if (loading || !data) {
+        return <Spin size="large" style={{ display: 'flex', justifyContent: 'center', marginTop: 100 }} />;
+    }
+
     return (
         <Space direction="vertical" size={16} style={{ width: '100%' }}>
             <Card>
@@ -75,7 +94,7 @@ export default function Dashboard() {
                     <Card>
                         <Statistic
                             title="CA du mois"
-                            value={84520}
+                            value={data.caDuMois}
                             precision={0}
                             suffix="EUR"
                             valueStyle={{ color: '#3f8600' }}
@@ -87,7 +106,7 @@ export default function Dashboard() {
                     <Card>
                         <Statistic
                             title="Interventions ouvertes"
-                            value={18}
+                            value={data.interventionsOuvertes}
                             valueStyle={{ color: '#1677ff' }}
                             prefix={<ClockCircleOutlined />}
                         />
@@ -97,7 +116,7 @@ export default function Dashboard() {
                     <Card>
                         <Statistic
                             title="Retards > 48h"
-                            value={4}
+                            value={data.retards48h}
                             valueStyle={{ color: '#cf1322' }}
                             prefix={<ArrowDownOutlined />}
                         />
@@ -107,7 +126,7 @@ export default function Dashboard() {
                     <Card>
                         <Statistic
                             title="Alertes stock"
-                            value={3}
+                            value={data.alertesStock}
                             valueStyle={{ color: '#d48806' }}
                             prefix={<WarningOutlined />}
                         />
@@ -120,7 +139,7 @@ export default function Dashboard() {
                     <Card title="Interventions du jour">
                         <Table
                             columns={interventionColumns}
-                            dataSource={interventions}
+                            dataSource={data.interventions}
                             pagination={false}
                             size="small"
                         />
@@ -129,7 +148,7 @@ export default function Dashboard() {
                 <Col xs={24} xl={8}>
                     <Card title="Stock a surveiller">
                         <List
-                            dataSource={alerts}
+                            dataSource={data.stockAlerts}
                             renderItem={(item) => (
                                 <List.Item>
                                     <Space style={{ width: '100%', justifyContent: 'space-between' }}>
@@ -149,15 +168,15 @@ export default function Dashboard() {
                         <Space direction="vertical" style={{ width: '100%' }} size={12}>
                             <div>
                                 <Text>Heures atelier facturees</Text>
-                                <Progress percent={74} status="active" />
+                                <Progress percent={data.heuresAtelierPct} status="active" />
                             </div>
                             <div>
                                 <Text>Ventes comptoir</Text>
-                                <Progress percent={61} />
+                                <Progress percent={data.ventesComptoirPct} />
                             </div>
                             <div>
                                 <Text>Contrats de maintenance</Text>
-                                <Progress percent={88} />
+                                <Progress percent={data.contratsMaintenancePct} />
                             </div>
                         </Space>
                     </Card>

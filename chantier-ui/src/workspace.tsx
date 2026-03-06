@@ -69,9 +69,6 @@ function SideMenu(props) {
         { key: 'planning', label: <Link to="/planning">Planning</Link>, icon: <CalendarOutlined/> },
       ] },
       { key: 'market', label: 'Market', icon: <AmazonOutlined/>, children: [
-        { key: 'marchands', label: 'Marchands' },
-        { key: 'site', label: 'Site ecommerce' },
-        { key: 'marketing', label: 'Marketing' },
         { key: 'annonces', label: <Link to="/annonces">Petites annonces</Link>, icon: <FileOutlined/> }
       ] },
       { key: 'parametrage', label: 'Paramétrage', icon: <SettingOutlined/>, children: [
