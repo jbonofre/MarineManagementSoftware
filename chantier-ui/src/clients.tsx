@@ -22,6 +22,8 @@ import {
   EditOutlined,
   DeleteOutlined,
   SearchOutlined,
+  MailOutlined,
+  KeyOutlined,
 } from "@ant-design/icons";
 import axios from "axios";
 import BateauxClients from "./clients-bateaux.tsx";
@@ -137,6 +139,19 @@ function Clients() {
     setLoading(false);
   };
 
+  const handleSendPassword = async (record: Client) => {
+    if (!record.email) {
+      message.warning("Ce client n'a pas d'adresse email.");
+      return;
+    }
+    try {
+      await axios.post(`/clients/${record.id}/send-password`);
+      message.success(`Mot de passe envoye a ${record.email}`);
+    } catch {
+      message.error("Erreur lors de l'envoi du mot de passe");
+    }
+  };
+
   const handleModalOk = async () => {
     try {
       const values = await form.validateFields();
@@ -192,12 +207,24 @@ function Clients() {
       render: (_, record) => (
         <Space>
           <Button icon={<EditOutlined />} size="small" onClick={() => handleEdit(record)} />
+          <Popconfirm
+            title="Generer un mot de passe et l'envoyer par email ?"
+            onConfirm={() => handleSendPassword(record)}
+            disabled={!record.email}
+          >
+            <Button
+              icon={<MailOutlined />}
+              size="small"
+              disabled={!record.email}
+              title="Envoyer mot de passe"
+            />
+          </Popconfirm>
           <Popconfirm title="Supprimer ce client ?" onConfirm={() => handleDelete(record.id)}>
             <Button icon={<DeleteOutlined />} danger size="small" />
           </Popconfirm>
         </Space>
       ),
-      width: 120,
+      width: 160,
     },
   ];
 
@@ -275,20 +302,30 @@ function Clients() {
               <Form.Item label="Email" name="email">
                 <Input />
               </Form.Item>
-            </Col>
-          </Row>
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item label="Téléphone" name="telephone">
-                <Input />
+              {editing && editing.id && (
+                <Popconfirm
+                  title="Générer un mot de passe et l'envoyer par email ?"
+                  onConfirm={() => handleSendPassword(editing)}
+                  disabled={!editing.email}
+                >
+                  <Button
+                    icon={<KeyOutlined />}
+                    disabled={!editing.email}
+                    size="small"
+                    style={{ marginTop: -12 }}
+                  >
+                    Générer et envoyer le mot de passe par email
+                  </Button>
+                </Popconfirm>
+              )}
+              <Form.Item name="consentement" valuePropName="checked" style={{ marginTop: 8 }}>
+                <Checkbox>Consentement</Checkbox>
               </Form.Item>
             </Col>
-            <Col span={12}>
-              <Form.Item label="Évaluation" name="evaluation">
-                <Rate allowClear />
-              </Form.Item>
-            </Col>
           </Row>
+          <Form.Item label="Téléphone" name="telephone">
+            <Input style={{ width: "50%" }}/>
+          </Form.Item>
           <Form.Item label="Adresse" name="adresse">
             <Input.TextArea autoSize={{ minRows: 3, maxRows: 6 }} />
           </Form.Item>
@@ -323,8 +360,8 @@ function Clients() {
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item name="consentement" valuePropName="checked">
-                <Checkbox>Consentement</Checkbox>
+              <Form.Item label="Évaluation" name="evaluation">
+                <Rate allowClear />
               </Form.Item>
             </Col>
           </Row>

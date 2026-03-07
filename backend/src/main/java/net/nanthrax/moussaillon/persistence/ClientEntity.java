@@ -18,6 +18,8 @@ public class ClientEntity extends PanacheEntity {
 
     public String email;
 
+    public String motDePasse;
+
     public String telephone;
 
     public String adresse;

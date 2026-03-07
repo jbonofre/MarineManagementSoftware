@@ -4,7 +4,10 @@ import java.sql.Date;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.quarkus.mailer.Mail;
+import io.quarkus.mailer.Mailer;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
@@ -16,6 +19,10 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import net.nanthrax.moussaillon.persistence.ForfaitEntity;
+import net.nanthrax.moussaillon.persistence.ForfaitProduitEntity;
+import net.nanthrax.moussaillon.persistence.ProduitCatalogueEntity;
+import net.nanthrax.moussaillon.persistence.SocieteEntity;
 import net.nanthrax.moussaillon.persistence.TaskEntity;
 import net.nanthrax.moussaillon.persistence.TechnicienEntity;
 import net.nanthrax.moussaillon.persistence.VenteEntity;
@@ -25,6 +32,9 @@ import net.nanthrax.moussaillon.persistence.VenteEntity;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class TechnicienPortalResource {
+
+    @Inject
+    Mailer mailer;
 
     public static class LoginRequest {
         public String email;
@@ -151,6 +161,18 @@ public class TechnicienPortalResource {
         // Find the parent vente for the response
         List<VenteEntity> ventes = VenteEntity.list("SELECT v FROM VenteEntity v JOIN v.taches t WHERE t.id = ?1", taskId);
         VenteEntity parentVente = ventes.isEmpty() ? null : ventes.get(0);
+
+        // Send incident notification email to client
+        if (task.status == TaskEntity.Status.INCIDENT && parentVente != null
+                && parentVente.client != null && parentVente.client.email != null && !parentVente.client.email.isBlank()) {
+            sendIncidentNotification(parentVente, task);
+        }
+
+        // Decrement stock when a task transitions to EN_COURS (once per vente)
+        if (task.status == TaskEntity.Status.EN_COURS && parentVente != null && !parentVente.stockDecremented) {
+            decrementStock(parentVente);
+            parentVente.stockDecremented = true;
+        }
         if (parentVente == null) {
             // fallback: return a minimal response
             TaskWithVente tw = new TaskWithVente();
@@ -164,5 +186,53 @@ public class TechnicienPortalResource {
             return tw;
         }
         return TaskWithVente.from(task, parentVente);
+    }
+
+    private void sendIncidentNotification(VenteEntity vente, TaskEntity task) {
+        SocieteEntity societe = SocieteEntity.findById(1L);
+        String societeNom = societe != null ? societe.nom : "moussAIllon";
+        String clientName = vente.client.prenom != null ? vente.client.prenom : vente.client.nom;
+
+        String subject = "Incident sur votre intervention - " + societeNom;
+        String body = "Bonjour " + clientName + ",\n\n"
+                + "Nous vous informons qu'un incident a ete signale sur l'intervention \"" + task.nom + "\".\n\n";
+        if (task.incidentDetails != null && !task.incidentDetails.isBlank()) {
+            body += "Details : " + task.incidentDetails + "\n\n";
+        }
+        if (task.incidentDate != null) {
+            body += "Date de l'incident : " + task.incidentDate + "\n\n";
+        }
+        body += "Notre equipe met tout en oeuvre pour resoudre la situation dans les meilleurs delais.\n\n"
+                + "Cordialement,\n" + societeNom;
+
+        mailer.send(Mail.withText(vente.client.email, subject, body));
+    }
+
+    private void decrementStock(VenteEntity vente) {
+        // Decrement stock for direct products on the vente
+        if (vente.produits != null) {
+            for (ProduitCatalogueEntity produit : vente.produits) {
+                ProduitCatalogueEntity p = ProduitCatalogueEntity.findById(produit.id);
+                if (p != null) {
+                    p.stock = Math.max(0, p.stock - 1);
+                }
+            }
+        }
+        // Decrement stock for products in forfaits
+        if (vente.forfaits != null) {
+            for (ForfaitEntity forfait : vente.forfaits) {
+                ForfaitEntity f = ForfaitEntity.findById(forfait.id);
+                if (f != null && f.produits != null) {
+                    for (ForfaitProduitEntity fp : f.produits) {
+                        if (fp.produit != null) {
+                            ProduitCatalogueEntity p = ProduitCatalogueEntity.findById(fp.produit.id);
+                            if (p != null) {
+                                p.stock = Math.max(0, p.stock - fp.quantite);
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }

@@ -183,6 +183,18 @@ export default function Planning({ technicienId }: PlanningProps) {
             render: (val: string) => <Tag color={statusColor[val]}>{statusLabel[val] || val}</Tag>,
         },
         {
+            title: 'Debut',
+            dataIndex: 'dateDebut',
+            key: 'dateDebut',
+            render: (val: string) => formatDate(val),
+        },
+        {
+            title: 'Fin',
+            dataIndex: 'dateFin',
+            key: 'dateFin',
+            render: (val: string) => formatDate(val),
+        },
+        {
             title: 'Date planifiee',
             dataIndex: 'statusDate',
             key: 'statusDate',
@@ -224,7 +236,7 @@ export default function Planning({ technicienId }: PlanningProps) {
                             Demarrer
                         </Button>
                     )}
-                    {(record.taskStatus === 'EN_COURS') && (
+                    {(record.taskStatus === 'PLANIFIEE' || record.taskStatus === 'EN_COURS') && (
                         <Button
                             size="small"
                             type="primary"

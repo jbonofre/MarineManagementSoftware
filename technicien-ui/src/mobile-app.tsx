@@ -170,6 +170,10 @@ export default function MobileApp({ user, onLogout }: MobileAppProps) {
                 <span>Estimee: {task.dureeEstimee ? `${task.dureeEstimee}h` : '-'}</span>
                 <span>Reelle: {task.dureeReelle ? `${task.dureeReelle}h` : '-'}</span>
             </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', margin: '2px 0', fontSize: 12 }}>
+                {task.dateDebut && <span>Debut: {formatDate(task.dateDebut)}</span>}
+                {task.dateFin && <span>Fin: {formatDate(task.dateFin)}</span>}
+            </div>
             {task.statusDate && <p style={{ margin: '2px 0', fontSize: 12 }}>Planifiee: {formatDate(task.statusDate)}</p>}
             {task.taskStatus === 'INCIDENT' && task.incidentDetails && (
                 <Card size="small" style={{ background: '#fff2f0', borderColor: '#ffccc7', marginTop: 4 }}>

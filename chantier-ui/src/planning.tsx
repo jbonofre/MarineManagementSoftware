@@ -62,6 +62,8 @@ interface VenteEntity {
 
 interface PlanningFormValues {
     date: string;
+    dateDebut?: string;
+    dateFin?: string;
     status: TaskStatus;
     technicienId?: number;
 }
@@ -216,6 +218,8 @@ export default function Planning() {
                 toDateTimeLocalValue(taskRow.task.statusDate)
                 || (forcedDate ? `${forcedDate}T08:00` : undefined)
                 || `${selectedDate || todayIso()}T08:00`,
+            dateDebut: taskRow.task.dateDebut || undefined,
+            dateFin: taskRow.task.dateFin || undefined,
             status: taskRow.task.status === 'EN_ATTENTE' ? 'PLANIFIEE' : (taskRow.task.status || 'PLANIFIEE'),
             technicienId: taskRow.task.technicien?.id,
             incidentDate: taskRow.task.incidentDate,
@@ -369,6 +373,8 @@ export default function Planning() {
                 ...latestTasks[taskToUpdateIndex],
                 status: values.status,
                 statusDate: values.date,
+                dateDebut: values.dateDebut || latestTasks[taskToUpdateIndex].dateDebut,
+                dateFin: values.dateFin || latestTasks[taskToUpdateIndex].dateFin,
                 technicien: techniciens.find((technicien) => technicien.id === values.technicienId),
                 incidentDate: values.status === 'INCIDENT' ? values.incidentDate : latestTasks[taskToUpdateIndex].incidentDate,
                 incidentDetails: values.status === 'INCIDENT' ? values.incidentDetails : latestTasks[taskToUpdateIndex].incidentDetails
@@ -430,6 +436,16 @@ export default function Planning() {
             title: 'Tâche',
             key: 'taskName',
             render: (_: unknown, record: PendingTaskRow) => record.task.nom || '(Sans nom)'
+        },
+        {
+            title: 'Debut',
+            key: 'dateDebut',
+            render: (_: unknown, record: PendingTaskRow) => record.task.dateDebut ? dayjs(record.task.dateDebut).format('DD/MM/YYYY') : '-'
+        },
+        {
+            title: 'Fin',
+            key: 'dateFin',
+            render: (_: unknown, record: PendingTaskRow) => record.task.dateFin ? dayjs(record.task.dateFin).format('DD/MM/YYYY') : '-'
         }
     ];
 
@@ -664,6 +680,18 @@ export default function Planning() {
                     >
                         <Input type="datetime-local" />
                     </Form.Item>
+                    <Row gutter={16}>
+                        <Col span={12}>
+                            <Form.Item name="dateDebut" label="Date de debut">
+                                <Input type="date" />
+                            </Form.Item>
+                        </Col>
+                        <Col span={12}>
+                            <Form.Item name="dateFin" label="Date de fin">
+                                <Input type="date" />
+                            </Form.Item>
+                        </Col>
+                    </Row>
                     <Form.Item
                         name="status"
                         label="Statut"

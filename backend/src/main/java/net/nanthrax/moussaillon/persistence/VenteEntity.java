@@ -79,7 +79,9 @@ public class VenteEntity extends PanacheEntity {
     }
 
     public ModePaiement modePaiement;
-    
+
+    public boolean stockDecremented;
+
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "vente_id")
     public List<TaskEntity> taches = new ArrayList<TaskEntity>();

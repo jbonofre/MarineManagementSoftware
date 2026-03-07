@@ -40,7 +40,14 @@ public class ClientPortalResource {
         if (clients.isEmpty()) {
             throw new WebApplicationException("Aucun compte client trouve avec cet email", Response.Status.UNAUTHORIZED);
         }
-        return clients.get(0);
+        ClientEntity client = clients.get(0);
+        if (request.password == null || request.password.isBlank()) {
+            throw new WebApplicationException("Le mot de passe est requis", Response.Status.BAD_REQUEST);
+        }
+        if (client.motDePasse == null || !request.password.equals(client.motDePasse)) {
+            throw new WebApplicationException("Mot de passe invalide", Response.Status.UNAUTHORIZED);
+        }
+        return client;
     }
 
     @GET

@@ -20,13 +20,13 @@ export default function Login({ setUser }: LoginProps) {
     const [loginForm] = Form.useForm();
     const [loading, setLoading] = useState(false);
 
-    const handleLogin = async (values: { email: string }) => {
+    const handleLogin = async (values: { email: string; password?: string }) => {
         setLoading(true);
         try {
-            const res = await axios.post('/portal/login', { email: values.email });
+            const res = await axios.post('/portal/login', { email: values.email, password: values.password });
             setUser(res.data);
         } catch {
-            message.error("Aucun compte client trouve avec cet email.");
+            message.error("Email ou mot de passe incorrect.");
         } finally {
             setLoading(false);
         }
@@ -67,6 +67,13 @@ export default function Login({ setUser }: LoginProps) {
                     ]}
                 >
                     <Input />
+                </Form.Item>
+                <Form.Item
+                    name="password"
+                    label="Mot de passe"
+                    rules={[{ required: true, message: 'Le mot de passe est requis' }]}
+                >
+                    <Input.Password />
                 </Form.Item>
             </Form>
         </Modal>

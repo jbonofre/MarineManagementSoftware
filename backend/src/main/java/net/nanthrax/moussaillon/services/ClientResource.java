@@ -1,12 +1,17 @@
 package net.nanthrax.moussaillon.services;
 
+import io.quarkus.mailer.Mail;
+import io.quarkus.mailer.Mailer;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import net.nanthrax.moussaillon.persistence.ClientEntity;
+import net.nanthrax.moussaillon.persistence.SocieteEntity;
 
+import java.security.SecureRandom;
 import java.util.List;
 
 @Path("/clients")
@@ -14,6 +19,9 @@ import java.util.List;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class ClientResource {
+
+    @Inject
+    Mailer mailer;
 
     @GET
     public List<ClientEntity> list() {
@@ -85,6 +93,47 @@ public class ClientResource {
         entity.naf = client.naf;
 
         return entity;
+    }
+
+    @POST
+    @Path("{id}/send-password")
+    @Transactional
+    public Response sendPassword(@PathParam("id") long id) {
+        ClientEntity client = ClientEntity.findById(id);
+        if (client == null) {
+            throw new WebApplicationException("Le client (" + id + ") n'est pas trouve", 404);
+        }
+        if (client.email == null || client.email.isBlank()) {
+            throw new WebApplicationException("Le client n'a pas d'adresse email", 400);
+        }
+
+        String password = generatePassword();
+        client.motDePasse = password;
+
+        SocieteEntity societe = SocieteEntity.findById(1L);
+        String societeNom = societe != null ? societe.nom : "moussAIllon";
+
+        String subject = "Votre mot de passe - Espace Client " + societeNom;
+        String body = "Bonjour " + (client.prenom != null ? client.prenom : client.nom) + ",\n\n"
+                + "Votre mot de passe pour acceder a l'Espace Client " + societeNom + " :\n\n"
+                + "    " + password + "\n\n"
+                + "Connectez-vous avec votre email : " + client.email + "\n\n"
+                + "Cordialement,\n"
+                + societeNom;
+
+        mailer.send(Mail.withText(client.email, subject, body));
+
+        return Response.ok().build();
+    }
+
+    private static String generatePassword() {
+        String chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+        SecureRandom random = new SecureRandom();
+        StringBuilder sb = new StringBuilder(8);
+        for (int i = 0; i < 8; i++) {
+            sb.append(chars.charAt(random.nextInt(chars.length())));
+        }
+        return sb.toString();
     }
 
 }
