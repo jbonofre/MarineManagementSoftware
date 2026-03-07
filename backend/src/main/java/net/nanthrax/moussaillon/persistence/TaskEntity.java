@@ -15,6 +15,7 @@ public class TaskEntity extends PanacheEntity {
 
     public enum Status {
         EN_ATTENTE,
+        PLANIFIEE,
         EN_COURS,
         TERMINEE,
         INCIDENT,

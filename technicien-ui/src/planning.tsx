@@ -19,7 +19,7 @@ import {
 import { CheckCircleOutlined, ClockCircleOutlined, ExclamationCircleOutlined, ReloadOutlined } from '@ant-design/icons';
 import axios from 'axios';
 
-type TaskStatus = 'EN_ATTENTE' | 'EN_COURS' | 'TERMINEE' | 'INCIDENT' | 'ANNULEE';
+type TaskStatus = 'EN_ATTENTE' | 'PLANIFIEE' | 'EN_COURS' | 'TERMINEE' | 'INCIDENT' | 'ANNULEE';
 
 interface TaskWithVente {
     taskId: number;
@@ -46,6 +46,7 @@ interface PlanningProps {
 
 const taskStatusOptions: Array<{ value: TaskStatus; label: string }> = [
     { value: 'EN_ATTENTE', label: 'En attente' },
+    { value: 'PLANIFIEE', label: 'Planifiee' },
     { value: 'EN_COURS', label: 'En cours' },
     { value: 'TERMINEE', label: 'Terminee' },
     { value: 'INCIDENT', label: 'Incident' },
@@ -54,6 +55,7 @@ const taskStatusOptions: Array<{ value: TaskStatus; label: string }> = [
 
 const statusColor: Record<string, string> = {
     EN_ATTENTE: 'orange',
+    PLANIFIEE: 'cyan',
     EN_COURS: 'blue',
     TERMINEE: 'green',
     INCIDENT: 'red',
@@ -62,6 +64,7 @@ const statusColor: Record<string, string> = {
 
 const statusLabel: Record<string, string> = {
     EN_ATTENTE: 'En attente',
+    PLANIFIEE: 'Planifiee',
     EN_COURS: 'En cours',
     TERMINEE: 'Terminee',
     INCIDENT: 'Incident',
@@ -115,7 +118,7 @@ export default function Planning({ technicienId }: PlanningProps) {
         return t.statusDate.startsWith(todayIso());
     });
 
-    const pendingTasks = filteredTasks.filter((t) => t.taskStatus === 'EN_ATTENTE' || t.taskStatus === 'EN_COURS');
+    const pendingTasks = filteredTasks.filter((t) => t.taskStatus === 'EN_ATTENTE' || t.taskStatus === 'PLANIFIEE' || t.taskStatus === 'EN_COURS');
     const incidentTasks = filteredTasks.filter((t) => t.taskStatus === 'INCIDENT');
 
     const openUpdateModal = (task: TaskWithVente) => {
@@ -202,7 +205,7 @@ export default function Planning({ technicienId }: PlanningProps) {
             key: 'actions',
             render: (_: unknown, record: TaskWithVente) => (
                 <Space>
-                    {(record.taskStatus === 'EN_ATTENTE') && (
+                    {(record.taskStatus === 'EN_ATTENTE' || record.taskStatus === 'PLANIFIEE') && (
                         <Button
                             size="small"
                             icon={<ClockCircleOutlined />}

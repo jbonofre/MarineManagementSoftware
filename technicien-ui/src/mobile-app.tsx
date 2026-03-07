@@ -34,7 +34,7 @@ interface Technicien {
     nom: string;
 }
 
-type TaskStatus = 'EN_ATTENTE' | 'EN_COURS' | 'TERMINEE' | 'INCIDENT' | 'ANNULEE';
+type TaskStatus = 'EN_ATTENTE' | 'PLANIFIEE' | 'EN_COURS' | 'TERMINEE' | 'INCIDENT' | 'ANNULEE';
 
 interface TaskWithVente {
     taskId: number;
@@ -64,6 +64,7 @@ type Tab = 'today' | 'all' | 'incidents';
 
 const taskStatusOptions: Array<{ value: TaskStatus; label: string }> = [
     { value: 'EN_ATTENTE', label: 'En attente' },
+    { value: 'PLANIFIEE', label: 'Planifiee' },
     { value: 'EN_COURS', label: 'En cours' },
     { value: 'TERMINEE', label: 'Terminee' },
     { value: 'INCIDENT', label: 'Incident' },
@@ -71,10 +72,10 @@ const taskStatusOptions: Array<{ value: TaskStatus; label: string }> = [
 ];
 
 const statusColor: Record<string, string> = {
-    EN_ATTENTE: 'orange', EN_COURS: 'blue', TERMINEE: 'green', INCIDENT: 'red', ANNULEE: 'default',
+    EN_ATTENTE: 'orange', PLANIFIEE: 'cyan', EN_COURS: 'blue', TERMINEE: 'green', INCIDENT: 'red', ANNULEE: 'default',
 };
 const statusLabel: Record<string, string> = {
-    EN_ATTENTE: 'En attente', EN_COURS: 'En cours', TERMINEE: 'Terminee', INCIDENT: 'Incident', ANNULEE: 'Annulee',
+    EN_ATTENTE: 'En attente', PLANIFIEE: 'Planifiee', EN_COURS: 'En cours', TERMINEE: 'Terminee', INCIDENT: 'Incident', ANNULEE: 'Annulee',
 };
 
 const todayIso = () => {
@@ -117,7 +118,7 @@ export default function MobileApp({ user, onLogout }: MobileAppProps) {
 
     const todayTasks = tasks.filter((t) => t.statusDate && t.statusDate.startsWith(todayIso()));
     const incidentTasks = tasks.filter((t) => t.taskStatus === 'INCIDENT');
-    const pendingCount = tasks.filter((t) => t.taskStatus === 'EN_ATTENTE' || t.taskStatus === 'EN_COURS').length;
+    const pendingCount = tasks.filter((t) => t.taskStatus === 'EN_ATTENTE' || t.taskStatus === 'PLANIFIEE' || t.taskStatus === 'EN_COURS').length;
 
     const displayedTasks = tab === 'today' ? todayTasks : tab === 'incidents' ? incidentTasks : tasks;
 
@@ -179,7 +180,7 @@ export default function MobileApp({ user, onLogout }: MobileAppProps) {
                 </Card>
             )}
             <Space style={{ marginTop: 8 }} wrap>
-                {task.taskStatus === 'EN_ATTENTE' && (
+                {(task.taskStatus === 'EN_ATTENTE' || task.taskStatus === 'PLANIFIEE') && (
                     <Button size="small" type="primary" icon={<ClockCircleOutlined />} onClick={() => openModal(task, 'EN_COURS')}>
                         Demarrer
                     </Button>

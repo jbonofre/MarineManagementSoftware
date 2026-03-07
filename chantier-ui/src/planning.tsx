@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Badge, Button, Card, Col, Empty, Form, Input, Modal, Row, Select, Space, Table, Tag, Typography, message } from 'antd';
 import { CalendarOutlined, EditOutlined } from '@ant-design/icons';
 import axios from 'axios';
@@ -7,7 +7,7 @@ import { WeeklyCalendar } from 'antd-weekly-calendar';
 import { useHistory } from 'react-router-dom';
 
 type VenteType = 'DEVIS' | 'FACTURE' | 'COMPTOIR';
-type TaskStatus = 'EN_ATTENTE' | 'EN_COURS' | 'TERMINEE' | 'INCIDENT' | 'ANNULEE';
+type TaskStatus = 'EN_ATTENTE' | 'PLANIFIEE' | 'EN_COURS' | 'TERMINEE' | 'INCIDENT' | 'ANNULEE';
 
 interface ClientEntity {
     id: number;
@@ -84,6 +84,7 @@ interface PendingTaskRow {
 
 const taskStatusOptions: Array<{ value: TaskStatus; label: string }> = [
     { value: 'EN_ATTENTE', label: 'En attente' },
+    { value: 'PLANIFIEE', label: 'Planifiee' },
     { value: 'EN_COURS', label: 'En cours' },
     { value: 'TERMINEE', label: 'Terminee' },
     { value: 'INCIDENT', label: 'Incident' },
@@ -98,6 +99,7 @@ const typeOptions: Array<{ value: VenteType; label: string }> = [
 
 const statusColor: Record<TaskStatus, string> = {
     EN_ATTENTE: 'default',
+    PLANIFIEE: 'cyan',
     EN_COURS: 'blue',
     TERMINEE: 'green',
     INCIDENT: 'volcano',
@@ -162,10 +164,15 @@ export default function Planning() {
     const [loading, setLoading] = useState(false);
     const [selectedDate, setSelectedDate] = useState(todayIso());
     const [selectedStatus, setSelectedStatus] = useState<TaskStatus | undefined>(undefined);
+    const [selectedTechnicien, setSelectedTechnicien] = useState<number | undefined>(undefined);
     const [modalVisible, setModalVisible] = useState(false);
     const [saving, setSaving] = useState(false);
     const [currentTaskRow, setCurrentTaskRow] = useState<PendingTaskRow | null>(null);
     const [form] = Form.useForm<PlanningFormValues>();
+    const calendarRef = useRef<HTMLDivElement>(null);
+    const draggedTaskRef = useRef<PendingTaskRow | null>(null);
+    const [dragOverDay, setDragOverDay] = useState<string | null>(null);
+    const [calendarWeekStart, setCalendarWeekStart] = useState<dayjs.Dayjs>(dayjs().startOf('week'));
 
     const fetchVentes = async () => {
         setLoading(true);
@@ -209,12 +216,51 @@ export default function Planning() {
                 toDateTimeLocalValue(taskRow.task.statusDate)
                 || (forcedDate ? `${forcedDate}T08:00` : undefined)
                 || `${selectedDate || todayIso()}T08:00`,
-            status: taskRow.task.status || 'EN_ATTENTE',
+            status: taskRow.task.status === 'EN_ATTENTE' ? 'PLANIFIEE' : (taskRow.task.status || 'PLANIFIEE'),
             technicienId: taskRow.task.technicien?.id,
             incidentDate: taskRow.task.incidentDate,
             incidentDetails: taskRow.task.incidentDetails
         });
         setModalVisible(true);
+    };
+
+    const getDropDate = (clientX: number): string | undefined => {
+        const container = calendarRef.current;
+        if (!container) return undefined;
+        const headerCells = container.querySelectorAll<HTMLElement>('.ant-table-thead th');
+        if (headerCells.length < 2) return undefined;
+        // Skip column 0 (time gutter), remaining columns are days starting from Sunday (week start)
+        const dayCells = Array.from(headerCells).slice(1);
+        for (let i = 0; i < dayCells.length; i++) {
+            const rect = dayCells[i].getBoundingClientRect();
+            if (clientX >= rect.left && clientX <= rect.right) {
+                return calendarWeekStart.add(i, 'day').format('YYYY-MM-DD');
+            }
+        }
+        return undefined;
+    };
+
+    const handleCalendarDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        const day = getDropDate(e.clientX);
+        setDragOverDay(day || null);
+    };
+
+    const handleCalendarDragLeave = () => {
+        setDragOverDay(null);
+    };
+
+    const handleCalendarDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        setDragOverDay(null);
+        const taskRow = draggedTaskRef.current;
+        draggedTaskRef.current = null;
+        if (!taskRow) return;
+        const day = getDropDate(e.clientX);
+        if (day) {
+            openPlanningModal(taskRow, day);
+        }
     };
 
     const allTasks = useMemo<PendingTaskRow[]>(
@@ -230,12 +276,16 @@ export default function Planning() {
         [ventes]
     );
 
+    const matchesTechnicien = (row: PendingTaskRow) =>
+        !selectedTechnicien || row.task.technicien?.id === selectedTechnicien;
+
     const pendingTasks = useMemo<PendingTaskRow[]>(
         () =>
             allTasks
                 .filter((row) => !row.task.status || row.task.status === 'EN_ATTENTE')
-                .filter((row) => !selectedStatus || row.task.status === selectedStatus),
-        [allTasks, selectedStatus]
+                .filter((row) => !selectedStatus || row.task.status === selectedStatus)
+                .filter(matchesTechnicien),
+        [allTasks, selectedStatus, selectedTechnicien]
     );
 
     const pendingTasksForDay = useMemo<PendingTaskRow[]>(
@@ -246,16 +296,18 @@ export default function Planning() {
     const plannedTasks = useMemo<PendingTaskRow[]>(
         () =>
             allTasks
-                .filter((row) => row.task.status === 'EN_COURS')
+                .filter((row) => row.task.status === 'PLANIFIEE' || row.task.status === 'EN_COURS')
                 .filter((row) => toIsoDay(row.task.statusDate) === selectedDate)
-                .filter((row) => !selectedStatus || row.task.status === selectedStatus),
-        [allTasks, selectedDate, selectedStatus]
+                .filter((row) => !selectedStatus || row.task.status === selectedStatus)
+                .filter(matchesTechnicien),
+        [allTasks, selectedDate, selectedStatus, selectedTechnicien]
     );
 
     const weeklyEvents = useMemo<WeeklyCalendarEvent[]>(
         () =>
             allTasks
-                .filter((row) => row.task.status === 'EN_COURS')
+                .filter((row) => row.task.status === 'PLANIFIEE' || row.task.status === 'EN_COURS')
+                .filter(matchesTechnicien)
                 .map((row) => {
                     const { vente, task } = row;
                     const startSource = task.dateDebut || task.statusDate || vente.date;
@@ -286,7 +338,7 @@ export default function Planning() {
                     } as WeeklyCalendarEvent;
                 })
                 .filter(Boolean) as WeeklyCalendarEvent[],
-        [allTasks]
+        [allTasks, selectedTechnicien]
     );
 
     const handleSavePlanning = async () => {
@@ -429,7 +481,7 @@ export default function Planning() {
     return (
         <Card title="Planning">
             <Row gutter={[16, 16]}>
-                <Col span={6}>
+                <Col flex="auto">
                     <Card size="small" title="Filtres">
                         <Space direction="vertical" style={{ width: '100%' }}>
                             <Input type="date" value={selectedDate} onChange={(event) => setSelectedDate(event.target.value || todayIso())} />
@@ -441,17 +493,29 @@ export default function Planning() {
                                 onChange={(value) => setSelectedStatus(value)}
                                 style={{ width: '100%' }}
                             />
+                            <Select
+                                allowClear
+                                showSearch
+                                options={technicienOptions}
+                                placeholder="Tous les techniciens"
+                                value={selectedTechnicien}
+                                onChange={(value) => setSelectedTechnicien(value)}
+                                style={{ width: '100%' }}
+                                filterOption={(input, option) =>
+                                    (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                                }
+                            />
                         </Space>
                     </Card>
                 </Col>
-                <Col span={6}>
+                <Col flex="auto">
                     <Card size="small" title="Synthese">
                         <Space direction="vertical" style={{ width: '100%' }}>
                             <div>
                                 <Badge status="processing" /> Date: <strong>{selectedDate}</strong>
                             </div>
                             <div>
-                                <Badge status="success" /> EN_COURS (jour): <strong>{plannedTasks.length}</strong>
+                                <Badge status="success" /> Planifiees (jour): <strong>{plannedTasks.length}</strong>
                             </div>
                             <div>
                                 <Badge status="warning" /> En attente (jour): <strong>{pendingTasksForDay.length}</strong>
@@ -466,20 +530,59 @@ export default function Planning() {
 
             <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
                 <Col span={24}>
-                    <Card size="small" title="Vue semaine">
-                        <WeeklyCalendar
-                            events={weeklyEvents}
-                            weekends
-                            onSelectDate={(date) => {
-                                setSelectedDate(dayjs(date).format('YYYY-MM-DD'));
+                    <Card size="small" title={<span>Vue semaine <Typography.Text type="secondary" style={{ fontWeight: 'normal', fontSize: 12 }}>(glisser-deposer une tache depuis le tableau ci-dessous)</Typography.Text></span>}>
+                        <style>{`
+                            .planning-calendar .ant-table-tbody > tr:nth-child(-n+9),
+                            .planning-calendar .ant-table-tbody > tr:nth-child(n+24) {
+                                display: none;
+                            }
+                        `}</style>
+                        <div
+                            ref={calendarRef}
+                            className="planning-calendar"
+                            onDragOver={handleCalendarDragOver}
+                            onDragLeave={handleCalendarDragLeave}
+                            onDrop={handleCalendarDrop}
+                            style={{
+                                position: 'relative',
+                                border: dragOverDay ? '2px dashed #1677ff' : '2px dashed transparent',
+                                borderRadius: 8,
+                                transition: 'border-color 0.2s'
                             }}
-                            onEventClick={(event: WeeklyCalendarEvent) => {
-                                const matchedTaskRow = allTasks.find((row) => row.key === event.eventId);
-                                if (matchedTaskRow) {
-                                    openPlanningModal(matchedTaskRow);
-                                }
-                            }}
-                        />
+                        >
+                            {dragOverDay && (
+                                <div style={{
+                                    position: 'absolute',
+                                    top: 0,
+                                    left: 0,
+                                    right: 0,
+                                    zIndex: 10,
+                                    textAlign: 'center',
+                                    background: 'rgba(22, 119, 255, 0.08)',
+                                    padding: '4px 0',
+                                    borderRadius: '8px 8px 0 0',
+                                    fontWeight: 500,
+                                    color: '#1677ff',
+                                    pointerEvents: 'none'
+                                }}>
+                                    Deposer pour planifier le {dayjs(dragOverDay).format('DD/MM/YYYY')}
+                                </div>
+                            )}
+                            <WeeklyCalendar
+                                events={weeklyEvents}
+                                weekends
+                                onSelectDate={(date) => {
+                                    setSelectedDate(dayjs(date).format('YYYY-MM-DD'));
+                                    setCalendarWeekStart(dayjs(date).startOf('week'));
+                                }}
+                                onEventClick={(event: WeeklyCalendarEvent) => {
+                                    const matchedTaskRow = allTasks.find((row) => row.key === event.eventId);
+                                    if (matchedTaskRow) {
+                                        openPlanningModal(matchedTaskRow);
+                                    }
+                                }}
+                            />
+                        </div>
                     </Card>
                 </Col>
             </Row>
@@ -497,7 +600,7 @@ export default function Planning() {
                                 bordered
                             />
                         ) : (
-                            <Empty description="Aucune tache EN_COURS avec date de statut pour cette date." />
+                            <Empty description="Aucune tache planifiee pour cette date." />
                         )}
                     </Card>
                 </Col>
@@ -518,6 +621,19 @@ export default function Planning() {
                                 columns={pendingTaskColumns}
                                 pagination={{ pageSize: 6 }}
                                 bordered
+                                onRow={(record) => ({
+                                    draggable: true,
+                                    style: { cursor: 'grab' },
+                                    onDragStart: (e) => {
+                                        draggedTaskRef.current = record;
+                                        e.dataTransfer.effectAllowed = 'move';
+                                        e.dataTransfer.setData('text/plain', record.key);
+                                    },
+                                    onDragEnd: () => {
+                                        draggedTaskRef.current = null;
+                                        setDragOverDay(null);
+                                    }
+                                })}
                             />
                         ) : (
                             <Empty description="Aucune tache en attente." />

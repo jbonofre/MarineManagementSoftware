@@ -104,6 +104,7 @@ public class DashboardResource {
     private String mapStatut(TaskEntity.Status status) {
         if (status == null) return "A faire";
         return switch (status) {
+            case PLANIFIEE -> "Planifiee";
             case EN_COURS -> "En cours";
             case TERMINEE -> "Terminee";
             default -> "A faire";
