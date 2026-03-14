@@ -24,6 +24,13 @@ import {
     TagsOutlined,
     PlusOutlined,
     DeleteOutlined,
+    ScheduleOutlined,
+    ClockCircleOutlined,
+    CalendarOutlined,
+    SyncOutlined,
+    CheckCircleOutlined,
+    ExclamationCircleOutlined,
+    StopOutlined,
 } from '@ant-design/icons';
 import axios from 'axios';
 
@@ -64,6 +71,22 @@ interface RemorqueClientEntity {
     modele?: { nom?: string; marque?: string };
 }
 
+interface TaskEntity {
+    id: number;
+    nom: string;
+    status: string;
+    dateDebut?: string;
+    dateFin?: string;
+    statusDate?: string;
+    description?: string;
+    notes?: string;
+    technicien?: { id: number; nom: string; prenom?: string };
+    dureeEstimee: number;
+    dureeReelle: number;
+    incidentDate?: string;
+    incidentDetails?: string;
+}
+
 interface VenteEntity {
     id: number;
     status: string;
@@ -78,6 +101,10 @@ interface VenteEntity {
     forfaits?: Array<{ id: number; nom: string; reference?: string; prixTTC?: number }>;
     produits?: Array<{ id: number; nom: string; marque?: string; prixVenteTTC?: number }>;
     services?: Array<{ id: number; nom: string; prixTTC?: number }>;
+    taches?: TaskEntity[];
+    bateau?: { name?: string; immatriculation?: string };
+    moteur?: { numeroSerie?: string; modele?: { nom?: string; marque?: string } };
+    remorque?: { immatriculation?: string };
 }
 
 interface MobileAppProps {
@@ -99,7 +126,7 @@ interface Annonce {
     bateau?: BateauClientEntity;
 }
 
-type Page = 'dashboard' | 'bateaux' | 'moteurs' | 'remorques' | 'factures' | 'annonces' | 'profil';
+type Page = 'dashboard' | 'bateaux' | 'moteurs' | 'remorques' | 'factures' | 'prestations' | 'annonces' | 'profil';
 
 const formatDate = (value?: string) => {
     if (!value) return '-';
@@ -112,6 +139,9 @@ const formatEuro = (value?: number) => `${(value || 0).toFixed(2)} EUR`;
 
 const statusColor: Record<string, string> = { EN_ATTENTE: 'orange', EN_COURS: 'blue', PAYEE: 'green', ANNULEE: 'red' };
 const statusLabel: Record<string, string> = { EN_ATTENTE: 'En attente', EN_COURS: 'En cours', PAYEE: 'Payee', ANNULEE: 'Annulee' };
+const taskStatusColor: Record<string, string> = { EN_ATTENTE: 'orange', PLANIFIEE: 'cyan', EN_COURS: 'blue', TERMINEE: 'green', INCIDENT: 'red', ANNULEE: 'default' };
+const taskStatusLabel: Record<string, string> = { EN_ATTENTE: 'En attente', PLANIFIEE: 'Planifiee', EN_COURS: 'En cours', TERMINEE: 'Terminee', INCIDENT: 'Incident', ANNULEE: 'Annulee' };
+const taskStatusIcon: Record<string, React.ReactNode> = { EN_ATTENTE: <ClockCircleOutlined />, PLANIFIEE: <CalendarOutlined />, EN_COURS: <SyncOutlined spin />, TERMINEE: <CheckCircleOutlined />, INCIDENT: <ExclamationCircleOutlined />, ANNULEE: <StopOutlined /> };
 const typeLabel: Record<string, string> = { DEVIS: 'Devis', FACTURE: 'Facture', COMMANDE: 'Commande', LIVRAISON: 'Livraison', COMPTOIR: 'Comptoir', PARTICULIER: 'Particulier', PROFESSIONNEL: 'Professionnel', PROFESSIONNEL_MER: 'Pro. de la Mer' };
 
 const warrantyTag = (date?: string) => {
@@ -135,6 +165,7 @@ export default function MobileApp({ user, onLogout }: MobileAppProps) {
     const [detailAnnonce, setDetailAnnonce] = useState<Annonce | null>(null);
     const [annonceFormOpen, setAnnonceFormOpen] = useState(false);
     const [profile, setProfile] = useState<Client | null>(null);
+    const [detailTask, setDetailTask] = useState<TaskEntity | null>(null);
 
     const clientName = `${user.prenom || ''} ${user.nom}`.trim();
     const clientId = user.id;
@@ -171,7 +202,8 @@ export default function MobileApp({ user, onLogout }: MobileAppProps) {
                     setRemorques(res.data || []);
                     break;
                 }
-                case 'factures': {
+                case 'factures':
+                case 'prestations': {
                     const res = await axios.get(`/portal/clients/${clientId}/ventes`);
                     setVentes(res.data || []);
                     break;
@@ -319,6 +351,97 @@ export default function MobileApp({ user, onLogout }: MobileAppProps) {
                             {(detailVente.remise || 0) > 0 && <p><strong>Remise:</strong> {formatEuro(detailVente.remise)}</p>}
                             <p style={{ fontSize: 16 }}><strong>Total: {formatEuro(detailVente.prixVenteTTC)}</strong></p>
                         </div>
+                    </div>
+                )}
+            </Modal>
+        </>
+    );
+
+    const ventesWithTasks = ventes.filter((v) => (v.taches || []).length > 0);
+    const allTasks = ventesWithTasks.flatMap((v) => v.taches || []);
+    const tasksDone = allTasks.filter((t) => t.status === 'TERMINEE').length;
+    const globalProgress = allTasks.length > 0 ? Math.round((tasksDone / allTasks.length) * 100) : 0;
+
+    const renderPrestations = () => (
+        <>
+            {/* Progress summary */}
+            <Card size="small" style={{ marginBottom: 12, textAlign: 'center' }}>
+                <div style={{ fontSize: 18, fontWeight: 'bold' }}>{globalProgress}% termine</div>
+                <div style={{ fontSize: 12, color: '#999' }}>
+                    {tasksDone}/{allTasks.length} prestations terminees
+                </div>
+            </Card>
+
+            {ventesWithTasks.length === 0 && (
+                <Card size="small"><p style={{ textAlign: 'center', margin: 0, color: '#999' }}>Aucune prestation en cours</p></Card>
+            )}
+
+            {ventesWithTasks.map((v) => {
+                const taches = v.taches || [];
+                const done = taches.filter((t) => t.status === 'TERMINEE').length;
+                const pct = taches.length > 0 ? Math.round((done / taches.length) * 100) : 0;
+                const asset = v.bateau?.name || v.bateau?.immatriculation || '';
+                return (
+                    <Card
+                        key={v.id}
+                        size="small"
+                        title={`${typeLabel[v.type] || v.type} #${v.id}${asset ? ` - ${asset}` : ''}`}
+                        extra={<span style={{ fontSize: 12 }}>{pct}%</span>}
+                        style={{ marginBottom: 8 }}
+                    >
+                        {taches.map((t) => (
+                            <div
+                                key={t.id}
+                                onClick={() => setDetailTask(t)}
+                                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: '1px solid #f0f0f0', cursor: 'pointer' }}
+                            >
+                                <span>{t.nom || `Tache #${t.id}`}</span>
+                                <Tag icon={taskStatusIcon[t.status]} color={taskStatusColor[t.status]}>{taskStatusLabel[t.status] || t.status}</Tag>
+                            </div>
+                        ))}
+                    </Card>
+                );
+            })}
+
+            {/* Task detail modal */}
+            <Modal
+                title={detailTask ? (detailTask.nom || `Tache #${detailTask.id}`) : ''}
+                open={!!detailTask}
+                onCancel={() => setDetailTask(null)}
+                footer={null}
+                width="95vw"
+                style={{ top: 20 }}
+            >
+                {detailTask && (
+                    <div>
+                        <p><strong>Statut:</strong>{' '}
+                            <Tag icon={taskStatusIcon[detailTask.status]} color={taskStatusColor[detailTask.status]}>
+                                {taskStatusLabel[detailTask.status] || detailTask.status}
+                            </Tag>
+                        </p>
+                        {detailTask.description && <p><strong>Description:</strong> {detailTask.description}</p>}
+                        <p><strong>Debut:</strong> {formatDate(detailTask.dateDebut)}</p>
+                        <p><strong>Fin:</strong> {formatDate(detailTask.dateFin)}</p>
+                        <p><strong>Technicien:</strong>{' '}
+                            {detailTask.technicien ? `${detailTask.technicien.prenom || ''} ${detailTask.technicien.nom}`.trim() : 'Non assigne'}
+                        </p>
+                        <p><strong>Duree estimee:</strong> {detailTask.dureeEstimee ? `${detailTask.dureeEstimee}h` : '-'}</p>
+                        <p><strong>Duree reelle:</strong> {detailTask.dureeReelle ? `${detailTask.dureeReelle}h` : '-'}</p>
+                        {detailTask.notes && <p><strong>Notes:</strong> {detailTask.notes}</p>}
+                        {detailTask.status === 'INCIDENT' && (
+                            <Card size="small" style={{ background: '#fff2f0', borderColor: '#ffccc7', marginTop: 8 }}>
+                                <p style={{ color: '#ff4d4f', fontWeight: 'bold', marginBottom: 4 }}>
+                                    <ExclamationCircleOutlined /> Incident signale
+                                </p>
+                                <p><strong>Date:</strong> {formatDate(detailTask.incidentDate)}</p>
+                                <p style={{ margin: 0 }}>{detailTask.incidentDetails || 'Aucun detail'}</p>
+                            </Card>
+                        )}
+                        {detailTask.statusDate && (
+                            <p style={{ marginTop: 8, color: '#999', fontSize: 12 }}>
+                                Derniere mise a jour: {new Date(detailTask.statusDate).toLocaleString('fr-FR')}
+                            </p>
+                        )}
                     </div>
                 )}
             </Modal>
@@ -488,6 +611,7 @@ export default function MobileApp({ user, onLogout }: MobileAppProps) {
         moteurs: 'Mes moteurs',
         remorques: 'Mes remorques',
         factures: 'Mes factures',
+        prestations: 'Mes prestations',
         annonces: 'Petites annonces',
         profil: 'Mon profil',
     };
@@ -498,6 +622,7 @@ export default function MobileApp({ user, onLogout }: MobileAppProps) {
             case 'moteurs': return renderMoteurs();
             case 'remorques': return renderRemorques();
             case 'factures': return renderFactures();
+            case 'prestations': return renderPrestations();
             case 'annonces': return renderAnnonces();
             case 'profil': return renderProfil();
             default: return renderDashboard();
@@ -535,6 +660,7 @@ export default function MobileApp({ user, onLogout }: MobileAppProps) {
                         { value: 'moteurs', icon: <ToolOutlined />, label: '' },
                         { value: 'remorques', icon: <CarOutlined />, label: '' },
                         { value: 'factures', icon: <FileTextOutlined />, label: '' },
+                        { value: 'prestations', icon: <ScheduleOutlined />, label: '' },
                         { value: 'annonces', icon: <TagsOutlined />, label: '' },
                         { value: 'profil', icon: <UserOutlined />, label: '' },
                     ]}
