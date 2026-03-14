@@ -12,6 +12,10 @@
     "react-scripts": "^5.0.1"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^15.0.7",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/jest": "^30.0.0",
     "@types/react": "^18.0.0",
     "@types/react-dom": "^18.0.0",
     "typescript": "^5"
@@ -19,6 +23,7 @@
   "scripts": {
     "start": "PORT=3002 react-scripts start",
     "build": "BUILD_PATH=target/classes/META-INF/resources react-scripts build",
+    "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
   "browserslist": {
