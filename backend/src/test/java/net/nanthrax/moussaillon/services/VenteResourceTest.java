@@ -200,4 +200,53 @@ public class VenteResourceTest {
             .body("rappel2Jours", nullValue())
             .body("rappel3Jours", nullValue());
     }
+
+    @Test
+    void testEnvoyerRappelManuel() {
+        int id = given()
+            .contentType("application/json")
+            .body("{\"status\":\"EN_ATTENTE\",\"type\":\"DEVIS\",\"prixVenteTTC\":100.0,\"client\":{\"id\":100}}")
+            .when().post("/ventes")
+            .then().statusCode(201).extract().path("id");
+
+        given()
+            .contentType("application/json")
+            .when().post("/ventes/" + id + "/rappel")
+            .then()
+            .statusCode(200);
+
+        // Verifier que l'historique a ete cree
+        given()
+            .when().get("/rappels/vente/" + id)
+            .then()
+            .statusCode(200)
+            .body("size()", is(1))
+            .body("[0].numeroRappel", is(0))
+            .body("[0].destinataire", is("jean.dupont@test.com"));
+    }
+
+    @Test
+    void testEnvoyerRappelManuelVenteNonTrouvee() {
+        given()
+            .contentType("application/json")
+            .when().post("/ventes/9999/rappel")
+            .then()
+            .statusCode(404);
+    }
+
+    @Test
+    void testEnvoyerRappelManuelSansEmailClient() {
+        // Creer une vente sans client
+        int id = given()
+            .contentType("application/json")
+            .body("{\"status\":\"EN_ATTENTE\",\"type\":\"DEVIS\",\"prixVenteTTC\":100.0}")
+            .when().post("/ventes")
+            .then().statusCode(201).extract().path("id");
+
+        given()
+            .contentType("application/json")
+            .when().post("/ventes/" + id + "/rappel")
+            .then()
+            .statusCode(400);
+    }
 }

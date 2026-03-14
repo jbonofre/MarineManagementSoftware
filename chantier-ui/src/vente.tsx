@@ -17,7 +17,7 @@ import {
     Dropdown,
     message
 } from 'antd';
-import { CreditCardOutlined, DeleteOutlined, EditOutlined, MailOutlined, PlusCircleOutlined, PrinterOutlined } from '@ant-design/icons';
+import { CreditCardOutlined, DeleteOutlined, EditOutlined, MailOutlined, PlusCircleOutlined, PrinterOutlined, SendOutlined } from '@ant-design/icons';
 import axios from 'axios';
 
 interface ClientEntity {
@@ -1460,9 +1460,31 @@ export default function Vente() {
                                 label: 'Rappels',
                                 children: (
                                     <>
-                                        <p style={{ marginBottom: 16, color: '#666' }}>
-                                            Configurez les rappels automatiques par email envoyés au client avant la date de la prestation.
-                                        </p>
+                                        <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
+                                            <Col>
+                                                <span style={{ color: '#666' }}>
+                                                    Configurez les rappels automatiques par email envoyés au client avant la date de la prestation.
+                                                </span>
+                                            </Col>
+                                            {isEdit && currentVente?.id && (
+                                                <Col>
+                                                    <Button
+                                                        icon={<SendOutlined />}
+                                                        onClick={async () => {
+                                                            try {
+                                                                await axios.post(`/ventes/${currentVente.id}/rappel`);
+                                                                message.success('Rappel envoye avec succes');
+                                                                axios.get<RappelHistoriqueEntity[]>(`/rappels/vente/${currentVente.id}`).then(res => setRappelHistorique(res.data));
+                                                            } catch (err: any) {
+                                                                message.error(err?.response?.data || 'Erreur lors de l\'envoi du rappel');
+                                                            }
+                                                        }}
+                                                    >
+                                                        Envoyer un rappel maintenant
+                                                    </Button>
+                                                </Col>
+                                            )}
+                                        </Row>
                                         <Row gutter={16}>
                                             <Col span={8}>
                                                 <Form.Item name="rappel1Jours" label="Rappel 1 (jours avant)">
@@ -1493,7 +1515,7 @@ export default function Vente() {
                                                             title: 'Rappel',
                                                             dataIndex: 'numeroRappel',
                                                             width: 80,
-                                                            render: (v: number) => `#${v}`
+                                                            render: (v: number) => v === 0 ? 'Manuel' : `#${v}`
                                                         },
                                                         {
                                                             title: 'Date d\'envoi',
