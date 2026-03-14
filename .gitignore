@@ -3,6 +3,5 @@ target
 .vscode
 **/*.log
 **/node_modules
-**/package-lock.json
 **/*.lock
 backend/data
