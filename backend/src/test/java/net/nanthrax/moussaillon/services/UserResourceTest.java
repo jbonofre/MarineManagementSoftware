@@ -11,7 +11,7 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 public class UserResourceTest {
 
     @Test
-    void testListUsers() {
+    void testListerUtilisateurs() {
         given()
             .when().get("/users")
             .then()
@@ -20,7 +20,7 @@ public class UserResourceTest {
     }
 
     @Test
-    void testGetUser() {
+    void testObtenirUtilisateur() {
         given()
             .when().get("/users/admin")
             .then()
@@ -31,7 +31,7 @@ public class UserResourceTest {
     }
 
     @Test
-    void testGetUserNotFound() {
+    void testObtenirUtilisateurNonTrouve() {
         given()
             .when().get("/users/inexistant")
             .then()
@@ -39,7 +39,7 @@ public class UserResourceTest {
     }
 
     @Test
-    void testAuthenticate() {
+    void testAuthentifier() {
         given()
             .contentType("application/json")
             .body("{\"name\":\"admin\",\"password\":\"admin123\"}")
@@ -50,7 +50,7 @@ public class UserResourceTest {
     }
 
     @Test
-    void testAuthenticateInvalidPassword() {
+    void testAuthentifierMotDePasseInvalide() {
         given()
             .contentType("application/json")
             .body("{\"name\":\"admin\",\"password\":\"wrong\"}")
@@ -60,7 +60,7 @@ public class UserResourceTest {
     }
 
     @Test
-    void testSearchUsers() {
+    void testRechercherUtilisateurs() {
         given()
             .queryParam("q", "admin")
             .when().get("/users/search")
@@ -70,8 +70,8 @@ public class UserResourceTest {
     }
 
     @Test
-    void testCreateAndDeleteUser() {
-        // Create
+    void testCreerEtSupprimerUtilisateur() {
+        // Creer
         given()
             .contentType("application/json")
             .body("{\"name\":\"testuser\",\"password\":\"pass123\",\"email\":\"test@test.com\",\"roles\":\"USER\"}")
@@ -80,7 +80,7 @@ public class UserResourceTest {
             .statusCode(201)
             .body("name", is("testuser"));
 
-        // Delete
+        // Supprimer
         given()
             .when().delete("/users/testuser")
             .then()
@@ -88,7 +88,7 @@ public class UserResourceTest {
     }
 
     @Test
-    void testChangePassword() {
+    void testChangerMotDePasse() {
         given()
             .contentType("application/json")
             .body("{\"currentPassword\":\"tech123\",\"newPassword\":\"newpass\"}")
@@ -96,7 +96,7 @@ public class UserResourceTest {
             .then()
             .statusCode(204);
 
-        // Verify new password works
+        // Verifier que le nouveau mot de passe fonctionne
         given()
             .contentType("application/json")
             .body("{\"name\":\"technicien1\",\"password\":\"newpass\"}")
@@ -106,7 +106,7 @@ public class UserResourceTest {
     }
 
     @Test
-    void testChangePasswordWrongCurrent() {
+    void testChangerMotDePasseActuelIncorrect() {
         given()
             .contentType("application/json")
             .body("{\"currentPassword\":\"wrong\",\"newPassword\":\"newpass\"}")

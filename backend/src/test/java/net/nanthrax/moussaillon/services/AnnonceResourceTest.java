@@ -1,0 +1,153 @@
+package net.nanthrax.moussaillon.services;
+
+import io.quarkus.test.junit.QuarkusTest;
+import org.junit.jupiter.api.Test;
+
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+
+@QuarkusTest
+public class AnnonceResourceTest {
+
+    @Test
+    void testListerAnnonces() {
+        given()
+            .when().get("/annonces")
+            .then()
+            .statusCode(200)
+            .body("size()", greaterThanOrEqualTo(1));
+    }
+
+    @Test
+    void testObtenirAnnoncesActives() {
+        given()
+            .when().get("/annonces/active")
+            .then()
+            .statusCode(200);
+    }
+
+    @Test
+    void testObtenirAnnonce() {
+        given()
+            .when().get("/annonces/100")
+            .then()
+            .statusCode(200)
+            .body("titre", is("Vente bateau occasion"));
+    }
+
+    @Test
+    void testObtenirAnnonceNonTrouvee() {
+        given()
+            .when().get("/annonces/9999")
+            .then()
+            .statusCode(404);
+    }
+
+    @Test
+    void testObtenirAnnoncesParClient() {
+        given()
+            .when().get("/annonces/client/100")
+            .then()
+            .statusCode(200)
+            .body("size()", greaterThanOrEqualTo(1));
+    }
+
+    @Test
+    void testCreerAnnonce() {
+        given()
+            .contentType("application/json")
+            .body("{\"titre\":\"Nouvelle annonce\",\"description\":\"Description test\",\"prix\":5000.0,\"contact\":\"Test\",\"telephone\":\"0600000000\"}")
+            .when().post("/annonces")
+            .then()
+            .statusCode(200)
+            .body("titre", is("Nouvelle annonce"))
+            .body("status", is("ACTIVE"))
+            .body("id", notNullValue());
+    }
+
+    @Test
+    void testModifierAnnonce() {
+        int id = given()
+            .contentType("application/json")
+            .body("{\"titre\":\"AvantUpdate\",\"prix\":1000.0}")
+            .when().post("/annonces")
+            .then().statusCode(200).extract().path("id");
+
+        given()
+            .contentType("application/json")
+            .body("{\"titre\":\"ApresUpdate\",\"prix\":1200.0,\"status\":\"ACTIVE\"}")
+            .when().put("/annonces/" + id)
+            .then()
+            .statusCode(200)
+            .body("titre", is("ApresUpdate"));
+    }
+
+    @Test
+    void testPublierAnnonce() {
+        int id = given()
+            .contentType("application/json")
+            .body("{\"titre\":\"Annonce a publier\",\"prix\":3000.0}")
+            .when().post("/annonces")
+            .then().statusCode(200).extract().path("id");
+
+        given()
+            .contentType("application/json")
+            .body("{\"plateforme\":\"LEBONCOIN\"}")
+            .when().post("/annonces/" + id + "/publier")
+            .then()
+            .statusCode(200);
+    }
+
+    @Test
+    void testPublierAnnoncePlateformeManquante() {
+        given()
+            .contentType("application/json")
+            .body("{}")
+            .when().post("/annonces/100/publier")
+            .then()
+            .statusCode(400);
+    }
+
+    @Test
+    void testDepublierAnnonce() {
+        // Create and publish first
+        int id = given()
+            .contentType("application/json")
+            .body("{\"titre\":\"Annonce depublier\",\"prix\":2000.0}")
+            .when().post("/annonces")
+            .then().statusCode(200).extract().path("id");
+
+        given()
+            .contentType("application/json")
+            .body("{\"plateforme\":\"LEBONCOIN\"}")
+            .when().post("/annonces/" + id + "/publier")
+            .then().statusCode(200);
+
+        given()
+            .contentType("application/json")
+            .body("{\"plateforme\":\"LEBONCOIN\"}")
+            .when().post("/annonces/" + id + "/depublier")
+            .then()
+            .statusCode(200);
+    }
+
+    @Test
+    void testSupprimerAnnonce() {
+        int id = given()
+            .contentType("application/json")
+            .body("{\"titre\":\"ToDelete\",\"prix\":500.0}")
+            .when().post("/annonces")
+            .then().statusCode(200).extract().path("id");
+
+        given()
+            .when().delete("/annonces/" + id)
+            .then()
+            .statusCode(204);
+
+        given()
+            .when().get("/annonces/" + id)
+            .then()
+            .statusCode(404);
+    }
+}
