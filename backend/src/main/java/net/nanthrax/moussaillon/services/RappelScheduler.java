@@ -11,6 +11,7 @@ import io.quarkus.scheduler.Scheduled;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+import net.nanthrax.moussaillon.persistence.RappelHistoriqueEntity;
 import net.nanthrax.moussaillon.persistence.SocieteEntity;
 import net.nanthrax.moussaillon.persistence.VenteEntity;
 
@@ -78,5 +79,14 @@ public class RappelScheduler {
                 + "Cordialement,\n" + societeNom;
 
         mailer.send(Mail.withText(vente.client.email, subject, body));
+
+        RappelHistoriqueEntity historique = new RappelHistoriqueEntity();
+        historique.vente = vente;
+        historique.numeroRappel = numeroRappel;
+        historique.destinataire = vente.client.email;
+        historique.sujet = subject;
+        historique.contenu = body;
+        historique.dateEnvoi = new Timestamp(System.currentTimeMillis());
+        historique.persist();
     }
 }
