@@ -1,32 +1,33 @@
 # moussAIllon
 
-Bienvenue moussAIllon !
+**Plateforme de gestion de chantier naval augmentee par l'IA.**
 
-MoussAIllon est un logiciel de gestion de chantier naval.
+MoussAIllon centralise l'ensemble des metiers d'un chantier naval dans une seule application : gestion commerciale, parc nautique, stock, planification des interventions, relation client et integration de fournisseurs.
 
-Il permet:
-* une gestion des clients
-* une gestion de parc (neuf et occasion)
-* une gestion de stock de pièces et accessoires
-* une gestion d'équipe et d'intervention, ainsi qu'une planification des tâches
-* une intégration de systèmes tiers (annonceurs, fournisseurs, etc)
+## Fonctionnalites principales
 
-Pilotez l'ensemble des métiers d'un chantier naval via une seule application, en simplifiant et optimisant les opérations.
+- **Gestion clients** - fiches, bateaux, moteurs, remorques, historique
+- **Catalogue & parc** - bateaux, moteurs, helices, remorques, produits (neuf et occasion)
+- **Ventes & facturation** - forfaits, comptoir, transactions, paiement en ligne (Stripe, PayPlug)
+- **Fournisseurs** - referentiel multi-types (bateaux, moteurs, helices, produits, remorques)
+- **Equipe & planning** - gestion des techniciens, planification des interventions
+- **Petites annonces** - publication et gestion d'annonces
+- **Espace client** - portail self-service (bateaux, factures, profil, annonces)
+- **Espace technicien** - planning mobile des interventions
+- **IA integree** - chat assisté (OpenAI / Anthropic), serveur MCP pour l'exploration de l'API
+- **Notifications email** - alertes incidents, mots de passe, planning
 
-# Architecture
+## Architecture
 
-Le projet est composé de 4 modules:
-
-| Module | Technologie | Description |
-|---|---|---|
-| `backend` | Java 21, Quarkus 3.32, Hibernate/Panache, H2 | API REST, persistance, intégrations IA et paiement |
-| `chantier-ui` | React 18, TypeScript, Ant Design 6 | Interface de gestion du chantier naval |
-| `client-ui` | React 18, TypeScript, Ant Design 5 | Espace client (portail) |
-| `technicien-ui` | React 18, TypeScript, Ant Design 5 | Espace technicien (planning, interventions) |
+```
+moussAIllon/
+├── backend/          Java 21, Quarkus 3.32, Hibernate/Panache, H2
+├── chantier-ui/      React 18, TypeScript, Ant Design 6 — gestion du chantier
+├── client-ui/        React 18, TypeScript, Ant Design 5 — portail client
+└── technicien-ui/    React 18, TypeScript, Ant Design 5 — espace technicien
+```
 
 Les frontends communiquent avec le backend via proxy sur `http://localhost:8080`.
-
-# Developpement
 
 ## Prerequis
 
@@ -34,7 +35,9 @@ Les frontends communiquent avec le backend via proxy sur `http://localhost:8080`
 - Node.js 20+
 - Maven 3.9+
 
-## Lancer le backend
+## Demarrage rapide
+
+### Backend
 
 ```bash
 cd backend
@@ -43,7 +46,7 @@ mvn quarkus:dev
 
 Le backend demarre sur `http://localhost:8080`.
 
-## Lancer les frontends
+### Frontends
 
 ```bash
 # Chantier UI (port 3000)
@@ -56,187 +59,129 @@ cd client-ui && npm install && npm start
 cd technicien-ui && npm install && npm start
 ```
 
-# Tests
+## Configuration
 
-## Backend
+### Variables d'environnement
 
-Les tests d'integration backend utilisent Quarkus JUnit 5 et REST Assured. Ils testent les endpoints REST avec une base H2 en memoire.
+| Variable | Description | Defaut |
+|---|---|---|
+| `AI_OPENAI_API_KEY` | Cle API OpenAI | _(requis pour le chat IA)_ |
+| `AI_ANTHROPIC_API_KEY` | Cle API Anthropic | _(requis pour le chat IA)_ |
+| `AI_OPENAI_MODEL` | Modele OpenAI | `gpt-4o-mini` |
+| `AI_ANTHROPIC_MODEL` | Modele Anthropic | `claude-haiku-4-5-20251001` |
+| `STRIPE_API_KEY` | Cle API Stripe | _(requis pour paiements Stripe)_ |
+| `PAYPLUG_API_KEY` | Cle API PayPlug | _(requis pour paiements PayPlug)_ |
+| `MAILER_FROM` | Expediteur email | `noreply@moussaillon.local` |
+| `MAILER_HOST` | Serveur SMTP | `localhost` |
+| `MAILER_PORT` | Port SMTP | `1025` |
+| `MAILER_MOCK` | Mode mock (pas d'envoi reel) | `true` |
+
+### Base de donnees
+
+Par defaut, H2 avec stockage fichier (`./data/moussaillon`). Le schema est mis a jour automatiquement au demarrage (`hibernate.schema-management.strategy=update`).
+
+## Tests
+
+### Backend
+
+Tests d'integration avec Quarkus JUnit 5 et REST Assured (base H2 en memoire).
 
 ```bash
-# Lancer les tests backend
 mvn -B verify -pl backend
 ```
 
-Tests disponibles:
-- `ClientResourceTest` - CRUD clients, recherche, suppression
-- `UserResourceTest` - authentification, changement de mot de passe, CRUD utilisateurs
-- `BateauCatalogueResourceTest` - CRUD catalogue bateaux, recherche
+Tests disponibles : `ClientResourceTest`, `UserResourceTest`, `BateauCatalogueResourceTest`.
 
-## Frontend
+### Frontend
 
-Les tests frontend utilisent Jest (via react-scripts) et React Testing Library.
+Tests avec Jest et React Testing Library.
 
 ```bash
-# Lancer les tests d'un frontend (depuis son repertoire)
-cd chantier-ui && npm test
-
-# Lancer les tests en mode CI (sans watch)
+# Depuis le repertoire du frontend concerne
 CI=true npm test -- --watchAll=false
 ```
 
-Tests disponibles:
-- `chantier-ui/src/app.test.tsx` - rendu conditionnel login/workspace
-- `client-ui/src/app.test.tsx` - rendu conditionnel login/dashboard
-- `technicien-ui/src/app.test.tsx` - rendu conditionnel login/planning
+## Integration continue
 
-# Integration continue (CI)
+GitHub Actions (`.github/workflows/ci.yml`) — declenchement sur push et PR vers `main`.
 
-Le projet utilise GitHub Actions (`.github/workflows/ci.yml`). La CI se declenche sur chaque push et pull request vers `main`.
+4 jobs en parallele :
 
-Elle execute 4 jobs en parallele:
-
-| Job | Description |
+| Job | Contenu |
 |---|---|
-| **Backend Tests** | Build Maven + tests d'integration Quarkus (JDK 21) |
-| **Chantier UI Tests** | `npm ci` + tests Jest + build React |
-| **Client UI Tests** | `npm ci` + tests Jest + build React |
-| **Technicien UI Tests** | `npm ci` + tests Jest + build React |
+| **Backend Tests** | Build Maven + tests d'integration (JDK 21) |
+| **Chantier UI Tests** | `npm ci` + tests Jest + build |
+| **Client UI Tests** | `npm ci` + tests Jest + build |
+| **Technicien UI Tests** | `npm ci` + tests Jest + build |
 
-Les caches Maven et npm sont actives pour accelerer les builds.
+## Serveur MCP (IA)
 
-# MCP Server (AI)
+Le backend expose un endpoint MCP JSON-RPC 2.0 sur `POST /mcp`.
 
-Le backend expose un endpoint MCP JSON-RPC sur `POST /mcp`.
+### Outils exposes
 
-Base URL locale:
+| Outil | Description |
+|---|---|
+| `moussaillon_list_api_resources` | Liste les ressources API disponibles |
+| `moussaillon_call_api_resource` | Appelle une ressource API (`GET`, `POST`, `PUT`, `DELETE`) |
 
-`http://localhost:8080/mcp`
+### Exemples d'utilisation
 
-## Prerequis
-
-- Lancer le backend Quarkus (JDK 21).
-- Envoyer les requetes MCP en JSON-RPC 2.0 sur l'endpoint `POST /mcp`.
-
-## Exemple 1: initialize
+**Initialisation :**
 
 ```bash
 curl -s http://localhost:8080/mcp \
   -H "Content-Type: application/json" \
-  -d '{
-    "jsonrpc": "2.0",
-    "id": 1,
-    "method": "initialize",
-    "params": {}
-  }'
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}'
 ```
 
-## Exemple 2: tools/list
+**Lister les outils :**
 
 ```bash
 curl -s http://localhost:8080/mcp \
   -H "Content-Type: application/json" \
-  -d '{
-    "jsonrpc": "2.0",
-    "id": 2,
-    "method": "tools/list",
-    "params": {}
-  }'
+  -d '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}'
 ```
 
-## Exemple 3: tools/call -> moussaillon_list_api_resources
+**Lister les ressources API :**
 
 ```bash
 curl -s http://localhost:8080/mcp \
   -H "Content-Type: application/json" \
-  -d '{
-    "jsonrpc": "2.0",
-    "id": 3,
-    "method": "tools/call",
-    "params": {
-      "name": "moussaillon_list_api_resources",
-      "arguments": {}
-    }
-  }'
+  -d '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"moussaillon_list_api_resources","arguments":{}}}'
 ```
 
-## Exemple 4: tools/call -> moussaillon_call_api_resource (GET avec query)
+**Appeler une ressource (GET avec query) :**
 
 ```bash
 curl -s http://localhost:8080/mcp \
   -H "Content-Type: application/json" \
-  -d '{
-    "jsonrpc": "2.0",
-    "id": 4,
-    "method": "tools/call",
-    "params": {
-      "name": "moussaillon_call_api_resource",
-      "arguments": {
-        "method": "GET",
-        "path": "/clients/search",
-        "query": {
-          "q": "dupont"
-        }
-      }
-    }
-  }'
+  -d '{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"moussaillon_call_api_resource","arguments":{"method":"GET","path":"/clients/search","query":{"q":"dupont"}}}}'
 ```
 
-## Exemple 5: tools/call -> moussaillon_call_api_resource (POST avec body)
+**Appeler une ressource (POST avec body) :**
 
 ```bash
 curl -s http://localhost:8080/mcp \
   -H "Content-Type: application/json" \
-  -d '{
-    "jsonrpc": "2.0",
-    "id": 5,
-    "method": "tools/call",
-    "params": {
-      "name": "moussaillon_call_api_resource",
-      "arguments": {
-        "method": "POST",
-        "path": "/clients",
-        "body": {
-          "prenom": "Jean",
-          "nom": "Dupont",
-          "type": "PARTICULIER",
-          "email": "jean.dupont@example.com"
-        }
-      }
-    }
-  }'
+  -d '{"jsonrpc":"2.0","id":5,"method":"tools/call","params":{"name":"moussaillon_call_api_resource","arguments":{"method":"POST","path":"/clients","body":{"prenom":"Jean","nom":"Dupont","type":"PARTICULIER","email":"jean.dupont@example.com"}}}}'
 ```
 
-## Outils MCP exposes
+## Chat IA
 
-- `moussaillon_list_api_resources`: liste les racines d'API autorisees depuis `net.nanthrax.moussaillon.services`.
-- `moussaillon_call_api_resource`: appelle une ressource API existante (methodes supportees: `GET`, `POST`, `PUT`, `DELETE`) avec filtrage par whitelist de chemins.
+Le backend expose `POST /ai/chat`. Le frontend (`chantier-ui`) permet de choisir le provider :
 
-## IA Chat (ChatGPT / Claude)
+- **ChatGPT** (`provider: "openai"`)
+- **Claude** (`provider: "anthropic"`)
 
-Le backend expose `POST /ai/chat` et le frontend `home.tsx` permet de choisir le provider:
+Les commandes API explicites (`GET /...`, `POST /...`) passent par MCP.
 
-- `ChatGPT (OpenAI)` (`provider: "openai"`)
-- `Claude (Anthropic)` (`provider: "anthropic"`)
+> Les cles API doivent rester cote backend uniquement — ne jamais les exposer dans le frontend.
 
-Configuration backend (variables d'environnement recommandees):
+## License
 
-```bash
-export AI_OPENAI_API_KEY="sk-..."
-export AI_ANTHROPIC_API_KEY="sk-ant-..."
-export AI_OPENAI_MODEL="gpt-4o-mini"
-export AI_ANTHROPIC_MODEL="claude-3-5-haiku-latest"
-```
+Apache 2.0 — voir [LICENSE](LICENSE) pour plus de details.
 
-Notes:
+## Copyright
 
-- Gardez les cles API uniquement cote backend (jamais dans le frontend).
-- Les commandes API explicites (`GET /...`, `POST /...`) continuent de passer par MCP.
-
-# License
-
-Apache 2.0 - See LICENSE for more information.
-
-# Copyright
-
-moussAIllon
-Copyright 2025-2026 NOSE Experts
+moussAIllon — Copyright 2025-2026 NOSE Experts
