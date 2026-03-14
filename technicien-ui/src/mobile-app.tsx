@@ -147,9 +147,6 @@ export default function MobileApp({ user, onLogout }: MobileAppProps) {
                 incidentDetails: values.status === 'INCIDENT' ? values.incidentDetails : null,
             });
             message.success('Tache mise a jour');
-            setModalVisible(false);
-            setCurrentTask(null);
-            form.resetFields();
             fetchTasks();
         } catch {
             message.error('Erreur lors de la mise a jour');

@@ -385,11 +385,8 @@ export default function Planning() {
                 taches: latestTasks
             };
 
-            await axios.put(`/ventes/${venteId}`, updatedVente);
+            const res = await axios.put(`/ventes/${venteId}`, updatedVente);
             message.success('Planning de la tâche mis a jour.');
-            setModalVisible(false);
-            setCurrentTaskRow(null);
-            form.resetFields();
             fetchVentes();
         } catch (error) {
             const formError = error as { errorFields?: unknown[] };

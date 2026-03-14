@@ -568,14 +568,15 @@ export default function Vente() {
             const values = await form.validateFields();
             const payload = toPayload(values);
             if (isEdit && currentVente?.id) {
-                await axios.put(`/ventes/${currentVente.id}`, { ...currentVente, ...payload });
+                const res = await axios.put(`/ventes/${currentVente.id}`, { ...currentVente, ...payload });
                 message.success('Vente modifiee avec succes');
+                setCurrentVente(res.data);
             } else {
-                await axios.post('/ventes', payload);
+                const res = await axios.post('/ventes', payload);
                 message.success('Vente ajoutee avec succes');
+                setIsEdit(true);
+                setCurrentVente(res.data);
             }
-            setModalVisible(false);
-            form.resetFields();
             fetchVentes(filters);
         } catch {
             // Les erreurs de validation sont affichees par le formulaire.

@@ -146,9 +146,6 @@ export default function Planning({ technicienId }: PlanningProps) {
                 incidentDetails: values.status === 'INCIDENT' ? values.incidentDetails : null,
             });
             message.success('Tache mise a jour');
-            setModalVisible(false);
-            setCurrentTask(null);
-            form.resetFields();
             fetchTasks();
         } catch {
             message.error('Erreur lors de la mise a jour');

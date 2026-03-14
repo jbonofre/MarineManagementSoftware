@@ -359,14 +359,15 @@ export default function Forfaits() {
             const values = await form.validateFields();
             const payload = toPayload(values);
             if (isEdit && currentForfait?.id) {
-                await axios.put(`/forfaits/${currentForfait.id}`, { ...currentForfait, ...payload });
+                const res = await axios.put(`/forfaits/${currentForfait.id}`, { ...currentForfait, ...payload });
                 message.success('Forfait modifié avec succès');
+                setCurrentForfait(res.data);
             } else {
-                await axios.post('/forfaits', payload);
+                const res = await axios.post('/forfaits', payload);
                 message.success('Forfait ajouté avec succès');
+                setIsEdit(true);
+                setCurrentForfait(res.data);
             }
-            setModalVisible(false);
-            form.resetFields();
             fetchForfaits(searchQuery);
         } catch {
             // Les erreurs de validation sont affichées par le formulaire.
