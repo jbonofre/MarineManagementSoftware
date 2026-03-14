@@ -10,7 +10,7 @@ import static org.hamcrest.CoreMatchers.*;
 public class DashboardResourceTest {
 
     @Test
-    void testGetDashboard() {
+    void testObtenirTableauDeBord() {
         given()
             .when().get("/dashboard")
             .then()

@@ -10,7 +10,7 @@ import static org.hamcrest.CoreMatchers.*;
 public class ClientPortalResourceTest {
 
     @Test
-    void testLoginSuccess() {
+    void testConnexionReussie() {
         given()
             .contentType("application/json")
             .body("{\"email\":\"jean.dupont@test.com\",\"password\":\"client123\"}")
@@ -21,7 +21,7 @@ public class ClientPortalResourceTest {
     }
 
     @Test
-    void testLoginMissingEmail() {
+    void testConnexionEmailManquant() {
         given()
             .contentType("application/json")
             .body("{\"password\":\"test\"}")
@@ -31,7 +31,7 @@ public class ClientPortalResourceTest {
     }
 
     @Test
-    void testLoginWrongEmail() {
+    void testConnexionEmailInconnu() {
         given()
             .contentType("application/json")
             .body("{\"email\":\"unknown@test.com\",\"password\":\"test\"}")
@@ -41,7 +41,7 @@ public class ClientPortalResourceTest {
     }
 
     @Test
-    void testLoginWrongPassword() {
+    void testConnexionMotDePasseIncorrect() {
         given()
             .contentType("application/json")
             .body("{\"email\":\"jean.dupont@test.com\",\"password\":\"wrong\"}")
@@ -51,7 +51,7 @@ public class ClientPortalResourceTest {
     }
 
     @Test
-    void testGetClient() {
+    void testObtenirClient() {
         given()
             .when().get("/portal/clients/100")
             .then()
@@ -60,7 +60,7 @@ public class ClientPortalResourceTest {
     }
 
     @Test
-    void testGetClientNotFound() {
+    void testObtenirClientNonTrouve() {
         given()
             .when().get("/portal/clients/9999")
             .then()
@@ -68,7 +68,7 @@ public class ClientPortalResourceTest {
     }
 
     @Test
-    void testGetClientBateaux() {
+    void testObtenirBateauxClient() {
         given()
             .when().get("/portal/clients/100/bateaux")
             .then()
@@ -76,7 +76,7 @@ public class ClientPortalResourceTest {
     }
 
     @Test
-    void testGetClientMoteurs() {
+    void testObtenirMoteursClient() {
         given()
             .when().get("/portal/clients/100/moteurs")
             .then()
@@ -84,7 +84,7 @@ public class ClientPortalResourceTest {
     }
 
     @Test
-    void testGetClientRemorques() {
+    void testObtenirRemorquesClient() {
         given()
             .when().get("/portal/clients/100/remorques")
             .then()
@@ -92,7 +92,7 @@ public class ClientPortalResourceTest {
     }
 
     @Test
-    void testGetClientVentes() {
+    void testObtenirVentesClient() {
         given()
             .when().get("/portal/clients/100/ventes")
             .then()
@@ -100,7 +100,7 @@ public class ClientPortalResourceTest {
     }
 
     @Test
-    void testGetClientAnnonces() {
+    void testObtenirAnnoncesClient() {
         given()
             .when().get("/portal/clients/100/annonces")
             .then()

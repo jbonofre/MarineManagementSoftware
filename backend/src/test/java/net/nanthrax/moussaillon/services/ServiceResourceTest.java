@@ -11,7 +11,7 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 public class ServiceResourceTest {
 
     @Test
-    void testListServices() {
+    void testListerServices() {
         given()
             .when().get("/services")
             .then()
@@ -20,7 +20,7 @@ public class ServiceResourceTest {
     }
 
     @Test
-    void testGetService() {
+    void testObtenirService() {
         given()
             .when().get("/services/100")
             .then()
@@ -29,7 +29,7 @@ public class ServiceResourceTest {
     }
 
     @Test
-    void testGetServiceNotFound() {
+    void testObtenirServiceNonTrouve() {
         given()
             .when().get("/services/9999")
             .then()
@@ -37,7 +37,7 @@ public class ServiceResourceTest {
     }
 
     @Test
-    void testCreateService() {
+    void testCreerService() {
         given()
             .contentType("application/json")
             .body("{\"nom\":\"Hivernage\",\"description\":\"Mise en hivernage\",\"prixHT\":100.0,\"tva\":20.0}")
@@ -49,7 +49,7 @@ public class ServiceResourceTest {
     }
 
     @Test
-    void testUpdateService() {
+    void testModifierService() {
         int id = given()
             .contentType("application/json")
             .body("{\"nom\":\"AvantUpdate\",\"description\":\"Test\"}")
@@ -66,7 +66,7 @@ public class ServiceResourceTest {
     }
 
     @Test
-    void testSearchServices() {
+    void testRechercherServices() {
         given()
             .queryParam("q", "revision")
             .when().get("/services/search")
@@ -76,7 +76,7 @@ public class ServiceResourceTest {
     }
 
     @Test
-    void testDeleteService() {
+    void testSupprimerService() {
         int id = given()
             .contentType("application/json")
             .body("{\"nom\":\"ToDelete\",\"description\":\"Test\"}")

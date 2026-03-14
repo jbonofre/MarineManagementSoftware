@@ -11,7 +11,7 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 public class BateauCatalogueResourceTest {
 
     @Test
-    void testListBateaux() {
+    void testListerBateaux() {
         given()
             .when().get("/catalogue/bateaux")
             .then()
@@ -20,7 +20,7 @@ public class BateauCatalogueResourceTest {
     }
 
     @Test
-    void testGetBateau() {
+    void testObtenirBateau() {
         given()
             .when().get("/catalogue/bateaux/100")
             .then()
@@ -31,7 +31,7 @@ public class BateauCatalogueResourceTest {
     }
 
     @Test
-    void testGetBateauNotFound() {
+    void testObtenirBateauNonTrouve() {
         given()
             .when().get("/catalogue/bateaux/9999")
             .then()
@@ -39,7 +39,7 @@ public class BateauCatalogueResourceTest {
     }
 
     @Test
-    void testCreateBateau() {
+    void testCreerBateau() {
         given()
             .contentType("application/json")
             .body("{\"modele\":\"Test 300\",\"marque\":\"TestBrand\",\"type\":\"Cabin\",\"description\":\"Test boat\",\"annee\":2025,\"stock\":5,\"prixVenteTTC\":30000.0}")
@@ -52,8 +52,8 @@ public class BateauCatalogueResourceTest {
     }
 
     @Test
-    void testUpdateBateau() {
-        // Create a dedicated entity for update test
+    void testModifierBateau() {
+        // Creer une entite dediee pour le test de modification
         int id = given()
             .contentType("application/json")
             .body("{\"modele\":\"AvantUpdate\",\"marque\":\"TestBrand\",\"type\":\"Open\"}")
@@ -72,7 +72,7 @@ public class BateauCatalogueResourceTest {
     }
 
     @Test
-    void testSearchBateaux() {
+    void testRechercherBateaux() {
         given()
             .queryParam("q", "quicksilver")
             .when().get("/catalogue/bateaux/search")
@@ -82,7 +82,7 @@ public class BateauCatalogueResourceTest {
     }
 
     @Test
-    void testSearchBateauxNoQuery() {
+    void testRechercherBateauxSansRequete() {
         given()
             .when().get("/catalogue/bateaux/search")
             .then()
@@ -91,8 +91,8 @@ public class BateauCatalogueResourceTest {
     }
 
     @Test
-    void testDeleteBateau() {
-        // Create one to delete
+    void testSupprimerBateau() {
+        // Creer un bateau a supprimer
         int id = given()
             .contentType("application/json")
             .body("{\"modele\":\"ToDelete\",\"marque\":\"TestBrand\",\"type\":\"Open\"}")

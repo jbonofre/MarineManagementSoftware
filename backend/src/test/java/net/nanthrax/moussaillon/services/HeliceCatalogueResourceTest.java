@@ -11,7 +11,7 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 public class HeliceCatalogueResourceTest {
 
     @Test
-    void testListHelices() {
+    void testListerHelices() {
         given()
             .when().get("/catalogue/helices")
             .then()
@@ -20,7 +20,7 @@ public class HeliceCatalogueResourceTest {
     }
 
     @Test
-    void testGetHelice() {
+    void testObtenirHelice() {
         given()
             .when().get("/catalogue/helices/100")
             .then()
@@ -30,7 +30,7 @@ public class HeliceCatalogueResourceTest {
     }
 
     @Test
-    void testGetHeliceNotFound() {
+    void testObtenirHeliceNonTrouve() {
         given()
             .when().get("/catalogue/helices/9999")
             .then()
@@ -38,7 +38,7 @@ public class HeliceCatalogueResourceTest {
     }
 
     @Test
-    void testCreateHelice() {
+    void testCreerHelice() {
         given()
             .contentType("application/json")
             .body("{\"modele\":\"Test Helice\",\"marque\":\"TestBrand\",\"description\":\"Test\",\"diametre\":12,\"pas\":17,\"pales\":3,\"prixVenteTTC\":200.0}")
@@ -50,7 +50,7 @@ public class HeliceCatalogueResourceTest {
     }
 
     @Test
-    void testUpdateHelice() {
+    void testModifierHelice() {
         int id = given()
             .contentType("application/json")
             .body("{\"modele\":\"AvantUpdate\",\"marque\":\"Test\",\"description\":\"Test\"}")
@@ -67,7 +67,7 @@ public class HeliceCatalogueResourceTest {
     }
 
     @Test
-    void testSearchHelices() {
+    void testRechercherHelices() {
         given()
             .queryParam("modele", "vengeance")
             .when().get("/catalogue/helices/search")
@@ -77,7 +77,7 @@ public class HeliceCatalogueResourceTest {
     }
 
     @Test
-    void testDeleteHelice() {
+    void testSupprimerHelice() {
         int id = given()
             .contentType("application/json")
             .body("{\"modele\":\"ToDelete\",\"marque\":\"Test\",\"description\":\"Test\"}")

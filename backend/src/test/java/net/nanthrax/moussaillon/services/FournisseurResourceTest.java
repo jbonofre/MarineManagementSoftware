@@ -11,7 +11,7 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 public class FournisseurResourceTest {
 
     @Test
-    void testListFournisseurs() {
+    void testListerFournisseurs() {
         given()
             .when().get("/catalogue/fournisseurs")
             .then()
@@ -20,7 +20,7 @@ public class FournisseurResourceTest {
     }
 
     @Test
-    void testGetFournisseur() {
+    void testObtenirFournisseur() {
         given()
             .when().get("/catalogue/fournisseurs/100")
             .then()
@@ -29,7 +29,7 @@ public class FournisseurResourceTest {
     }
 
     @Test
-    void testGetFournisseurNotFound() {
+    void testObtenirFournisseurNonTrouve() {
         given()
             .when().get("/catalogue/fournisseurs/9999")
             .then()
@@ -37,7 +37,7 @@ public class FournisseurResourceTest {
     }
 
     @Test
-    void testCreateFournisseur() {
+    void testCreerFournisseur() {
         given()
             .contentType("application/json")
             .body("{\"nom\":\"Nouveau Fournisseur\",\"email\":\"new@fournisseur.com\",\"telephone\":\"0400009999\"}")
@@ -49,7 +49,7 @@ public class FournisseurResourceTest {
     }
 
     @Test
-    void testUpdateFournisseur() {
+    void testModifierFournisseur() {
         int id = given()
             .contentType("application/json")
             .body("{\"nom\":\"AvantUpdateFourn\",\"email\":\"avant@test.com\"}")
@@ -66,7 +66,7 @@ public class FournisseurResourceTest {
     }
 
     @Test
-    void testSearchFournisseurs() {
+    void testRechercherFournisseurs() {
         given()
             .queryParam("q", "marine")
             .when().get("/catalogue/fournisseurs/search")
@@ -76,7 +76,7 @@ public class FournisseurResourceTest {
     }
 
     @Test
-    void testDeleteFournisseur() {
+    void testSupprimerFournisseur() {
         int id = given()
             .contentType("application/json")
             .body("{\"nom\":\"ToDeleteFourn\",\"email\":\"del@test.com\"}")

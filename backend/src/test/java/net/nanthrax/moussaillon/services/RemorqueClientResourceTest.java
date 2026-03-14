@@ -11,7 +11,7 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 public class RemorqueClientResourceTest {
 
     @Test
-    void testListRemorques() {
+    void testListerRemorques() {
         given()
             .when().get("/remorques")
             .then()
@@ -19,7 +19,7 @@ public class RemorqueClientResourceTest {
     }
 
     @Test
-    void testGetRemorqueNotFound() {
+    void testObtenirRemorqueNonTrouvee() {
         given()
             .when().get("/remorques/9999")
             .then()
@@ -27,7 +27,7 @@ public class RemorqueClientResourceTest {
     }
 
     @Test
-    void testCreateRemorque() {
+    void testCreerRemorque() {
         given()
             .contentType("application/json")
             .body("{\"immatriculation\":\"REM-001\"}")
@@ -39,7 +39,7 @@ public class RemorqueClientResourceTest {
     }
 
     @Test
-    void testUpdateRemorque() {
+    void testModifierRemorque() {
         int id = given()
             .contentType("application/json")
             .body("{\"immatriculation\":\"REM-UPD\"}")
@@ -56,7 +56,7 @@ public class RemorqueClientResourceTest {
     }
 
     @Test
-    void testSearchRemorques() {
+    void testRechercherRemorques() {
         given()
             .queryParam("q", "rem")
             .when().get("/remorques/search")
@@ -65,7 +65,7 @@ public class RemorqueClientResourceTest {
     }
 
     @Test
-    void testDeleteRemorque() {
+    void testSupprimerRemorque() {
         int id = given()
             .contentType("application/json")
             .body("{\"immatriculation\":\"REM-DEL\"}")

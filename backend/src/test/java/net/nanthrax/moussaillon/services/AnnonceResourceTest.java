@@ -11,7 +11,7 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 public class AnnonceResourceTest {
 
     @Test
-    void testListAnnonces() {
+    void testListerAnnonces() {
         given()
             .when().get("/annonces")
             .then()
@@ -20,7 +20,7 @@ public class AnnonceResourceTest {
     }
 
     @Test
-    void testGetActiveAnnonces() {
+    void testObtenirAnnoncesActives() {
         given()
             .when().get("/annonces/active")
             .then()
@@ -28,7 +28,7 @@ public class AnnonceResourceTest {
     }
 
     @Test
-    void testGetAnnonce() {
+    void testObtenirAnnonce() {
         given()
             .when().get("/annonces/100")
             .then()
@@ -37,7 +37,7 @@ public class AnnonceResourceTest {
     }
 
     @Test
-    void testGetAnnonceNotFound() {
+    void testObtenirAnnonceNonTrouvee() {
         given()
             .when().get("/annonces/9999")
             .then()
@@ -45,7 +45,7 @@ public class AnnonceResourceTest {
     }
 
     @Test
-    void testGetAnnoncesByClient() {
+    void testObtenirAnnoncesParClient() {
         given()
             .when().get("/annonces/client/100")
             .then()
@@ -54,7 +54,7 @@ public class AnnonceResourceTest {
     }
 
     @Test
-    void testCreateAnnonce() {
+    void testCreerAnnonce() {
         given()
             .contentType("application/json")
             .body("{\"titre\":\"Nouvelle annonce\",\"description\":\"Description test\",\"prix\":5000.0,\"contact\":\"Test\",\"telephone\":\"0600000000\"}")
@@ -67,7 +67,7 @@ public class AnnonceResourceTest {
     }
 
     @Test
-    void testUpdateAnnonce() {
+    void testModifierAnnonce() {
         int id = given()
             .contentType("application/json")
             .body("{\"titre\":\"AvantUpdate\",\"prix\":1000.0}")
@@ -100,7 +100,7 @@ public class AnnonceResourceTest {
     }
 
     @Test
-    void testPublierAnnonceMissingPlateforme() {
+    void testPublierAnnoncePlateformeManquante() {
         given()
             .contentType("application/json")
             .body("{}")
@@ -133,7 +133,7 @@ public class AnnonceResourceTest {
     }
 
     @Test
-    void testDeleteAnnonce() {
+    void testSupprimerAnnonce() {
         int id = given()
             .contentType("application/json")
             .body("{\"titre\":\"ToDelete\",\"prix\":500.0}")

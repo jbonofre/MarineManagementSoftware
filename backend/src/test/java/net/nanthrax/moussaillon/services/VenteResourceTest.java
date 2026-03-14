@@ -11,7 +11,7 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 public class VenteResourceTest {
 
     @Test
-    void testListVentes() {
+    void testListerVentes() {
         given()
             .when().get("/ventes")
             .then()
@@ -20,7 +20,7 @@ public class VenteResourceTest {
     }
 
     @Test
-    void testGetVente() {
+    void testObtenirVente() {
         given()
             .when().get("/ventes/100")
             .then()
@@ -29,7 +29,7 @@ public class VenteResourceTest {
     }
 
     @Test
-    void testGetVenteNotFound() {
+    void testObtenirVenteNonTrouvee() {
         given()
             .when().get("/ventes/9999")
             .then()
@@ -37,7 +37,7 @@ public class VenteResourceTest {
     }
 
     @Test
-    void testCreateVente() {
+    void testCreerVente() {
         given()
             .contentType("application/json")
             .body("{\"status\":\"EN_ATTENTE\",\"type\":\"COMPTOIR\",\"prixVenteTTC\":100.0,\"montantTTC\":100.0}")
@@ -50,7 +50,7 @@ public class VenteResourceTest {
     }
 
     @Test
-    void testUpdateVente() {
+    void testModifierVente() {
         int id = given()
             .contentType("application/json")
             .body("{\"status\":\"EN_ATTENTE\",\"type\":\"DEVIS\",\"prixVenteTTC\":200.0}")
@@ -68,7 +68,7 @@ public class VenteResourceTest {
     }
 
     @Test
-    void testSearchVentesByStatus() {
+    void testRechercherVentesParStatut() {
         given()
             .queryParam("status", "PAYEE")
             .when().get("/ventes/search")
@@ -78,7 +78,7 @@ public class VenteResourceTest {
     }
 
     @Test
-    void testSearchVentesByType() {
+    void testRechercherVentesParType() {
         given()
             .queryParam("type", "COMPTOIR")
             .when().get("/ventes/search")
@@ -87,7 +87,7 @@ public class VenteResourceTest {
     }
 
     @Test
-    void testSearchVentesInvalidStatus() {
+    void testRechercherVentesStatutInvalide() {
         given()
             .queryParam("status", "INVALID")
             .when().get("/ventes/search")
@@ -96,7 +96,7 @@ public class VenteResourceTest {
     }
 
     @Test
-    void testSearchVentesNoFilter() {
+    void testRechercherVentesSansFiltre() {
         given()
             .when().get("/ventes/search")
             .then()
@@ -105,7 +105,7 @@ public class VenteResourceTest {
     }
 
     @Test
-    void testDeleteVente() {
+    void testSupprimerVente() {
         int id = given()
             .contentType("application/json")
             .body("{\"status\":\"EN_ATTENTE\",\"type\":\"DEVIS\",\"prixVenteTTC\":50.0}")
@@ -124,7 +124,7 @@ public class VenteResourceTest {
     }
 
     @Test
-    void testDeleteVenteNotFound() {
+    void testSupprimerVenteNonTrouvee() {
         given()
             .when().delete("/ventes/9999")
             .then()

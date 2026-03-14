@@ -10,7 +10,7 @@ import static org.hamcrest.CoreMatchers.*;
 public class FournisseurHeliceResourceTest {
 
     @Test
-    void testListAll() {
+    void testListerTout() {
         given()
             .when().get("/fournisseur-helice")
             .then()
@@ -18,7 +18,7 @@ public class FournisseurHeliceResourceTest {
     }
 
     @Test
-    void testGetNotFound() {
+    void testObtenirNonTrouve() {
         given()
             .when().get("/fournisseur-helice/9999")
             .then()
@@ -26,7 +26,7 @@ public class FournisseurHeliceResourceTest {
     }
 
     @Test
-    void testCreateAndGet() {
+    void testCreerEtObtenir() {
         int id = given()
             .contentType("application/json")
             .body("{\"fournisseur\":{\"id\":100},\"helice\":{\"id\":100},\"prixAchatHT\":200.0,\"tva\":20.0}")
@@ -43,7 +43,7 @@ public class FournisseurHeliceResourceTest {
     }
 
     @Test
-    void testGetByFournisseur() {
+    void testObtenirParFournisseur() {
         given()
             .when().get("/fournisseur-helice/fournisseur/100")
             .then()
@@ -51,7 +51,7 @@ public class FournisseurHeliceResourceTest {
     }
 
     @Test
-    void testGetHelicesByFournisseur() {
+    void testObtenirHelicesParFournisseur() {
         given()
             .when().get("/fournisseur-helice/fournisseur/100/helices")
             .then()
@@ -59,7 +59,7 @@ public class FournisseurHeliceResourceTest {
     }
 
     @Test
-    void testGetFournisseursByHelice() {
+    void testObtenirFournisseursParHelice() {
         given()
             .when().get("/fournisseur-helice/helice/100/fournisseurs")
             .then()
@@ -67,7 +67,7 @@ public class FournisseurHeliceResourceTest {
     }
 
     @Test
-    void testGetByHelice() {
+    void testObtenirParHelice() {
         given()
             .when().get("/fournisseur-helice/helice/100")
             .then()
@@ -75,7 +75,7 @@ public class FournisseurHeliceResourceTest {
     }
 
     @Test
-    void testSearch() {
+    void testRechercher() {
         given()
             .when().get("/fournisseur-helice/search")
             .then()
@@ -83,7 +83,7 @@ public class FournisseurHeliceResourceTest {
     }
 
     @Test
-    void testDeleteNotFound() {
+    void testSupprimerNonTrouve() {
         given()
             .when().delete("/fournisseur-helice/9999")
             .then()

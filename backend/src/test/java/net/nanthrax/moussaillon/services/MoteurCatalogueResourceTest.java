@@ -11,7 +11,7 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 public class MoteurCatalogueResourceTest {
 
     @Test
-    void testListMoteurs() {
+    void testListerMoteurs() {
         given()
             .when().get("/catalogue/moteurs")
             .then()
@@ -20,7 +20,7 @@ public class MoteurCatalogueResourceTest {
     }
 
     @Test
-    void testGetMoteur() {
+    void testObtenirMoteur() {
         given()
             .when().get("/catalogue/moteurs/100")
             .then()
@@ -30,7 +30,7 @@ public class MoteurCatalogueResourceTest {
     }
 
     @Test
-    void testGetMoteurNotFound() {
+    void testObtenirMoteurNonTrouve() {
         given()
             .when().get("/catalogue/moteurs/9999")
             .then()
@@ -38,7 +38,7 @@ public class MoteurCatalogueResourceTest {
     }
 
     @Test
-    void testCreateMoteur() {
+    void testCreerMoteur() {
         given()
             .contentType("application/json")
             .body("{\"modele\":\"Yamaha F90\",\"marque\":\"Yamaha\",\"type\":\"Hors-bord\",\"puissanceCv\":90,\"stock\":3,\"prixVenteTTC\":9000.0}")
@@ -50,7 +50,7 @@ public class MoteurCatalogueResourceTest {
     }
 
     @Test
-    void testUpdateMoteur() {
+    void testModifierMoteur() {
         int id = given()
             .contentType("application/json")
             .body("{\"modele\":\"AvantUpdate\",\"marque\":\"Test\",\"type\":\"Hors-bord\"}")
@@ -67,7 +67,7 @@ public class MoteurCatalogueResourceTest {
     }
 
     @Test
-    void testSearchMoteurs() {
+    void testRechercherMoteurs() {
         given()
             .queryParam("q", "mercury")
             .when().get("/catalogue/moteurs/search")
@@ -77,7 +77,7 @@ public class MoteurCatalogueResourceTest {
     }
 
     @Test
-    void testDeleteMoteur() {
+    void testSupprimerMoteur() {
         int id = given()
             .contentType("application/json")
             .body("{\"modele\":\"ToDelete\",\"marque\":\"Test\",\"type\":\"Hors-bord\"}")

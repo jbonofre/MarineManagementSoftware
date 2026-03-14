@@ -10,7 +10,7 @@ import static org.hamcrest.CoreMatchers.*;
 public class FournisseurMoteurResourceTest {
 
     @Test
-    void testListAll() {
+    void testListerTout() {
         given()
             .when().get("/fournisseur-moteur")
             .then()
@@ -18,7 +18,7 @@ public class FournisseurMoteurResourceTest {
     }
 
     @Test
-    void testGetNotFound() {
+    void testObtenirNonTrouve() {
         given()
             .when().get("/fournisseur-moteur/9999")
             .then()
@@ -26,7 +26,7 @@ public class FournisseurMoteurResourceTest {
     }
 
     @Test
-    void testCreateAndGet() {
+    void testCreerEtObtenir() {
         int id = given()
             .contentType("application/json")
             .body("{\"fournisseur\":{\"id\":100},\"moteur\":{\"id\":100},\"prixAchatHT\":8000.0,\"tva\":20.0}")
@@ -43,7 +43,7 @@ public class FournisseurMoteurResourceTest {
     }
 
     @Test
-    void testGetByFournisseur() {
+    void testObtenirParFournisseur() {
         given()
             .when().get("/fournisseur-moteur/fournisseur/100")
             .then()
@@ -51,7 +51,7 @@ public class FournisseurMoteurResourceTest {
     }
 
     @Test
-    void testGetMoteursByFournisseur() {
+    void testObtenirMoteursParFournisseur() {
         given()
             .when().get("/fournisseur-moteur/fournisseur/100/moteurs")
             .then()
@@ -59,7 +59,7 @@ public class FournisseurMoteurResourceTest {
     }
 
     @Test
-    void testGetFournisseursByMoteur() {
+    void testObtenirFournisseursParMoteur() {
         given()
             .when().get("/fournisseur-moteur/moteur/100/fournisseurs")
             .then()
@@ -67,7 +67,7 @@ public class FournisseurMoteurResourceTest {
     }
 
     @Test
-    void testGetByMoteur() {
+    void testObtenirParMoteur() {
         given()
             .when().get("/fournisseur-moteur/moteur/100")
             .then()
@@ -75,7 +75,7 @@ public class FournisseurMoteurResourceTest {
     }
 
     @Test
-    void testSearch() {
+    void testRechercher() {
         given()
             .when().get("/fournisseur-moteur/search")
             .then()
@@ -83,7 +83,7 @@ public class FournisseurMoteurResourceTest {
     }
 
     @Test
-    void testDeleteNotFound() {
+    void testSupprimerNonTrouve() {
         given()
             .when().delete("/fournisseur-moteur/9999")
             .then()

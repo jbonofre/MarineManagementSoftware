@@ -10,7 +10,7 @@ import static org.hamcrest.CoreMatchers.*;
 public class TechnicienPortalResourceTest {
 
     @Test
-    void testLoginSuccess() {
+    void testConnexionReussie() {
         given()
             .contentType("application/json")
             .body("{\"email\":\"pierre.leclerc@test.com\",\"motDePasse\":\"tech456\"}")
@@ -21,7 +21,7 @@ public class TechnicienPortalResourceTest {
     }
 
     @Test
-    void testLoginMissingEmail() {
+    void testConnexionEmailManquant() {
         given()
             .contentType("application/json")
             .body("{\"motDePasse\":\"test\"}")
@@ -31,7 +31,7 @@ public class TechnicienPortalResourceTest {
     }
 
     @Test
-    void testLoginWrongEmail() {
+    void testConnexionEmailInconnu() {
         given()
             .contentType("application/json")
             .body("{\"email\":\"unknown@test.com\",\"motDePasse\":\"test\"}")
@@ -41,7 +41,7 @@ public class TechnicienPortalResourceTest {
     }
 
     @Test
-    void testLoginWrongPassword() {
+    void testConnexionMotDePasseIncorrect() {
         given()
             .contentType("application/json")
             .body("{\"email\":\"pierre.leclerc@test.com\",\"motDePasse\":\"wrong\"}")
@@ -51,7 +51,7 @@ public class TechnicienPortalResourceTest {
     }
 
     @Test
-    void testGetTechnicienTasks() {
+    void testObtenirTachesTechnicien() {
         given()
             .when().get("/technicien-portal/techniciens/100/taches")
             .then()
@@ -59,7 +59,7 @@ public class TechnicienPortalResourceTest {
     }
 
     @Test
-    void testGetTechnicienTasksNotFound() {
+    void testObtenirTachesTechnicienNonTrouve() {
         given()
             .when().get("/technicien-portal/techniciens/9999/taches")
             .then()
@@ -67,7 +67,7 @@ public class TechnicienPortalResourceTest {
     }
 
     @Test
-    void testUpdateTask() {
+    void testModifierTache() {
         given()
             .contentType("application/json")
             .body("{\"status\":\"EN_COURS\",\"dureeReelle\":1.5,\"notes\":\"En cours de traitement\"}")
@@ -78,7 +78,7 @@ public class TechnicienPortalResourceTest {
     }
 
     @Test
-    void testUpdateTaskNotFound() {
+    void testModifierTacheNonTrouvee() {
         given()
             .contentType("application/json")
             .body("{\"status\":\"EN_COURS\",\"dureeReelle\":1.0}")

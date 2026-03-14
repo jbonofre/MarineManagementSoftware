@@ -10,7 +10,7 @@ import static org.hamcrest.CoreMatchers.*;
 public class SocieteResourceTest {
 
     @Test
-    void testGetSociete() {
+    void testObtenirSociete() {
         given()
             .when().get("/societe")
             .then()
@@ -20,7 +20,7 @@ public class SocieteResourceTest {
     }
 
     @Test
-    void testUpdateSociete() {
+    void testModifierSociete() {
         given()
             .contentType("application/json")
             .body("{\"nom\":\"MS Plaisance Updated\",\"siren\":\"123456789\",\"adresse\":\"20 quai du Port\",\"email\":\"new@msplaisance.com\"}")
@@ -30,7 +30,7 @@ public class SocieteResourceTest {
             .body("nom", is("MS Plaisance Updated"))
             .body("adresse", is("20 quai du Port"));
 
-        // Restore original
+        // Restaurer l'original
         given()
             .contentType("application/json")
             .body("{\"nom\":\"MS Plaisance\",\"siren\":\"123456789\",\"adresse\":\"10 quai du Port\"}")

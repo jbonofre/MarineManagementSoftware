@@ -10,7 +10,7 @@ import static org.hamcrest.CoreMatchers.*;
 public class AiChatResourceTest {
 
     @Test
-    void testMissingProvider() {
+    void testFournisseurManquant() {
         given()
             .contentType("application/json")
             .body("{\"message\":\"Bonjour\"}")
@@ -22,7 +22,7 @@ public class AiChatResourceTest {
     }
 
     @Test
-    void testEmptyProvider() {
+    void testFournisseurVide() {
         given()
             .contentType("application/json")
             .body("{\"provider\":\"\",\"message\":\"Bonjour\"}")
@@ -33,7 +33,7 @@ public class AiChatResourceTest {
     }
 
     @Test
-    void testMissingMessage() {
+    void testMessageManquant() {
         given()
             .contentType("application/json")
             .body("{\"provider\":\"openai\"}")
@@ -46,7 +46,7 @@ public class AiChatResourceTest {
     }
 
     @Test
-    void testEmptyMessage() {
+    void testMessageVide() {
         given()
             .contentType("application/json")
             .body("{\"provider\":\"anthropic\",\"message\":\"\"}")
@@ -57,7 +57,7 @@ public class AiChatResourceTest {
     }
 
     @Test
-    void testInvalidProvider() {
+    void testFournisseurInvalide() {
         given()
             .contentType("application/json")
             .body("{\"provider\":\"gemini\",\"message\":\"Bonjour\"}")
@@ -70,9 +70,9 @@ public class AiChatResourceTest {
     }
 
     @Test
-    void testOpenAiCallWithTestKey() {
-        // With test-key, the call to OpenAI API will fail (401/connection error)
-        // This exercises the request building + error handling code paths
+    void testAppelOpenAiAvecClefTest() {
+        // Avec la clef de test, l'appel a l'API OpenAI echouera (401/erreur de connexion)
+        // Cela teste la construction de la requete et la gestion des erreurs
         given()
             .contentType("application/json")
             .body("{\"provider\":\"openai\",\"message\":\"test\"}")
@@ -83,9 +83,9 @@ public class AiChatResourceTest {
     }
 
     @Test
-    void testAnthropicCallWithTestKey() {
-        // With test-key, the call to Anthropic API will fail (401/connection error)
-        // This exercises the request building + error handling code paths
+    void testAppelAnthropicAvecClefTest() {
+        // Avec la clef de test, l'appel a l'API Anthropic echouera (401/erreur de connexion)
+        // Cela teste la construction de la requete et la gestion des erreurs
         given()
             .contentType("application/json")
             .body("{\"provider\":\"anthropic\",\"message\":\"test\"}")
@@ -96,14 +96,14 @@ public class AiChatResourceTest {
     }
 
     @Test
-    void testProviderCaseInsensitive() {
-        // "OpenAI" should be normalized to "openai"
+    void testFournisseurInsensibleCasse() {
+        // "OpenAI" doit etre normalise en "openai"
         given()
             .contentType("application/json")
             .body("{\"provider\":\"OpenAI\",\"message\":\"test\"}")
             .when().post("/ai/chat")
             .then()
-            // Should attempt the call (not return INVALID_PROVIDER)
+            // Doit tenter l'appel (pas de retour INVALID_PROVIDER)
             .statusCode(anyOf(is(200), is(500), is(502)));
     }
 }

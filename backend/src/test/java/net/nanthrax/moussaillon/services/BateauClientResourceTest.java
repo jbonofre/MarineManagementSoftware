@@ -11,7 +11,7 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 public class BateauClientResourceTest {
 
     @Test
-    void testListBateaux() {
+    void testListerBateaux() {
         given()
             .when().get("/bateaux")
             .then()
@@ -19,7 +19,7 @@ public class BateauClientResourceTest {
     }
 
     @Test
-    void testGetBateauNotFound() {
+    void testObtenirBateauNonTrouve() {
         given()
             .when().get("/bateaux/9999")
             .then()
@@ -27,7 +27,7 @@ public class BateauClientResourceTest {
     }
 
     @Test
-    void testCreateBateau() {
+    void testCreerBateau() {
         given()
             .contentType("application/json")
             .body("{\"name\":\"Mon Bateau\",\"immatriculation\":\"AB-123\",\"numeroSerie\":\"SN001\"}")
@@ -39,7 +39,7 @@ public class BateauClientResourceTest {
     }
 
     @Test
-    void testUpdateBateau() {
+    void testModifierBateau() {
         int id = given()
             .contentType("application/json")
             .body("{\"name\":\"AvantUpdate\",\"immatriculation\":\"XX-001\"}")
@@ -56,8 +56,8 @@ public class BateauClientResourceTest {
     }
 
     @Test
-    void testSearchBateaux() {
-        // Create one first to ensure search has results
+    void testRechercherBateaux() {
+        // Creer un bateau pour garantir des resultats de recherche
         given()
             .contentType("application/json")
             .body("{\"name\":\"SearchTest\",\"immatriculation\":\"SR-001\"}")
@@ -73,7 +73,7 @@ public class BateauClientResourceTest {
     }
 
     @Test
-    void testDeleteBateau() {
+    void testSupprimerBateau() {
         int id = given()
             .contentType("application/json")
             .body("{\"name\":\"ToDelete\",\"immatriculation\":\"DEL-001\"}")

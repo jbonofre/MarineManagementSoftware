@@ -11,7 +11,7 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 public class ProduitCatalogueResourceTest {
 
     @Test
-    void testListProduits() {
+    void testListerProduits() {
         given()
             .when().get("/catalogue/produits")
             .then()
@@ -20,7 +20,7 @@ public class ProduitCatalogueResourceTest {
     }
 
     @Test
-    void testGetProduit() {
+    void testObtenirProduit() {
         given()
             .when().get("/catalogue/produits/100")
             .then()
@@ -30,7 +30,7 @@ public class ProduitCatalogueResourceTest {
     }
 
     @Test
-    void testGetProduitNotFound() {
+    void testObtenirProduitNonTrouve() {
         given()
             .when().get("/catalogue/produits/9999")
             .then()
@@ -38,7 +38,7 @@ public class ProduitCatalogueResourceTest {
     }
 
     @Test
-    void testCreateProduit() {
+    void testCreerProduit() {
         given()
             .contentType("application/json")
             .body("{\"nom\":\"Antifouling\",\"marque\":\"International\",\"categorie\":\"Peinture\",\"stock\":10,\"prixVenteTTC\":45.0}")
@@ -50,7 +50,7 @@ public class ProduitCatalogueResourceTest {
     }
 
     @Test
-    void testUpdateProduit() {
+    void testModifierProduit() {
         int id = given()
             .contentType("application/json")
             .body("{\"nom\":\"AvantUpdate\",\"marque\":\"Test\",\"categorie\":\"Test\"}")
@@ -67,7 +67,7 @@ public class ProduitCatalogueResourceTest {
     }
 
     @Test
-    void testSearchProduits() {
+    void testRechercherProduits() {
         given()
             .queryParam("q", "huile")
             .when().get("/catalogue/produits/search")
@@ -77,7 +77,7 @@ public class ProduitCatalogueResourceTest {
     }
 
     @Test
-    void testListFournisseurs() {
+    void testListerFournisseurs() {
         given()
             .when().get("/catalogue/produits/fournisseurs")
             .then()
@@ -85,7 +85,7 @@ public class ProduitCatalogueResourceTest {
     }
 
     @Test
-    void testDeleteProduit() {
+    void testSupprimerProduit() {
         int id = given()
             .contentType("application/json")
             .body("{\"nom\":\"ToDelete\",\"marque\":\"Test\",\"categorie\":\"Test\"}")

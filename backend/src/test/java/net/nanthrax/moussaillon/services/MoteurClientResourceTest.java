@@ -11,7 +11,7 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 public class MoteurClientResourceTest {
 
     @Test
-    void testListMoteurs() {
+    void testListerMoteurs() {
         given()
             .when().get("/moteurs")
             .then()
@@ -19,7 +19,7 @@ public class MoteurClientResourceTest {
     }
 
     @Test
-    void testGetMoteurNotFound() {
+    void testObtenirMoteurNonTrouve() {
         given()
             .when().get("/moteurs/9999")
             .then()
@@ -27,7 +27,7 @@ public class MoteurClientResourceTest {
     }
 
     @Test
-    void testCreateMoteur() {
+    void testCreerMoteur() {
         given()
             .contentType("application/json")
             .body("{\"numeroSerie\":\"MOT-001\",\"numeroClef\":\"KEY-001\"}")
@@ -39,7 +39,7 @@ public class MoteurClientResourceTest {
     }
 
     @Test
-    void testUpdateMoteur() {
+    void testModifierMoteur() {
         int id = given()
             .contentType("application/json")
             .body("{\"numeroSerie\":\"MOT-UPD\"}")
@@ -56,7 +56,7 @@ public class MoteurClientResourceTest {
     }
 
     @Test
-    void testSearchMoteurs() {
+    void testRechercherMoteurs() {
         given()
             .queryParam("q", "mot")
             .when().get("/moteurs/search")
@@ -65,7 +65,7 @@ public class MoteurClientResourceTest {
     }
 
     @Test
-    void testDeleteMoteur() {
+    void testSupprimerMoteur() {
         int id = given()
             .contentType("application/json")
             .body("{\"numeroSerie\":\"MOT-DEL\"}")

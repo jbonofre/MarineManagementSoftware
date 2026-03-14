@@ -11,7 +11,7 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 public class ForfaitResourceTest {
 
     @Test
-    void testListForfaits() {
+    void testListerForfaits() {
         given()
             .when().get("/forfaits")
             .then()
@@ -20,7 +20,7 @@ public class ForfaitResourceTest {
     }
 
     @Test
-    void testGetForfait() {
+    void testObtenirForfait() {
         given()
             .when().get("/forfaits/100")
             .then()
@@ -29,7 +29,7 @@ public class ForfaitResourceTest {
     }
 
     @Test
-    void testGetForfaitNotFound() {
+    void testObtenirForfaitNonTrouve() {
         given()
             .when().get("/forfaits/9999")
             .then()
@@ -37,7 +37,7 @@ public class ForfaitResourceTest {
     }
 
     @Test
-    void testCreateForfait() {
+    void testCreerForfait() {
         given()
             .contentType("application/json")
             .body("{\"nom\":\"Pack hivernage\",\"reference\":\"FORFAIT-002\",\"prixHT\":180.0,\"tva\":20.0}")
@@ -49,7 +49,7 @@ public class ForfaitResourceTest {
     }
 
     @Test
-    void testUpdateForfait() {
+    void testModifierForfait() {
         int id = given()
             .contentType("application/json")
             .body("{\"nom\":\"AvantUpdate\",\"reference\":\"REF-UPD\"}")
@@ -66,7 +66,7 @@ public class ForfaitResourceTest {
     }
 
     @Test
-    void testSearchForfaits() {
+    void testRechercherForfaits() {
         given()
             .queryParam("q", "entretien")
             .when().get("/forfaits/search")
@@ -76,7 +76,7 @@ public class ForfaitResourceTest {
     }
 
     @Test
-    void testDeleteForfait() {
+    void testSupprimerForfait() {
         int id = given()
             .contentType("application/json")
             .body("{\"nom\":\"ToDelete\",\"reference\":\"REF-DEL\"}")

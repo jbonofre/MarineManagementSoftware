@@ -11,7 +11,7 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 public class McpServerResourceTest {
 
     @Test
-    void testInitialize() {
+    void testInitialiser() {
         given()
             .contentType("application/json")
             .body("{\"jsonrpc\":\"2.0\",\"id\":\"1\",\"method\":\"initialize\",\"params\":{}}")
@@ -25,7 +25,7 @@ public class McpServerResourceTest {
     }
 
     @Test
-    void testNotificationsInitialized() {
+    void testNotificationInitialisee() {
         given()
             .contentType("application/json")
             .body("{\"jsonrpc\":\"2.0\",\"id\":\"2\",\"method\":\"notifications/initialized\",\"params\":{}}")
@@ -35,7 +35,7 @@ public class McpServerResourceTest {
     }
 
     @Test
-    void testToolsList() {
+    void testListeOutils() {
         given()
             .contentType("application/json")
             .body("{\"jsonrpc\":\"2.0\",\"id\":\"3\",\"method\":\"tools/list\",\"params\":{}}")
@@ -48,7 +48,7 @@ public class McpServerResourceTest {
     }
 
     @Test
-    void testToolCallListResources() {
+    void testAppelOutilListerRessources() {
         given()
             .contentType("application/json")
             .body("{\"jsonrpc\":\"2.0\",\"id\":\"4\",\"method\":\"tools/call\",\"params\":{\"name\":\"moussaillon_list_api_resources\",\"arguments\":{}}}")
@@ -60,7 +60,7 @@ public class McpServerResourceTest {
     }
 
     @Test
-    void testToolCallApiResourceGet() {
+    void testAppelOutilApiRessourceGet() {
         given()
             .contentType("application/json")
             .body("{\"jsonrpc\":\"2.0\",\"id\":\"5\",\"method\":\"tools/call\",\"params\":{\"name\":\"moussaillon_call_api_resource\",\"arguments\":{\"method\":\"GET\",\"path\":\"/clients\"}}}")
@@ -74,7 +74,7 @@ public class McpServerResourceTest {
     }
 
     @Test
-    void testToolCallApiResourceGetWithQuery() {
+    void testAppelOutilApiRessourceGetAvecRequete() {
         given()
             .contentType("application/json")
             .body("{\"jsonrpc\":\"2.0\",\"id\":\"6\",\"method\":\"tools/call\",\"params\":{\"name\":\"moussaillon_call_api_resource\",\"arguments\":{\"method\":\"GET\",\"path\":\"/clients/search\",\"query\":{\"q\":\"dupont\"}}}}")
@@ -86,7 +86,7 @@ public class McpServerResourceTest {
     }
 
     @Test
-    void testToolCallApiResourcePost() {
+    void testAppelOutilApiRessourcePost() {
         given()
             .contentType("application/json")
             .body("{\"jsonrpc\":\"2.0\",\"id\":\"7\",\"method\":\"tools/call\",\"params\":{\"name\":\"moussaillon_call_api_resource\",\"arguments\":{\"method\":\"POST\",\"path\":\"/services\",\"body\":{\"nom\":\"MCP Test Service\",\"description\":\"Created via MCP\",\"prixHT\":50.0,\"tva\":20.0,\"montantTVA\":10.0,\"prixTTC\":60.0}}}}")
@@ -98,7 +98,7 @@ public class McpServerResourceTest {
     }
 
     @Test
-    void testToolCallApiResourceNotFound() {
+    void testAppelOutilApiRessourceNonTrouvee() {
         given()
             .contentType("application/json")
             .body("{\"jsonrpc\":\"2.0\",\"id\":\"8\",\"method\":\"tools/call\",\"params\":{\"name\":\"moussaillon_call_api_resource\",\"arguments\":{\"method\":\"GET\",\"path\":\"/clients/9999\"}}}")
@@ -110,7 +110,7 @@ public class McpServerResourceTest {
     }
 
     @Test
-    void testToolCallUnknownTool() {
+    void testAppelOutilInconnu() {
         given()
             .contentType("application/json")
             .body("{\"jsonrpc\":\"2.0\",\"id\":\"9\",\"method\":\"tools/call\",\"params\":{\"name\":\"unknown_tool\",\"arguments\":{}}}")
@@ -122,7 +122,7 @@ public class McpServerResourceTest {
     }
 
     @Test
-    void testToolCallApiResourceBadPath() {
+    void testAppelOutilApiCheminInterdit() {
         given()
             .contentType("application/json")
             .body("{\"jsonrpc\":\"2.0\",\"id\":\"10\",\"method\":\"tools/call\",\"params\":{\"name\":\"moussaillon_call_api_resource\",\"arguments\":{\"method\":\"GET\",\"path\":\"/admin/secret\"}}}")
@@ -134,7 +134,7 @@ public class McpServerResourceTest {
     }
 
     @Test
-    void testToolCallApiResourceBadMethod() {
+    void testAppelOutilApiMethodeNonSupportee() {
         given()
             .contentType("application/json")
             .body("{\"jsonrpc\":\"2.0\",\"id\":\"11\",\"method\":\"tools/call\",\"params\":{\"name\":\"moussaillon_call_api_resource\",\"arguments\":{\"method\":\"PATCH\",\"path\":\"/clients\"}}}")
@@ -146,7 +146,7 @@ public class McpServerResourceTest {
     }
 
     @Test
-    void testToolCallApiResourceMissingMethod() {
+    void testAppelOutilApiMethodeManquante() {
         given()
             .contentType("application/json")
             .body("{\"jsonrpc\":\"2.0\",\"id\":\"12\",\"method\":\"tools/call\",\"params\":{\"name\":\"moussaillon_call_api_resource\",\"arguments\":{\"path\":\"/clients\"}}}")
@@ -158,7 +158,7 @@ public class McpServerResourceTest {
     }
 
     @Test
-    void testToolCallApiResourceMissingPath() {
+    void testAppelOutilApiCheminManquant() {
         given()
             .contentType("application/json")
             .body("{\"jsonrpc\":\"2.0\",\"id\":\"13\",\"method\":\"tools/call\",\"params\":{\"name\":\"moussaillon_call_api_resource\",\"arguments\":{\"method\":\"GET\"}}}")
@@ -170,7 +170,7 @@ public class McpServerResourceTest {
     }
 
     @Test
-    void testToolCallApiResourcePathNoSlash() {
+    void testAppelOutilApiCheminSansSlash() {
         given()
             .contentType("application/json")
             .body("{\"jsonrpc\":\"2.0\",\"id\":\"14\",\"method\":\"tools/call\",\"params\":{\"name\":\"moussaillon_call_api_resource\",\"arguments\":{\"method\":\"GET\",\"path\":\"clients\"}}}")
@@ -182,7 +182,7 @@ public class McpServerResourceTest {
     }
 
     @Test
-    void testUnknownJsonRpcMethod() {
+    void testMethodeJsonRpcInconnue() {
         given()
             .contentType("application/json")
             .body("{\"jsonrpc\":\"2.0\",\"id\":\"15\",\"method\":\"unknown/method\",\"params\":{}}")
@@ -194,7 +194,7 @@ public class McpServerResourceTest {
     }
 
     @Test
-    void testMissingJsonRpcMethod() {
+    void testMethodeJsonRpcManquante() {
         given()
             .contentType("application/json")
             .body("{\"jsonrpc\":\"2.0\",\"id\":\"16\"}")
@@ -205,8 +205,8 @@ public class McpServerResourceTest {
     }
 
     @Test
-    void testToolCallApiResourcePut() {
-        // First create a service
+    void testAppelOutilApiRessourcePut() {
+        // Creer un service d'abord
         given()
             .contentType("application/json")
             .body("{\"jsonrpc\":\"2.0\",\"id\":\"17\",\"method\":\"tools/call\",\"params\":{\"name\":\"moussaillon_call_api_resource\",\"arguments\":{\"method\":\"PUT\",\"path\":\"/societe\",\"body\":{\"nom\":\"MCP Updated\",\"siren\":\"123456789\",\"adresse\":\"MCP Address\"}}}}")
@@ -215,7 +215,7 @@ public class McpServerResourceTest {
             .statusCode(200)
             .body("result.structuredContent.status", is(200));
 
-        // Restore
+        // Restaurer
         given()
             .contentType("application/json")
             .body("{\"nom\":\"MS Plaisance\",\"siren\":\"123456789\",\"adresse\":\"10 quai du Port\"}")
@@ -224,8 +224,8 @@ public class McpServerResourceTest {
     }
 
     @Test
-    void testToolCallApiResourceDelete() {
-        // Create something to delete
+    void testAppelOutilApiRessourceDelete() {
+        // Creer un element a supprimer
         int id = given()
             .contentType("application/json")
             .body("{\"nom\":\"MCP Delete Test\",\"description\":\"Test\",\"prixHT\":10.0,\"tva\":20.0,\"montantTVA\":2.0,\"prixTTC\":12.0}")

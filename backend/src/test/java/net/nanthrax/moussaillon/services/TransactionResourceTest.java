@@ -11,7 +11,7 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 public class TransactionResourceTest {
 
     @Test
-    void testListTransactions() {
+    void testListerTransactions() {
         given()
             .when().get("/transactions")
             .then()
@@ -20,7 +20,7 @@ public class TransactionResourceTest {
     }
 
     @Test
-    void testGetTransaction() {
+    void testObtenirTransaction() {
         given()
             .when().get("/transactions/100")
             .then()
@@ -29,7 +29,7 @@ public class TransactionResourceTest {
     }
 
     @Test
-    void testGetTransactionNotFound() {
+    void testObtenirTransactionNonTrouvee() {
         given()
             .when().get("/transactions/9999")
             .then()
@@ -37,7 +37,7 @@ public class TransactionResourceTest {
     }
 
     @Test
-    void testCreateTransaction() {
+    void testCreerTransaction() {
         given()
             .contentType("application/json")
             .body("{\"status\":\"EN_ATTENTE\",\"montantHT\":2000,\"remise\":0}")
@@ -49,7 +49,7 @@ public class TransactionResourceTest {
     }
 
     @Test
-    void testUpdateTransaction() {
+    void testModifierTransaction() {
         int id = given()
             .contentType("application/json")
             .body("{\"status\":\"EN_ATTENTE\",\"montantHT\":1000,\"remise\":0}")
@@ -66,7 +66,7 @@ public class TransactionResourceTest {
     }
 
     @Test
-    void testSearchTransactionsByStatus() {
+    void testRechercherTransactionsParStatut() {
         given()
             .queryParam("status", "EN_ATTENTE")
             .when().get("/transactions/search")
@@ -75,7 +75,7 @@ public class TransactionResourceTest {
     }
 
     @Test
-    void testSearchTransactionsNoFilter() {
+    void testRechercherTransactionsSansFiltre() {
         given()
             .when().get("/transactions/search")
             .then()
@@ -84,7 +84,7 @@ public class TransactionResourceTest {
     }
 
     @Test
-    void testDeleteTransaction() {
+    void testSupprimerTransaction() {
         int id = given()
             .contentType("application/json")
             .body("{\"status\":\"EN_ATTENTE\",\"montantHT\":500,\"remise\":0}")

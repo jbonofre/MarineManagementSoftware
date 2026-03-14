@@ -10,7 +10,7 @@ import static org.hamcrest.CoreMatchers.*;
 public class FournisseurBateauResourceTest {
 
     @Test
-    void testListAll() {
+    void testListerTout() {
         given()
             .when().get("/fournisseur-bateau")
             .then()
@@ -18,7 +18,7 @@ public class FournisseurBateauResourceTest {
     }
 
     @Test
-    void testGetNotFound() {
+    void testObtenirNonTrouve() {
         given()
             .when().get("/fournisseur-bateau/9999")
             .then()
@@ -26,7 +26,7 @@ public class FournisseurBateauResourceTest {
     }
 
     @Test
-    void testCreateAndGet() {
+    void testCreerEtObtenir() {
         int id = given()
             .contentType("application/json")
             .body("{\"fournisseur\":{\"id\":100},\"bateau\":{\"id\":100},\"prixAchatHT\":18000.0,\"tva\":20.0}")
@@ -43,7 +43,7 @@ public class FournisseurBateauResourceTest {
     }
 
     @Test
-    void testGetByFournisseur() {
+    void testObtenirParFournisseur() {
         given()
             .when().get("/fournisseur-bateau/fournisseur/100")
             .then()
@@ -51,7 +51,7 @@ public class FournisseurBateauResourceTest {
     }
 
     @Test
-    void testGetByBateau() {
+    void testObtenirParBateau() {
         given()
             .when().get("/fournisseur-bateau/bateau/100")
             .then()
@@ -59,7 +59,7 @@ public class FournisseurBateauResourceTest {
     }
 
     @Test
-    void testSearch() {
+    void testRechercher() {
         given()
             .when().get("/fournisseur-bateau/search")
             .then()
@@ -67,7 +67,7 @@ public class FournisseurBateauResourceTest {
     }
 
     @Test
-    void testDeleteNotFound() {
+    void testSupprimerNonTrouve() {
         given()
             .when().delete("/fournisseur-bateau/9999")
             .then()

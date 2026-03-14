@@ -11,7 +11,7 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 public class ClientResourceTest {
 
     @Test
-    void testListClients() {
+    void testListerClients() {
         given()
             .when().get("/clients")
             .then()
@@ -20,7 +20,7 @@ public class ClientResourceTest {
     }
 
     @Test
-    void testGetClient() {
+    void testObtenirClient() {
         given()
             .when().get("/clients/100")
             .then()
@@ -32,7 +32,7 @@ public class ClientResourceTest {
     }
 
     @Test
-    void testGetClientNotFound() {
+    void testObtenirClientNonTrouve() {
         given()
             .when().get("/clients/9999")
             .then()
@@ -40,7 +40,7 @@ public class ClientResourceTest {
     }
 
     @Test
-    void testCreateClient() {
+    void testCreerClient() {
         given()
             .contentType("application/json")
             .body("{\"nom\":\"Nouveau\",\"prenom\":\"Client\",\"type\":\"Particulier\",\"email\":\"nouveau@test.com\"}")
@@ -53,8 +53,8 @@ public class ClientResourceTest {
     }
 
     @Test
-    void testUpdateClient() {
-        // Create a dedicated entity for update test
+    void testModifierClient() {
+        // Creer une entite dediee pour le test de modification
         int id = given()
             .contentType("application/json")
             .body("{\"nom\":\"AvantUpdate\",\"prenom\":\"Test\",\"type\":\"Particulier\"}")
@@ -73,7 +73,7 @@ public class ClientResourceTest {
     }
 
     @Test
-    void testSearchClients() {
+    void testRechercherClients() {
         given()
             .queryParam("q", "dupont")
             .when().get("/clients/search")
@@ -83,7 +83,7 @@ public class ClientResourceTest {
     }
 
     @Test
-    void testSearchClientsEmpty() {
+    void testRechercherClientsSansRequete() {
         given()
             .when().get("/clients/search")
             .then()
@@ -92,8 +92,8 @@ public class ClientResourceTest {
     }
 
     @Test
-    void testDeleteClient() {
-        // Create a client to delete
+    void testSupprimerClient() {
+        // Creer un client a supprimer
         int id = given()
             .contentType("application/json")
             .body("{\"nom\":\"ASupprimer\",\"prenom\":\"Test\",\"type\":\"Particulier\"}")

@@ -11,7 +11,7 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 public class TechnicienResourceTest {
 
     @Test
-    void testListTechniciens() {
+    void testListerTechniciens() {
         given()
             .when().get("/techniciens")
             .then()
@@ -20,7 +20,7 @@ public class TechnicienResourceTest {
     }
 
     @Test
-    void testGetTechnicien() {
+    void testObtenirTechnicien() {
         given()
             .when().get("/techniciens/100")
             .then()
@@ -30,7 +30,7 @@ public class TechnicienResourceTest {
     }
 
     @Test
-    void testGetTechnicienNotFound() {
+    void testObtenirTechnicienNonTrouve() {
         given()
             .when().get("/techniciens/9999")
             .then()
@@ -38,7 +38,7 @@ public class TechnicienResourceTest {
     }
 
     @Test
-    void testCreateTechnicien() {
+    void testCreerTechnicien() {
         given()
             .contentType("application/json")
             .body("{\"nom\":\"Durand\",\"prenom\":\"Marc\",\"email\":\"marc@test.com\",\"telephone\":\"0600000001\",\"couleur\":\"#0000FF\"}")
@@ -50,7 +50,7 @@ public class TechnicienResourceTest {
     }
 
     @Test
-    void testUpdateTechnicien() {
+    void testModifierTechnicien() {
         int id = given()
             .contentType("application/json")
             .body("{\"nom\":\"Avant\",\"prenom\":\"Update\"}")
@@ -67,7 +67,7 @@ public class TechnicienResourceTest {
     }
 
     @Test
-    void testSearchTechniciens() {
+    void testRechercherTechniciens() {
         given()
             .queryParam("q", "leclerc")
             .when().get("/techniciens/search")
@@ -77,7 +77,7 @@ public class TechnicienResourceTest {
     }
 
     @Test
-    void testDeleteTechnicien() {
+    void testSupprimerTechnicien() {
         int id = given()
             .contentType("application/json")
             .body("{\"nom\":\"ToDelete\",\"prenom\":\"Test\"}")

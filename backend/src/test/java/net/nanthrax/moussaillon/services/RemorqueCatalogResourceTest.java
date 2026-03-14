@@ -11,7 +11,7 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 public class RemorqueCatalogResourceTest {
 
     @Test
-    void testListRemorques() {
+    void testListerRemorques() {
         given()
             .when().get("/catalogue/remorques")
             .then()
@@ -20,7 +20,7 @@ public class RemorqueCatalogResourceTest {
     }
 
     @Test
-    void testGetRemorque() {
+    void testObtenirRemorque() {
         given()
             .when().get("/catalogue/remorques/100")
             .then()
@@ -30,7 +30,7 @@ public class RemorqueCatalogResourceTest {
     }
 
     @Test
-    void testGetRemorqueNotFound() {
+    void testObtenirRemorqueNonTrouve() {
         given()
             .when().get("/catalogue/remorques/9999")
             .then()
@@ -38,7 +38,7 @@ public class RemorqueCatalogResourceTest {
     }
 
     @Test
-    void testCreateRemorque() {
+    void testCreerRemorque() {
         given()
             .contentType("application/json")
             .body("{\"modele\":\"Test Remorque\",\"marque\":\"TestBrand\",\"description\":\"Test\",\"ptac\":500,\"stock\":1,\"prixVenteTTC\":1500.0}")
@@ -50,7 +50,7 @@ public class RemorqueCatalogResourceTest {
     }
 
     @Test
-    void testUpdateRemorque() {
+    void testModifierRemorque() {
         int id = given()
             .contentType("application/json")
             .body("{\"modele\":\"AvantUpdate\",\"marque\":\"Test\",\"description\":\"Test\"}")
@@ -67,7 +67,7 @@ public class RemorqueCatalogResourceTest {
     }
 
     @Test
-    void testSearchRemorques() {
+    void testRechercherRemorques() {
         given()
             .queryParam("modele", "sun")
             .when().get("/catalogue/remorques/search")
@@ -77,7 +77,7 @@ public class RemorqueCatalogResourceTest {
     }
 
     @Test
-    void testDeleteRemorque() {
+    void testSupprimerRemorque() {
         int id = given()
             .contentType("application/json")
             .body("{\"modele\":\"ToDelete\",\"marque\":\"Test\",\"description\":\"Test\"}")

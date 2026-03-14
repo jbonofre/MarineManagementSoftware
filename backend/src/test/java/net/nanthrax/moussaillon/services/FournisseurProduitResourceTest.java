@@ -10,7 +10,7 @@ import static org.hamcrest.CoreMatchers.*;
 public class FournisseurProduitResourceTest {
 
     @Test
-    void testListAll() {
+    void testListerTout() {
         given()
             .when().get("/fournisseur-produit")
             .then()
@@ -18,7 +18,7 @@ public class FournisseurProduitResourceTest {
     }
 
     @Test
-    void testGetNotFound() {
+    void testObtenirNonTrouve() {
         given()
             .when().get("/fournisseur-produit/9999")
             .then()
@@ -26,7 +26,7 @@ public class FournisseurProduitResourceTest {
     }
 
     @Test
-    void testCreateAndGet() {
+    void testCreerEtObtenir() {
         int id = given()
             .contentType("application/json")
             .body("{\"fournisseur\":{\"id\":100},\"produit\":{\"id\":100},\"reference\":\"REF-001\",\"prixAchatHT\":15.0,\"tva\":20.0}")
@@ -43,7 +43,7 @@ public class FournisseurProduitResourceTest {
     }
 
     @Test
-    void testGetByFournisseur() {
+    void testObtenirParFournisseur() {
         given()
             .when().get("/fournisseur-produit/fournisseur/100")
             .then()
@@ -51,7 +51,7 @@ public class FournisseurProduitResourceTest {
     }
 
     @Test
-    void testGetProduitsByFournisseur() {
+    void testObtenirProduitsParFournisseur() {
         given()
             .when().get("/fournisseur-produit/fournisseur/100/produits")
             .then()
@@ -59,7 +59,7 @@ public class FournisseurProduitResourceTest {
     }
 
     @Test
-    void testGetFournisseursByProduit() {
+    void testObtenirFournisseursParProduit() {
         given()
             .when().get("/fournisseur-produit/produit/100/fournisseurs")
             .then()
@@ -67,7 +67,7 @@ public class FournisseurProduitResourceTest {
     }
 
     @Test
-    void testGetByProduit() {
+    void testObtenirParProduit() {
         given()
             .when().get("/fournisseur-produit/produit/100")
             .then()
@@ -75,7 +75,7 @@ public class FournisseurProduitResourceTest {
     }
 
     @Test
-    void testSearch() {
+    void testRechercher() {
         given()
             .when().get("/fournisseur-produit/search")
             .then()
@@ -83,7 +83,7 @@ public class FournisseurProduitResourceTest {
     }
 
     @Test
-    void testDeleteNotFound() {
+    void testSupprimerNonTrouve() {
         given()
             .when().delete("/fournisseur-produit/9999")
             .then()

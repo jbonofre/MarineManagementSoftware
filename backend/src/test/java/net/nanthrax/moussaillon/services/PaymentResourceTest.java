@@ -10,7 +10,7 @@ import static org.hamcrest.CoreMatchers.*;
 public class PaymentResourceTest {
 
     @Test
-    void testStripeVenteNotFound() {
+    void testStripeVenteNonTrouvee() {
         given()
             .contentType("application/json")
             .when().post("/ventes/9999/payment-link/stripe")
@@ -19,7 +19,7 @@ public class PaymentResourceTest {
     }
 
     @Test
-    void testPayplugVenteNotFound() {
+    void testPayplugVenteNonTrouvee() {
         given()
             .contentType("application/json")
             .when().post("/ventes/9999/payment-link/payplug")
@@ -28,9 +28,9 @@ public class PaymentResourceTest {
     }
 
     @Test
-    void testStripeWithTestKey() {
-        // With test-key, the Stripe SDK will fail (invalid API key)
-        // This exercises: vente lookup, key validation, Stripe request building, error handling
+    void testStripeAvecClefTest() {
+        // Avec la clef de test, le SDK Stripe echouera (clef API invalide)
+        // Cela teste: recherche de vente, validation de clef, construction requete Stripe, gestion erreurs
         given()
             .contentType("application/json")
             .when().post("/ventes/100/payment-link/stripe")
@@ -39,9 +39,9 @@ public class PaymentResourceTest {
     }
 
     @Test
-    void testPayplugWithTestKey() {
-        // With test-key, the PayPlug HTTP call will fail (401 or connection error)
-        // This exercises: vente lookup, key validation, PayPlug request building, error handling
+    void testPayplugAvecClefTest() {
+        // Avec la clef de test, l'appel HTTP PayPlug echouera (401 ou erreur de connexion)
+        // Cela teste: recherche de vente, validation de clef, construction requete PayPlug, gestion erreurs
         given()
             .contentType("application/json")
             .when().post("/ventes/100/payment-link/payplug")

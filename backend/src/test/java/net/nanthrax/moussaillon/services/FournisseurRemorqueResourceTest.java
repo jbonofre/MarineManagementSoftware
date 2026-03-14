@@ -10,7 +10,7 @@ import static org.hamcrest.CoreMatchers.*;
 public class FournisseurRemorqueResourceTest {
 
     @Test
-    void testListAll() {
+    void testListerTout() {
         given()
             .when().get("/fournisseur-remorque")
             .then()
@@ -18,7 +18,7 @@ public class FournisseurRemorqueResourceTest {
     }
 
     @Test
-    void testGetNotFound() {
+    void testObtenirNonTrouve() {
         given()
             .when().get("/fournisseur-remorque/9999")
             .then()
@@ -26,7 +26,7 @@ public class FournisseurRemorqueResourceTest {
     }
 
     @Test
-    void testCreateAndGet() {
+    void testCreerEtObtenir() {
         int id = given()
             .contentType("application/json")
             .body("{\"fournisseur\":{\"id\":100},\"remorque\":{\"id\":100},\"prixAchatHT\":1500.0,\"tva\":20.0}")
@@ -43,7 +43,7 @@ public class FournisseurRemorqueResourceTest {
     }
 
     @Test
-    void testGetByFournisseur() {
+    void testObtenirParFournisseur() {
         given()
             .when().get("/fournisseur-remorque/fournisseur/100")
             .then()
@@ -51,7 +51,7 @@ public class FournisseurRemorqueResourceTest {
     }
 
     @Test
-    void testGetRemorquesByFournisseur() {
+    void testObtenirRemorquesParFournisseur() {
         given()
             .when().get("/fournisseur-remorque/fournisseur/100/remorques")
             .then()
@@ -59,7 +59,7 @@ public class FournisseurRemorqueResourceTest {
     }
 
     @Test
-    void testGetFournisseursByRemorque() {
+    void testObtenirFournisseursParRemorque() {
         given()
             .when().get("/fournisseur-remorque/remorque/100/fournisseurs")
             .then()
@@ -67,7 +67,7 @@ public class FournisseurRemorqueResourceTest {
     }
 
     @Test
-    void testGetByRemorque() {
+    void testObtenirParRemorque() {
         given()
             .when().get("/fournisseur-remorque/remorque/100")
             .then()
@@ -75,7 +75,7 @@ public class FournisseurRemorqueResourceTest {
     }
 
     @Test
-    void testSearch() {
+    void testRechercher() {
         given()
             .when().get("/fournisseur-remorque/search")
             .then()
@@ -83,7 +83,7 @@ public class FournisseurRemorqueResourceTest {
     }
 
     @Test
-    void testDeleteNotFound() {
+    void testSupprimerNonTrouve() {
         given()
             .when().delete("/fournisseur-remorque/9999")
             .then()
