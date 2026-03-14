@@ -1,0 +1,97 @@
+package net.nanthrax.moussaillon.services;
+
+import io.quarkus.test.junit.QuarkusTest;
+import org.junit.jupiter.api.Test;
+
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+
+@QuarkusTest
+public class TechnicienResourceTest {
+
+    @Test
+    void testListTechniciens() {
+        given()
+            .when().get("/techniciens")
+            .then()
+            .statusCode(200)
+            .body("size()", greaterThanOrEqualTo(1));
+    }
+
+    @Test
+    void testGetTechnicien() {
+        given()
+            .when().get("/techniciens/100")
+            .then()
+            .statusCode(200)
+            .body("nom", is("Leclerc"))
+            .body("prenom", is("Pierre"));
+    }
+
+    @Test
+    void testGetTechnicienNotFound() {
+        given()
+            .when().get("/techniciens/9999")
+            .then()
+            .statusCode(404);
+    }
+
+    @Test
+    void testCreateTechnicien() {
+        given()
+            .contentType("application/json")
+            .body("{\"nom\":\"Durand\",\"prenom\":\"Marc\",\"email\":\"marc@test.com\",\"telephone\":\"0600000001\",\"couleur\":\"#0000FF\"}")
+            .when().post("/techniciens")
+            .then()
+            .statusCode(200)
+            .body("nom", is("Durand"))
+            .body("id", notNullValue());
+    }
+
+    @Test
+    void testUpdateTechnicien() {
+        int id = given()
+            .contentType("application/json")
+            .body("{\"nom\":\"Avant\",\"prenom\":\"Update\"}")
+            .when().post("/techniciens")
+            .then().statusCode(200).extract().path("id");
+
+        given()
+            .contentType("application/json")
+            .body("{\"nom\":\"Apres\",\"prenom\":\"Update\",\"couleur\":\"#00FF00\"}")
+            .when().put("/techniciens/" + id)
+            .then()
+            .statusCode(200)
+            .body("nom", is("Apres"));
+    }
+
+    @Test
+    void testSearchTechniciens() {
+        given()
+            .queryParam("q", "leclerc")
+            .when().get("/techniciens/search")
+            .then()
+            .statusCode(200)
+            .body("size()", greaterThanOrEqualTo(1));
+    }
+
+    @Test
+    void testDeleteTechnicien() {
+        int id = given()
+            .contentType("application/json")
+            .body("{\"nom\":\"ToDelete\",\"prenom\":\"Test\"}")
+            .when().post("/techniciens")
+            .then().statusCode(200).extract().path("id");
+
+        given()
+            .when().delete("/techniciens/" + id)
+            .then()
+            .statusCode(204);
+
+        given()
+            .when().get("/techniciens/" + id)
+            .then()
+            .statusCode(404);
+    }
+}
