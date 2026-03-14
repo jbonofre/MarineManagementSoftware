@@ -5,11 +5,25 @@ import { UserOutlined, PlusCircleOutlined, EditOutlined, DeleteOutlined } from '
 const style: React.CSSProperties = { padding: '8px 0' };
 const { Search } = Input;
 
-// Roles for demonstration
 const USER_ROLES = [
     { label: "Administrateur", value: "admin" },
-    { label: "Utilisateur", value: "user" }
+    { label: "Manager (Parc)", value: "manager" },
+    { label: "Magasinier (Catalogue)", value: "magasinier" },
+    { label: "Vendeur (Ventes & Comptoir)", value: "vendeur" }
 ];
+
+// Convert roles between backend string (CSV) and frontend array
+function rolesToArray(roles) {
+    if (Array.isArray(roles)) return roles;
+    if (!roles) return [];
+    return roles.split(',').map(r => r.trim()).filter(Boolean);
+}
+
+function rolesToString(roles) {
+    if (typeof roles === 'string') return roles;
+    if (Array.isArray(roles)) return roles.join(',');
+    return '';
+}
 
 // User Form Modal component
 const UserFormModal = ({ visible, onCancel, onSubmit, initialValues, loading }) => {
@@ -102,7 +116,7 @@ export default function Utilisateurs() {
                 if (!r.ok) throw new Error("Erreur HTTP: " + r.status);
                 return r.json();
             })
-            .then(setUsers)
+            .then(data => setUsers(data.map(u => ({ ...u, roles: rolesToArray(u.roles) }))))
             .catch(e => {
                 message.error("Erreur lors du chargement des utilisateurs: " + e.message);
                 setUsers([]);
@@ -120,7 +134,7 @@ export default function Utilisateurs() {
         fetch('/users', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
+            body: JSON.stringify({ ...data, roles: rolesToString(data.roles) })
         })
             .then(async res => {
                 if (!res.ok) {
@@ -144,7 +158,7 @@ export default function Utilisateurs() {
         fetch(`/users/${encodeURIComponent(editUser.name)}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ...editUser, ...data })
+            body: JSON.stringify({ ...editUser, ...data, roles: rolesToString(data.roles) })
         })
             .then(async res => {
                 if (!res.ok) {

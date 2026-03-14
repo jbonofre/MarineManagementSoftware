@@ -11,7 +11,7 @@ export default function App() {
 
     if (user) {
         return(
-            <Workspace user={user} setUser={setUser} />
+            <Workspace user={user.name} roles={user.roles} setUser={setUser} />
         );
     } else {
         return(

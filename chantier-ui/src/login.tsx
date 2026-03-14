@@ -23,7 +23,7 @@ export default function Login(props) {
                     return response.json();
                 })
                 .then((data) => {
-                    props.setUser(data.name);
+                    props.setUser({ name: data.name, roles: data.roles || '' });
                 })
                 .catch((error) => {
                     message.error('Une erreur est survenue: ' + error.message);

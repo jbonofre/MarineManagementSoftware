@@ -9,6 +9,7 @@ import { ReactComponent as BoatOutlined } from './boat.svg';
 import { ReactComponent as EngineOutlined } from './moteur.svg';
 import { ReactComponent as ParcOutlined } from './parc.svg';
 import { ReactComponent as TailerOutlined } from './remorque.svg';
+import { Result } from 'antd';
 import Home from './home.tsx';
 import Clients from './clients.tsx';
 import Produits from './catalogue-produits.tsx';
@@ -37,20 +38,27 @@ export function demo() {
 
 type UserTheme = 'LIGHT' | 'DARK';
 
+function hasRole(roles: string, role: string): boolean {
+    if (!roles) return false;
+    const roleList = Array.isArray(roles) ? roles : roles.split(',').map(r => r.trim());
+    return roleList.includes('admin') || roleList.includes(role);
+}
+
 function SideMenu(props) {
 
     const [ collapsed, setCollapsed ] = useState(false);
+    const roles = props.roles || '';
 
-    const menuItems = [
+    const allMenuItems = [
       { key: 'home', label: <Link to="/">Accueil</Link>, icon: <HomeOutlined/> },
       { key: 'dashboard', label: <Link to="/dashboard">Tableau de Bord</Link>, icon: <DashboardOutlined/> },
-      { key: 'parc', label: 'Parc', icon: <Icon component={ ParcOutlined } />, children: [
+      { key: 'parc', label: 'Parc', icon: <Icon component={ ParcOutlined } />, requiredRole: 'manager', children: [
         { key: 'clients', label: <Link to="/clients">Clients</Link>, icon: <TeamOutlined /> },
         { key: 'bateaux', label: <Link to="/clients/bateaux">Bateaux</Link>, icon: <Icon component={ BoatOutlined } />},
         { key: 'moteurs', label: <Link to="/clients/moteurs">Moteurs</Link>, icon: <Icon component={ EngineOutlined } /> },
         { key: 'remorques', label: <Link to="/clients/remorques">Remorques</Link>, icon: <Icon component={ TailerOutlined } /> }
       ] },
-      { key: 'catalogue', label: 'Catalogue', icon: <ReadOutlined/>, children: [
+      { key: 'catalogue', label: 'Catalogue', icon: <ReadOutlined/>, requiredRole: 'magasinier', children: [
         { key: 'produits', label: <Link to="/catalogue/produits">Produits</Link>, icon: <StockOutlined /> },
         { key: 'bateaux', label: <Link to="/catalogue/bateaux">Bateaux</Link>, icon: <Icon component={ BoatOutlined } /> },
         { key: 'moteurs', label: <Link to="/catalogue/moteurs">Moteurs</Link>, icon: <Icon component={ EngineOutlined } /> },
@@ -58,24 +66,26 @@ function SideMenu(props) {
         { key: 'remorques', label: <Link to="/catalogue/remorques">Remorques</Link>, icon: <Icon component={ TailerOutlined } /> },
         { key: 'fournisseurs', label: <Link to="/catalogue/fournisseurs">Fournisseurs</Link>, icon: <FileProtectOutlined/> },
       ]},
-      { key: 'Vente', label: 'Vente', icon: <StockOutlined/>, children: [
+      { key: 'Vente', label: 'Vente', icon: <StockOutlined/>, requiredRole: 'vendeur', children: [
         { key: 'comptoir', label: <Link to="/comptoir">Comptoir</Link>, icon: <DesktopOutlined/> },
         { key: 'prestations', label: <Link to="/prestations">Prestations</Link>, icon: <CheckSquareOutlined/> },
       ]},
-      { key: 'atelier', label: 'Atelier', icon: <ToolOutlined/>, children: [
+      { key: 'atelier', label: 'Atelier', icon: <ToolOutlined/>, requiredRole: 'admin', children: [
         { key: 'services', label: <Link to="/services">Services & Main d'Oeuvre</Link>, icon: <RedoOutlined/> },
         { key: 'forfaits', label: <Link to="/forfaits">Forfaits</Link>, icon: <FileDoneOutlined/> },
         { key: 'equipe', label: <Link to="/techniciens">Equipe</Link>, icon: <TeamOutlined/> },
         { key: 'planning', label: <Link to="/planning">Planning</Link>, icon: <CalendarOutlined/> },
       ] },
-      { key: 'market', label: 'Market', icon: <AmazonOutlined/>, children: [
+      { key: 'market', label: 'Market', icon: <AmazonOutlined/>, requiredRole: 'admin', children: [
         { key: 'annonces', label: <Link to="/annonces">Petites annonces</Link>, icon: <FileOutlined/> }
       ] },
-      { key: 'parametrage', label: 'Paramétrage', icon: <SettingOutlined/>, children: [
+      { key: 'parametrage', label: 'Paramétrage', icon: <SettingOutlined/>, requiredRole: 'admin', children: [
         { key: 'societe', label: <Link to="/societe">Société</Link>, icon: <DeploymentUnitOutlined/> },
         { key: 'utilisateurs', label: <Link to="/utilisateurs">Utilisateurs</Link>, icon: <UserOutlined/> }
       ] }
     ];
+
+    const menuItems = allMenuItems.filter(item => !item.requiredRole || hasRole(roles, item.requiredRole));
 
     return(
         <Layout.Sider
@@ -103,8 +113,12 @@ function Header(props) {
     const [ preferencesForm ] = Form.useForm();
     const [ selectedTheme, setSelectedTheme ] = useState<UserTheme>(props.theme || 'LIGHT');
 
+    const roleLabels = { admin: 'Admin', manager: 'Manager', magasinier: 'Magasinier', vendeur: 'Vendeur' };
+    const userRoles = props.roles ? (Array.isArray(props.roles) ? props.roles : props.roles.split(',').map(r => r.trim())) : [];
+    const roleDisplay = userRoles.map(r => roleLabels[r] || r).join(', ');
+
     const menuUser = [
-              { key: 'user', label: props.user, icon: <UserOutlined />, children: [
+              { key: 'user', label: <span>{props.user} <span style={{ fontSize: '0.8em', opacity: 0.7 }}>({roleDisplay})</span></span>, icon: <UserOutlined />, children: [
                 { key: 'preferences', label: 'Préférences', icon: <SettingOutlined/> },
                 { key: 'deconnexion', label: 'Déconnexion', icon: <DisconnectOutlined/> }
               ]}
@@ -319,6 +333,13 @@ function Header(props) {
 
 }
 
+function ProtectedRoute({ roles, requiredRole, children }) {
+    if (requiredRole && !hasRole(roles, requiredRole)) {
+        return <Result status="403" title="Accès refusé" subTitle="Vous n'avez pas les droits nécessaires pour accéder à cette page." />;
+    }
+    return children;
+}
+
 export default function Workspace(props) {
     const [ theme, setTheme ] = useState<UserTheme>('LIGHT');
 
@@ -347,10 +368,10 @@ export default function Workspace(props) {
     return(
         <ConfigProvider theme={{ algorithm: isDarkTheme ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm }}>
             <Layout style={{ height: "105vh", background: isDarkTheme ? '#101010' : '#f5f5f5' }}>
-              <Header user={props.user} setUser={props.setUser} theme={theme} setTheme={setTheme} />
+              <Header user={props.user} roles={props.roles} setUser={props.setUser} theme={theme} setTheme={setTheme} />
               <Layout hasSider={true}>
                 <Router>
-                <SideMenu user={props.user} theme={theme} />
+                <SideMenu user={props.user} roles={props.roles} theme={theme} />
                 <Layout.Content style={{ margin: "15px", color: isDarkTheme ? '#f5f5f5' : undefined }}>
                     <Switch>
                         <Route path="/" key="home" exact={true}>
@@ -360,61 +381,61 @@ export default function Workspace(props) {
                             <Dashboard />
                         </Route>
                         <Route path="/clients" key="clients" exact={true}>
-                            <Clients />
+                            <ProtectedRoute roles={props.roles} requiredRole="manager"><Clients /></ProtectedRoute>
                         </Route>
                         <Route path="/clients/bateaux" key="clients-bateaux">
-                            <BateauxClients />
+                            <ProtectedRoute roles={props.roles} requiredRole="manager"><BateauxClients /></ProtectedRoute>
                         </Route>
                         <Route path="/clients/moteurs" key="clients-moteurs">
-                            <ClientsMoteurs />
+                            <ProtectedRoute roles={props.roles} requiredRole="manager"><ClientsMoteurs /></ProtectedRoute>
                         </Route>
                         <Route path="/clients/remorques" key="clients-remorques">
-                            <RemorquesClients />
+                            <ProtectedRoute roles={props.roles} requiredRole="manager"><RemorquesClients /></ProtectedRoute>
                         </Route>
                         <Route path="/catalogue/produits" key="produits">
-                            <Produits />
+                            <ProtectedRoute roles={props.roles} requiredRole="magasinier"><Produits /></ProtectedRoute>
                         </Route>
                         <Route path="/catalogue/bateaux" key="catalogue-bateaux">
-                            <CatalogueBateaux />
+                            <ProtectedRoute roles={props.roles} requiredRole="magasinier"><CatalogueBateaux /></ProtectedRoute>
                         </Route>
                         <Route path="/catalogue/moteurs" key="catalogue-moteurs">
-                            <CatalogueMoteurs />
+                            <ProtectedRoute roles={props.roles} requiredRole="magasinier"><CatalogueMoteurs /></ProtectedRoute>
                         </Route>
                         <Route path="/catalogue/helices" key="helices">
-                            <CatalogueHelices />
+                            <ProtectedRoute roles={props.roles} requiredRole="magasinier"><CatalogueHelices /></ProtectedRoute>
                         </Route>
                         <Route path="/catalogue/remorques" key="catalogue-remorques">
-                            <CatalogueRemorques />
+                            <ProtectedRoute roles={props.roles} requiredRole="magasinier"><CatalogueRemorques /></ProtectedRoute>
                         </Route>
                         <Route path="/catalogue/fournisseurs" key="fournisseurs">
-                            <Fournisseurs />
+                            <ProtectedRoute roles={props.roles} requiredRole="magasinier"><Fournisseurs /></ProtectedRoute>
                         </Route>
                         <Route path="/societe" key="societe">
-                            <Societe />
+                            <ProtectedRoute roles={props.roles} requiredRole="admin"><Societe /></ProtectedRoute>
                         </Route>
                         <Route path="/utilisateurs" key="utilisateurs">
-                            <Utilisateurs />
+                            <ProtectedRoute roles={props.roles} requiredRole="admin"><Utilisateurs /></ProtectedRoute>
                         </Route>
                         <Route path="/prestations" key="prestations">
-                            <Vente />
+                            <ProtectedRoute roles={props.roles} requiredRole="vendeur"><Vente /></ProtectedRoute>
                         </Route>
                         <Route path="/comptoir" key="comptoir">
-                            <Comptoir />
+                            <ProtectedRoute roles={props.roles} requiredRole="vendeur"><Comptoir /></ProtectedRoute>
                         </Route>
                         <Route path="/forfaits" key="forfaits">
-                            <Forfaits />
+                            <ProtectedRoute roles={props.roles} requiredRole="admin"><Forfaits /></ProtectedRoute>
                         </Route>
                         <Route path="/techniciens" key="techniciens">
-                            <Techniciens />
+                            <ProtectedRoute roles={props.roles} requiredRole="admin"><Techniciens /></ProtectedRoute>
                         </Route>
                         <Route path="/services" key="services">
-                            <Services />
+                            <ProtectedRoute roles={props.roles} requiredRole="admin"><Services /></ProtectedRoute>
                         </Route>
                         <Route path="/planning" key="planning">
-                            <Planning />
+                            <ProtectedRoute roles={props.roles} requiredRole="admin"><Planning /></ProtectedRoute>
                         </Route>
                         <Route path="/annonces" key="annonces">
-                            <Annonces />
+                            <ProtectedRoute roles={props.roles} requiredRole="admin"><Annonces /></ProtectedRoute>
                         </Route>
                     </Switch>
                 </Layout.Content>
