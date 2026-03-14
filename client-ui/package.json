@@ -22,7 +22,7 @@
     "typescript": "^5"
   },
   "scripts": {
-    "start": "react-scripts start",
+    "start": "PORT=3001 react-scripts start",
     "build": "BUILD_PATH=target/classes/META-INF/resources react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"

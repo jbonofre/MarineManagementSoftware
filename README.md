@@ -52,7 +52,7 @@ Le backend demarre sur `http://localhost:8080`.
 # Chantier UI (port 3000)
 cd chantier-ui && npm install && npm start
 
-# Client UI (port 3000)
+# Client UI (port 3001)
 cd client-ui && npm install && npm start
 
 # Technicien UI (port 3002)
