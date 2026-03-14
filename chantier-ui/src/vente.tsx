@@ -117,6 +117,15 @@ interface VenteEntity {
     rappel3Jours?: number;
 }
 
+interface RappelHistoriqueEntity {
+    id: number;
+    numeroRappel: number;
+    destinataire: string;
+    sujet: string;
+    contenu: string;
+    dateEnvoi?: string;
+}
+
 interface VenteFormValues {
     status: VenteStatus;
     type: VenteType;
@@ -282,6 +291,7 @@ export default function Vente() {
     const [modalVisible, setModalVisible] = useState(false);
     const [isEdit, setIsEdit] = useState(false);
     const [currentVente, setCurrentVente] = useState<VenteEntity | null>(null);
+    const [rappelHistorique, setRappelHistorique] = useState<RappelHistoriqueEntity[]>([]);
     const [filters, setFilters] = useState<SearchFilters>({});
     const [searchForm] = Form.useForm<SearchFilters>();
     const [form] = Form.useForm<VenteFormValues>();
@@ -401,6 +411,9 @@ export default function Vente() {
         if (vente) {
             setIsEdit(true);
             setCurrentVente(vente);
+            if (vente.id) {
+                axios.get<RappelHistoriqueEntity[]>(`/rappels/vente/${vente.id}`).then(res => setRappelHistorique(res.data)).catch(() => setRappelHistorique([]));
+            }
             const forfaitLinesMap = (vente.forfaits || []).reduce((acc, item) => {
                 if (!item?.id) {
                     return acc;
@@ -466,6 +479,7 @@ export default function Vente() {
         } else {
             setIsEdit(false);
             setCurrentVente(null);
+            setRappelHistorique([]);
             form.resetFields();
             form.setFieldsValue({ ...defaultVente, date: getTodayIsoDate() });
         }
@@ -1463,6 +1477,40 @@ export default function Vente() {
                                                 </Form.Item>
                                             </Col>
                                         </Row>
+                                        {isEdit && rappelHistorique.length > 0 && (
+                                            <>
+                                                <h4 style={{ marginTop: 16 }}>Historique des rappels envoyes</h4>
+                                                <Table
+                                                    dataSource={rappelHistorique}
+                                                    rowKey="id"
+                                                    size="small"
+                                                    pagination={false}
+                                                    columns={[
+                                                        {
+                                                            title: 'Rappel',
+                                                            dataIndex: 'numeroRappel',
+                                                            width: 80,
+                                                            render: (v: number) => `#${v}`
+                                                        },
+                                                        {
+                                                            title: 'Date d\'envoi',
+                                                            dataIndex: 'dateEnvoi',
+                                                            width: 160,
+                                                            render: (v: string) => v ? new Date(v).toLocaleString('fr-FR') : '-'
+                                                        },
+                                                        {
+                                                            title: 'Destinataire',
+                                                            dataIndex: 'destinataire',
+                                                            width: 200
+                                                        },
+                                                        {
+                                                            title: 'Sujet',
+                                                            dataIndex: 'sujet'
+                                                        }
+                                                    ]}
+                                                />
+                                            </>
+                                        )}
                                     </>
                                 )
                             },
