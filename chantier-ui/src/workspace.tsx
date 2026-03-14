@@ -31,6 +31,7 @@ import Planning from './planning.tsx';
 import Comptoir from './comptoir.tsx';
 import Dashboard from './dashboard.tsx';
 import Annonces from './annonces.tsx';
+import CommandesFournisseur from './commandes-fournisseur.tsx';
 
 export function demo() {
     message.warning("Vous êtes sur une version de démonstration de moussAIllon. Il n'est pas possible d'ajouter ou supprimer des éléments.")
@@ -65,6 +66,7 @@ function SideMenu(props) {
         { key: 'helices', label: <Link to="/catalogue/helices">Hélices</Link>, icon: <DeploymentUnitOutlined /> },
         { key: 'remorques', label: <Link to="/catalogue/remorques">Remorques</Link>, icon: <Icon component={ TailerOutlined } /> },
         { key: 'fournisseurs', label: <Link to="/catalogue/fournisseurs">Fournisseurs</Link>, icon: <FileProtectOutlined/> },
+        { key: 'commandes-fournisseur', label: <Link to="/commandes-fournisseur">Commandes Fournisseur</Link>, icon: <FileDoneOutlined/> },
       ]},
       { key: 'Vente', label: 'Vente', icon: <StockOutlined/>, requiredRole: 'vendeur', children: [
         { key: 'comptoir', label: <Link to="/comptoir">Comptoir</Link>, icon: <DesktopOutlined/> },
@@ -409,6 +411,9 @@ export default function Workspace(props) {
                         </Route>
                         <Route path="/catalogue/fournisseurs" key="fournisseurs">
                             <ProtectedRoute roles={props.roles} requiredRole="magasinier"><Fournisseurs /></ProtectedRoute>
+                        </Route>
+                        <Route path="/commandes-fournisseur" key="commandes-fournisseur">
+                            <ProtectedRoute roles={props.roles} requiredRole="magasinier"><CommandesFournisseur /></ProtectedRoute>
                         </Route>
                         <Route path="/societe" key="societe">
                             <ProtectedRoute roles={props.roles} requiredRole="admin"><Societe /></ProtectedRoute>
