@@ -209,6 +209,20 @@ public class VenteResource {
         entity.prixVenteTTC = vente.prixVenteTTC;
         entity.modePaiement = vente.modePaiement;
 
+        // Reset reminder flags if intervals changed
+        if (!java.util.Objects.equals(entity.rappel1Jours, vente.rappel1Jours)) {
+            entity.rappel1Envoye = false;
+        }
+        if (!java.util.Objects.equals(entity.rappel2Jours, vente.rappel2Jours)) {
+            entity.rappel2Envoye = false;
+        }
+        if (!java.util.Objects.equals(entity.rappel3Jours, vente.rappel3Jours)) {
+            entity.rappel3Envoye = false;
+        }
+        entity.rappel1Jours = vente.rappel1Jours;
+        entity.rappel2Jours = vente.rappel2Jours;
+        entity.rappel3Jours = vente.rappel3Jours;
+
         return entity;
     }
 

@@ -130,4 +130,74 @@ public class VenteResourceTest {
             .then()
             .statusCode(404);
     }
+
+    @Test
+    void testCreerVenteAvecRappels() {
+        given()
+            .contentType("application/json")
+            .body("{\"status\":\"EN_ATTENTE\",\"type\":\"DEVIS\",\"prixVenteTTC\":300.0,\"rappel1Jours\":30,\"rappel2Jours\":7,\"rappel3Jours\":1}")
+            .when().post("/ventes")
+            .then()
+            .statusCode(201)
+            .body("rappel1Jours", is(30))
+            .body("rappel2Jours", is(7))
+            .body("rappel3Jours", is(1))
+            .body("rappel1Envoye", is(false))
+            .body("rappel2Envoye", is(false))
+            .body("rappel3Envoye", is(false));
+    }
+
+    @Test
+    void testModifierRappelsVente() {
+        int id = given()
+            .contentType("application/json")
+            .body("{\"status\":\"EN_ATTENTE\",\"type\":\"DEVIS\",\"prixVenteTTC\":200.0}")
+            .when().post("/ventes")
+            .then().statusCode(201)
+            .body("rappel1Jours", nullValue())
+            .extract().path("id");
+
+        given()
+            .contentType("application/json")
+            .body("{\"status\":\"EN_ATTENTE\",\"type\":\"DEVIS\",\"prixVenteTTC\":200.0,\"rappel1Jours\":14,\"rappel2Jours\":3}")
+            .when().put("/ventes/" + id)
+            .then()
+            .statusCode(200)
+            .body("rappel1Jours", is(14))
+            .body("rappel2Jours", is(3))
+            .body("rappel3Jours", nullValue());
+    }
+
+    @Test
+    void testModifierRappelsResetDrapeauEnvoi() {
+        // Creer une vente avec rappels
+        int id = given()
+            .contentType("application/json")
+            .body("{\"status\":\"EN_ATTENTE\",\"type\":\"DEVIS\",\"prixVenteTTC\":200.0,\"rappel1Jours\":30}")
+            .when().post("/ventes")
+            .then().statusCode(201).extract().path("id");
+
+        // Modifier l'intervalle du rappel 1 => le drapeau doit etre reinitialise
+        given()
+            .contentType("application/json")
+            .body("{\"status\":\"EN_ATTENTE\",\"type\":\"DEVIS\",\"prixVenteTTC\":200.0,\"rappel1Jours\":15}")
+            .when().put("/ventes/" + id)
+            .then()
+            .statusCode(200)
+            .body("rappel1Jours", is(15))
+            .body("rappel1Envoye", is(false));
+    }
+
+    @Test
+    void testCreerVenteSansRappels() {
+        given()
+            .contentType("application/json")
+            .body("{\"status\":\"EN_ATTENTE\",\"type\":\"COMPTOIR\",\"prixVenteTTC\":50.0}")
+            .when().post("/ventes")
+            .then()
+            .statusCode(201)
+            .body("rappel1Jours", nullValue())
+            .body("rappel2Jours", nullValue())
+            .body("rappel3Jours", nullValue());
+    }
 }

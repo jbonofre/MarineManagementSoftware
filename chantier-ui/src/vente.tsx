@@ -112,6 +112,9 @@ interface VenteEntity {
     montantTVA?: number;
     prixVenteTTC?: number;
     modePaiement?: ModePaiement;
+    rappel1Jours?: number;
+    rappel2Jours?: number;
+    rappel3Jours?: number;
 }
 
 interface VenteFormValues {
@@ -148,6 +151,9 @@ interface VenteFormValues {
     montantTTC: number;
     prixVenteTTC: number;
     modePaiement?: ModePaiement;
+    rappel1Jours?: number;
+    rappel2Jours?: number;
+    rappel3Jours?: number;
 }
 
 interface SearchFilters {
@@ -452,7 +458,10 @@ export default function Vente() {
                 montantTVA: vente.montantTVA || 0,
                 montantTTC: vente.montantTTC || 0,
                 prixVenteTTC: vente.prixVenteTTC || 0,
-                modePaiement: vente.modePaiement
+                modePaiement: vente.modePaiement,
+                rappel1Jours: vente.rappel1Jours,
+                rappel2Jours: vente.rappel2Jours,
+                rappel3Jours: vente.rappel3Jours
             });
         } else {
             setIsEdit(false);
@@ -560,7 +569,10 @@ export default function Vente() {
         montantTVA: values.montantTVA || 0,
         montantTTC: values.montantTTC || 0,
         prixVenteTTC: values.prixVenteTTC || 0,
-        modePaiement: values.modePaiement
+        modePaiement: values.modePaiement,
+        rappel1Jours: values.rappel1Jours,
+        rappel2Jours: values.rappel2Jours,
+        rappel3Jours: values.rappel3Jours
     });
 
     const handleSave = async () => {
@@ -1423,6 +1435,34 @@ export default function Vente() {
                                                 )}
                                             </Form.List>
                                         </Form.Item>
+                                    </>
+                                )
+                            },
+                            {
+                                key: 'rappels',
+                                label: 'Rappels',
+                                children: (
+                                    <>
+                                        <p style={{ marginBottom: 16, color: '#666' }}>
+                                            Configurez les rappels automatiques par email envoyés au client avant la date de la prestation.
+                                        </p>
+                                        <Row gutter={16}>
+                                            <Col span={8}>
+                                                <Form.Item name="rappel1Jours" label="Rappel 1 (jours avant)">
+                                                    <InputNumber min={1} step={1} style={{ width: '100%' }} placeholder="Ex: 30" addonAfter="jours" />
+                                                </Form.Item>
+                                            </Col>
+                                            <Col span={8}>
+                                                <Form.Item name="rappel2Jours" label="Rappel 2 (jours avant)">
+                                                    <InputNumber min={1} step={1} style={{ width: '100%' }} placeholder="Ex: 7" addonAfter="jours" />
+                                                </Form.Item>
+                                            </Col>
+                                            <Col span={8}>
+                                                <Form.Item name="rappel3Jours" label="Rappel 3 (jours avant)">
+                                                    <InputNumber min={1} step={1} style={{ width: '100%' }} placeholder="Ex: 1" addonAfter="jours" />
+                                                </Form.Item>
+                                            </Col>
+                                        </Row>
                                     </>
                                 )
                             },
