@@ -39,23 +39,23 @@ public class RappelScheduler {
             long joursRestants = ChronoUnit.DAYS.between(today, dateVente);
 
             if (!vente.rappel1Envoye && vente.rappel1Jours != null && joursRestants <= vente.rappel1Jours) {
-                envoyerRappel(vente, 1, vente.rappel1Jours);
+                envoyerRappel(vente, 1);
                 vente.rappel1Envoye = true;
             }
 
             if (!vente.rappel2Envoye && vente.rappel2Jours != null && joursRestants <= vente.rappel2Jours) {
-                envoyerRappel(vente, 2, vente.rappel2Jours);
+                envoyerRappel(vente, 2);
                 vente.rappel2Envoye = true;
             }
 
             if (!vente.rappel3Envoye && vente.rappel3Jours != null && joursRestants <= vente.rappel3Jours) {
-                envoyerRappel(vente, 3, vente.rappel3Jours);
+                envoyerRappel(vente, 3);
                 vente.rappel3Envoye = true;
             }
         }
     }
 
-    private void envoyerRappel(VenteEntity vente, int numeroRappel, int joursAvant) {
+    public void envoyerRappel(VenteEntity vente, int numeroRappel) {
         SocieteEntity societe = SocieteEntity.findById(1L);
         String societeNom = societe != null ? societe.nom : "moussAIllon";
         String clientName = vente.client.prenom != null ? vente.client.prenom : vente.client.nom;
@@ -68,12 +68,18 @@ public class RappelScheduler {
             case COMPTOIR -> "vente comptoir";
         };
 
-        String subject = "Rappel " + numeroRappel + " - Votre " + typeLabel + " - " + societeNom;
+        String subject = numeroRappel > 0
+                ? "Rappel " + numeroRappel + " - Votre " + typeLabel + " - " + societeNom
+                : "Rappel - Votre " + typeLabel + " - " + societeNom;
+
+        String datePrevue = vente.date != null
+                ? new Timestamp(vente.date.getTime()).toLocalDateTime().toLocalDate().toString()
+                : "non definie";
 
         String body = "Bonjour " + clientName + ",\n\n"
                 + "Ceci est un rappel concernant votre " + typeLabel
                 + " (reference #" + vente.id + ").\n\n"
-                + "Date prevue : " + new Timestamp(vente.date.getTime()).toLocalDateTime().toLocalDate() + "\n"
+                + "Date prevue : " + datePrevue + "\n"
                 + "Montant TTC : " + String.format("%.2f", vente.prixVenteTTC) + " EUR\n\n"
                 + "N'hesitez pas a nous contacter pour toute question.\n\n"
                 + "Cordialement,\n" + societeNom;

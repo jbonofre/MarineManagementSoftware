@@ -35,6 +35,24 @@ public class VenteResource {
     @Inject
     Mailer mailer;
 
+    @Inject
+    RappelScheduler rappelScheduler;
+
+    @POST
+    @Path("{id}/rappel")
+    @Transactional
+    public Response envoyerRappelManuel(@PathParam("id") long id) {
+        VenteEntity entity = VenteEntity.findById(id);
+        if (entity == null) {
+            throw new WebApplicationException("La vente (" + id + ") n'est pas trouvee", 404);
+        }
+        if (entity.client == null || entity.client.email == null || entity.client.email.isBlank()) {
+            throw new WebApplicationException("Le client n'a pas d'adresse email", 400);
+        }
+        rappelScheduler.envoyerRappel(entity, 0);
+        return Response.ok().build();
+    }
+
     @GET
     public List<VenteEntity> list() {
         return VenteEntity.listAll();
