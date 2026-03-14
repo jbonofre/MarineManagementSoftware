@@ -82,6 +82,16 @@ public class VenteEntity extends PanacheEntity {
 
     public boolean stockDecremented;
 
+    // Configuration des rappels (en jours avant la date de la vente)
+    public Integer rappel1Jours;
+    public Integer rappel2Jours;
+    public Integer rappel3Jours;
+
+    // Suivi des rappels envoyes
+    public boolean rappel1Envoye;
+    public boolean rappel2Envoye;
+    public boolean rappel3Envoye;
+
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "vente_id")
     public List<TaskEntity> taches = new ArrayList<TaskEntity>();
