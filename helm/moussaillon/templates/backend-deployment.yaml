@@ -40,13 +40,13 @@ spec:
             {{- end }}
           readinessProbe:
             httpGet:
-              path: /q/health/ready
+              path: /clients
               port: 8080
             initialDelaySeconds: 10
             periodSeconds: 10
           livenessProbe:
             httpGet:
-              path: /q/health/live
+              path: /clients
               port: 8080
             initialDelaySeconds: 15
             periodSeconds: 20
