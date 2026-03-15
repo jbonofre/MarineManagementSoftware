@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Layout, Menu, Image, Button } from 'antd';
 import {
+    KeyOutlined,
     ScheduleOutlined,
     UserOutlined,
     LogoutOutlined,
@@ -8,6 +9,7 @@ import {
 import Login from './login.tsx';
 import Planning from './planning.tsx';
 import MobileApp from './mobile-app.tsx';
+import ChangePasswordModal from './change-password-modal.tsx';
 import useIsMobile from './use-is-mobile.tsx';
 
 import './app.css';
@@ -25,6 +27,7 @@ interface Technicien {
 
 export default function App() {
     const [user, setUser] = useState<Technicien | null>(null);
+    const [passwordModalOpen, setPasswordModalOpen] = useState(false);
     const isMobile = useIsMobile();
 
     if (!user) {
@@ -32,7 +35,16 @@ export default function App() {
     }
 
     if (isMobile) {
-        return <MobileApp user={user} onLogout={() => setUser(null)} />;
+        return (
+            <>
+                <MobileApp user={user} onLogout={() => setUser(null)} onChangePassword={() => setPasswordModalOpen(true)} />
+                <ChangePasswordModal
+                    technicienId={user.id}
+                    open={passwordModalOpen}
+                    onClose={() => setPasswordModalOpen(false)}
+                />
+            </>
+        );
     }
 
     const technicienName = `${user.prenom || ''} ${user.nom}`.trim();
@@ -59,6 +71,13 @@ export default function App() {
                         <UserOutlined /> {technicienName}
                     </span>
                     <Button
+                        icon={<KeyOutlined />}
+                        onClick={() => setPasswordModalOpen(true)}
+                        style={{ marginRight: 8 }}
+                    >
+                        Mot de passe
+                    </Button>
+                    <Button
                         icon={<LogoutOutlined />}
                         onClick={() => setUser(null)}
                     >
@@ -70,6 +89,11 @@ export default function App() {
                 </Content>
                 <Footer>moussAIllon - Espace Technicien</Footer>
             </Layout>
+            <ChangePasswordModal
+                technicienId={user.id}
+                open={passwordModalOpen}
+                onClose={() => setPasswordModalOpen(false)}
+            />
         </Layout>
     );
 }

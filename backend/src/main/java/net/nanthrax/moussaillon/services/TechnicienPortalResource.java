@@ -41,6 +41,12 @@ public class TechnicienPortalResource {
         public String motDePasse;
     }
 
+    public static class ChangePasswordRequest {
+        public Long technicienId;
+        public String currentPassword;
+        public String newPassword;
+    }
+
     public static class TaskUpdateRequest {
         public String status;
         public double dureeReelle;
@@ -111,6 +117,29 @@ public class TechnicienPortalResource {
             }
         }
         return technicien;
+    }
+
+    @POST
+    @Path("/change-password")
+    @Transactional
+    public Response changePassword(ChangePasswordRequest request) {
+        if (request == null || request.technicienId == null) {
+            throw new WebApplicationException("L'identifiant du technicien est requis", Response.Status.BAD_REQUEST);
+        }
+        if (request.newPassword == null || request.newPassword.isBlank()) {
+            throw new WebApplicationException("Le nouveau mot de passe est requis", Response.Status.BAD_REQUEST);
+        }
+        TechnicienEntity technicien = TechnicienEntity.findById(request.technicienId);
+        if (technicien == null) {
+            throw new WebApplicationException("Technicien non trouve", Response.Status.NOT_FOUND);
+        }
+        if (technicien.motDePasse != null && !technicien.motDePasse.isBlank()) {
+            if (request.currentPassword == null || !request.currentPassword.equals(technicien.motDePasse)) {
+                throw new WebApplicationException("Mot de passe actuel invalide", Response.Status.UNAUTHORIZED);
+            }
+        }
+        technicien.motDePasse = request.newPassword;
+        return Response.noContent().build();
     }
 
     @GET

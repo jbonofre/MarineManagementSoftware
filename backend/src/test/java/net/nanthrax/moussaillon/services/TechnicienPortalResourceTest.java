@@ -51,6 +51,63 @@ public class TechnicienPortalResourceTest {
     }
 
     @Test
+    void testChangerMotDePasse() {
+        given()
+            .contentType("application/json")
+            .body("{\"technicienId\":100,\"currentPassword\":\"tech456\",\"newPassword\":\"newpass123\"}")
+            .when().post("/technicien-portal/change-password")
+            .then()
+            .statusCode(204);
+
+        // verify new password works for login
+        given()
+            .contentType("application/json")
+            .body("{\"email\":\"pierre.leclerc@test.com\",\"motDePasse\":\"newpass123\"}")
+            .when().post("/technicien-portal/login")
+            .then()
+            .statusCode(200)
+            .body("nom", is("Leclerc"));
+
+        // restore original password
+        given()
+            .contentType("application/json")
+            .body("{\"technicienId\":100,\"currentPassword\":\"newpass123\",\"newPassword\":\"tech456\"}")
+            .when().post("/technicien-portal/change-password")
+            .then()
+            .statusCode(204);
+    }
+
+    @Test
+    void testChangerMotDePasseActuelIncorrect() {
+        given()
+            .contentType("application/json")
+            .body("{\"technicienId\":100,\"currentPassword\":\"wrong\",\"newPassword\":\"newpass123\"}")
+            .when().post("/technicien-portal/change-password")
+            .then()
+            .statusCode(401);
+    }
+
+    @Test
+    void testChangerMotDePasseNouveauVide() {
+        given()
+            .contentType("application/json")
+            .body("{\"technicienId\":100,\"currentPassword\":\"tech456\",\"newPassword\":\"\"}")
+            .when().post("/technicien-portal/change-password")
+            .then()
+            .statusCode(400);
+    }
+
+    @Test
+    void testChangerMotDePasseTechnicienNonTrouve() {
+        given()
+            .contentType("application/json")
+            .body("{\"technicienId\":9999,\"currentPassword\":\"test\",\"newPassword\":\"newpass\"}")
+            .when().post("/technicien-portal/change-password")
+            .then()
+            .statusCode(404);
+    }
+
+    @Test
     void testObtenirTachesTechnicien() {
         given()
             .when().get("/technicien-portal/techniciens/100/taches")
