@@ -13,6 +13,7 @@ import {
   Spin,
   Row,
   Col,
+  DatePicker,
 } from "antd";
 import {
   PlusCircleOutlined,
@@ -21,6 +22,7 @@ import {
   SearchOutlined,
 } from "@ant-design/icons";
 import axios from "axios";
+import dayjs from "dayjs";
 
 const { Option } = Select;
 const { Search } = Input;
@@ -42,9 +44,9 @@ const defaultMoteur: MoteurClient = {
   images: [],
   numeroSerie: "",
   numeroClef: "",
-  dateMeS: "",
-  dateAchat: "",
-  dateFinDeGuarantie: "",
+  dateMeS: null,
+  dateAchat: null,
+  dateFinDeGuarantie: null,
   proprietaire: null,
   modele: null,
 };
@@ -120,6 +122,9 @@ const ClientsMoteurs: React.FC<ClientsMoteursProps> = ({ clientId }) => {
     setEditing(record);
     form.setFieldsValue({
       ...record,
+      dateMeS: record.dateMeS ? dayjs(record.dateMeS) : null,
+      dateAchat: record.dateAchat ? dayjs(record.dateAchat) : null,
+      dateFinDeGuarantie: record.dateFinDeGuarantie ? dayjs(record.dateFinDeGuarantie) : null,
       modeleId: record.modele?.id || undefined,
       proprietaireId: record.proprietaire?.id || record.proprietaire || undefined,
       images: record.images ?? [],
@@ -144,9 +149,12 @@ const ClientsMoteurs: React.FC<ClientsMoteursProps> = ({ clientId }) => {
     try {
       const values = await form.validateFields();
       setLoading(true);
-      const { modeleId, proprietaireId, ...restValues } = values;
+      const { modeleId, proprietaireId, dateMeS, dateAchat, dateFinDeGuarantie, ...restValues } = values;
       const payload = {
         ...restValues,
+        dateMeS: dateMeS ? dateMeS.format("YYYY-MM-DD") : null,
+        dateAchat: dateAchat ? dateAchat.format("YYYY-MM-DD") : null,
+        dateFinDeGuarantie: dateFinDeGuarantie ? dateFinDeGuarantie.format("YYYY-MM-DD") : null,
         modele: modeleId ? { id: modeleId } : null,
         proprietaire: proprietaireId ? { id: proprietaireId } : null,
       };
@@ -158,6 +166,9 @@ const ClientsMoteurs: React.FC<ClientsMoteursProps> = ({ clientId }) => {
         setEditing(updated);
         form.setFieldsValue({
           ...updated,
+          dateMeS: updated.dateMeS ? dayjs(updated.dateMeS) : null,
+          dateAchat: updated.dateAchat ? dayjs(updated.dateAchat) : null,
+          dateFinDeGuarantie: updated.dateFinDeGuarantie ? dayjs(updated.dateFinDeGuarantie) : null,
           modeleId: updated.modele?.id || undefined,
           proprietaireId: updated.proprietaire?.id || undefined,
           images: updated.images ?? [],
@@ -170,6 +181,9 @@ const ClientsMoteurs: React.FC<ClientsMoteursProps> = ({ clientId }) => {
         setEditing(created);
         form.setFieldsValue({
           ...created,
+          dateMeS: created.dateMeS ? dayjs(created.dateMeS) : null,
+          dateAchat: created.dateAchat ? dayjs(created.dateAchat) : null,
+          dateFinDeGuarantie: created.dateFinDeGuarantie ? dayjs(created.dateFinDeGuarantie) : null,
           modeleId: created.modele?.id || undefined,
           proprietaireId: created.proprietaire?.id || undefined,
           images: created.images ?? [],
@@ -284,17 +298,17 @@ const ClientsMoteurs: React.FC<ClientsMoteursProps> = ({ clientId }) => {
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item label="Date MeS" name="dateMeS">
-                <Input placeholder="YYYY-MM-DD" />
+                <DatePicker format="YYYY-MM-DD" style={{ width: "100%" }} />
               </Form.Item>
             </Col>
             <Col span={12}>
               <Form.Item label="Date achat" name="dateAchat">
-                <Input placeholder="YYYY-MM-DD" />
+                <DatePicker format="YYYY-MM-DD" style={{ width: "100%" }} />
               </Form.Item>
             </Col>
           </Row>
           <Form.Item label="Date fin garantie" name="dateFinDeGuarantie">
-            <Input placeholder="YYYY-MM-DD" />
+            <DatePicker format="YYYY-MM-DD" style={{ width: "100%" }} />
           </Form.Item>
           <Form.Item label="Modèle catalogue" name="modeleId">
             <Select

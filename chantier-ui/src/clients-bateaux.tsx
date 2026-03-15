@@ -13,6 +13,7 @@ import {
   Spin,
   Row,
   Col,
+  DatePicker,
 } from "antd";
 import {
   PlusCircleOutlined,
@@ -21,6 +22,7 @@ import {
   SearchOutlined,
 } from "@ant-design/icons";
 import axios from "axios";
+import dayjs from "dayjs";
 import clients from "./clients";
 
 const { Option } = Select;
@@ -52,9 +54,9 @@ const defaultBateau: BateauClient = {
   immatriculation: "",
   numeroSerie: "",
   numeroClef: "",
-  dateMeS: "",
-  dateAchat: "",
-  dateFinDeGuarantie: "",
+  dateMeS: null,
+  dateAchat: null,
+  dateFinDeGuarantie: null,
   proprietaires: [],
   modele: null,
   localisation: "",
@@ -143,6 +145,9 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
     setEditing(record);
     form.setFieldsValue({
       ...record,
+      dateMeS: record.dateMeS ? dayjs(record.dateMeS) : null,
+      dateAchat: record.dateAchat ? dayjs(record.dateAchat) : null,
+      dateFinDeGuarantie: record.dateFinDeGuarantie ? dayjs(record.dateFinDeGuarantie) : null,
       modeleId: record.modele?.id || undefined,
       proprietaires: record.proprietaires?.map((p: any) => p.id || p) || [],
       moteurs: record.moteurs?.map((m: any) => m.id || m) || [],
@@ -168,9 +173,12 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
       const values = await form.validateFields();
       setLoading(true);
       // Transform modeleId to modele object and proprietaires/moteurs IDs to objects
-      const { modeleId, proprietaires, moteurs, ...restValues } = values;
+      const { modeleId, proprietaires, moteurs, dateMeS, dateAchat, dateFinDeGuarantie, ...restValues } = values;
       const payload = {
         ...restValues,
+        dateMeS: dateMeS ? dateMeS.format("YYYY-MM-DD") : null,
+        dateAchat: dateAchat ? dateAchat.format("YYYY-MM-DD") : null,
+        dateFinDeGuarantie: dateFinDeGuarantie ? dateFinDeGuarantie.format("YYYY-MM-DD") : null,
         modele: modeleId ? { id: modeleId } : null,
         proprietaires: proprietaires && Array.isArray(proprietaires) 
           ? proprietaires.map((id: number) => ({ id }))
@@ -187,6 +195,9 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
         setEditing(updated);
         form.setFieldsValue({
           ...updated,
+          dateMeS: updated.dateMeS ? dayjs(updated.dateMeS) : null,
+          dateAchat: updated.dateAchat ? dayjs(updated.dateAchat) : null,
+          dateFinDeGuarantie: updated.dateFinDeGuarantie ? dayjs(updated.dateFinDeGuarantie) : null,
           modeleId: updated.modele?.id || undefined,
           proprietaires: updated.proprietaires?.map((p: any) => p.id || p) || [],
           moteurs: updated.moteurs?.map((m: any) => m.id || m) || [],
@@ -199,6 +210,9 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
         setEditing(created);
         form.setFieldsValue({
           ...created,
+          dateMeS: created.dateMeS ? dayjs(created.dateMeS) : null,
+          dateAchat: created.dateAchat ? dayjs(created.dateAchat) : null,
+          dateFinDeGuarantie: created.dateFinDeGuarantie ? dayjs(created.dateFinDeGuarantie) : null,
           modeleId: created.modele?.id || undefined,
           proprietaires: created.proprietaires?.map((p: any) => p.id || p) || [],
           moteurs: created.moteurs?.map((m: any) => m.id || m) || [],
@@ -301,19 +315,19 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item label="Date MeS" name="dateMeS">
-                <Input placeholder="YYYY-MM-DD" />
+                <DatePicker format="YYYY-MM-DD" style={{ width: "100%" }} />
               </Form.Item>
             </Col>
             <Col span={12}>
               <Form.Item label="Date achat" name="dateAchat">
-                <Input placeholder="YYYY-MM-DD" />
+                <DatePicker format="YYYY-MM-DD" style={{ width: "100%" }} />
               </Form.Item>
             </Col>
           </Row>
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item label="Date fin garantie" name="dateFinDeGuarantie">
-                <Input placeholder="YYYY-MM-DD" />
+                <DatePicker format="YYYY-MM-DD" style={{ width: "100%" }} />
               </Form.Item>
             </Col>
             <Col span={12}>
