@@ -203,6 +203,272 @@ helm install moussaillon ./helm/moussaillon \
 
 > **Note :** Le backend utilise H2 (base embarquee fichier). Pour un deploiement Kubernetes en production avec plusieurs replicas, il est recommande de migrer vers PostgreSQL (`quarkus-jdbc-postgresql`).
 
+## Deploiement AWS
+
+Les images Docker et le chart Helm de ce projet permettent un deploiement sur AWS via trois approches.
+
+### Prerequis communs
+
+- AWS CLI configuree (`aws configure`)
+- Images Docker poussees sur **Amazon ECR** :
+
+```bash
+# Creer les repositories ECR
+for repo in backend chantier-ui client-ui technicien-ui; do
+  aws ecr create-repository --repository-name moussaillon/$repo --region eu-west-3
+done
+
+# Authentification Docker aupres d'ECR
+aws ecr get-login-password --region eu-west-3 | docker login --username AWS --password-stdin <account-id>.dkr.ecr.eu-west-3.amazonaws.com
+
+# Build et push des images
+docker build -f backend/Dockerfile -t <account-id>.dkr.ecr.eu-west-3.amazonaws.com/moussaillon/backend:latest .
+docker push <account-id>.dkr.ecr.eu-west-3.amazonaws.com/moussaillon/backend:latest
+
+for ui in chantier-ui client-ui technicien-ui; do
+  docker build -t <account-id>.dkr.ecr.eu-west-3.amazonaws.com/moussaillon/$ui:latest $ui/
+  docker push <account-id>.dkr.ecr.eu-west-3.amazonaws.com/moussaillon/$ui:latest
+done
+```
+
+- Stocker les secrets (cles API) dans **AWS Secrets Manager** ou **SSM Parameter Store**
+
+### Option 1 : Amazon EKS (Kubernetes manage)
+
+Utilise directement le chart Helm (`helm/moussaillon/`).
+
+**Creation du cluster :**
+
+```bash
+eksctl create cluster \
+  --name moussaillon \
+  --region eu-west-3 \
+  --node-type t3.medium \
+  --nodes 2
+```
+
+**Installation de l'AWS Load Balancer Controller** (necessaire pour l'Ingress) :
+
+```bash
+helm repo add eks https://aws.github.io/eks-charts
+helm install aws-load-balancer-controller eks/aws-load-balancer-controller \
+  -n kube-system \
+  --set clusterName=moussaillon
+```
+
+**Creation du secret Kubernetes :**
+
+```bash
+kubectl create secret generic moussaillon-secrets \
+  --from-literal=AI_OPENAI_API_KEY=sk-... \
+  --from-literal=AI_ANTHROPIC_API_KEY=sk-ant-... \
+  --from-literal=STRIPE_API_KEY=sk_live_... \
+  --from-literal=PAYPLUG_API_KEY=...
+```
+
+**Deploiement avec Helm :**
+
+```bash
+helm install moussaillon ./helm/moussaillon \
+  --set global.imageRegistry=<account-id>.dkr.ecr.eu-west-3.amazonaws.com \
+  --set backend.existingSecret=moussaillon-secrets \
+  --set ingress.enabled=true \
+  --set ingress.className=alb \
+  --set 'ingress.annotations.alb\.ingress\.kubernetes\.io/scheme=internet-facing' \
+  --set 'ingress.annotations.alb\.ingress\.kubernetes\.io/target-type=ip'
+```
+
+**Points cles :**
+
+- Le chart gere les Deployments, Services, PVC (stockage H2) et Ingress
+- Les sondes de sante (`/q/health/ready`, `/q/health/live`) sont deja configurees
+- Le scaling se fait via `--set backend.replicaCount=N` (migrer vers RDS PostgreSQL si replicas > 1)
+
+### Option 2 : Amazon ECS Fargate (conteneurs serverless)
+
+Deploiement sans Kubernetes, directement depuis les images Docker.
+
+**Creation du cluster ECS et des ressources :**
+
+```bash
+# Creer le cluster
+aws ecs create-cluster --cluster-name moussaillon
+
+# Creer un VPC avec des sous-reseaux publics (ou utiliser un existant)
+# Creer un ALB (Application Load Balancer) avec des target groups pour chaque service
+```
+
+**Definition des taches** (une par service) :
+
+| Service | Image ECR | Port | Health check |
+|---|---|---|---|
+| backend | `moussaillon/backend:latest` | 8080 | `/q/health/ready` |
+| chantier-ui | `moussaillon/chantier-ui:latest` | 80 | `/` |
+| client-ui | `moussaillon/client-ui:latest` | 80 | `/` |
+| technicien-ui | `moussaillon/technicien-ui:latest` | 80 | `/` |
+
+**Exemple de task definition backend :**
+
+```json
+{
+  "family": "moussaillon-backend",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "containerDefinitions": [
+    {
+      "name": "backend",
+      "image": "<account-id>.dkr.ecr.eu-west-3.amazonaws.com/moussaillon/backend:latest",
+      "portMappings": [{ "containerPort": 8080 }],
+      "healthCheck": {
+        "command": ["CMD-SHELL", "curl -f http://localhost:8080/q/health/ready || exit 1"],
+        "interval": 10,
+        "timeout": 5,
+        "retries": 5
+      },
+      "secrets": [
+        { "name": "AI_OPENAI_API_KEY", "valueFrom": "arn:aws:ssm:eu-west-3:<account-id>:parameter/moussaillon/AI_OPENAI_API_KEY" },
+        { "name": "AI_ANTHROPIC_API_KEY", "valueFrom": "arn:aws:ssm:eu-west-3:<account-id>:parameter/moussaillon/AI_ANTHROPIC_API_KEY" },
+        { "name": "STRIPE_API_KEY", "valueFrom": "arn:aws:ssm:eu-west-3:<account-id>:parameter/moussaillon/STRIPE_API_KEY" },
+        { "name": "PAYPLUG_API_KEY", "valueFrom": "arn:aws:ssm:eu-west-3:<account-id>:parameter/moussaillon/PAYPLUG_API_KEY" }
+      ],
+      "environment": [
+        { "name": "MAILER_MOCK", "value": "true" }
+      ]
+    }
+  ]
+}
+```
+
+**Creation des services :**
+
+```bash
+aws ecs create-service \
+  --cluster moussaillon \
+  --service-name backend \
+  --task-definition moussaillon-backend \
+  --desired-count 1 \
+  --launch-type FARGATE \
+  --network-configuration "awsvpcConfiguration={subnets=[subnet-xxx],securityGroups=[sg-xxx],assignPublicIp=ENABLED}" \
+  --load-balancers "targetGroupArn=arn:aws:...,containerName=backend,containerPort=8080"
+```
+
+**Points cles :**
+
+- Pas de cluster Kubernetes a gerer
+- Auto-scaling natif via les politiques ECS
+- Les secrets sont injectes depuis SSM Parameter Store
+- Routage via ALB : regles par host ou par path vers chaque target group
+
+### Option 3 : AWS App Runner (le plus simple)
+
+Deploiement entierement manage : une image ECR = un service avec HTTPS, auto-scaling et health checks integres. Aucune infra a configurer.
+
+**Creation du role IAM pour l'acces ECR :**
+
+```bash
+aws iam create-role \
+  --role-name AppRunnerECRAccess \
+  --assume-role-policy-document '{
+    "Version": "2012-10-17",
+    "Statement": [{
+      "Effect": "Allow",
+      "Principal": {"Service": "build.apprunner.amazonaws.com"},
+      "Action": "sts:AssumeRole"
+    }]
+  }'
+
+aws iam attach-role-policy \
+  --role-name AppRunnerECRAccess \
+  --policy-arn arn:aws:iam::aws:policy/service-role/AWSAppRunnerServicePolicyForECRAccess
+```
+
+**Deploiement du backend :**
+
+```bash
+aws apprunner create-service \
+  --service-name moussaillon-backend \
+  --source-configuration '{
+    "ImageRepository": {
+      "ImageIdentifier": "<account-id>.dkr.ecr.eu-west-3.amazonaws.com/moussaillon/backend:latest",
+      "ImageRepositoryType": "ECR",
+      "ImageConfiguration": {
+        "Port": "8080",
+        "RuntimeEnvironmentSecrets": {
+          "AI_OPENAI_API_KEY": "arn:aws:ssm:eu-west-3:<account-id>:parameter/moussaillon/AI_OPENAI_API_KEY",
+          "AI_ANTHROPIC_API_KEY": "arn:aws:ssm:eu-west-3:<account-id>:parameter/moussaillon/AI_ANTHROPIC_API_KEY",
+          "STRIPE_API_KEY": "arn:aws:ssm:eu-west-3:<account-id>:parameter/moussaillon/STRIPE_API_KEY",
+          "PAYPLUG_API_KEY": "arn:aws:ssm:eu-west-3:<account-id>:parameter/moussaillon/PAYPLUG_API_KEY"
+        },
+        "RuntimeEnvironmentVariables": {
+          "MAILER_MOCK": "true"
+        }
+      }
+    },
+    "AutoDeploymentsEnabled": true,
+    "AuthenticationConfiguration": {
+      "AccessRoleArn": "arn:aws:iam::<account-id>:role/AppRunnerECRAccess"
+    }
+  }' \
+  --health-check-configuration "Protocol=HTTP,Path=/q/health/ready,Interval=10,Timeout=5" \
+  --instance-configuration "Cpu=1 vCPU,Memory=2 GB"
+```
+
+**Deploiement des frontends :**
+
+Chaque frontend doit pointer vers l'URL publique du backend (et non `http://backend:8080` comme en Docker/Kubernetes). Adapter la config nginx avant le build :
+
+```bash
+# Recuperer l'URL du service backend
+BACKEND_URL=$(aws apprunner list-services --query "ServiceSummaryList[?ServiceName=='moussaillon-backend'].ServiceUrl" --output text)
+
+# Pour chaque frontend, remplacer le proxy_pass dans nginx.conf avant le build Docker
+for ui in chantier-ui client-ui technicien-ui; do
+  sed "s|proxy_pass http://backend:8080/;|proxy_pass https://$BACKEND_URL/;|" $ui/nginx.conf > $ui/nginx.conf.aws
+  docker build --build-arg NGINX_CONF=nginx.conf.aws -t <account-id>.dkr.ecr.eu-west-3.amazonaws.com/moussaillon/$ui:latest $ui/
+  docker push <account-id>.dkr.ecr.eu-west-3.amazonaws.com/moussaillon/$ui:latest
+
+  aws apprunner create-service \
+    --service-name moussaillon-$ui \
+    --source-configuration '{
+      "ImageRepository": {
+        "ImageIdentifier": "<account-id>.dkr.ecr.eu-west-3.amazonaws.com/moussaillon/'$ui':latest",
+        "ImageRepositoryType": "ECR",
+        "ImageConfiguration": { "Port": "80" }
+      },
+      "AutoDeploymentsEnabled": true,
+      "AuthenticationConfiguration": {
+        "AccessRoleArn": "arn:aws:iam::<account-id>:role/AppRunnerECRAccess"
+      }
+    }' \
+    --health-check-configuration "Protocol=HTTP,Path=/,Interval=10,Timeout=5" \
+    --instance-configuration "Cpu=0.25 vCPU,Memory=0.5 GB"
+done
+```
+
+**Points cles :**
+
+- Chaque service recoit une URL HTTPS publique (`xxx.eu-west-3.awsapprunner.com`)
+- Auto-scaling et TLS geres automatiquement, zero infra a maintenir
+- Deploiement automatique a chaque push d'image sur ECR (`AutoDeploymentsEnabled: true`)
+- Pas de service discovery interne : les frontends doivent utiliser l'URL publique du backend
+- Pas de volume persistant : necessite une base externe (RDS PostgreSQL) des le depart
+
+### Comparaison
+
+| | EKS + Helm | ECS Fargate | App Runner |
+|---|---|---|---|
+| Reutilise le chart Helm | Oui | Non | Non |
+| Reutilise les images Docker | Oui | Oui | Oui |
+| Complexite operationnelle | Moyenne | Faible | Tres faible |
+| Cout minimum | ~150 EUR/mois (cluster EKS) | ~30-50 EUR/mois | ~20-40 EUR/mois |
+| Auto-scaling | HPA (manuel) | Natif | Natif |
+| HTTPS/TLS | A configurer | A configurer | Inclus |
+| Volume persistant (H2) | Oui (PVC) | EFS possible | Non |
+
+> **Note :** Pour un deploiement production avec plusieurs replicas, il est recommande de migrer la base H2 vers **Amazon RDS PostgreSQL** (`quarkus-jdbc-postgresql`).
+
 ## Integration continue
 
 GitHub Actions (`.github/workflows/ci.yml`) — declenchement sur push et PR vers `main`.
