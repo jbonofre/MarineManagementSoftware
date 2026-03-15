@@ -13,13 +13,18 @@ export default function ChangePasswordModal({ technicienId, open, onClose }: Cha
     const [loading, setLoading] = useState(false);
 
     const handleSubmit = async () => {
+        let values;
         try {
-            const values = await form.validateFields();
-            if (values.newPassword !== values.confirmPassword) {
-                message.error('Les mots de passe ne correspondent pas');
-                return;
-            }
-            setLoading(true);
+            values = await form.validateFields();
+        } catch {
+            return;
+        }
+        if (values.newPassword !== values.confirmPassword) {
+            message.error('Les mots de passe ne correspondent pas');
+            return;
+        }
+        setLoading(true);
+        try {
             await axios.post('/technicien-portal/change-password', {
                 technicienId,
                 currentPassword: values.currentPassword || '',
