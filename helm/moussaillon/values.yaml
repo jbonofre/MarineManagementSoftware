@@ -23,15 +23,17 @@ backend:
     size: 1Gi
     storageClass: ""
   env:
-    AI_OPENAI_API_KEY: not-set
-    AI_ANTHROPIC_API_KEY: not-set
-    STRIPE_API_KEY: not-set
-    PAYPLUG_API_KEY: not-set
     MAILER_FROM: noreply@moussaillon.local
     MAILER_HOST: localhost
     MAILER_PORT: "1025"
     MAILER_MOCK: "true"
-  # Reference to an existing secret for sensitive values
+  # Sensitive keys injected only when no existingSecret is provided
+  secretEnv:
+    AI_OPENAI_API_KEY: not-set
+    AI_ANTHROPIC_API_KEY: not-set
+    STRIPE_API_KEY: not-set
+    PAYPLUG_API_KEY: not-set
+  # Reference to an existing Kubernetes secret for sensitive values
   # Keys: AI_OPENAI_API_KEY, AI_ANTHROPIC_API_KEY, STRIPE_API_KEY, PAYPLUG_API_KEY
   existingSecret: ""
 

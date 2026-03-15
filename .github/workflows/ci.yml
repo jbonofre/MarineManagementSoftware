@@ -120,7 +120,7 @@ jobs:
         run: |
           docker run -d --name backend-test -p 8080:8080 moussaillon/backend:test
           for i in $(seq 1 30); do
-            if curl -sf http://localhost:8080/clients; then
+            if curl -sf http://localhost:8080/q/health/ready; then
               echo "Backend is ready"
               exit 0
             fi
