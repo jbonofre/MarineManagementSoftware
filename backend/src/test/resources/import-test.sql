@@ -46,7 +46,7 @@ INSERT INTO TransactionEntity (id, status, montantHT, remise, dateCreation) VALU
 INSERT INTO AnnonceEntity (id, titre, description, prix, contact, telephone, status, client_id) VALUES (100, 'Vente bateau occasion', 'Quicksilver 505 en bon etat', 18000.0, 'Jean Dupont', '0612345678', 0, 100);
 
 -- Ventes (all primitive fields included)
-INSERT INTO VenteEntity (id, status, type, client_id, date, prixVenteTTC, montantTTC, tva, montantTVA, montantHT, remise, stockDecremented) VALUES (100, 2, 4, 100, '2025-06-15 10:00:00', 500.0, 500.0, 20.0, 100.0, 400.0, 0.0, false);
+INSERT INTO VenteEntity (id, status, type, client_id, date, prixVenteTTC, montantTTC, tva, montantTVA, montantHT, remise, stockDecremented, rappel1Envoye, rappel2Envoye, rappel3Envoye) VALUES (100, 2, 4, 100, '2025-06-15 10:00:00', 500.0, 500.0, 20.0, 100.0, 400.0, 0.0, false, false, false, false);
 
 -- Tasks (linked to vente 100)
 INSERT INTO TaskEntity (id, nom, status, dateDebut, dateFin, description, dureeEstimee, dureeReelle, technicien_id, vente_id) VALUES (100, 'Revision moteur', 1, CURRENT_DATE, CURRENT_DATE, 'Revision complete', 2.0, 0.0, 100, 100);
@@ -67,3 +67,4 @@ ALTER TABLE AnnonceEntity ALTER COLUMN id RESTART WITH 200;
 ALTER TABLE VenteEntity ALTER COLUMN id RESTART WITH 200;
 ALTER TABLE TaskEntity ALTER COLUMN id RESTART WITH 200;
 ALTER TABLE SocieteEntity ALTER COLUMN id RESTART WITH 200;
+ALTER TABLE RappelHistoriqueEntity ALTER COLUMN id RESTART WITH 200;

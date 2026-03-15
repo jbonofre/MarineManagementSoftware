@@ -17,7 +17,7 @@ import {
     Dropdown,
     message
 } from 'antd';
-import { CreditCardOutlined, DeleteOutlined, EditOutlined, MailOutlined, PlusCircleOutlined, PrinterOutlined } from '@ant-design/icons';
+import { CreditCardOutlined, DeleteOutlined, EditOutlined, MailOutlined, PlusCircleOutlined, PrinterOutlined, SendOutlined } from '@ant-design/icons';
 import axios from 'axios';
 
 interface ClientEntity {
@@ -112,6 +112,18 @@ interface VenteEntity {
     montantTVA?: number;
     prixVenteTTC?: number;
     modePaiement?: ModePaiement;
+    rappel1Jours?: number;
+    rappel2Jours?: number;
+    rappel3Jours?: number;
+}
+
+interface RappelHistoriqueEntity {
+    id: number;
+    numeroRappel: number;
+    destinataire: string;
+    sujet: string;
+    contenu: string;
+    dateEnvoi?: string;
 }
 
 interface VenteFormValues {
@@ -148,6 +160,9 @@ interface VenteFormValues {
     montantTTC: number;
     prixVenteTTC: number;
     modePaiement?: ModePaiement;
+    rappel1Jours?: number;
+    rappel2Jours?: number;
+    rappel3Jours?: number;
 }
 
 interface SearchFilters {
@@ -276,6 +291,7 @@ export default function Vente() {
     const [modalVisible, setModalVisible] = useState(false);
     const [isEdit, setIsEdit] = useState(false);
     const [currentVente, setCurrentVente] = useState<VenteEntity | null>(null);
+    const [rappelHistorique, setRappelHistorique] = useState<RappelHistoriqueEntity[]>([]);
     const [filters, setFilters] = useState<SearchFilters>({});
     const [searchForm] = Form.useForm<SearchFilters>();
     const [form] = Form.useForm<VenteFormValues>();
@@ -395,6 +411,9 @@ export default function Vente() {
         if (vente) {
             setIsEdit(true);
             setCurrentVente(vente);
+            if (vente.id) {
+                axios.get<RappelHistoriqueEntity[]>(`/rappels/vente/${vente.id}`).then(res => setRappelHistorique(res.data)).catch(() => setRappelHistorique([]));
+            }
             const forfaitLinesMap = (vente.forfaits || []).reduce((acc, item) => {
                 if (!item?.id) {
                     return acc;
@@ -452,11 +471,15 @@ export default function Vente() {
                 montantTVA: vente.montantTVA || 0,
                 montantTTC: vente.montantTTC || 0,
                 prixVenteTTC: vente.prixVenteTTC || 0,
-                modePaiement: vente.modePaiement
+                modePaiement: vente.modePaiement,
+                rappel1Jours: vente.rappel1Jours,
+                rappel2Jours: vente.rappel2Jours,
+                rappel3Jours: vente.rappel3Jours
             });
         } else {
             setIsEdit(false);
             setCurrentVente(null);
+            setRappelHistorique([]);
             form.resetFields();
             form.setFieldsValue({ ...defaultVente, date: getTodayIsoDate() });
         }
@@ -560,7 +583,10 @@ export default function Vente() {
         montantTVA: values.montantTVA || 0,
         montantTTC: values.montantTTC || 0,
         prixVenteTTC: values.prixVenteTTC || 0,
-        modePaiement: values.modePaiement
+        modePaiement: values.modePaiement,
+        rappel1Jours: values.rappel1Jours,
+        rappel2Jours: values.rappel2Jours,
+        rappel3Jours: values.rappel3Jours
     });
 
     const handleSave = async () => {
@@ -1423,6 +1449,90 @@ export default function Vente() {
                                                 )}
                                             </Form.List>
                                         </Form.Item>
+                                    </>
+                                )
+                            },
+                            {
+                                key: 'rappels',
+                                label: 'Rappels',
+                                children: (
+                                    <>
+                                        <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
+                                            <Col>
+                                                <span style={{ color: '#666' }}>
+                                                    Configurez les rappels automatiques par email envoyés au client avant la date de la prestation.
+                                                </span>
+                                            </Col>
+                                            {isEdit && currentVente?.id && (
+                                                <Col>
+                                                    <Button
+                                                        icon={<SendOutlined />}
+                                                        onClick={async () => {
+                                                            try {
+                                                                await axios.post(`/ventes/${currentVente.id}/rappel`);
+                                                                message.success('Rappel envoye avec succes');
+                                                                axios.get<RappelHistoriqueEntity[]>(`/rappels/vente/${currentVente.id}`).then(res => setRappelHistorique(res.data)).catch(() => {});
+                                                            } catch (err: any) {
+                                                                message.error(err?.response?.data || 'Erreur lors de l\'envoi du rappel');
+                                                            }
+                                                        }}
+                                                    >
+                                                        Envoyer un rappel maintenant
+                                                    </Button>
+                                                </Col>
+                                            )}
+                                        </Row>
+                                        <Row gutter={16}>
+                                            <Col span={8}>
+                                                <Form.Item name="rappel1Jours" label="Rappel 1 (jours avant)">
+                                                    <InputNumber min={1} step={1} style={{ width: '100%' }} placeholder="Ex: 30" addonAfter="jours" />
+                                                </Form.Item>
+                                            </Col>
+                                            <Col span={8}>
+                                                <Form.Item name="rappel2Jours" label="Rappel 2 (jours avant)">
+                                                    <InputNumber min={1} step={1} style={{ width: '100%' }} placeholder="Ex: 7" addonAfter="jours" />
+                                                </Form.Item>
+                                            </Col>
+                                            <Col span={8}>
+                                                <Form.Item name="rappel3Jours" label="Rappel 3 (jours avant)">
+                                                    <InputNumber min={1} step={1} style={{ width: '100%' }} placeholder="Ex: 1" addonAfter="jours" />
+                                                </Form.Item>
+                                            </Col>
+                                        </Row>
+                                        {isEdit && rappelHistorique.length > 0 && (
+                                            <>
+                                                <h4 style={{ marginTop: 16 }}>Historique des rappels envoyes</h4>
+                                                <Table
+                                                    dataSource={rappelHistorique}
+                                                    rowKey="id"
+                                                    size="small"
+                                                    pagination={false}
+                                                    columns={[
+                                                        {
+                                                            title: 'Rappel',
+                                                            dataIndex: 'numeroRappel',
+                                                            width: 80,
+                                                            render: (v: number) => v === 0 ? 'Manuel' : `#${v}`
+                                                        },
+                                                        {
+                                                            title: 'Date d\'envoi',
+                                                            dataIndex: 'dateEnvoi',
+                                                            width: 160,
+                                                            render: (v: string) => v ? new Date(v).toLocaleString('fr-FR') : '-'
+                                                        },
+                                                        {
+                                                            title: 'Destinataire',
+                                                            dataIndex: 'destinataire',
+                                                            width: 200
+                                                        },
+                                                        {
+                                                            title: 'Sujet',
+                                                            dataIndex: 'sujet'
+                                                        }
+                                                    ]}
+                                                />
+                                            </>
+                                        )}
                                     </>
                                 )
                             },

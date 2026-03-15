@@ -35,6 +35,24 @@ public class VenteResource {
     @Inject
     Mailer mailer;
 
+    @Inject
+    RappelScheduler rappelScheduler;
+
+    @POST
+    @Path("{id}/rappel")
+    @Transactional
+    public Response envoyerRappelManuel(@PathParam("id") long id) {
+        VenteEntity entity = VenteEntity.findById(id);
+        if (entity == null) {
+            throw new WebApplicationException("La vente (" + id + ") n'est pas trouvee", 404);
+        }
+        if (entity.client == null || entity.client.email == null || entity.client.email.isBlank()) {
+            throw new WebApplicationException("Le client n'a pas d'adresse email", 400);
+        }
+        rappelScheduler.envoyerRappel(entity, 0);
+        return Response.ok().build();
+    }
+
     @GET
     public List<VenteEntity> list() {
         return VenteEntity.listAll();
@@ -208,6 +226,20 @@ public class VenteResource {
         entity.montantTVA = vente.montantTVA;
         entity.prixVenteTTC = vente.prixVenteTTC;
         entity.modePaiement = vente.modePaiement;
+
+        // Reinitialiser les drapeaux d'envoi si les intervalles ont change
+        if (!java.util.Objects.equals(entity.rappel1Jours, vente.rappel1Jours)) {
+            entity.rappel1Envoye = false;
+        }
+        if (!java.util.Objects.equals(entity.rappel2Jours, vente.rappel2Jours)) {
+            entity.rappel2Envoye = false;
+        }
+        if (!java.util.Objects.equals(entity.rappel3Jours, vente.rappel3Jours)) {
+            entity.rappel3Envoye = false;
+        }
+        entity.rappel1Jours = vente.rappel1Jours;
+        entity.rappel2Jours = vente.rappel2Jours;
+        entity.rappel3Jours = vente.rappel3Jours;
 
         return entity;
     }
