@@ -1471,7 +1471,7 @@ export default function Vente() {
                                                             try {
                                                                 await axios.post(`/ventes/${currentVente.id}/rappel`);
                                                                 message.success('Rappel envoye avec succes');
-                                                                axios.get<RappelHistoriqueEntity[]>(`/rappels/vente/${currentVente.id}`).then(res => setRappelHistorique(res.data));
+                                                                axios.get<RappelHistoriqueEntity[]>(`/rappels/vente/${currentVente.id}`).then(res => setRappelHistorique(res.data)).catch(() => {});
                                                             } catch (err: any) {
                                                                 message.error(err?.response?.data || 'Erreur lors de l\'envoi du rappel');
                                                             }

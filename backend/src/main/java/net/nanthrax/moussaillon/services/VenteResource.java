@@ -227,7 +227,7 @@ public class VenteResource {
         entity.prixVenteTTC = vente.prixVenteTTC;
         entity.modePaiement = vente.modePaiement;
 
-        // Reset reminder flags if intervals changed
+        // Reinitialiser les drapeaux d'envoi si les intervalles ont change
         if (!java.util.Objects.equals(entity.rappel1Jours, vente.rappel1Jours)) {
             entity.rappel1Envoye = false;
         }

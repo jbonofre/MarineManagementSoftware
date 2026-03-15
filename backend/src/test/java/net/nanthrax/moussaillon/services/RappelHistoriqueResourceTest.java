@@ -36,8 +36,8 @@ public class RappelHistoriqueResourceTest {
     }
 
     @Test
-    void testHistoriqueCreePourRappelEnvoye() {
-        // Creer une vente avec rappel et date proche pour declencher l'envoi
+    void testEndpointHistoriqueAccessiblePourVente() {
+        // Creer une vente et verifier que le endpoint historique est accessible
         int venteId = given()
             .contentType("application/json")
             .body("{\"status\":\"EN_ATTENTE\",\"type\":\"DEVIS\",\"prixVenteTTC\":100.0,"
@@ -47,11 +47,11 @@ public class RappelHistoriqueResourceTest {
             .when().post("/ventes")
             .then().statusCode(201).extract().path("id");
 
-        // Le scheduler s'execute periodiquement, mais on peut verifier via le endpoint
-        // que l'historique est accessible pour cette vente
+        // Verifier que le endpoint retourne une liste vide (le scheduler n'a pas encore tourne)
         given()
             .when().get("/rappels/vente/" + venteId)
             .then()
-            .statusCode(200);
+            .statusCode(200)
+            .body("size()", is(0));
     }
 }
