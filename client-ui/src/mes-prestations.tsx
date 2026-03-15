@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Card, Collapse, Empty, Modal, Progress, Spin, Steps, Table, Tag, Timeline, message } from 'antd';
+import { Card, Collapse, Empty, Modal, Progress, Spin, Steps, Table, Tag, message } from 'antd';
 import {
     ClockCircleOutlined,
     CheckCircleOutlined,
@@ -268,8 +268,8 @@ export default function MesPrestations({ clientId }: MesPrestationsProps) {
                                 ? `${detailTask.technicien.prenom || ''} ${detailTask.technicien.nom}`.trim()
                                 : 'Non assigne'}
                         </p>
-                        <p><strong>Duree estimee :</strong> {detailTask.dureeEstimee ? `${detailTask.dureeEstimee}h` : '-'}</p>
-                        <p><strong>Duree reelle :</strong> {detailTask.dureeReelle ? `${detailTask.dureeReelle}h` : '-'}</p>
+                        <p><strong>Duree estimee :</strong> {detailTask.dureeEstimee != null ? `${detailTask.dureeEstimee}h` : '-'}</p>
+                        <p><strong>Duree reelle :</strong> {detailTask.dureeReelle != null ? `${detailTask.dureeReelle}h` : '-'}</p>
                         {detailTask.notes && (
                             <p><strong>Notes :</strong> {detailTask.notes}</p>
                         )}
