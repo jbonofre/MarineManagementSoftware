@@ -135,10 +135,21 @@ jobs:
           docker run -d --name chantier-test -p 3000:80 moussaillon/chantier-ui:test
           docker run -d --name client-test -p 3001:80 moussaillon/client-ui:test
           docker run -d --name technicien-test -p 3002:80 moussaillon/technicien-ui:test
-          sleep 3
-          curl -sf http://localhost:3000/ > /dev/null && echo "chantier-ui OK"
-          curl -sf http://localhost:3001/ > /dev/null && echo "client-ui OK"
-          curl -sf http://localhost:3002/ > /dev/null && echo "technicien-ui OK"
+          declare -A ports=([chantier-ui]=3000 [client-ui]=3001 [technicien-ui]=3002)
+          for name in "${!ports[@]}"; do
+            port=${ports[$name]}
+            for i in $(seq 1 15); do
+              if curl -sf http://localhost:$port/ > /dev/null; then
+                echo "$name OK"
+                break
+              fi
+              if [ $i -eq 15 ]; then
+                echo "$name failed to respond on port $port"
+                exit 1
+              fi
+              sleep 2
+            done
+          done
 
   helm:
     name: Helm Chart Validation
