@@ -23,6 +23,7 @@ import {
   SaveOutlined,
   SearchOutlined,
   ShrinkOutlined,
+  ShoppingCartOutlined,
 } from "@ant-design/icons";
 import axios from "axios";
 
@@ -226,6 +227,42 @@ const FournisseurProduits = ({
     }
   };
 
+  const handleCommander = async (record: FournisseurProduit) => {
+    const qte = record.nombreMinACommander || 1;
+    const prixUnitaireHT = record.prixAchatHT || 0;
+    const tvaRate = record.tva || 20;
+    const prixTotalHT = Math.round(prixUnitaireHT * qte * 100) / 100;
+    const montantTVALigne = Math.round(prixTotalHT * (tvaRate / 100) * 100) / 100;
+    const prixTotalTTC = Math.round((prixTotalHT + montantTVALigne) * 100) / 100;
+    const portTotal = Math.round(((record.portForfaitaire || 0) + (record.portParUnite || 0) * qte) * 100) / 100;
+
+    const body = {
+      status: "BROUILLON",
+      fournisseur: record.fournisseur,
+      montantHT: prixTotalHT,
+      tva: tvaRate,
+      montantTVA: montantTVALigne,
+      montantTTC: Math.round((prixTotalTTC + portTotal) * 100) / 100,
+      portTotal,
+      lignes: [{
+        produit: { id: record.produit.id },
+        quantite: qte,
+        prixUnitaireHT,
+        tva: tvaRate,
+        montantTVA: montantTVALigne,
+        prixTotalHT,
+        prixTotalTTC,
+      }],
+    };
+
+    try {
+      await axios.post("/commandes-fournisseur", body);
+      message.success(`Commande brouillon créée pour ${record.produit.nom} (x${qte})`);
+    } catch {
+      message.error("Erreur lors de la création de la commande");
+    }
+  };
+
   const columns = [
     ...(isProduitMode
       ? [
@@ -267,13 +304,14 @@ const FournisseurProduits = ({
       key: "actions",
       render: (_: any, record: FournisseurProduit) => (
         <Space>
+          <Button icon={<ShoppingCartOutlined />} onClick={() => handleCommander(record)} size="small" title="Créer une commande fournisseur" />
           <Button icon={<EditOutlined />} onClick={() => handleEdit(record)} size="small" />
           <Popconfirm title="Confirmer la suppression ?" onConfirm={() => handleDelete(record.id)}>
             <Button icon={<DeleteOutlined />} danger size="small" />
           </Popconfirm>
         </Space>
       ),
-      width: 110,
+      width: 150,
     },
   ];
 

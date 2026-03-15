@@ -51,6 +51,15 @@ INSERT INTO VenteEntity (id, status, type, client_id, date, prixVenteTTC, montan
 -- Tasks (linked to vente 100)
 INSERT INTO TaskEntity (id, nom, status, dateDebut, dateFin, description, dureeEstimee, dureeReelle, technicien_id, vente_id) VALUES (100, 'Revision moteur', 1, CURRENT_DATE, CURRENT_DATE, 'Revision complete', 2.0, 0.0, 100, 100);
 
+-- Fournisseur-Produit associations
+INSERT INTO FournisseurProduitEntity (id, fournisseur_id, produit_id, reference, prixAchatHT, tva, montantTVA, prixAchatTTC, portForfaitaire, portParUnite, nombreMinACommander) VALUES (100, 100, 100, 'MP-H4T', 15.0, 20.0, 3.0, 18.0, 10.0, 0.5, 5);
+
+-- Commandes Fournisseur
+INSERT INTO CommandeFournisseurEntity (id, status, fournisseur_id, date, reference, montantHT, tva, montantTVA, montantTTC, portTotal, stockIncremented, notes) VALUES (100, 'EN_ATTENTE', 100, '2025-07-01', 'CF-001', 150.0, 20.0, 30.0, 180.0, 10.0, false, 'Commande initiale');
+
+-- Lignes commande fournisseur
+INSERT INTO CommandeFournisseurLigneEntity (id, commandeFournisseur_id, produit_id, quantite, prixUnitaireHT, tva, montantTVA, prixTotalHT, prixTotalTTC) VALUES (100, 100, 100, 10, 15.0, 20.0, 30.0, 150.0, 180.0);
+
 -- Reset sequences to avoid conflicts with pre-inserted data
 ALTER TABLE ClientEntity ALTER COLUMN id RESTART WITH 200;
 ALTER TABLE TechnicienEntity ALTER COLUMN id RESTART WITH 200;
@@ -67,3 +76,6 @@ ALTER TABLE AnnonceEntity ALTER COLUMN id RESTART WITH 200;
 ALTER TABLE VenteEntity ALTER COLUMN id RESTART WITH 200;
 ALTER TABLE TaskEntity ALTER COLUMN id RESTART WITH 200;
 ALTER TABLE SocieteEntity ALTER COLUMN id RESTART WITH 200;
+ALTER TABLE FournisseurProduitEntity ALTER COLUMN id RESTART WITH 200;
+ALTER TABLE CommandeFournisseurEntity ALTER COLUMN id RESTART WITH 200;
+ALTER TABLE CommandeFournisseurLigneEntity ALTER COLUMN id RESTART WITH 200;
