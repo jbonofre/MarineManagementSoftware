@@ -106,11 +106,13 @@ const statusLabels: Record<CommandeFournisseurStatus, string> = {
 
 const CommandesFournisseur = ({ fournisseurId }: { fournisseurId?: number }) => {
   const [commandes, setCommandes] = useState<CommandeFournisseur[]>([]);
+  const [fournisseurs, setFournisseurs] = useState<Fournisseur[]>([]);
   const [fournisseurProduits, setFournisseurProduits] = useState<FournisseurProduit[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [editing, setEditing] = useState<CommandeFournisseur | null>(null);
   const [lignes, setLignes] = useState<CommandeFournisseurLigne[]>([]);
+  const [selectedFournisseurId, setSelectedFournisseurId] = useState<number | undefined>(fournisseurId);
   const [form] = Form.useForm();
 
   const fetchCommandes = async () => {
@@ -128,6 +130,15 @@ const CommandesFournisseur = ({ fournisseurId }: { fournisseurId?: number }) => 
     }
   };
 
+  const fetchFournisseurs = async () => {
+    try {
+      const { data } = await axios.get("/fournisseurs");
+      setFournisseurs(data);
+    } catch {
+      message.error("Erreur lors du chargement des fournisseurs");
+    }
+  };
+
   const fetchFournisseurProduits = async (fId: number) => {
     try {
       const { data } = await axios.get(`/fournisseur-produit/fournisseur/${fId}/produits`);
@@ -141,14 +152,16 @@ const CommandesFournisseur = ({ fournisseurId }: { fournisseurId?: number }) => 
     fetchCommandes();
     if (fournisseurId) {
       fetchFournisseurProduits(fournisseurId);
+    } else {
+      fetchFournisseurs();
     }
   }, [fournisseurId]);
 
-  const recalcTotals = (currentLignes: CommandeFournisseurLigne[]) => {
+  const recalcTotals = (currentLignes: CommandeFournisseurLigne[], portOverride?: number) => {
     const montantHT = currentLignes.reduce((sum, l) => sum + l.prixTotalHT, 0);
     const montantTVA = currentLignes.reduce((sum, l) => sum + l.montantTVA, 0);
     const montantTTC = currentLignes.reduce((sum, l) => sum + l.prixTotalTTC, 0);
-    const portTotal = form.getFieldValue("portTotal") || 0;
+    const portTotal = portOverride !== undefined ? portOverride : (form.getFieldValue("portTotal") || 0);
     form.setFieldsValue({
       montantHT: Math.round(montantHT * 100) / 100,
       montantTVA: Math.round(montantTVA * 100) / 100,
@@ -156,9 +169,20 @@ const CommandesFournisseur = ({ fournisseurId }: { fournisseurId?: number }) => 
     });
   };
 
+  const handleFournisseurChange = (fId: number) => {
+    setSelectedFournisseurId(fId);
+    setLignes([]);
+    setFournisseurProduits([]);
+    fetchFournisseurProduits(fId);
+  };
+
   const handleNew = () => {
     setEditing(null);
     setLignes([]);
+    setFournisseurProduits([]);
+    if (!fournisseurId) {
+      setSelectedFournisseurId(undefined);
+    }
     form.resetFields();
     form.setFieldsValue({
       status: "BROUILLON",
@@ -174,11 +198,15 @@ const CommandesFournisseur = ({ fournisseurId }: { fournisseurId?: number }) => 
   const handleEdit = (record: CommandeFournisseur) => {
     setEditing(record);
     setLignes(record.lignes || []);
-    if (record.fournisseur?.id && !fournisseurId) {
-      fetchFournisseurProduits(record.fournisseur.id);
+    if (record.fournisseur?.id) {
+      setSelectedFournisseurId(record.fournisseur.id);
+      if (!fournisseurId) {
+        fetchFournisseurProduits(record.fournisseur.id);
+      }
     }
     form.setFieldsValue({
       ...record,
+      fournisseurId: record.fournisseur?.id,
       date: record.date ? dayjs(record.date) : undefined,
       dateReception: record.dateReception ? dayjs(record.dateReception) : undefined,
     });
@@ -383,6 +411,31 @@ const CommandesFournisseur = ({ fournisseurId }: { fournisseurId?: number }) => 
               </Form.Item>
             </Col>
           </Row>
+          {!fournisseurId && (
+            <Row gutter={16}>
+              <Col span={24}>
+                <Form.Item
+                  label="Fournisseur"
+                  name="fournisseurId"
+                  rules={[{ required: true, message: "Fournisseur requis" }]}
+                >
+                  <Select
+                    showSearch
+                    placeholder="Sélectionner un fournisseur"
+                    optionFilterProp="children"
+                    filterOption={(input, option: any) =>
+                      `${option.children}`.toLowerCase().includes(input.toLowerCase())
+                    }
+                    onChange={handleFournisseurChange}
+                  >
+                    {fournisseurs.map((f) => (
+                      <Option key={f.id} value={f.id}>{f.nom}</Option>
+                    ))}
+                  </Select>
+                </Form.Item>
+              </Col>
+            </Row>
+          )}
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item label="Date" name="date">
@@ -485,9 +538,7 @@ const CommandesFournisseur = ({ fournisseurId }: { fournisseurId?: number }) => 
                 <InputNumber
                   min={0}
                   style={{ width: "100%" }}
-                  onChange={() => {
-                    setTimeout(() => recalcTotals(lignes));
-                  }}
+                  onChange={(val) => recalcTotals(lignes, val || 0)}
                 />
               </Form.Item>
             </Col>

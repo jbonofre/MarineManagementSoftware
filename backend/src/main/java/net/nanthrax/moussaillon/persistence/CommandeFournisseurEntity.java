@@ -8,6 +8,8 @@ import io.quarkus.hibernate.orm.panache.PanacheEntity;
 import jakarta.json.bind.annotation.JsonbTypeAdapter;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
@@ -24,6 +26,7 @@ public class CommandeFournisseurEntity extends PanacheEntity {
         ANNULEE
     }
 
+    @Enumerated(EnumType.STRING)
     public Status status;
 
     @ManyToOne

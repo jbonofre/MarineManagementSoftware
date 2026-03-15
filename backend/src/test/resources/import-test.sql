@@ -55,7 +55,7 @@ INSERT INTO TaskEntity (id, nom, status, dateDebut, dateFin, description, dureeE
 INSERT INTO FournisseurProduitEntity (id, fournisseur_id, produit_id, reference, prixAchatHT, tva, montantTVA, prixAchatTTC, portForfaitaire, portParUnite, nombreMinACommander) VALUES (100, 100, 100, 'MP-H4T', 15.0, 20.0, 3.0, 18.0, 10.0, 0.5, 5);
 
 -- Commandes Fournisseur
-INSERT INTO CommandeFournisseurEntity (id, status, fournisseur_id, date, reference, montantHT, tva, montantTVA, montantTTC, portTotal, stockIncremented, notes) VALUES (100, 1, 100, '2025-07-01', 'CF-001', 150.0, 20.0, 30.0, 180.0, 10.0, false, 'Commande initiale');
+INSERT INTO CommandeFournisseurEntity (id, status, fournisseur_id, date, reference, montantHT, tva, montantTVA, montantTTC, portTotal, stockIncremented, notes) VALUES (100, 'EN_ATTENTE', 100, '2025-07-01', 'CF-001', 150.0, 20.0, 30.0, 180.0, 10.0, false, 'Commande initiale');
 
 -- Lignes commande fournisseur
 INSERT INTO CommandeFournisseurLigneEntity (id, commandeFournisseur_id, produit_id, quantite, prixUnitaireHT, tva, montantTVA, prixTotalHT, prixTotalTTC) VALUES (100, 100, 100, 10, 15.0, 20.0, 30.0, 150.0, 180.0);

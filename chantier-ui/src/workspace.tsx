@@ -3,7 +3,7 @@ import { Layout, Input, Col, Row, Image, Menu, Form, Modal, message, ConfigProvi
 import { Route, Switch } from 'react-router';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { Link } from 'react-router-dom';
-import { UserOutlined, TeamOutlined, HomeOutlined, AmazonOutlined, SettingOutlined, ToolOutlined, StockOutlined, FileOutlined, FileProtectOutlined, ReadOutlined, DesktopOutlined, DeploymentUnitOutlined, DisconnectOutlined, DashboardOutlined, CalendarOutlined, FileDoneOutlined, CheckSquareOutlined, RedoOutlined } from '@ant-design/icons';
+import { UserOutlined, TeamOutlined, HomeOutlined, AmazonOutlined, SettingOutlined, ToolOutlined, StockOutlined, FileOutlined, FileProtectOutlined, ReadOutlined, DesktopOutlined, DeploymentUnitOutlined, DisconnectOutlined, DashboardOutlined, CalendarOutlined, FileDoneOutlined, CheckSquareOutlined, RedoOutlined, ShoppingCartOutlined } from '@ant-design/icons';
 import Icon from '@ant-design/icons';
 import { ReactComponent as BoatOutlined } from './boat.svg';
 import { ReactComponent as EngineOutlined } from './moteur.svg';
@@ -66,7 +66,7 @@ function SideMenu(props) {
         { key: 'helices', label: <Link to="/catalogue/helices">Hélices</Link>, icon: <DeploymentUnitOutlined /> },
         { key: 'remorques', label: <Link to="/catalogue/remorques">Remorques</Link>, icon: <Icon component={ TailerOutlined } /> },
         { key: 'fournisseurs', label: <Link to="/catalogue/fournisseurs">Fournisseurs</Link>, icon: <FileProtectOutlined/> },
-        { key: 'commandes-fournisseur', label: <Link to="/commandes-fournisseur">Commandes Fournisseur</Link>, icon: <FileDoneOutlined/> },
+        { key: 'commandes-fournisseur', label: <Link to="/commandes-fournisseur">Commandes Fournisseur</Link>, icon: <ShoppingCartOutlined/> },
       ]},
       { key: 'Vente', label: 'Vente', icon: <StockOutlined/>, requiredRole: 'vendeur', children: [
         { key: 'comptoir', label: <Link to="/comptoir">Comptoir</Link>, icon: <DesktopOutlined/> },
