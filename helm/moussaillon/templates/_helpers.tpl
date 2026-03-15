@@ -26,6 +26,8 @@ Common labels
 */}}
 {{- define "moussaillon.labels" -}}
 helm.sh/chart: {{ include "moussaillon.name" . }}
+app.kubernetes.io/name: {{ include "moussaillon.name" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}

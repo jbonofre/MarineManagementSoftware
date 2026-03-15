@@ -17,7 +17,7 @@ services:
       MAILER_PORT: ${MAILER_PORT:-1025}
       MAILER_MOCK: ${MAILER_MOCK:-true}
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/clients"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/q/health/ready"]
       interval: 10s
       timeout: 5s
       retries: 5

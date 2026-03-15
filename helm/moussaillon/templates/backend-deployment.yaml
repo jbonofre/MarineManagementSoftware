@@ -28,25 +28,31 @@ spec:
           ports:
             - containerPort: 8080
               protocol: TCP
+          {{- if .Values.backend.existingSecret }}
           envFrom:
-            {{- if .Values.backend.existingSecret }}
             - secretRef:
                 name: {{ .Values.backend.existingSecret }}
-            {{- end }}
+          {{- end }}
           env:
             {{- range $key, $val := .Values.backend.env }}
             - name: {{ $key }}
               value: {{ $val | quote }}
             {{- end }}
+            {{- if not .Values.backend.existingSecret }}
+            {{- range $key, $val := .Values.backend.secretEnv }}
+            - name: {{ $key }}
+              value: {{ $val | quote }}
+            {{- end }}
+            {{- end }}
           readinessProbe:
             httpGet:
-              path: /clients
+              path: /q/health/ready
               port: 8080
             initialDelaySeconds: 10
             periodSeconds: 10
           livenessProbe:
             httpGet:
-              path: /clients
+              path: /q/health/live
               port: 8080
             initialDelaySeconds: 15
             periodSeconds: 20
