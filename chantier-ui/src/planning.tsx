@@ -387,6 +387,18 @@ export default function Planning() {
 
             const res = await axios.put(`/ventes/${venteId}`, updatedVente);
             message.success('Planning de la tâche mis a jour.');
+            const savedVente = res.data as VenteEntity;
+            const savedTask = (savedVente.taches || [])[taskToUpdateIndex] || latestTasks[taskToUpdateIndex];
+            setCurrentTaskRow({ ...currentTaskRow, vente: savedVente, task: savedTask });
+            form.setFieldsValue({
+                date: toDateTimeLocalValue(savedTask.statusDate) || values.date,
+                dateDebut: savedTask.dateDebut || values.dateDebut,
+                dateFin: savedTask.dateFin || values.dateFin,
+                status: savedTask.status || values.status,
+                technicienId: savedTask.technicien?.id || values.technicienId,
+                incidentDate: savedTask.incidentDate,
+                incidentDetails: savedTask.incidentDetails,
+            });
             fetchVentes();
         } catch (error) {
             const formError = error as { errorFields?: unknown[] };

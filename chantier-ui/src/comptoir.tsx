@@ -394,11 +394,13 @@ export default function Comptoir() {
                 const res = await axios.put(`/ventes/${currentVente.id}`, { ...currentVente, ...payload, type: 'COMPTOIR' });
                 message.success('Vente comptoir modifiee avec succes');
                 setCurrentVente(res.data);
+                form.setFieldsValue(values);
             } else {
                 const res = await axios.post('/ventes', payload);
                 message.success('Vente comptoir ajoutee avec succes');
                 setIsEdit(true);
                 setCurrentVente(res.data);
+                form.setFieldsValue(values);
             }
             fetchVentes(filters);
         } catch (error) {

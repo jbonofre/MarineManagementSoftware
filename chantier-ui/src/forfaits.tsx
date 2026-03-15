@@ -362,11 +362,13 @@ export default function Forfaits() {
                 const res = await axios.put(`/forfaits/${currentForfait.id}`, { ...currentForfait, ...payload });
                 message.success('Forfait modifié avec succès');
                 setCurrentForfait(res.data);
+                form.setFieldsValue(values);
             } else {
                 const res = await axios.post('/forfaits', payload);
                 message.success('Forfait ajouté avec succès');
                 setIsEdit(true);
                 setCurrentForfait(res.data);
+                form.setFieldsValue(values);
             }
             fetchForfaits(searchQuery);
         } catch {
