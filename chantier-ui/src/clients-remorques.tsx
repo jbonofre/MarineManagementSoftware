@@ -13,6 +13,7 @@ import {
   Spin,
   Row,
   Col,
+  DatePicker,
 } from "antd";
 import {
   PlusCircleOutlined,
@@ -22,6 +23,7 @@ import {
   DeleteOutlined as DeleteIcon,
 } from "@ant-design/icons";
 import axios from "axios";
+import dayjs from "dayjs";
 
 const { Option } = Select;
 const { Search } = Input;
@@ -41,9 +43,9 @@ interface RemorqueClient {
 const defaultRemorque: RemorqueClient = {
   images: [],
   immatriculation: "",
-  dateMeS: "",
-  dateAchat: "",
-  dateFinDeGuarantie: "",
+  dateMeS: null,
+  dateAchat: null,
+  dateFinDeGuarantie: null,
   proprietaire: null,
   modele: null,
 };
@@ -120,6 +122,9 @@ function RemorquesClients({ clientId }: RemorquesClientsProps) {
     setEditing(record);
     form.setFieldsValue({
       ...record,
+      dateMeS: record.dateMeS ? dayjs(record.dateMeS) : null,
+      dateAchat: record.dateAchat ? dayjs(record.dateAchat) : null,
+      dateFinDeGuarantie: record.dateFinDeGuarantie ? dayjs(record.dateFinDeGuarantie) : null,
       modeleId: record.modele?.id || undefined,
       proprietaireId: record.proprietaire?.id || undefined,
     });
@@ -143,9 +148,12 @@ function RemorquesClients({ clientId }: RemorquesClientsProps) {
     try {
       const values = await form.validateFields();
       setLoading(true);
-      const { modeleId, proprietaireId, images, ...restValues } = values;
+      const { modeleId, proprietaireId, images, dateMeS, dateAchat, dateFinDeGuarantie, ...restValues } = values;
       const payload = {
         ...restValues,
+        dateMeS: dateMeS ? dateMeS.format("YYYY-MM-DD") : null,
+        dateAchat: dateAchat ? dateAchat.format("YYYY-MM-DD") : null,
+        dateFinDeGuarantie: dateFinDeGuarantie ? dateFinDeGuarantie.format("YYYY-MM-DD") : null,
         images: Array.isArray(images) ? images : [],
         modele: modeleId ? { id: modeleId } : null,
         proprietaire: proprietaireId ? { id: proprietaireId } : null,
@@ -158,6 +166,9 @@ function RemorquesClients({ clientId }: RemorquesClientsProps) {
         setEditing(updated);
         form.setFieldsValue({
           ...updated,
+          dateMeS: updated.dateMeS ? dayjs(updated.dateMeS) : null,
+          dateAchat: updated.dateAchat ? dayjs(updated.dateAchat) : null,
+          dateFinDeGuarantie: updated.dateFinDeGuarantie ? dayjs(updated.dateFinDeGuarantie) : null,
           modeleId: updated.modele?.id || undefined,
           proprietaireId: updated.proprietaire?.id || undefined,
         });
@@ -169,6 +180,9 @@ function RemorquesClients({ clientId }: RemorquesClientsProps) {
         setEditing(created);
         form.setFieldsValue({
           ...created,
+          dateMeS: created.dateMeS ? dayjs(created.dateMeS) : null,
+          dateAchat: created.dateAchat ? dayjs(created.dateAchat) : null,
+          dateFinDeGuarantie: created.dateFinDeGuarantie ? dayjs(created.dateFinDeGuarantie) : null,
           modeleId: created.modele?.id || undefined,
           proprietaireId: created.proprietaire?.id || undefined,
         });
@@ -256,19 +270,19 @@ function RemorquesClients({ clientId }: RemorquesClientsProps) {
             </Col>
             <Col span={12}>
               <Form.Item label="Date MeS" name="dateMeS">
-                <Input placeholder="YYYY-MM-DD" />
+                <DatePicker format="YYYY-MM-DD" style={{ width: "100%" }} />
               </Form.Item>
             </Col>
           </Row>
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item label="Date achat" name="dateAchat">
-                <Input placeholder="YYYY-MM-DD" />
+                <DatePicker format="YYYY-MM-DD" style={{ width: "100%" }} />
               </Form.Item>
             </Col>
             <Col span={12}>
               <Form.Item label="Date fin garantie" name="dateFinDeGuarantie">
-                <Input placeholder="YYYY-MM-DD" />
+                <DatePicker format="YYYY-MM-DD" style={{ width: "100%" }} />
               </Form.Item>
             </Col>
           </Row>
