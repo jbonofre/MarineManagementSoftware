@@ -315,23 +315,30 @@ function Clients() {
               <Form.Item label="Email" name="email">
                 <Input />
               </Form.Item>
-              {editing && editing.id && (
-                <Popconfirm
-                  title="Générer un mot de passe et l'envoyer par email ?"
-                  onConfirm={() => handleSendPassword(editing)}
-                  disabled={!editing.email}
-                >
-                  <Button
-                    icon={<KeyOutlined />}
+            </Col>
+            {editing && editing.id && (
+              <Col span={12}>
+                <Form.Item label=" ">
+                  <Popconfirm
+                    title="Générer un mot de passe et l'envoyer par email ?"
+                    onConfirm={() => handleSendPassword(editing)}
                     disabled={!editing.email}
-                    size="small"
-                    style={{ marginTop: -12 }}
                   >
-                    Générer et envoyer le mot de passe par email
-                  </Button>
-                </Popconfirm>
-              )}
-              <Form.Item name="consentement" valuePropName="checked" style={{ marginTop: 8 }}>
+                    <Button
+                      icon={<KeyOutlined />}
+                      disabled={!editing.email}
+                      size="small"
+                    >
+                      Générer et envoyer le mot de passe par email
+                    </Button>
+                  </Popconfirm>
+                </Form.Item>
+              </Col>
+            )}
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="consentement" valuePropName="checked">
                 <Checkbox>Consentement</Checkbox>
               </Form.Item>
             </Col>

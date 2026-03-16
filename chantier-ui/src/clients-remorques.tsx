@@ -5,12 +5,14 @@ import {
   Modal,
   Form,
   Input,
+  InputNumber,
   Select,
   Space,
   message,
   Popconfirm,
   Card,
   Spin,
+  Rate,
   Row,
   Col,
   DatePicker,
@@ -62,6 +64,8 @@ function RemorquesClients({ clientId }: RemorquesClientsProps) {
   const [modalVisible, setModalVisible] = useState(false);
   const [editing, setEditing] = useState<RemorqueClient | null>(null);
   const [form] = Form.useForm();
+  const [catalogueModalVisible, setCatalogueModalVisible] = useState(false);
+  const [catalogueForm] = Form.useForm();
 
   const fetchRemorques = async (q = "") => {
     setLoading(true);
@@ -115,6 +119,9 @@ function RemorquesClients({ clientId }: RemorquesClientsProps) {
   const handleAdd = () => {
     setEditing(null);
     form.resetFields();
+    if (clientId) {
+      form.setFieldsValue({ proprietaireId: clientId });
+    }
     setModalVisible(true);
   };
 
@@ -142,6 +149,22 @@ function RemorquesClients({ clientId }: RemorquesClientsProps) {
       message.error("Erreur lors de la suppression");
     }
     setLoading(false);
+  };
+
+  const handleCatalogueAdd = async () => {
+    try {
+      const values = await catalogueForm.validateFields();
+      const res = await axios.post("/catalogue/remorques", values);
+      message.success("Remorque catalogue ajoutée");
+      setCatalogueModalVisible(false);
+      catalogueForm.resetFields();
+      await fetchRemorquesCatalogue();
+      form.setFieldsValue({ modeleId: res.data.id });
+    } catch (e: any) {
+      if (e && e.response) {
+        message.error("Erreur lors de l'ajout de la remorque catalogue");
+      }
+    }
   };
 
   const handleModalOk = async () => {
@@ -323,22 +346,34 @@ function RemorquesClients({ clientId }: RemorquesClientsProps) {
             </Form.List>
           </Form.Item>
           {/* Association avec un modèle du catalogue */}
-          <Form.Item label="Modèle catalogue" name="modeleId">
-            <Select
-              showSearch
-              placeholder="Associer à un modèle du catalogue"
-              optionFilterProp="children"
-              filterOption={(input, option) =>
-                `${option?.children ?? ""}`.toLowerCase().includes(input.toLowerCase())
-              }
-              allowClear
-            >
-              {remorquesCatalogue.map((remorque) => (
-                <Select.Option key={remorque.id} value={remorque.id}>
-                  {remorque.marque} {remorque.modele} {remorque.annee ? `(${remorque.annee})` : ""}
-                </Select.Option>
-              ))}
-            </Select>
+          <Form.Item label="Modèle catalogue" style={{ marginBottom: 0 }}>
+            <Space.Compact style={{ width: "100%" }}>
+              <Form.Item name="modeleId" noStyle>
+                <Select
+                  showSearch
+                  placeholder="Associer à un modèle du catalogue"
+                  optionFilterProp="children"
+                  filterOption={(input, option) =>
+                    `${option?.children ?? ""}`.toLowerCase().includes(input.toLowerCase())
+                  }
+                  allowClear
+                  style={{ width: "100%" }}
+                >
+                  {remorquesCatalogue.map((remorque) => (
+                    <Select.Option key={remorque.id} value={remorque.id}>
+                      {remorque.marque} {remorque.modele} {remorque.annee ? `(${remorque.annee})` : ""}
+                    </Select.Option>
+                  ))}
+                </Select>
+              </Form.Item>
+              <Button
+                icon={<PlusCircleOutlined />}
+                onClick={() => {
+                  catalogueForm.resetFields();
+                  setCatalogueModalVisible(true);
+                }}
+              />
+            </Space.Compact>
           </Form.Item>
           <Form.Item label="Propriétaire" name="proprietaireId">
             <Select
@@ -357,6 +392,194 @@ function RemorquesClients({ clientId }: RemorquesClientsProps) {
               ))}
             </Select>
           </Form.Item>
+        </Form>
+      </Modal>
+      <Modal
+        open={catalogueModalVisible}
+        title="Ajouter une remorque catalogue"
+        onCancel={() => setCatalogueModalVisible(false)}
+        onOk={handleCatalogueAdd}
+        okText="Ajouter"
+        cancelText="Annuler"
+        destroyOnHidden
+        width={1024}
+      >
+        <Form
+          layout="vertical"
+          form={catalogueForm}
+          initialValues={{ tva: 20 }}
+          onValuesChange={(changed, all) => {
+            const roundAmount = (v: number) => Math.round((v + Number.EPSILON) * 100) / 100;
+            const toNumber = (v: unknown, fb = 0) => { const p = Number(v); return Number.isFinite(p) ? p : fb; };
+            const hasChanged = (key: string) => Object.prototype.hasOwnProperty.call(changed, key);
+            const tva = toNumber(all.tva, 20);
+            const ht = toNumber(all.prixVenteHT, 0);
+            const ttc = toNumber(all.prixVenteTTC, 0);
+            if (hasChanged("prixVenteHT") || hasChanged("tva")) {
+              const montantTVA = roundAmount(ht * (tva / 100));
+              catalogueForm.setFieldsValue({ montantTVA, prixVenteTTC: roundAmount(ht + montantTVA) });
+            } else if (hasChanged("prixVenteTTC")) {
+              const montantTVA = roundAmount((ttc / (100 + tva)) * tva);
+              catalogueForm.setFieldsValue({ montantTVA, prixVenteHT: roundAmount(ttc - montantTVA) });
+            }
+          }}
+        >
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="marque" label="Marque" rules={[{ required: true, message: "Champ requis" }]}>
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="modele" label="Modèle" rules={[{ required: true, message: "Champ requis" }]}>
+                <Input />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Form.Item name="description" label="Description">
+            <Input.TextArea rows={3} />
+          </Form.Item>
+          <Form.Item name="evaluation" label="Évaluation">
+            <Rate allowHalf />
+          </Form.Item>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="ptac" label="PTAC">
+                <InputNumber min={0} style={{ width: "100%" }} addonAfter="kg" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="chargeAVide" label="Charge à vide">
+                <InputNumber min={0} style={{ width: "100%" }} addonAfter="kg" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="chargeUtile" label="Charge utile">
+                <InputNumber min={0} style={{ width: "100%" }} addonAfter="kg" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="longueur" label="Longueur">
+                <InputNumber min={0} style={{ width: "100%" }} addonAfter="mm" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="largeur" label="Largeur">
+                <InputNumber min={0} style={{ width: "100%" }} addonAfter="mm" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="longueurMaxBateau" label="Long. Max. Bateau">
+                <InputNumber min={0} style={{ width: "100%" }} addonAfter="mm" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="largeurMaxBateau" label="Larg. Max. Bateau">
+                <InputNumber min={0} style={{ width: "100%" }} addonAfter="mm" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="fleche" label="Flèche">
+                <InputNumber min={0} style={{ width: "100%" }} addonAfter="mm" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="typeChassis" label="Type de châssis">
+                <Select allowClear>
+                  <Select.Option value="Standard">Standard</Select.Option>
+                  <Select.Option value="Renforcé">Renforcé</Select.Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="roues" label="Roues">
+                <Select allowClear>
+                  <Select.Option value="Simple">Simple</Select.Option>
+                  <Select.Option value="Double">Double</Select.Option>
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="equipement" label="Équipement">
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="emplacement" label="Emplacement">
+                <Input />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="stock" label="Stock">
+                <InputNumber min={0} style={{ width: "100%" }} />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="stockAlerte" label="Stock alerte">
+                <InputNumber min={0} style={{ width: "100%" }} />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="prixPublic" label="Prix public">
+                <InputNumber min={0} style={{ width: "100%" }} step={100} addonAfter="€" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="frais" label="Frais">
+                <InputNumber min={0} style={{ width: "100%" }} step={10} addonAfter="€" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="tauxMarge" label="Taux de marge">
+                <InputNumber min={0} max={100} style={{ width: "100%" }} addonAfter="%" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="tauxMarque" label="Taux de marque">
+                <InputNumber min={0} max={100} style={{ width: "100%" }} addonAfter="%" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="prixVenteHT" label="Prix Vente HT">
+                <InputNumber min={0} style={{ width: "100%" }} step={100} addonAfter="€" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="tva" label="TVA">
+                <InputNumber min={0} max={100} style={{ width: "100%" }} step={1} addonAfter="%" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="montantTVA" label="Montant TVA">
+                <InputNumber min={0} style={{ width: "100%" }} step={1} addonAfter="€" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="prixVenteTTC" label="Prix Vente TTC">
+                <InputNumber min={0} style={{ width: "100%" }} step={100} addonAfter="€" />
+              </Form.Item>
+            </Col>
+          </Row>
         </Form>
       </Modal>
     </Card>
