@@ -132,7 +132,7 @@ const CommandesFournisseur = ({ fournisseurId }: { fournisseurId?: number }) => 
 
   const fetchFournisseurs = async () => {
     try {
-      const { data } = await axios.get("/fournisseurs");
+      const { data } = await axios.get("/catalogue/fournisseurs");
       setFournisseurs(data);
     } catch {
       message.error("Erreur lors du chargement des fournisseurs");
