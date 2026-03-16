@@ -15,6 +15,7 @@ import {
   Col,
   Spin,
   Rate,
+  Image,
 } from "antd";
 
 const { TextArea } = Input;
@@ -29,6 +30,27 @@ import {
 import axios from "axios";
 
 const { Option } = Select;
+
+const defaultHeliceCatalogue = {
+  modele: '',
+  marque: '',
+  description: '',
+  images: [],
+  evaluation: 0,
+  diametre: 0,
+  pas: '',
+  pales: 0,
+  cannelures: 0,
+  moteursCompatibles: [],
+  prixPublic: 0,
+  frais: 0,
+  tauxMarge: 0,
+  tauxMarque: 0,
+  prixVenteHT: 0,
+  tva: 20,
+  montantTVA: 0,
+  prixVenteTTC: 0,
+};
 
 type Fournisseur = {
   id: number;
@@ -82,6 +104,8 @@ const FournisseurHelices = ({
   const [form] = Form.useForm();
   const [fournisseurModalVisible, setFournisseurModalVisible] = useState(false);
   const [fournisseurForm] = Form.useForm();
+  const [heliceModalVisible, setHeliceModalVisible] = useState(false);
+  const [heliceForm] = Form.useForm();
 
   const isHeliceMode = !!heliceId;
   const isFournisseurMode = !!fournisseurId;
@@ -142,6 +166,21 @@ const FournisseurHelices = ({
     }
     // eslint-disable-next-line
   }, [fournisseurId, heliceId]);
+
+  const handleHeliceAdd = async () => {
+    try {
+      const values = await heliceForm.validateFields();
+      const res = await axios.post("/catalogue/helices", values);
+      message.success("Hélice créée");
+      setHeliceModalVisible(false);
+      heliceForm.resetFields();
+      await fetchHelicesCatalogue();
+      form.setFieldsValue({ heliceId: res.data.id });
+    } catch (e: any) {
+      if (e.errorFields) return;
+      message.error("Erreur lors de la création de l'hélice");
+    }
+  };
 
   const handleFournisseurAdd = async () => {
     try {
@@ -391,26 +430,37 @@ const FournisseurHelices = ({
               </Space.Compact>
             </Form.Item>
           ) : (
-            <Form.Item
-              label="Hélice catalogue"
-              name="heliceId"
-              rules={[{ required: true, message: "Sélectionnez une hélice du catalogue" }]}
-            >
-              <Select
-                showSearch
-                placeholder="Choisissez une hélice"
-                optionFilterProp="children"
-                filterOption={(input, option: any) =>
-                  `${option.children}`.toLowerCase().includes(input.toLowerCase())
-                }
-                disabled={!!(editing && editing.id)}
-              >
-                {helicesCatalogue.map((h) => (
-                  <Option key={h.id} value={h.id}>
-                    {h.marque} {h.modele}
-                  </Option>
-                ))}
-              </Select>
+            <Form.Item label="Hélice catalogue" style={{ marginBottom: 0 }}>
+              <Space.Compact style={{ width: "100%" }}>
+                <Form.Item
+                  name="heliceId"
+                  rules={[{ required: true, message: "Sélectionnez une hélice du catalogue" }]}
+                  style={{ flex: 1, marginBottom: 0 }}
+                >
+                  <Select
+                    showSearch
+                    placeholder="Choisissez une hélice"
+                    optionFilterProp="children"
+                    filterOption={(input, option: any) =>
+                      `${option.children}`.toLowerCase().includes(input.toLowerCase())
+                    }
+                    disabled={!!(editing && editing.id)}
+                  >
+                    {helicesCatalogue.map((h) => (
+                      <Option key={h.id} value={h.id}>
+                        {h.marque} {h.modele}
+                      </Option>
+                    ))}
+                  </Select>
+                </Form.Item>
+                <Button
+                  icon={<PlusCircleOutlined />}
+                  onClick={() => {
+                    heliceForm.resetFields();
+                    setHeliceModalVisible(true);
+                  }}
+                />
+              </Space.Compact>
             </Form.Item>
           )}
           <Row gutter={8}>
@@ -553,6 +603,165 @@ const FournisseurHelices = ({
             <Col span={12}>
               <Form.Item label="NAF" name="naf">
                 <Input />
+              </Form.Item>
+            </Col>
+          </Row>
+        </Form>
+      </Modal>
+
+      <Modal
+        open={heliceModalVisible}
+        title="Nouvelle Hélice"
+        onCancel={() => setHeliceModalVisible(false)}
+        onOk={handleHeliceAdd}
+        okText="Ajouter"
+        cancelText="Annuler"
+        destroyOnHidden
+        width={1024}
+        maskClosable={false}
+      >
+        <Form
+          layout="vertical"
+          form={heliceForm}
+          initialValues={defaultHeliceCatalogue}
+          onValuesChange={(changedValues) => {
+            if (changedValues.prixVenteHT || changedValues.tva) {
+              const prixVenteHT = heliceForm.getFieldValue('prixVenteHT');
+              const tva = heliceForm.getFieldValue('tva');
+              const montantTVA = Math.round(((prixVenteHT * (tva / 100)) + Number.EPSILON) * 100) / 100;
+              heliceForm.setFieldValue('montantTVA', montantTVA);
+              const prixVenteTTC = Math.round(((prixVenteHT + montantTVA) + Number.EPSILON) * 100) / 100;
+              heliceForm.setFieldValue('prixVenteTTC', prixVenteTTC);
+            }
+            if (changedValues.prixVenteTTC) {
+              const prixVenteTTC = heliceForm.getFieldValue('prixVenteTTC');
+              const tva = heliceForm.getFieldValue('tva');
+              const montantTVA = Math.round((((prixVenteTTC / (100 + tva)) * tva) + Number.EPSILON) * 100) / 100;
+              heliceForm.setFieldValue('montantTVA', montantTVA);
+              const prixVenteHT = Math.round(((prixVenteTTC - montantTVA) + Number.EPSILON) * 100) / 100;
+              heliceForm.setFieldValue('prixVenteHT', prixVenteHT);
+            }
+          }}
+        >
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="marque" label="Marque" rules={[{ required: true, message: "Champ obligatoire" }]}>
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="modele" label="Modèle" rules={[{ required: true, message: "Champ obligatoire" }]}>
+                <Input />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Form.Item name="description" label="Description">
+            <TextArea rows={2} />
+          </Form.Item>
+          <Form.Item name="images" label="Images">
+            <Form.List name="images">
+              {(fields, { add, remove }) => (
+                <>
+                  {fields.map((field, index) => (
+                    <Space key={field.key} align="baseline" style={{ display: 'flex', marginBottom: 8 }}>
+                      <Form.Item
+                        {...field}
+                        name={[field.name]}
+                        fieldKey={[field.fieldKey ?? field.key]}
+                        rules={[{ required: true, message: "Veuillez entrer une URL d'image" }]}
+                        style={{ flex: 1 }}
+                      >
+                        <Input placeholder="URL de l'image" style={{ width: '100%' }} />
+                      </Form.Item>
+                      <Button
+                        icon={<DeleteOutlined />}
+                        danger
+                        onClick={() => remove(field.name)}
+                      />
+                      {heliceForm.getFieldValue(['images', index]) &&
+                        <Image width={100} src={heliceForm.getFieldValue(['images', index])} />
+                      }
+                    </Space>
+                  ))}
+                  <Button type="dashed" onClick={() => add()} block icon={<PlusCircleOutlined />}>
+                    Ajouter une image
+                  </Button>
+                </>
+              )}
+            </Form.List>
+          </Form.Item>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="evaluation" label="Évaluation">
+                <Rate allowHalf />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="diametre" label="Diamètre">
+                <InputNumber min={0} step={0.01} style={{ width: '100%' }} addonAfter="mm" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="pas" label="Pas">
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="pales" label="Pales">
+                <InputNumber min={1} style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Form.Item name="cannelures" label="Cannelures">
+            <InputNumber min={0} style={{ width: '100%' }} />
+          </Form.Item>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="prixPublic" label="Prix Public">
+                <InputNumber min={0} step={0.01} addonAfter="€" style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="frais" label="Frais">
+                <InputNumber min={0} step={0.01} addonAfter="€" style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="tauxMarge" label="Taux Marge">
+                <InputNumber min={0} max={100} step={0.01} addonAfter="%" style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="tauxMarque" label="Taux Marque">
+                <InputNumber min={0} max={100} step={0.01} addonAfter="%" style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="prixVenteHT" label="Prix Vente HT">
+                <InputNumber min={0} step={0.01} addonAfter="€" style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="tva" label="TVA">
+                <InputNumber min={0} max={100} step={0.01} addonAfter="%" style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="montantTVA" label="Montant TVA">
+                <InputNumber min={0} step={0.01} addonAfter="€" style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="prixVenteTTC" label="Prix Vente TTC">
+                <InputNumber min={0} step={0.01} addonAfter="€" style={{ width: '100%' }} />
               </Form.Item>
             </Col>
           </Row>

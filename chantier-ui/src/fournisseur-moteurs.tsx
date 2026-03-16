@@ -15,6 +15,8 @@ import {
   Col,
   Spin,
   Rate,
+  AutoComplete,
+  Image,
 } from "antd";
 
 const { TextArea } = Input;
@@ -27,6 +29,44 @@ import {
 import axios from "axios";
 
 const { Option } = Select;
+
+const moteurTypes = [
+  { text: 'Hors-bord', value: 'Hors-bord' },
+  { text: 'In-bord', value: 'In-bord' },
+  { text: 'Electrique', value: 'Electrique' },
+  { text: 'Diesel', value: 'Diesel' },
+];
+
+const defaultMoteurCatalogue = {
+  modele: '',
+  marque: '',
+  type: '',
+  description: '',
+  evaluation: 0,
+  images: [],
+  puissanceCv: 0,
+  puissanceKw: 0,
+  longueurArbre: '',
+  arbre: 0,
+  demarrage: '',
+  direction: '',
+  cylindres: 0,
+  cylindree: 0,
+  regime: '',
+  huileRecommandee: '',
+  helicesCompatibles: [],
+  stock: 0,
+  stockAlerte: 0,
+  emplacement: '',
+  prixPublic: 0,
+  frais: 0,
+  tauxMarge: 0,
+  tauxMarque: 0,
+  prixVenteHT: 0,
+  tva: 20,
+  montantTVA: 0,
+  prixVenteTTC: 0,
+};
 
 type Fournisseur = {
   id: number;
@@ -80,6 +120,11 @@ const FournisseurMoteurs = ({
   const [form] = Form.useForm();
   const [fournisseurModalVisible, setFournisseurModalVisible] = useState(false);
   const [fournisseurForm] = Form.useForm();
+  const [moteurModalVisible, setMoteurModalVisible] = useState(false);
+  const [moteurForm] = Form.useForm();
+
+  const CV_TO_KW_FACTOR = 0.735499;
+  const roundPower = (value: number) => Math.round((value + Number.EPSILON) * 100) / 100;
 
   const isMoteurMode = !!moteurId;
   const isFournisseurMode = !!fournisseurId;
@@ -142,6 +187,21 @@ const FournisseurMoteurs = ({
     }
     // eslint-disable-next-line
   }, [fournisseurId, moteurId]);
+
+  const handleMoteurAdd = async () => {
+    try {
+      const values = await moteurForm.validateFields();
+      const res = await axios.post("/catalogue/moteurs", values);
+      message.success("Moteur créé");
+      setMoteurModalVisible(false);
+      moteurForm.resetFields();
+      await fetchMoteursCatalogue();
+      form.setFieldsValue({ moteurId: res.data.id });
+    } catch (e: any) {
+      if (e.errorFields) return;
+      message.error("Erreur lors de la création du moteur");
+    }
+  };
 
   const handleFournisseurAdd = async () => {
     try {
@@ -435,26 +495,37 @@ const FournisseurMoteurs = ({
               </Space.Compact>
             </Form.Item>
           ) : (
-            <Form.Item
-              label="Moteur catalogue"
-              name="moteurId"
-              rules={[{ required: true, message: "Sélectionnez un moteur du catalogue" }]}
-            >
-              <Select
-                showSearch
-                placeholder="Choisissez un moteur"
-                optionFilterProp="children"
-                filterOption={(input, option: any) =>
-                  `${option.children}`.toLowerCase().includes(input.toLowerCase())
-                }
-                disabled={!!(editing && editing.id)}
-              >
-                {moteursCatalogue.map((m) => (
-                  <Option key={m.id} value={m.id}>
-                    {m.marque} {m.modele}
-                  </Option>
-                ))}
-              </Select>
+            <Form.Item label="Moteur catalogue" style={{ marginBottom: 0 }}>
+              <Space.Compact style={{ width: "100%" }}>
+                <Form.Item
+                  name="moteurId"
+                  rules={[{ required: true, message: "Sélectionnez un moteur du catalogue" }]}
+                  style={{ flex: 1, marginBottom: 0 }}
+                >
+                  <Select
+                    showSearch
+                    placeholder="Choisissez un moteur"
+                    optionFilterProp="children"
+                    filterOption={(input, option: any) =>
+                      `${option.children}`.toLowerCase().includes(input.toLowerCase())
+                    }
+                    disabled={!!(editing && editing.id)}
+                  >
+                    {moteursCatalogue.map((m) => (
+                      <Option key={m.id} value={m.id}>
+                        {m.marque} {m.modele}
+                      </Option>
+                    ))}
+                  </Select>
+                </Form.Item>
+                <Button
+                  icon={<PlusCircleOutlined />}
+                  onClick={() => {
+                    moteurForm.resetFields();
+                    setMoteurModalVisible(true);
+                  }}
+                />
+              </Space.Compact>
             </Form.Item>
           )}
 
@@ -598,6 +669,239 @@ const FournisseurMoteurs = ({
             <Col span={12}>
               <Form.Item label="NAF" name="naf">
                 <Input />
+              </Form.Item>
+            </Col>
+          </Row>
+        </Form>
+      </Modal>
+
+      <Modal
+        open={moteurModalVisible}
+        title="Nouveau Moteur"
+        onCancel={() => setMoteurModalVisible(false)}
+        onOk={handleMoteurAdd}
+        okText="Ajouter"
+        cancelText="Annuler"
+        destroyOnHidden
+        width={1024}
+        maskClosable={false}
+      >
+        <Form
+          layout="vertical"
+          form={moteurForm}
+          initialValues={defaultMoteurCatalogue}
+          onValuesChange={(changedValues) => {
+            if (Object.prototype.hasOwnProperty.call(changedValues, 'puissanceCv')
+              && !Object.prototype.hasOwnProperty.call(changedValues, 'puissanceKw')) {
+              const puissanceCv = Number(moteurForm.getFieldValue('puissanceCv')) || 0;
+              moteurForm.setFieldValue('puissanceKw', roundPower(puissanceCv * CV_TO_KW_FACTOR));
+            }
+            if (Object.prototype.hasOwnProperty.call(changedValues, 'puissanceKw')
+              && !Object.prototype.hasOwnProperty.call(changedValues, 'puissanceCv')) {
+              const puissanceKw = Number(moteurForm.getFieldValue('puissanceKw')) || 0;
+              moteurForm.setFieldValue('puissanceCv', roundPower(puissanceKw / CV_TO_KW_FACTOR));
+            }
+            if (changedValues.prixVenteHT || changedValues.tva) {
+              const prixVenteHT = moteurForm.getFieldValue('prixVenteHT');
+              const tva = moteurForm.getFieldValue('tva');
+              const montantTVA = Math.round(((prixVenteHT * (tva / 100)) + Number.EPSILON) * 100) / 100;
+              moteurForm.setFieldValue('montantTVA', montantTVA);
+              const prixVenteTTC = Math.round(((prixVenteHT + montantTVA) + Number.EPSILON) * 100) / 100;
+              moteurForm.setFieldValue('prixVenteTTC', prixVenteTTC);
+            }
+            if (changedValues.prixVenteTTC) {
+              const prixVenteTTC = moteurForm.getFieldValue('prixVenteTTC');
+              const tva = moteurForm.getFieldValue('tva');
+              const montantTVA = Math.round((((prixVenteTTC / (100 + tva)) * tva) + Number.EPSILON) * 100) / 100;
+              moteurForm.setFieldValue('montantTVA', montantTVA);
+              const prixVenteHT = Math.round(((prixVenteTTC - montantTVA) + Number.EPSILON) * 100) / 100;
+              moteurForm.setFieldValue('prixVenteHT', prixVenteHT);
+            }
+          }}
+        >
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="marque" label="Marque" rules={[{ required: true }]}>
+                <AutoComplete
+                  allowClear
+                  options={moteursCatalogue.map(m => ({ value: m.marque })).filter((v, i, a) => a.findIndex(t => t.value === v.value) === i)}
+                  placeholder="Saisir ou sélectionner une marque"
+                />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="modele" label="Modèle" rules={[{ required: true }]}>
+                <Input />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="type" label="Type" rules={[{ required: true }]}>
+                <Select options={moteurTypes.map((t) => ({ label: t.text, value: t.value }))} />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="evaluation" label="Évaluation">
+                <Rate allowHalf />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Form.Item name="description" label="Description">
+            <Input.TextArea rows={3} />
+          </Form.Item>
+          <Form.Item name="images" label="Images">
+            <Form.List name="images">
+              {(fields, { add, remove }) => (
+                <>
+                  {fields.map((field, index) => (
+                    <Space key={field.key} align="baseline" style={{ display: 'flex', marginBottom: 8 }}>
+                      <Form.Item
+                        {...field}
+                        name={[field.name]}
+                        fieldKey={[field.fieldKey ?? field.key]}
+                        rules={[{ required: true, message: "Veuillez entrer une URL d'image" }]}
+                        style={{ flex: 1 }}
+                      >
+                        <Input placeholder="URL de l'image" style={{ width: '100%' }} />
+                      </Form.Item>
+                      <Button
+                        icon={<DeleteOutlined />}
+                        danger
+                        onClick={() => remove(field.name)}
+                      />
+                      {moteurForm.getFieldValue(['images', index]) &&
+                        <Image width={80} src={moteurForm.getFieldValue(['images', index])} />
+                      }
+                    </Space>
+                  ))}
+                  <Button type="dashed" onClick={() => add()} block icon={<PlusCircleOutlined />}>
+                    Ajouter une image
+                  </Button>
+                </>
+              )}
+            </Form.List>
+          </Form.Item>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="puissanceCv" label="Puissance">
+                <InputNumber min={0} step={0.1} style={{ width: '100%' }} addonAfter="cv" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="puissanceKw" label="Puissance">
+                <InputNumber min={0} step={0.1} style={{ width: '100%' }} addonAfter="kW" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="longueurArbre" label="Longueur arbre">
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="arbre" label="Arbre">
+                <InputNumber min={0} step={0.1} style={{ width: '100%' }} addonAfter="cm" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="demarrage" label="Démarrage">
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="direction" label="Direction">
+                <Input />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="cylindres" label="Nombre de cylindres">
+                <InputNumber min={0} step={1} style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="cylindree" label="Cylindrée">
+                <InputNumber min={0} step={1} style={{ width: '100%' }} addonAfter="cm3" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="regime" label="Régime Max">
+                <InputNumber min={0} step={1} style={{ width: '100%' }} addonAfter="tr/min" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="huileRecommandee" label="Huile recommandée">
+                <Input />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="stock" label="Stock">
+                <InputNumber min={0} step={1} style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="stockAlerte" label="Stock alerte">
+                <InputNumber min={0} step={1} style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Form.Item name="emplacement" label="Emplacement">
+            <Input />
+          </Form.Item>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="prixPublic" label="Prix public">
+                <InputNumber min={0} step={0.01} style={{ width: '100%' }} addonAfter="€" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="frais" label="Frais">
+                <InputNumber min={0} step={0.01} style={{ width: '100%' }} addonAfter="€" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="tauxMarge" label="Taux de marge">
+                <InputNumber min={0} step={0.01} style={{ width: '100%' }} addonAfter="%" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="tauxMarque" label="Taux de marque">
+                <InputNumber min={0} step={0.01} style={{ width: '100%' }} addonAfter="%" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="prixVenteHT" label="Prix de vente HT">
+                <InputNumber min={0} step={0.01} style={{ width: '100%' }} addonAfter="€" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="tva" label="TVA">
+                <InputNumber min={0} step={0.01} style={{ width: '100%' }} addonAfter="%" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="montantTVA" label="Montant TVA">
+                <InputNumber min={0} step={0.01} style={{ width: '100%' }} addonAfter="€" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="prixVenteTTC" label="Prix de vente TTC">
+                <InputNumber min={0} step={0.01} style={{ width: '100%' }} addonAfter="€" />
               </Form.Item>
             </Col>
           </Row>

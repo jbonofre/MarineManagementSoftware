@@ -28,6 +28,45 @@ import axios from "axios";
 
 const { Option } = Select;
 
+const typeChassisList = [
+  { label: "Standard", value: "Standard" },
+  { label: "Renforcé", value: "Renforcé" },
+];
+
+const rouesList = [
+  { label: "Simple", value: "Simple" },
+  { label: "Double", value: "Double" },
+];
+
+const defaultRemorqueCatalogue = {
+  modele: "",
+  marque: "",
+  description: "",
+  evaluation: 0,
+  ptac: 0,
+  chargeAVide: 0,
+  chargeUtile: 0,
+  longueur: 0,
+  largeur: 0,
+  longueurMaxBateau: 0,
+  largeurMaxBateau: 0,
+  fleche: "",
+  typeChassis: "",
+  roues: "",
+  equipement: "",
+  stock: 0,
+  stockAlerte: 0,
+  emplacement: "",
+  prixPublic: 0,
+  frais: 0,
+  tauxMarge: 0,
+  tauxMarque: 0,
+  prixVenteHT: 0,
+  tva: 20,
+  montantTVA: 0,
+  prixVenteTTC: 0,
+};
+
 type Fournisseur = {
   id: number;
   nom: string;
@@ -80,6 +119,8 @@ const FournisseurRemorques = ({
   const [form] = Form.useForm();
   const [fournisseurModalVisible, setFournisseurModalVisible] = useState(false);
   const [fournisseurForm] = Form.useForm();
+  const [remorqueModalVisible, setRemorqueModalVisible] = useState(false);
+  const [remorqueForm] = Form.useForm();
 
   const isRemorqueMode = !!remorqueId;
   const isFournisseurMode = !!fournisseurId;
@@ -138,6 +179,21 @@ const FournisseurRemorques = ({
       }
     }
   }, [fournisseurId, remorqueId]);
+
+  const handleRemorqueAdd = async () => {
+    try {
+      const values = await remorqueForm.validateFields();
+      const res = await axios.post("/catalogue/remorques", values);
+      message.success("Remorque créée");
+      setRemorqueModalVisible(false);
+      remorqueForm.resetFields();
+      await fetchRemorquesCatalogue();
+      form.setFieldsValue({ remorqueId: res.data.id });
+    } catch (e: any) {
+      if (e.errorFields) return;
+      message.error("Erreur lors de la création de la remorque");
+    }
+  };
 
   const handleFournisseurAdd = async () => {
     try {
@@ -376,26 +432,37 @@ const FournisseurRemorques = ({
               </Space.Compact>
             </Form.Item>
           ) : (
-            <Form.Item
-              label="Remorque catalogue"
-              name="remorqueId"
-              rules={[{ required: true, message: "Sélectionnez une remorque du catalogue" }]}
-            >
-              <Select
-                showSearch
-                placeholder="Choisissez une remorque"
-                optionFilterProp="children"
-                filterOption={(input, option: any) =>
-                  `${option.children}`.toLowerCase().includes(input.toLowerCase())
-                }
-                disabled={!!(editing && editing.id)}
-              >
-                {remorquesCatalogue.map((r) => (
-                  <Option key={r.id} value={r.id}>
-                    {r.marque} {r.modele}
-                  </Option>
-                ))}
-              </Select>
+            <Form.Item label="Remorque catalogue" style={{ marginBottom: 0 }}>
+              <Space.Compact style={{ width: "100%" }}>
+                <Form.Item
+                  name="remorqueId"
+                  rules={[{ required: true, message: "Sélectionnez une remorque du catalogue" }]}
+                  style={{ flex: 1, marginBottom: 0 }}
+                >
+                  <Select
+                    showSearch
+                    placeholder="Choisissez une remorque"
+                    optionFilterProp="children"
+                    filterOption={(input, option: any) =>
+                      `${option.children}`.toLowerCase().includes(input.toLowerCase())
+                    }
+                    disabled={!!(editing && editing.id)}
+                  >
+                    {remorquesCatalogue.map((r) => (
+                      <Option key={r.id} value={r.id}>
+                        {r.marque} {r.modele}
+                      </Option>
+                    ))}
+                  </Select>
+                </Form.Item>
+                <Button
+                  icon={<PlusCircleOutlined />}
+                  onClick={() => {
+                    remorqueForm.resetFields();
+                    setRemorqueModalVisible(true);
+                  }}
+                />
+              </Space.Compact>
             </Form.Item>
           )}
           <Row gutter={8}>
@@ -529,6 +596,197 @@ const FournisseurRemorques = ({
             <Col span={12}>
               <Form.Item label="NAF" name="naf">
                 <Input />
+              </Form.Item>
+            </Col>
+          </Row>
+        </Form>
+      </Modal>
+
+      <Modal
+        open={remorqueModalVisible}
+        title="Nouvelle Remorque"
+        onCancel={() => setRemorqueModalVisible(false)}
+        onOk={handleRemorqueAdd}
+        okText="Ajouter"
+        cancelText="Annuler"
+        destroyOnHidden
+        width={1024}
+        maskClosable={false}
+      >
+        <Form
+          layout="vertical"
+          form={remorqueForm}
+          initialValues={defaultRemorqueCatalogue}
+          onValuesChange={(changed, all) => {
+            const toNumber = (v: unknown, fb = 0) => { const p = Number(v); return Number.isFinite(p) ? p : fb; };
+            const roundAmount = (v: number) => Math.round((v + Number.EPSILON) * 100) / 100;
+            const hasChanged = (key: string) => Object.prototype.hasOwnProperty.call(changed, key);
+            const currentTva = toNumber(all.tva, 20);
+            const currentHT = toNumber(all.prixVenteHT, 0);
+            const currentTTC = toNumber(all.prixVenteTTC, 0);
+            const currentMontantTVA = toNumber(all.montantTVA, 0);
+
+            if (hasChanged("prixVenteHT") || hasChanged("tva")) {
+              const montantTVA = roundAmount(currentHT * (currentTva / 100));
+              const prixVenteTTC = roundAmount(currentHT + montantTVA);
+              remorqueForm.setFieldsValue({ montantTVA, prixVenteTTC });
+            } else if (hasChanged("prixVenteTTC")) {
+              const montantTVA = roundAmount((currentTTC / (100 + currentTva)) * currentTva);
+              const prixVenteHT = roundAmount(currentTTC - montantTVA);
+              remorqueForm.setFieldsValue({ montantTVA, prixVenteHT });
+            } else if (hasChanged("montantTVA")) {
+              const prixVenteTTC = roundAmount(currentHT + currentMontantTVA);
+              remorqueForm.setFieldsValue({ prixVenteTTC });
+            }
+          }}
+        >
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="marque" label="Marque" rules={[{ required: true, message: "Champ requis" }]}>
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="modele" label="Modèle" rules={[{ required: true, message: "Champ requis" }]}>
+                <Input />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Form.Item name="description" label="Description">
+            <Input.TextArea rows={3} />
+          </Form.Item>
+          <Form.Item name="evaluation" label="Évaluation">
+            <Rate allowHalf />
+          </Form.Item>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="ptac" label="PTAC">
+                <InputNumber min={0} style={{ width: "100%" }} addonAfter="kg" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="chargeAVide" label="Charge à vide">
+                <InputNumber min={0} style={{ width: "100%" }} addonAfter="kg" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="chargeUtile" label="Charge utile">
+                <InputNumber min={0} style={{ width: "100%" }} addonAfter="kg" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="longueur" label="Longueur">
+                <InputNumber min={0} style={{ width: "100%" }} addonAfter="mm" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="largeur" label="Largeur">
+                <InputNumber min={0} style={{ width: "100%" }} addonAfter="mm" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="longueurMaxBateau" label="Long. Max. Bateau">
+                <InputNumber min={0} style={{ width: "100%" }} addonAfter="mm" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="largeurMaxBateau" label="Larg. Max. Bateau">
+                <InputNumber min={0} style={{ width: "100%" }} addonAfter="mm" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="fleche" label="Flèche">
+                <InputNumber min={0} style={{ width: "100%" }} addonAfter="mm" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="typeChassis" label="Type de châssis">
+                <Select options={typeChassisList} allowClear />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="roues" label="Roues">
+                <Select options={rouesList} allowClear />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="equipement" label="Équipement">
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="emplacement" label="Emplacement">
+                <Input />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="stock" label="Stock">
+                <InputNumber min={0} style={{ width: "100%" }} />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="stockAlerte" label="Stock alerte">
+                <InputNumber min={0} style={{ width: "100%" }} />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="prixPublic" label="Prix public">
+                <InputNumber min={0} style={{ width: "100%" }} step={100} addonAfter="€" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="frais" label="Frais">
+                <InputNumber min={0} style={{ width: "100%" }} step={10} addonAfter="€" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="tauxMarge" label="Taux de marge">
+                <InputNumber min={0} max={100} style={{ width: "100%" }} addonAfter="%" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="tauxMarque" label="Taux de marque">
+                <InputNumber min={0} max={100} style={{ width: "100%" }} addonAfter="%" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="prixVenteHT" label="Prix Vente HT">
+                <InputNumber min={0} style={{ width: "100%" }} step={100} addonAfter="€" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="tva" label="TVA">
+                <InputNumber min={0} max={100} style={{ width: "100%" }} step={1} addonAfter="%" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="montantTVA" label="Montant TVA">
+                <InputNumber min={0} style={{ width: "100%" }} step={1} addonAfter="€" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="prixVenteTTC" label="Prix Vente TTC">
+                <InputNumber min={0} style={{ width: "100%" }} step={100} addonAfter="€" />
               </Form.Item>
             </Col>
           </Row>
