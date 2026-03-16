@@ -9,6 +9,7 @@ import {
     UserOutlined,
     LogoutOutlined,
     TagsOutlined,
+    ScheduleOutlined,
 } from '@ant-design/icons';
 import Login from './login.tsx';
 import Dashboard from './dashboard.tsx';
@@ -16,6 +17,7 @@ import MesBateaux from './mes-bateaux.tsx';
 import MesMoteurs from './mes-moteurs.tsx';
 import MesRemorques from './mes-remorques.tsx';
 import MesFactures from './mes-factures.tsx';
+import MesPrestations from './mes-prestations.tsx';
 import MonProfil from './mon-profil.tsx';
 import PetitesAnnonces from './petites-annonces.tsx';
 import MobileApp from './mobile-app.tsx';
@@ -56,6 +58,7 @@ export default function App() {
         { key: 'moteurs', icon: <ToolOutlined />, label: 'Mes moteurs' },
         { key: 'remorques', icon: <CarOutlined />, label: 'Mes remorques' },
         { key: 'factures', icon: <FileTextOutlined />, label: 'Mes factures' },
+        { key: 'prestations', icon: <ScheduleOutlined />, label: 'Mes prestations' },
         { key: 'annonces', icon: <TagsOutlined />, label: 'Petites annonces' },
         { key: 'profil', icon: <UserOutlined />, label: 'Mon profil' },
     ];
@@ -70,6 +73,8 @@ export default function App() {
                 return <MesRemorques clientId={user.id} />;
             case 'factures':
                 return <MesFactures clientId={user.id} />;
+            case 'prestations':
+                return <MesPrestations clientId={user.id} />;
             case 'annonces':
                 return <PetitesAnnonces clientId={user.id} />;
             case 'profil':

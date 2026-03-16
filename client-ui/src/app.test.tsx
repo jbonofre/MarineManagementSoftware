@@ -46,6 +46,12 @@ jest.mock('./mes-factures.tsx', () => {
     };
 });
 
+jest.mock('./mes-prestations.tsx', () => {
+    return function MockMesPrestations() {
+        return <div>Mes Prestations</div>;
+    };
+});
+
 jest.mock('./mon-profil.tsx', () => {
     return function MockMonProfil() {
         return <div>Mon Profil</div>;
