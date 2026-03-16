@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Button, Card, Descriptions, Spin, Tag, message } from 'antd';
-import { ReloadOutlined } from '@ant-design/icons';
+import { Button, Card, Descriptions, Form, Input, Spin, Tag, message } from 'antd';
+import { LockOutlined, ReloadOutlined } from '@ant-design/icons';
 import axios from 'axios';
 
 interface Client {
@@ -31,6 +31,8 @@ const typeLabel: Record<string, string> = {
 export default function MonProfil({ clientId }: MonProfilProps) {
     const [client, setClient] = useState<Client | null>(null);
     const [loading, setLoading] = useState(false);
+    const [passwordForm] = Form.useForm();
+    const [changingPassword, setChangingPassword] = useState(false);
 
     const fetchProfile = () => {
         setLoading(true);
@@ -43,6 +45,23 @@ export default function MonProfil({ clientId }: MonProfilProps) {
     useEffect(() => {
         fetchProfile();
     }, [clientId]);
+
+    const handleChangePassword = async (values: { currentPassword: string; newPassword: string }) => {
+        setChangingPassword(true);
+        try {
+            await axios.post(`/portal/clients/${clientId}/change-password`, {
+                currentPassword: values.currentPassword,
+                newPassword: values.newPassword,
+            });
+            message.success('Mot de passe modifie avec succes');
+            passwordForm.resetFields();
+        } catch (err: any) {
+            const msg = err?.response?.data || 'Erreur lors du changement de mot de passe';
+            message.error(typeof msg === 'string' ? msg : 'Erreur lors du changement de mot de passe');
+        } finally {
+            setChangingPassword(false);
+        }
+    };
 
     return (
         <Card
@@ -71,6 +90,48 @@ export default function MonProfil({ clientId }: MonProfilProps) {
                     </Descriptions>
                 )}
             </Spin>
+            <Card title="Changer le mot de passe" style={{ marginTop: 16 }} size="small">
+                <Form
+                    form={passwordForm}
+                    layout="inline"
+                    onFinish={handleChangePassword}
+                >
+                    <Form.Item
+                        name="currentPassword"
+                        rules={[{ required: true, message: 'Requis' }]}
+                    >
+                        <Input.Password prefix={<LockOutlined />} placeholder="Mot de passe actuel" />
+                    </Form.Item>
+                    <Form.Item
+                        name="newPassword"
+                        rules={[{ required: true, message: 'Requis' }, { min: 4, message: 'Minimum 4 caracteres' }]}
+                    >
+                        <Input.Password prefix={<LockOutlined />} placeholder="Nouveau mot de passe" />
+                    </Form.Item>
+                    <Form.Item
+                        name="confirmPassword"
+                        dependencies={['newPassword']}
+                        rules={[
+                            { required: true, message: 'Requis' },
+                            ({ getFieldValue }) => ({
+                                validator(_, value) {
+                                    if (!value || getFieldValue('newPassword') === value) {
+                                        return Promise.resolve();
+                                    }
+                                    return Promise.reject(new Error('Les mots de passe ne correspondent pas'));
+                                },
+                            }),
+                        ]}
+                    >
+                        <Input.Password prefix={<LockOutlined />} placeholder="Confirmer le mot de passe" />
+                    </Form.Item>
+                    <Form.Item>
+                        <Button type="primary" htmlType="submit" loading={changingPassword}>
+                            Modifier
+                        </Button>
+                    </Form.Item>
+                </Form>
+            </Card>
         </Card>
     );
 }

@@ -3,6 +3,7 @@ package net.nanthrax.moussaillon.services;
 import java.util.List;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.transaction.Transactional;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
@@ -30,6 +31,11 @@ public class ClientPortalResource {
         public String password;
     }
 
+    public static class ChangePasswordRequest {
+        public String currentPassword;
+        public String newPassword;
+    }
+
     @POST
     @Path("/login")
     public ClientEntity login(LoginRequest request) {
@@ -48,6 +54,27 @@ public class ClientPortalResource {
             throw new WebApplicationException("Mot de passe invalide", Response.Status.UNAUTHORIZED);
         }
         return client;
+    }
+
+    @POST
+    @Path("/clients/{id}/change-password")
+    @Transactional
+    public Response changePassword(@PathParam("id") long id, ChangePasswordRequest request) {
+        if (request == null || request.currentPassword == null || request.newPassword == null) {
+            return Response.status(Response.Status.BAD_REQUEST).entity("Mot de passe actuel et nouveau mot de passe requis.").build();
+        }
+        if (request.newPassword.trim().isEmpty()) {
+            return Response.status(Response.Status.BAD_REQUEST).entity("Le nouveau mot de passe ne peut pas etre vide.").build();
+        }
+        ClientEntity client = ClientEntity.findById(id);
+        if (client == null) {
+            return Response.status(Response.Status.NOT_FOUND).entity("Client non trouve.").build();
+        }
+        if (client.motDePasse == null || !client.motDePasse.equals(request.currentPassword)) {
+            return Response.status(Response.Status.UNAUTHORIZED).entity("Mot de passe actuel invalide.").build();
+        }
+        client.motDePasse = request.newPassword;
+        return Response.noContent().build();
     }
 
     @GET

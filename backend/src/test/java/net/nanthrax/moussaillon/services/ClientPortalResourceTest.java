@@ -106,4 +106,63 @@ public class ClientPortalResourceTest {
             .then()
             .statusCode(200);
     }
+
+    @Test
+    void testChangerMotDePasse() {
+        given()
+            .contentType("application/json")
+            .body("{\"currentPassword\":\"client123\",\"newPassword\":\"newpass456\"}")
+            .when().post("/portal/clients/100/change-password")
+            .then()
+            .statusCode(204);
+
+        // verifier que le nouveau mot de passe fonctionne
+        given()
+            .contentType("application/json")
+            .body("{\"email\":\"jean.dupont@test.com\",\"password\":\"newpass456\"}")
+            .when().post("/portal/login")
+            .then()
+            .statusCode(200)
+            .body("nom", is("Dupont"));
+    }
+
+    @Test
+    void testChangerMotDePasseActuelIncorrect() {
+        given()
+            .contentType("application/json")
+            .body("{\"currentPassword\":\"wrong\",\"newPassword\":\"newpass\"}")
+            .when().post("/portal/clients/100/change-password")
+            .then()
+            .statusCode(401);
+    }
+
+    @Test
+    void testChangerMotDePasseNouveauVide() {
+        given()
+            .contentType("application/json")
+            .body("{\"currentPassword\":\"client123\",\"newPassword\":\"  \"}")
+            .when().post("/portal/clients/100/change-password")
+            .then()
+            .statusCode(400);
+    }
+
+    @Test
+    void testChangerMotDePasseClientNonTrouve() {
+        given()
+            .contentType("application/json")
+            .body("{\"currentPassword\":\"test\",\"newPassword\":\"newpass\"}")
+            .when().post("/portal/clients/9999/change-password")
+            .then()
+            .statusCode(404);
+    }
+
+    @Test
+    void testChangerMotDePasseRequeteVide() {
+        given()
+            .contentType("application/json")
+            .body("{}")
+            .when().post("/portal/clients/100/change-password")
+            .then()
+            .statusCode(400);
+    }
 }
