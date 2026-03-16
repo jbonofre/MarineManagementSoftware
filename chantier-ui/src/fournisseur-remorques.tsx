@@ -14,10 +14,14 @@ import {
   Row,
   Col,
   Spin,
+  Rate,
 } from "antd";
+
+const { TextArea } = Input;
 import {
   EditOutlined,
   DeleteOutlined,
+  PlusCircleOutlined,
   ShrinkOutlined,
 } from "@ant-design/icons";
 import axios from "axios";
@@ -74,6 +78,8 @@ const FournisseurRemorques = ({
   const [modalVisible, setModalVisible] = useState(false);
   const [editing, setEditing] = useState<Partial<FournisseurRemorque> | null>(null);
   const [form] = Form.useForm();
+  const [fournisseurModalVisible, setFournisseurModalVisible] = useState(false);
+  const [fournisseurForm] = Form.useForm();
 
   const isRemorqueMode = !!remorqueId;
   const isFournisseurMode = !!fournisseurId;
@@ -132,6 +138,21 @@ const FournisseurRemorques = ({
       }
     }
   }, [fournisseurId, remorqueId]);
+
+  const handleFournisseurAdd = async () => {
+    try {
+      const values = await fournisseurForm.validateFields();
+      const res = await axios.post("/catalogue/fournisseurs", values);
+      message.success("Fournisseur créé");
+      setFournisseurModalVisible(false);
+      fournisseurForm.resetFields();
+      await fetchFournisseurs();
+      form.setFieldsValue({ fournisseurId: res.data.id });
+    } catch (e: any) {
+      if (e.errorFields) return;
+      message.error("Erreur lors de la création du fournisseur");
+    }
+  };
 
   const handleNew = () => {
     setEditing({
@@ -322,26 +343,37 @@ const FournisseurRemorques = ({
           }}
         >
           {isRemorqueMode ? (
-            <Form.Item
-              label="Fournisseur"
-              name="fournisseurId"
-              rules={[{ required: true, message: "Sélectionnez un fournisseur" }]}
-            >
-              <Select
-                showSearch
-                placeholder="Choisissez un fournisseur"
-                optionFilterProp="children"
-                filterOption={(input, option: any) =>
-                  `${option.children}`.toLowerCase().includes(input.toLowerCase())
-                }
-                disabled={!!(editing && editing.id)}
-              >
-                {fournisseurs.map((f) => (
-                  <Option key={f.id} value={f.id}>
-                    {f.nom}
-                  </Option>
-                ))}
-              </Select>
+            <Form.Item label="Fournisseur" style={{ marginBottom: 0 }}>
+              <Space.Compact style={{ width: "100%" }}>
+                <Form.Item
+                  name="fournisseurId"
+                  rules={[{ required: true, message: "Sélectionnez un fournisseur" }]}
+                  style={{ flex: 1, marginBottom: 0 }}
+                >
+                  <Select
+                    showSearch
+                    placeholder="Choisissez un fournisseur"
+                    optionFilterProp="children"
+                    filterOption={(input, option: any) =>
+                      `${option.children}`.toLowerCase().includes(input.toLowerCase())
+                    }
+                    disabled={!!(editing && editing.id)}
+                  >
+                    {fournisseurs.map((f) => (
+                      <Option key={f.id} value={f.id}>
+                        {f.nom}
+                      </Option>
+                    ))}
+                  </Select>
+                </Form.Item>
+                <Button
+                  icon={<PlusCircleOutlined />}
+                  onClick={() => {
+                    fournisseurForm.resetFields();
+                    setFournisseurModalVisible(true);
+                  }}
+                />
+              </Space.Compact>
             </Form.Item>
           ) : (
             <Form.Item
@@ -423,6 +455,83 @@ const FournisseurRemorques = ({
           <Form.Item label="Notes" name="notes">
             <Input.TextArea rows={2} />
           </Form.Item>
+        </Form>
+      </Modal>
+
+      <Modal
+        open={fournisseurModalVisible}
+        title="Nouveau Fournisseur"
+        onCancel={() => setFournisseurModalVisible(false)}
+        onOk={handleFournisseurAdd}
+        okText="Ajouter"
+        cancelText="Annuler"
+        destroyOnHidden
+        width={1024}
+      >
+        <Form layout="vertical" form={fournisseurForm} initialValues={{ evaluation: 0 }}>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="Nom" name="nom" rules={[{ required: true, message: "Champ requis" }]}>
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="Évaluation" name="evaluation">
+                <Rate allowHalf />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="Image (URL)" name="image">
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="Email" name="email">
+                <Input type="email" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="Téléphone" name="telephone">
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="Connexion" name="connexion">
+                <Input />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Form.Item label="Adresse" name="adresse">
+            <TextArea rows={2} />
+          </Form.Item>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="SIREN" name="siren">
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="SIRET" name="siret">
+                <Input />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="TVA" name="tva">
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="NAF" name="naf">
+                <Input />
+              </Form.Item>
+            </Col>
+          </Row>
         </Form>
       </Modal>
     </Card>
