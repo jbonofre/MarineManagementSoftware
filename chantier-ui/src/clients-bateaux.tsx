@@ -138,6 +138,9 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
   const handleAdd = () => {
     setEditing(null);
     form.resetFields();
+    if (clientId) {
+      form.setFieldsValue({ proprietaires: [clientId] });
+    }
     setModalVisible(true);
   };
 
