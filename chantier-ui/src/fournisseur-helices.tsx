@@ -232,32 +232,30 @@ const FournisseurHelices = ({
       ? [
           {
             title: "Fournisseur",
-            dataIndex: ["fournisseur", "id"],
             key: "fournisseur",
-            sorter: (a, b) => (a.fournisseur.nom || "").localeCompare(b.fournisseur.nom || ""),
+            sorter: (a, b) => (a.fournisseur?.nom || "").localeCompare(b.fournisseur?.nom || ""),
             filters: fournisseurs.map((f) => ({ text: f.nom, value: f.id })),
-            onFilter: (value, record) => record.fournisseur.id === value,
-            render: (_: any, record: FournisseurHelice) => <span>{record.fournisseur.nom}</span>,
+            onFilter: (value, record) => record.fournisseur?.id === value,
+            render: (_: any, record: FournisseurHelice) => <span>{record.fournisseur?.nom || "-"}</span>,
           },
         ]
       : [
           {
             title: "Hélice",
-            dataIndex: ["helice", "id"],
             key: "helice",
             sorter: (a, b) => {
-              let marque = a.helice?.marque?.localeCompare(b.helice?.marque || "") || 0;
-              let modele = a.helice?.modele?.localeCompare(b.helice?.modele || "") || 0;
+              let marque = (a.helice?.marque || "").localeCompare(b.helice?.marque || "");
+              let modele = (a.helice?.modele || "").localeCompare(b.helice?.modele || "");
               return marque !== 0 ? marque : modele;
             },
             filters: helicesCatalogue.map((h) => ({
               text: `${h.marque} ${h.modele}`,
               value: h.id,
             })),
-            onFilter: (value, record) => record.helice.id === value,
+            onFilter: (value, record) => record.helice?.id === value,
             render: (_: any, record: FournisseurHelice) => (
               <span>
-                {record.helice.marque} {record.helice.modele}
+                {record.helice?.marque || "-"} {record.helice?.modele || ""}
               </span>
             ),
           },

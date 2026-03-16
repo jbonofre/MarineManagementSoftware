@@ -219,22 +219,20 @@ const FournisseurBateaux = ({ fournisseurId, bateauId }: { fournisseurId?: numbe
   const columns = [
     ...(isBateauMode ? [{
       title: "Fournisseur",
-      dataIndex: ["fournisseur", "id"],
       key: "fournisseur",
-      sorter: (a, b) => a.fournisseur.nom.localeCompare(b.fournisseur.nom),
+      sorter: (a, b) => (a.fournisseur?.nom || "").localeCompare(b.fournisseur?.nom || ""),
       filters: fournisseurs.map(f => ({ text: f.nom, value: f.id })),
-      onFilter: (value, record) => record.fournisseur.id === value,
+      onFilter: (value, record) => record.fournisseur?.id === value,
       render: (_: any, record: FournisseurBateau) =>
-        <span>{record.fournisseur.nom}</span>
+        <span>{record.fournisseur?.nom || "-"}</span>
     }] : [{
       title: "Bateau",
-      dataIndex: ["bateau", "id"],
       key: "bateau",
-      sorter: (a, b) => a.bateau.marque.localeCompare(b.bateau.marque) + a.bateau.modele.localeCompare(b.bateau.modele),
+      sorter: (a, b) => (a.bateau?.marque || "").localeCompare(b.bateau?.marque || "") || (a.bateau?.modele || "").localeCompare(b.bateau?.modele || ""),
       filters: bateauxCatalogue.map(b => ({ text: b.marque + " " + b.modele, value: b.id })),
-      onFilter: (value, record) => record.bateau.id === value,
+      onFilter: (value, record) => record.bateau?.id === value,
       render: (_: any, record: FournisseurBateau) =>
-        <span>{record.bateau.marque} {record.bateau.modele}</span>
+        <span>{record.bateau?.marque || "-"} {record.bateau?.modele || ""}</span>
     }]),
     { title: "Prix Achat HT", dataIndex: "prixAchatHT", key: "prixAchatHT", sorter: (a, b) => a.prixAchatHT - b.prixAchatHT },
     { title: "TVA (%)", dataIndex: "tva", key: "tva", sorter: (a, b) => a.tva - b.tva },

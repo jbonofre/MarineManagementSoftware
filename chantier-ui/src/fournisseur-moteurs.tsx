@@ -224,34 +224,32 @@ const FournisseurMoteurs = ({
       ? [
           {
             title: "Fournisseur",
-            dataIndex: ["fournisseur", "id"],
             key: "fournisseur",
             sorter: (a, b) =>
-              a.fournisseur.nom.localeCompare(b.fournisseur.nom),
+              (a.fournisseur?.nom || "").localeCompare(b.fournisseur?.nom || ""),
             filters: fournisseurs.map((f) => ({ text: f.nom, value: f.id })),
-            onFilter: (value, record) => record.fournisseur.id === value,
+            onFilter: (value, record) => record.fournisseur?.id === value,
             render: (_: any, record: FournisseurMoteur) => (
-              <span>{record.fournisseur.nom}</span>
+              <span>{record.fournisseur?.nom || "-"}</span>
             ),
           },
         ]
       : [
           {
             title: "Moteur",
-            dataIndex: ["moteur", "id"],
             key: "moteur",
             sorter: (a, b) =>
-              (a.moteur.marque + a.moteur.modele).localeCompare(
-                b.moteur.marque + b.moteur.modele
+              ((a.moteur?.marque || "") + (a.moteur?.modele || "")).localeCompare(
+                (b.moteur?.marque || "") + (b.moteur?.modele || "")
               ),
             filters: moteursCatalogue.map((m) => ({
               text: `${m.marque} ${m.modele}`,
               value: m.id,
             })),
-            onFilter: (value, record) => record.moteur.id === value,
+            onFilter: (value, record) => record.moteur?.id === value,
             render: (_: any, record: FournisseurMoteur) => (
               <span>
-                {record.moteur.marque} {record.moteur.modele}
+                {record.moteur?.marque || "-"} {record.moteur?.modele || ""}
               </span>
             ),
           },

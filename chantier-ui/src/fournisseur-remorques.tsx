@@ -221,32 +221,30 @@ const FournisseurRemorques = ({
       ? [
           {
             title: "Fournisseur",
-            dataIndex: ["fournisseur", "id"],
             key: "fournisseur",
             sorter: (a: FournisseurRemorque, b: FournisseurRemorque) =>
-              (a.fournisseur.nom || "").localeCompare(b.fournisseur.nom || ""),
+              (a.fournisseur?.nom || "").localeCompare(b.fournisseur?.nom || ""),
             filters: fournisseurs.map((f) => ({ text: f.nom, value: f.id })),
-            onFilter: (value: any, record: FournisseurRemorque) => record.fournisseur.id === value,
-            render: (_: any, record: FournisseurRemorque) => <span>{record.fournisseur.nom}</span>,
+            onFilter: (value: any, record: FournisseurRemorque) => record.fournisseur?.id === value,
+            render: (_: any, record: FournisseurRemorque) => <span>{record.fournisseur?.nom || "-"}</span>,
           },
         ]
       : [
           {
             title: "Remorque",
-            dataIndex: ["remorque", "id"],
             key: "remorque",
             sorter: (a: FournisseurRemorque, b: FournisseurRemorque) =>
-              (a.remorque.marque + " " + a.remorque.modele).localeCompare(
-                b.remorque.marque + " " + b.remorque.modele
+              ((a.remorque?.marque || "") + " " + (a.remorque?.modele || "")).localeCompare(
+                (b.remorque?.marque || "") + " " + (b.remorque?.modele || "")
               ),
             filters: remorquesCatalogue.map((r) => ({
               text: r.marque + " " + r.modele,
               value: r.id,
             })),
-            onFilter: (value: any, record: FournisseurRemorque) => record.remorque.id === value,
+            onFilter: (value: any, record: FournisseurRemorque) => record.remorque?.id === value,
             render: (_: any, record: FournisseurRemorque) => (
               <span>
-                {record.remorque.marque} {record.remorque.modele}
+                {record.remorque?.marque || "-"} {record.remorque?.modele || ""}
               </span>
             ),
           },

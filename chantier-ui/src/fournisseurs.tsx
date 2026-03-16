@@ -168,7 +168,7 @@ const Fournisseurs = () => {
   const columns = [
     {
       title: "Nom", dataIndex: "nom", key: "nom",
-      sorter: (a, b) => a.nom.localeCompare(b.nom),
+      sorter: (a, b) => (a.nom || "").localeCompare(b.nom || ""),
     },
     {
       title: "Évaluation",
@@ -178,8 +178,8 @@ const Fournisseurs = () => {
       width: 120,
       sorter: (a, b) => a.evaluation - b.evaluation,
     },
-    { title: "Email", dataIndex: "email", key: "email", sorter: (a, b) => a.email.localeCompare(b.email) },
-    { title: "Téléphone", dataIndex: "telephone", key: "telephone", sorter: (a, b) => a.telephone.localeCompare(b.telephone) },
+    { title: "Email", dataIndex: "email", key: "email", sorter: (a, b) => (a.email || "").localeCompare(b.email || "") },
+    { title: "Téléphone", dataIndex: "telephone", key: "telephone", sorter: (a, b) => (a.telephone || "").localeCompare(b.telephone || "") },
     {
       title: "Actions",
       key: "actions",

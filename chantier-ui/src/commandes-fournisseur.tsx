@@ -242,7 +242,7 @@ const CommandesFournisseur = ({ fournisseurId }: { fournisseurId?: number }) => 
     const ligne = { ...updated[index], [field]: value };
 
     if (field === "produitId") {
-      const fp = fournisseurProduits.find((fp) => fp.produit.id === value);
+      const fp = fournisseurProduits.find((fp) => fp.produit?.id === value);
       if (fp) {
         ligne.produit = fp.produit;
         ligne.prixUnitaireHT = fp.prixAchatHT;
@@ -304,8 +304,8 @@ const CommandesFournisseur = ({ fournisseurId }: { fournisseurId?: number }) => 
     ...(!fournisseurId
       ? [{
           title: "Fournisseur",
-          dataIndex: ["fournisseur", "nom"],
           key: "fournisseur",
+          render: (_: any, record: CommandeFournisseur) => record.fournisseur?.nom || "-",
           sorter: (a: any, b: any) => (a.fournisseur?.nom || "").localeCompare(b.fournisseur?.nom || ""),
         }]
       : []),
@@ -465,7 +465,7 @@ const CommandesFournisseur = ({ fournisseurId }: { fournisseurId?: number }) => 
                   onChange={(val) => handleLigneChange(index, "produitId", val)}
                   style={{ width: "100%" }}
                 >
-                  {fournisseurProduits.map((fp) => (
+                  {fournisseurProduits.filter((fp) => fp.produit).map((fp) => (
                     <Option key={fp.produit.id} value={fp.produit.id}>
                       {fp.produit.nom}{fp.produit.marque ? ` (${fp.produit.marque})` : ""}
                     </Option>

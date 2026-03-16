@@ -269,26 +269,24 @@ const FournisseurProduits = ({
       ? [
           {
             title: "Fournisseur",
-            dataIndex: ["fournisseur", "id"],
             key: "fournisseur",
-            sorter: (a, b) => a.fournisseur.nom.localeCompare(b.fournisseur.nom),
+            sorter: (a, b) => (a.fournisseur?.nom || "").localeCompare(b.fournisseur?.nom || ""),
             filters: fournisseurs.map((f) => ({ text: f.nom, value: f.id })),
-            onFilter: (value, record) => record.fournisseur.id === value,
-            render: (_: any, record: FournisseurProduit) => <span>{record.fournisseur.nom}</span>,
+            onFilter: (value, record) => record.fournisseur?.id === value,
+            render: (_: any, record: FournisseurProduit) => <span>{record.fournisseur?.nom || "-"}</span>,
           },
         ]
       : [
           {
             title: "Produit",
-            dataIndex: ["produit", "id"],
             key: "produit",
-            sorter: (a, b) => a.produit.nom.localeCompare(b.produit.nom),
+            sorter: (a, b) => (a.produit?.nom || "").localeCompare(b.produit?.nom || ""),
             filters: produits.map((p) => ({ text: p.nom, value: p.id })),
-            onFilter: (value, record) => record.produit.id === value,
+            onFilter: (value, record) => record.produit?.id === value,
             render: (_: any, record: FournisseurProduit) => (
               <span>
-                {record.produit.nom}
-                {record.produit.marque ? ` (${record.produit.marque})` : ""}
+                {record.produit?.nom || "-"}
+                {record.produit?.marque ? ` (${record.produit.marque})` : ""}
               </span>
             ),
           },
