@@ -28,6 +28,7 @@ import {
 import axios from "axios";
 import dayjs from "dayjs";
 import clients from "./clients";
+import LocationPicker from "./LocationPicker.tsx";
 
 const { Option } = Select;
 const { Search } = Input;
@@ -382,7 +383,7 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
             </Col>
           </Row>
           <Form.Item label="Localisation GPS" name="localisationGps">
-            <Input />
+            <LocationPicker />
           </Form.Item>
           <Form.Item label="Images" name="images">
             <Form.List name="images">
