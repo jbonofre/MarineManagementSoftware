@@ -148,6 +148,11 @@ const CatalogueProduits: React.FC = () => {
     // Columns
     const columns = [
         {
+            title: 'Marque',
+            dataIndex: 'marque',
+            sorter: (a: ProduitCatalogueEntity, b: ProduitCatalogueEntity) => (a.marque || '').localeCompare(b.marque || ''),
+        },
+        {
             title: 'Nom',
             dataIndex: 'nom',
             render: (_: string, record: ProduitCatalogueEntity) => (
@@ -159,11 +164,6 @@ const CatalogueProduits: React.FC = () => {
                 </Space>
             ),
             sorter: (a: ProduitCatalogueEntity, b: ProduitCatalogueEntity) => a.nom.localeCompare(b.nom),
-        },
-        {
-            title: 'Marque',
-            dataIndex: 'marque',
-            sorter: (a: ProduitCatalogueEntity, b: ProduitCatalogueEntity) => (a.marque || '').localeCompare(b.marque || ''),
         },
         {
             title: 'Catégorie',
@@ -291,20 +291,20 @@ const CatalogueProduits: React.FC = () => {
                             >
                                 <Row gutter={16}>
                                     <Col span={12}>
-                                        <Form.Item name="nom" label="Nom" rules={[{ required: true, message: "Le nom est requis" }]}>
-                                            <Input />
+                                        <Form.Item name="marque" label="Marque">
+                                            <AutoComplete allowClear options={marqueOptions} placeholder="Saisir/select. une marque" />
                                         </Form.Item>
                                     </Col>
                                     <Col span={12}>
-                                        <Form.Item name="categorie" label="Catégorie" rules={[{ required: true, message: "La catégorie est requise" }]}>
-                                            <Select options={CATEGORIES} placeholder="Choisir une catégorie" />
+                                        <Form.Item name="nom" label="Nom" rules={[{ required: true, message: "Le nom est requis" }]}>
+                                            <Input />
                                         </Form.Item>
                                     </Col>
                                 </Row>
                                 <Row gutter={16}>
                                     <Col span={12}>
-                                        <Form.Item name="marque" label="Marque">
-                                            <AutoComplete allowClear options={marqueOptions} placeholder="Saisir/select. une marque" />
+                                        <Form.Item name="categorie" label="Catégorie" rules={[{ required: true, message: "La catégorie est requise" }]}>
+                                            <Select options={CATEGORIES} placeholder="Choisir une catégorie" />
                                         </Form.Item>
                                     </Col>
                                     <Col span={12}>

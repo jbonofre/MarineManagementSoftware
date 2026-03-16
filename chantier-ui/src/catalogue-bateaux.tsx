@@ -156,6 +156,11 @@ const CatalogueBateaux: React.FC = () => {
 
     const columns = [
         {
+            title: 'Marque',
+            dataIndex: 'marque',
+            sorter: (a,b) => a.marque.localeCompare(b.marque),
+        },
+        {
             title: 'Modèle',
             dataIndex: 'modele',
             render: (_,record) => (
@@ -165,11 +170,6 @@ const CatalogueBateaux: React.FC = () => {
                 </Space>
             ),
             sorter: (a,b) => a.modele.localeCompare(b.modele),
-        },
-        {
-            title: 'Marque',
-            dataIndex: 'marque',
-            sorter: (a,b) => a.marque.localeCompare(b.marque),
         },
         {
             title: 'Type',
@@ -291,17 +291,17 @@ const CatalogueBateaux: React.FC = () => {
                         >
                             <Row gutter={16}>
                                 <Col span={12}>
-                                    <Form.Item name="modele" label="Modèle" rules={[{ required: true }]}>
-                                        <Input />
-                                    </Form.Item>
-                                </Col>
-                                <Col span={12}>
                                     <Form.Item name="marque" label="Marque" rules={[{ required: true }]}>
                                         <AutoComplete
                                             allowClear
                                             options={marqueOptions}
                                             placeholder="Saisir ou sélectionner une marque"
                                         />
+                                    </Form.Item>
+                                </Col>
+                                <Col span={12}>
+                                    <Form.Item name="modele" label="Modèle" rules={[{ required: true }]}>
+                                        <Input />
                                     </Form.Item>
                                 </Col>
                             </Row>

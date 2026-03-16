@@ -213,6 +213,11 @@ const MoteurCatalogue = () => {
 
   const columns = [
     {
+      title: 'Marque',
+      dataIndex: 'marque',
+      sorter: (a, b) => a.marque.localeCompare(b.marque),
+    },
+    {
       title: 'Modèle',
       dataIndex: 'modele',
       render: (_: any, record: any) => (
@@ -222,11 +227,6 @@ const MoteurCatalogue = () => {
         </Space>
       ),
       sorter: (a, b) => a.modele.localeCompare(b.modele),
-    },
-    {
-      title: 'Marque',
-      dataIndex: 'marque',
-      sorter: (a, b) => a.marque.localeCompare(b.marque),
     },
     {
       title: 'Type',
@@ -354,11 +354,6 @@ const MoteurCatalogue = () => {
             >
               <Row gutter={16}>
                 <Col span={12}>
-                  <Form.Item name="modele" label="Modèle" rules={[{ required: true }]}>
-                    <Input />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
                   <Form.Item name="marque" label="Marque" rules={[{ required: true }]}>
                     <AutoComplete
                       allowClear
@@ -369,6 +364,11 @@ const MoteurCatalogue = () => {
                       }
                       placeholder="Saisir ou sélectionner une marque"
                     />
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item name="modele" label="Modèle" rules={[{ required: true }]}>
+                    <Input />
                   </Form.Item>
                 </Col>
               </Row>

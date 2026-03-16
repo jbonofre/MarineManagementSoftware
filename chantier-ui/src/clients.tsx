@@ -183,8 +183,8 @@ function Clients() {
   };
 
   const columns = [
-    { title: "Nom", dataIndex: "nom", key: "nom", sorter: (a, b) => a.nom.localeCompare(b.nom) },
     { title: "Prénom", dataIndex: "prenom", key: "prenom", sorter: (a, b) => a.prenom?.localeCompare(b.prenom || "") },
+    { title: "Nom", dataIndex: "nom", key: "nom", sorter: (a, b) => a.nom.localeCompare(b.nom) },
     {
       title: "Type",
       dataIndex: "type",
@@ -291,6 +291,19 @@ function Clients() {
                 </Select>
               </Form.Item>
             </Col>
+          </Row>
+          <Row gutter={16}>
+            <Form.Item noStyle shouldUpdate={(prev, cur) => prev.type !== cur.type}>
+              {({ getFieldValue }) =>
+                getFieldValue("type") === "PARTICULIER" && (
+                  <Col span={12}>
+                    <Form.Item label="Prénom" name="prenom">
+                      <Input />
+                    </Form.Item>
+                  </Col>
+                )
+              }
+            </Form.Item>
             <Col span={12}>
               <Form.Item label="Nom" name="nom" rules={[{ required: true, message: "Le nom est requis" }]}>
                 <Input />
@@ -298,11 +311,6 @@ function Clients() {
             </Col>
           </Row>
           <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item label="Prénom" name="prenom">
-                <Input />
-              </Form.Item>
-            </Col>
             <Col span={12}>
               <Form.Item label="Email" name="email">
                 <Input />
@@ -334,30 +342,38 @@ function Clients() {
           <Form.Item label="Adresse" name="adresse">
             <Input.TextArea autoSize={{ minRows: 3, maxRows: 6 }} />
           </Form.Item>
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item label="SIREN" name="siren">
-                <Input />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item label="SIRET" name="siret">
-                <Input />
-              </Form.Item>
-            </Col>
-          </Row>
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item label="TVA" name="tva">
-                <Input />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item label="NAF" name="naf">
-                <Input />
-              </Form.Item>
-            </Col>
-          </Row>
+          <Form.Item noStyle shouldUpdate={(prev, cur) => prev.type !== cur.type}>
+            {({ getFieldValue }) =>
+              getFieldValue("type") !== "PARTICULIER" && (
+                <>
+                  <Row gutter={16}>
+                    <Col span={12}>
+                      <Form.Item label="SIREN" name="siren">
+                        <Input />
+                      </Form.Item>
+                    </Col>
+                    <Col span={12}>
+                      <Form.Item label="SIRET" name="siret">
+                        <Input />
+                      </Form.Item>
+                    </Col>
+                  </Row>
+                  <Row gutter={16}>
+                    <Col span={12}>
+                      <Form.Item label="TVA" name="tva">
+                        <Input />
+                      </Form.Item>
+                    </Col>
+                    <Col span={12}>
+                      <Form.Item label="NAF" name="naf">
+                        <Input />
+                      </Form.Item>
+                    </Col>
+                  </Row>
+                </>
+              )
+            }
+          </Form.Item>
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item label="Remise (%)" name="remise" initialValue={0}>

@@ -230,8 +230,8 @@ const RemorqueCatalogue: React.FC = () => {
   };
 
   const columns = [
-    { title: "Modèle", dataIndex: "modele", key: "modele" },
     { title: "Marque", dataIndex: "marque", key: "marque" },
+    { title: "Modèle", dataIndex: "modele", key: "modele" },
     {
       title: "Évaluation",
       dataIndex: "evaluation",
@@ -320,8 +320,8 @@ const RemorqueCatalogue: React.FC = () => {
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item
-                name="modele"
-                label="Modèle"
+                name="marque"
+                label="Marque"
                 rules={[{ required: true, message: "Champ requis" }]}
               >
                 <Input />
@@ -329,8 +329,8 @@ const RemorqueCatalogue: React.FC = () => {
             </Col>
             <Col span={12}>
               <Form.Item
-                name="marque"
-                label="Marque"
+                name="modele"
+                label="Modèle"
                 rules={[{ required: true, message: "Champ requis" }]}
               >
                 <Input />

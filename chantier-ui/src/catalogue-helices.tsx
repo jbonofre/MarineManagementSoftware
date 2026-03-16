@@ -267,6 +267,9 @@ const HeliceCatalogueView: React.FC = () => {
     };
 
     const columns = [
+        { title: 'Marque', dataIndex: 'marque', key: 'marque',
+            sorter: (a, b) => a.marque.localeCompare(b.marque),
+        },
         { title: 'Modèle', dataIndex: 'modele', key: 'modele',
             render: (_, record) => (
                 <Space>
@@ -276,9 +279,6 @@ const HeliceCatalogueView: React.FC = () => {
             ),
             sorter: (a, b) => a.modele.localeCompare(b.modele),
          },
-        { title: 'Marque', dataIndex: 'marque', key: 'marque',
-            sorter: (a, b) => a.marque.localeCompare(b.marque),
-        },
         { title: 'Évaluation', dataIndex: 'evaluation', key: 'evaluation',
             render: (_, record) => (
                 <Rate defaultValue={record.evaluation} disabled={true} />
@@ -377,8 +377,8 @@ const HeliceCatalogueView: React.FC = () => {
                             <Row gutter={16}>
                                 <Col span={12}>
                                     <Form.Item
-                                        name="modele"
-                                        label="Modèle"
+                                        name="marque"
+                                        label="Marque"
                                         rules={[{ required: true, message: "Champ obligatoire" }]}
                                     >
                                         <Input />
@@ -386,8 +386,8 @@ const HeliceCatalogueView: React.FC = () => {
                                 </Col>
                                 <Col span={12}>
                                     <Form.Item
-                                        name="marque"
-                                        label="Marque"
+                                        name="modele"
+                                        label="Modèle"
                                         rules={[{ required: true, message: "Champ obligatoire" }]}
                                     >
                                         <Input />
