@@ -1,0 +1,61 @@
+version: 2
+updates:
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
+  # Maven (backend)
+  - package-ecosystem: "maven"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
+  # npm - chantier-ui
+  - package-ecosystem: "npm"
+    directory: "/chantier-ui"
+    schedule:
+      interval: "weekly"
+
+  # npm - client-ui
+  - package-ecosystem: "npm"
+    directory: "/client-ui"
+    schedule:
+      interval: "weekly"
+
+  # npm - technicien-ui
+  - package-ecosystem: "npm"
+    directory: "/technicien-ui"
+    schedule:
+      interval: "weekly"
+
+  # Docker - backend
+  - package-ecosystem: "docker"
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
+
+  # Docker - chantier-ui
+  - package-ecosystem: "docker"
+    directory: "/chantier-ui"
+    schedule:
+      interval: "weekly"
+
+  # Docker - client-ui
+  - package-ecosystem: "docker"
+    directory: "/client-ui"
+    schedule:
+      interval: "weekly"
+
+  # Docker - technicien-ui
+  - package-ecosystem: "docker"
+    directory: "/technicien-ui"
+    schedule:
+      interval: "weekly"
+
+  # Helm
+  - package-ecosystem: "helm"
+    directory: "/helm/moussaillon"
+    schedule:
+      interval: "weekly"
