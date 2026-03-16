@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Space, Table, Button, Input, Form, Modal, Card, Row, Col, Popconfirm, message } from 'antd';
-import { PlusCircleOutlined, EditOutlined, DeleteOutlined, UserOutlined } from '@ant-design/icons';
+import { Space, Table, Button, Input, Form, Modal, Card, Row, Col, Popconfirm, message, Drawer, Statistic, Progress, Divider, Spin } from 'antd';
+import { PlusCircleOutlined, EditOutlined, DeleteOutlined, UserOutlined, BarChartOutlined, CheckCircleOutlined, ClockCircleOutlined, ExclamationCircleOutlined, WarningOutlined } from '@ant-design/icons';
 import axios from 'axios';
 
 // --- Types ---
@@ -13,6 +13,24 @@ interface TechnicienEntity {
     email: string;
     telephone?: string;
     couleur?: string;
+}
+
+interface TechnicienKpi {
+    totalTaches: number;
+    tachesTerminees: number;
+    tachesEnCours: number;
+    tachesEnAttente: number;
+    tachesIncident: number;
+    tachesAnnulees: number;
+    tauxCompletion: number;
+    tauxIncident: number;
+    heuresEstimees: number;
+    heuresReelles: number;
+    efficacite: number;
+    tachesMois: number;
+    tachesTermineesMois: number;
+    heuresReellesMois: number;
+    retards48h: number;
 }
 
 interface TechnicienFormValues {
@@ -42,6 +60,10 @@ const Techniciens: React.FC = () => {
     const [currentTechnicien, setCurrentTechnicien] = useState<TechnicienEntity | null>(null);
     const [form] = Form.useForm();
     const [searchQuery, setSearchQuery] = useState<string>('');
+    const [kpiDrawerVisible, setKpiDrawerVisible] = useState<boolean>(false);
+    const [kpiLoading, setKpiLoading] = useState<boolean>(false);
+    const [kpiData, setKpiData] = useState<TechnicienKpi | null>(null);
+    const [kpiTechnicien, setKpiTechnicien] = useState<TechnicienEntity | null>(null);
 
     // Get all techniciens
     const fetchTechniciens = async (query: string = '') => {
@@ -119,6 +141,19 @@ const Techniciens: React.FC = () => {
         fetchTechniciens(value);
     };
 
+    const openKpiDrawer = async (technicien: TechnicienEntity) => {
+        setKpiTechnicien(technicien);
+        setKpiDrawerVisible(true);
+        setKpiLoading(true);
+        try {
+            const res = await axios.get(`/techniciens/${technicien.id}/kpi`);
+            setKpiData(res.data);
+        } catch {
+            message.error('Erreur lors du chargement des KPI.');
+        }
+        setKpiLoading(false);
+    };
+
     // Columns
     const columns = [
         {
@@ -180,6 +215,7 @@ const Techniciens: React.FC = () => {
             key: 'actions',
             render: (_: any, record: TechnicienEntity) => (
                 <Space>
+                    <Button onClick={() => openKpiDrawer(record)} icon={<BarChartOutlined/>} title="KPI" />
                     <Button onClick={() => openModal(record)} icon={<EditOutlined/>} />
                     <Popconfirm
                         title="Supprimer ce technicien ?"
@@ -312,6 +348,90 @@ const Techniciens: React.FC = () => {
                     </Col>
                 </Row>
             </Card>
+            <Drawer
+                title={kpiTechnicien ? `KPI — ${kpiTechnicien.prenom} ${kpiTechnicien.nom}` : 'KPI'}
+                open={kpiDrawerVisible}
+                onClose={() => { setKpiDrawerVisible(false); setKpiData(null); }}
+                width={520}
+            >
+                {kpiLoading ? (
+                    <div style={{ textAlign: 'center', padding: 40 }}><Spin size="large" /></div>
+                ) : kpiData ? (
+                    <>
+                        <Divider orientation="left">Vue globale</Divider>
+                        <Row gutter={[16, 16]}>
+                            <Col span={8}>
+                                <Statistic title="Total tâches" value={kpiData.totalTaches} />
+                            </Col>
+                            <Col span={8}>
+                                <Statistic title="Terminées" value={kpiData.tachesTerminees} valueStyle={{ color: '#52c41a' }} prefix={<CheckCircleOutlined />} />
+                            </Col>
+                            <Col span={8}>
+                                <Statistic title="En cours" value={kpiData.tachesEnCours} valueStyle={{ color: '#1677ff' }} prefix={<ClockCircleOutlined />} />
+                            </Col>
+                        </Row>
+                        <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+                            <Col span={8}>
+                                <Statistic title="En attente" value={kpiData.tachesEnAttente} />
+                            </Col>
+                            <Col span={8}>
+                                <Statistic title="Incidents" value={kpiData.tachesIncident} valueStyle={{ color: '#ff4d4f' }} prefix={<ExclamationCircleOutlined />} />
+                            </Col>
+                            <Col span={8}>
+                                <Statistic title="Annulées" value={kpiData.tachesAnnulees} valueStyle={{ color: '#999' }} />
+                            </Col>
+                        </Row>
+
+                        <Divider orientation="left">Taux</Divider>
+                        <Row gutter={[16, 16]}>
+                            <Col span={8}>
+                                <div style={{ textAlign: 'center' }}>
+                                    <Progress type="circle" percent={kpiData.tauxCompletion} size={80} strokeColor="#52c41a" />
+                                    <div style={{ marginTop: 8 }}>Complétion</div>
+                                </div>
+                            </Col>
+                            <Col span={8}>
+                                <div style={{ textAlign: 'center' }}>
+                                    <Progress type="circle" percent={kpiData.tauxIncident} size={80} strokeColor="#ff4d4f" />
+                                    <div style={{ marginTop: 8 }}>Incidents</div>
+                                </div>
+                            </Col>
+                            <Col span={8}>
+                                <div style={{ textAlign: 'center' }}>
+                                    <Progress type="circle" percent={kpiData.efficacite} size={80} strokeColor={kpiData.efficacite <= 100 ? '#52c41a' : '#faad14'} />
+                                    <div style={{ marginTop: 8 }}>Efficacité</div>
+                                </div>
+                            </Col>
+                        </Row>
+
+                        <Divider orientation="left">Heures</Divider>
+                        <Row gutter={[16, 16]}>
+                            <Col span={8}>
+                                <Statistic title="Estimées" value={kpiData.heuresEstimees} suffix="h" precision={1} />
+                            </Col>
+                            <Col span={8}>
+                                <Statistic title="Réelles" value={kpiData.heuresReelles} suffix="h" precision={1} />
+                            </Col>
+                            <Col span={8}>
+                                <Statistic title="Retards > 48h" value={kpiData.retards48h} valueStyle={kpiData.retards48h > 0 ? { color: '#ff4d4f' } : {}} prefix={kpiData.retards48h > 0 ? <WarningOutlined /> : undefined} />
+                            </Col>
+                        </Row>
+
+                        <Divider orientation="left">Ce mois</Divider>
+                        <Row gutter={[16, 16]}>
+                            <Col span={8}>
+                                <Statistic title="Tâches" value={kpiData.tachesMois} />
+                            </Col>
+                            <Col span={8}>
+                                <Statistic title="Terminées" value={kpiData.tachesTermineesMois} valueStyle={{ color: '#52c41a' }} />
+                            </Col>
+                            <Col span={8}>
+                                <Statistic title="Heures réelles" value={kpiData.heuresReellesMois} suffix="h" precision={1} />
+                            </Col>
+                        </Row>
+                    </>
+                ) : null}
+            </Drawer>
         </>
     );
 };
