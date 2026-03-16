@@ -19,6 +19,7 @@ import {
     CheckCircleOutlined,
     ClockCircleOutlined,
     ExclamationCircleOutlined,
+    KeyOutlined,
     LogoutOutlined,
     ReloadOutlined,
     ScheduleOutlined,
@@ -58,6 +59,7 @@ interface TaskWithVente {
 interface MobileAppProps {
     user: Technicien;
     onLogout: () => void;
+    onChangePassword: () => void;
 }
 
 type Tab = 'today' | 'all' | 'incidents';
@@ -91,7 +93,7 @@ const formatDate = (value?: string) => {
     return parsed.toLocaleDateString('fr-FR');
 };
 
-export default function MobileApp({ user, onLogout }: MobileAppProps) {
+export default function MobileApp({ user, onLogout, onChangePassword }: MobileAppProps) {
     const [tasks, setTasks] = useState<TaskWithVente[]>([]);
     const [loading, setLoading] = useState(false);
     const [tab, setTab] = useState<Tab>('today');
@@ -215,7 +217,10 @@ export default function MobileApp({ user, onLogout }: MobileAppProps) {
             {/* Header */}
             <div style={{ background: '#001529', color: '#fff', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontWeight: 'bold' }}><UserOutlined /> {technicienName}</span>
-                <Button size="small" icon={<LogoutOutlined />} onClick={onLogout} ghost>Quitter</Button>
+                <span>
+                    <Button size="small" icon={<KeyOutlined />} onClick={onChangePassword} ghost style={{ marginRight: 8 }} />
+                    <Button size="small" icon={<LogoutOutlined />} onClick={onLogout} ghost>Quitter</Button>
+                </span>
             </div>
 
             {/* Summary */}
