@@ -16,6 +16,7 @@ import {
   Row,
   Col,
   DatePicker,
+  Checkbox,
 } from "antd";
 import {
   PlusCircleOutlined,
@@ -66,6 +67,8 @@ function RemorquesClients({ clientId }: RemorquesClientsProps) {
   const [form] = Form.useForm();
   const [catalogueModalVisible, setCatalogueModalVisible] = useState(false);
   const [catalogueForm] = Form.useForm();
+  const [clientModalVisible, setClientModalVisible] = useState(false);
+  const [clientForm] = Form.useForm();
 
   const fetchRemorques = async (q = "") => {
     setLoading(true);
@@ -149,6 +152,22 @@ function RemorquesClients({ clientId }: RemorquesClientsProps) {
       message.error("Erreur lors de la suppression");
     }
     setLoading(false);
+  };
+
+  const handleClientAdd = async () => {
+    try {
+      const values = await clientForm.validateFields();
+      const res = await axios.post("/clients", values);
+      message.success("Client ajouté");
+      setClientModalVisible(false);
+      clientForm.resetFields();
+      await fetchClients();
+      form.setFieldsValue({ proprietaireId: res.data.id });
+    } catch (e: any) {
+      if (e && e.response) {
+        message.error("Erreur lors de l'ajout du client");
+      }
+    }
   };
 
   const handleCatalogueAdd = async () => {
@@ -375,22 +394,34 @@ function RemorquesClients({ clientId }: RemorquesClientsProps) {
               />
             </Space.Compact>
           </Form.Item>
-          <Form.Item label="Propriétaire" name="proprietaireId">
-            <Select
-              showSearch
-              placeholder="Choisir le propriétaire"
-              optionFilterProp="children"
-              filterOption={(input, option) =>
-                (option as any)?.children?.toLowerCase().includes(input.toLowerCase())
-              }
-              allowClear
-            >
-              {clients.map((client: any) => (
-                <Select.Option key={client.id} value={client.id}>
-                  {client.prenom} {client.nom}
-                </Select.Option>
-              ))}
-            </Select>
+          <Form.Item label="Propriétaire" style={{ marginBottom: 0 }}>
+            <Space.Compact style={{ width: "100%" }}>
+              <Form.Item name="proprietaireId" noStyle>
+                <Select
+                  showSearch
+                  placeholder="Choisir le propriétaire"
+                  optionFilterProp="children"
+                  filterOption={(input, option) =>
+                    (option as any)?.children?.toLowerCase().includes(input.toLowerCase())
+                  }
+                  allowClear
+                  style={{ width: "100%" }}
+                >
+                  {clients.map((client: any) => (
+                    <Select.Option key={client.id} value={client.id}>
+                      {client.prenom} {client.nom}
+                    </Select.Option>
+                  ))}
+                </Select>
+              </Form.Item>
+              <Button
+                icon={<PlusCircleOutlined />}
+                onClick={() => {
+                  clientForm.resetFields();
+                  setClientModalVisible(true);
+                }}
+              />
+            </Space.Compact>
           </Form.Item>
         </Form>
       </Modal>
@@ -580,6 +611,115 @@ function RemorquesClients({ clientId }: RemorquesClientsProps) {
               </Form.Item>
             </Col>
           </Row>
+        </Form>
+      </Modal>
+      <Modal
+        open={clientModalVisible}
+        title="Ajouter un client"
+        onCancel={() => setClientModalVisible(false)}
+        onOk={handleClientAdd}
+        okText="Ajouter"
+        cancelText="Annuler"
+        destroyOnHidden
+        width={1024}
+      >
+        <Form layout="vertical" form={clientForm} initialValues={{ type: "PARTICULIER", consentement: false, remise: 0 }}>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="Type" name="type" rules={[{ required: true }]}>
+                <Select>
+                  <Select.Option value="PARTICULIER">Particulier</Select.Option>
+                  <Select.Option value="PROFESSIONNEL">Professionnel</Select.Option>
+                  <Select.Option value="PROFESSIONNEL_MER">Professionnel de la Mer</Select.Option>
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Form.Item noStyle shouldUpdate={(prev, cur) => prev.type !== cur.type}>
+              {({ getFieldValue }) =>
+                getFieldValue("type") === "PARTICULIER" && (
+                  <Col span={12}>
+                    <Form.Item label="Prénom" name="prenom">
+                      <Input />
+                    </Form.Item>
+                  </Col>
+                )
+              }
+            </Form.Item>
+            <Col span={12}>
+              <Form.Item label="Nom" name="nom" rules={[{ required: true, message: "Le nom est requis" }]}>
+                <Input />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="Email" name="email">
+                <Input />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="consentement" valuePropName="checked">
+                <Checkbox>Consentement</Checkbox>
+              </Form.Item>
+            </Col>
+          </Row>
+          <Form.Item label="Téléphone" name="telephone">
+            <Input style={{ width: "50%" }} />
+          </Form.Item>
+          <Form.Item label="Adresse" name="adresse">
+            <Input.TextArea autoSize={{ minRows: 3, maxRows: 6 }} />
+          </Form.Item>
+          <Form.Item noStyle shouldUpdate={(prev, cur) => prev.type !== cur.type}>
+            {({ getFieldValue }) =>
+              getFieldValue("type") !== "PARTICULIER" && (
+                <>
+                  <Row gutter={16}>
+                    <Col span={12}>
+                      <Form.Item label="SIREN" name="siren">
+                        <Input />
+                      </Form.Item>
+                    </Col>
+                    <Col span={12}>
+                      <Form.Item label="SIRET" name="siret">
+                        <Input />
+                      </Form.Item>
+                    </Col>
+                  </Row>
+                  <Row gutter={16}>
+                    <Col span={12}>
+                      <Form.Item label="TVA" name="tva">
+                        <Input />
+                      </Form.Item>
+                    </Col>
+                    <Col span={12}>
+                      <Form.Item label="NAF" name="naf">
+                        <Input />
+                      </Form.Item>
+                    </Col>
+                  </Row>
+                </>
+              )
+            }
+          </Form.Item>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="Remise (%)" name="remise">
+                <Input type="number" min={0} max={100} />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="Évaluation" name="evaluation">
+                <Rate allowClear />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Form.Item label="Notes" name="notes">
+            <Input.TextArea rows={3} />
+          </Form.Item>
         </Form>
       </Modal>
     </Card>
