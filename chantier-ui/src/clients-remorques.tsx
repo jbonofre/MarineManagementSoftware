@@ -46,8 +46,8 @@ interface RemorqueClient {
 const defaultRemorque: RemorqueClient = {
   images: [],
   immatriculation: "",
-  dateMeS: null,
-  dateAchat: null,
+  dateMeS: dayjs(),
+  dateAchat: dayjs(),
   dateFinDeGuarantie: null,
   proprietaire: null,
   modele: null,
