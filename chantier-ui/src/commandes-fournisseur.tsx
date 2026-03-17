@@ -13,7 +13,7 @@ import {
   Card,
   Row,
   Col,
-  Spin,
+
   Tag,
   DatePicker,
   Divider,
@@ -25,12 +25,13 @@ import {
   PlusCircleOutlined,
   PlusOutlined,
   MinusCircleOutlined,
+  SearchOutlined,
 } from "@ant-design/icons";
 import axios from "axios";
 import dayjs from "dayjs";
 
 const { Option } = Select;
-const { TextArea } = Input;
+const { TextArea, Search } = Input;
 
 type Fournisseur = {
   id: number;
@@ -193,6 +194,20 @@ const CommandesFournisseur = ({ fournisseurId }: { fournisseurId?: number }) => 
     setLignes([]);
     setFournisseurProduits([]);
     fetchFournisseurProduits(fId);
+  };
+
+  const handleSearch = async (value: string) => {
+    setLoading(true);
+    try {
+      const params: any = { q: value };
+      if (fournisseurId) params.fournisseurId = fournisseurId;
+      const { data } = await axios.get("/commandes-fournisseur/search", { params });
+      setCommandes(data);
+    } catch {
+      message.error("Erreur lors de la recherche");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleNew = () => {
@@ -375,22 +390,30 @@ const CommandesFournisseur = ({ fournisseurId }: { fournisseurId?: number }) => 
   return (
     <Card
       title="Commandes Fournisseur"
-      extra={
-        <Button type="primary" icon={<PlusCircleOutlined />} onClick={handleNew}>
-          Nouvelle commande
-        </Button>
-      }
       style={fournisseurId ? { marginTop: 24 } : undefined}
     >
-      <Spin spinning={loading}>
-        <Table
-          rowKey="id"
-          columns={columns}
-          dataSource={commandes}
-          bordered
-          pagination={{ pageSize: 10 }}
-        />
-      </Spin>
+      <Row gutter={[16, 16]}>
+        <Col span={24}>
+          <div style={{ paddingBottom: 16 }}>
+            <Space>
+              <Search allowClear placeholder="Rechercher" enterButton={<SearchOutlined />} style={{ width: 600 }} onSearch={handleSearch} />
+              <Button type="primary" icon={<PlusCircleOutlined />} onClick={handleNew} />
+            </Space>
+          </div>
+        </Col>
+      </Row>
+      <Row gutter={[16, 16]}>
+        <Col span={24}>
+          <Table
+            rowKey="id"
+            columns={columns}
+            dataSource={commandes}
+            loading={loading}
+            bordered
+            pagination={{ pageSize: 10 }}
+          />
+        </Col>
+      </Row>
 
       <Modal
         open={modalVisible}
