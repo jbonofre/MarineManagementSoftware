@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom';
 
@@ -12,6 +12,19 @@ jest.mock('axios', () => ({
         post: (...args: any[]) => mockPost(...args),
     },
 }));
+
+const mockMessageError = jest.fn();
+jest.mock('antd', () => {
+    const actual = jest.requireActual('antd');
+    return {
+        ...actual,
+        message: {
+            ...actual.message,
+            error: (...args: any[]) => mockMessageError(...args),
+            success: actual.message.success,
+        },
+    };
+});
 
 import MonProfil from './mon-profil.tsx';
 
@@ -27,6 +40,7 @@ const mockClient = {
 
 beforeEach(() => {
     mockGet.mockResolvedValue({ data: mockClient });
+    mockMessageError.mockClear();
 });
 
 describe('MonProfil', () => {
@@ -88,7 +102,7 @@ describe('MonProfil', () => {
         await user.click(screen.getByText('Modifier'));
 
         await waitFor(() => {
-            expect(screen.getByText('Mot de passe actuel invalide.')).toBeInTheDocument();
+            expect(mockMessageError).toHaveBeenCalledWith('Mot de passe actuel invalide.');
         });
     });
 });

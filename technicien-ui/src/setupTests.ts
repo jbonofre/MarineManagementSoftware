@@ -1,4 +1,4 @@
-// Polyfills for jsdom (required by Ant Design)
+// Polyfills for jsdom (required by Ant Design 6)
 window.matchMedia = window.matchMedia || function matchMediaMock(query: string) {
     return {
         matches: false,
