@@ -353,7 +353,11 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
         destroyOnHidden
         width={1024}
       >
-        <Form layout="vertical" form={form} initialValues={defaultBateau}>
+        <Form layout="vertical" form={form} initialValues={defaultBateau} onValuesChange={(changedValues) => {
+            if (changedValues.localisationGps) {
+              form.setFieldsValue({ localisation: changedValues.localisationGps });
+            }
+          }}>
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item label="Nom" name="name" rules={[{ required: true, message: "Nom requis" }]}>
