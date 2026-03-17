@@ -12,6 +12,7 @@
     </parent>
 
     <artifactId>moussaillon-backend</artifactId>
+    <name>moussAIllon :: Backend</name>
 
     <dependencies>
         <dependency>
