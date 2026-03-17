@@ -5,7 +5,7 @@ COPY backend/pom.xml ./backend/pom.xml
 COPY backend/src ./backend/src
 RUN mvn -B package -DskipTests -pl backend
 
-FROM eclipse-temurin:21-jre
+FROM eclipse-temurin:25-jre
 WORKDIR /app
 COPY --from=build /build/backend/target/quarkus-app ./
 VOLUME /app/data
