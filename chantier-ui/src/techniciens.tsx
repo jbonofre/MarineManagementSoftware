@@ -283,19 +283,19 @@ const Techniciens: React.FC = () => {
                             >
                                 <Row gutter={16}>
                                     <Col span={12}>
-                                        <Form.Item 
-                                            name="nom" 
-                                            label="Nom" 
-                                            rules={[{ required: true, message: "Le nom est requis" }]}
+                                        <Form.Item
+                                            name="prenom"
+                                            label="Prénom"
+                                            rules={[{ required: true, message: "Le prénom est requis" }]}
                                         >
                                             <Input />
                                         </Form.Item>
                                     </Col>
                                     <Col span={12}>
-                                        <Form.Item 
-                                            name="prenom" 
-                                            label="Prénom" 
-                                            rules={[{ required: true, message: "Le prénom est requis" }]}
+                                        <Form.Item
+                                            name="nom"
+                                            label="Nom"
+                                            rules={[{ required: true, message: "Le nom est requis" }]}
                                         >
                                             <Input />
                                         </Form.Item>
