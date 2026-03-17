@@ -34,23 +34,41 @@ public class CommandeFournisseurResource {
     @GET
     @Path("/search")
     public List<CommandeFournisseurEntity> search(
+            @QueryParam("q") String q,
             @QueryParam("status") String status,
             @QueryParam("fournisseurId") Long fournisseurId
     ) {
         CommandeFournisseurEntity.Status parsedStatus = parseStatus(status);
         boolean hasStatus = parsedStatus != null;
         boolean hasFournisseurId = fournisseurId != null;
+        boolean hasQuery = q != null && !q.trim().isEmpty();
 
-        if (hasStatus && hasFournisseurId) {
-            return CommandeFournisseurEntity.list("status = ?1 and fournisseur.id = ?2", parsedStatus, fournisseurId);
+        StringBuilder query = new StringBuilder();
+        List<Object> params = new java.util.ArrayList<>();
+        int paramIndex = 1;
+
+        if (hasQuery) {
+            String likePattern = "%" + q.toLowerCase() + "%";
+            query.append("(LOWER(reference) like ?").append(paramIndex++).append(" or LOWER(referenceFournisseur) like ?").append(paramIndex++).append(" or LOWER(fournisseur.nom) like ?").append(paramIndex++).append(")");
+            params.add(likePattern);
+            params.add(likePattern);
+            params.add(likePattern);
         }
         if (hasStatus) {
-            return CommandeFournisseurEntity.list("status = ?1", parsedStatus);
+            if (query.length() > 0) query.append(" and ");
+            query.append("status = ?").append(paramIndex++);
+            params.add(parsedStatus);
         }
         if (hasFournisseurId) {
-            return CommandeFournisseurEntity.list("fournisseur.id = ?1", fournisseurId);
+            if (query.length() > 0) query.append(" and ");
+            query.append("fournisseur.id = ?").append(paramIndex++);
+            params.add(fournisseurId);
         }
-        return CommandeFournisseurEntity.listAll();
+
+        if (query.length() == 0) {
+            return CommandeFournisseurEntity.listAll();
+        }
+        return CommandeFournisseurEntity.list(query.toString(), params.toArray());
     }
 
     @POST
