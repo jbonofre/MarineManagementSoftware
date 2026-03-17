@@ -5,19 +5,20 @@
   "dependencies": {
     "@ant-design/icons": "^6.0.0",
     "ajv": "^8.18.0",
-    "antd": "^5.0.0",
+    "antd": "^6.0.0",
     "axios": "^1.6.0",
-    "react": "^18.0.0",
-    "react-dom": "^18.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
     "react-scripts": "^5.0.1"
   },
   "devDependencies": {
+    "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
-    "@testing-library/react": "^15.0.7",
+    "@testing-library/react": "^16.0.0",
     "@testing-library/user-event": "^14.6.1",
     "@types/jest": "^30.0.0",
-    "@types/react": "^18.0.0",
-    "@types/react-dom": "^18.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
     "typescript": "^5"
   },
   "scripts": {
@@ -42,6 +43,11 @@
   "jest": {
     "transformIgnorePatterns": [
       "node_modules/(?!axios)"
-    ]
+    ],
+    "moduleNameMapper": {
+      "^@rc-component/picker/locale/(.*)$": "@rc-component/picker/lib/locale/$1",
+      "^@rc-component/picker/generate/(.*)$": "@rc-component/picker/lib/generate/$1",
+      "^@rc-component/picker/interface$": "@rc-component/picker/lib/interface"
+    }
   }
 }

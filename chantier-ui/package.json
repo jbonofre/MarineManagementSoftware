@@ -9,19 +9,20 @@
     "antd-weekly-calendar": "^2.0.1",
     "axios": "^1.6.0",
     "leaflet": "^1.9.4",
-    "react": "^18.0.0",
-    "react-dom": "^18.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
     "react-leaflet": "^4.2.1",
     "react-router-dom": "^5.3.0",
     "react-scripts": "^5.0.1"
   },
   "devDependencies": {
+    "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
-    "@testing-library/react": "^15.0.7",
+    "@testing-library/react": "^16.0.0",
     "@testing-library/user-event": "^14.6.1",
     "@types/jest": "^30.0.0",
-    "@types/react": "^18.0.0",
-    "@types/react-dom": "^18.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
     "typescript": "^4.9.5"
   },
   "scripts": {
