@@ -1919,7 +1919,7 @@ export default function Vente() {
                     <Row gutter={16}>
                         <Col span={6}>
                             <Form.Item name="montantHT" label="Montant HT">
-                                <InputNumber addonAfter="EUR" min={0} step={0.01} style={{ width: '100%' }} disabled />
+                                <InputNumber addonAfter="EUR" min={0} step={0.01} style={{ width: '100%' }} />
                             </Form.Item>
                         </Col>
                         <Col span={6}>
@@ -1942,17 +1942,17 @@ export default function Vente() {
                     <Row gutter={16}>
                         <Col span={8}>
                             <Form.Item name="montantTVA" label="Montant TVA">
-                                <InputNumber addonAfter="EUR" min={0} step={0.01} style={{ width: '100%' }} disabled />
+                                <InputNumber addonAfter="EUR" min={0} step={0.01} style={{ width: '100%' }} />
                             </Form.Item>
                         </Col>
                         <Col span={8}>
                             <Form.Item name="montantTTC" label="Montant TTC">
-                                <InputNumber addonAfter="EUR" min={0} step={0.01} style={{ width: '100%' }} disabled />
+                                <InputNumber addonAfter="EUR" min={0} step={0.01} style={{ width: '100%' }} />
                             </Form.Item>
                         </Col>
                         <Col span={8}>
                             <Form.Item name="prixVenteTTC" label="Prix vente TTC">
-                                <InputNumber addonAfter="EUR" min={0} step={0.01} style={{ width: '100%' }} disabled />
+                                <InputNumber addonAfter="EUR" min={0} step={0.01} style={{ width: '100%' }} />
                             </Form.Item>
                         </Col>
                     </Row>
