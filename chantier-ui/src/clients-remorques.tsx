@@ -26,6 +26,7 @@ import {
   DeleteOutlined as DeleteIcon,
 } from "@ant-design/icons";
 import axios from "axios";
+import ImageUpload from './ImageUpload.tsx';
 import dayjs from "dayjs";
 
 const { Option } = Select;
@@ -329,40 +330,7 @@ function RemorquesClients({ clientId }: RemorquesClientsProps) {
             </Col>
           </Row>
           <Form.Item label="Images" name="images">
-            <Form.List name="images">
-              {(fields, { add, remove }) => (
-                <>
-                  {fields.map((field, index) => (
-                    <Space key={field.key} align="baseline" style={{ display: "flex", marginBottom: 8 }}>
-                      <Form.Item
-                        {...field}
-                        name={[field.name]}
-                        fieldKey={[field.fieldKey ?? field.key]}
-                        rules={[{ required: true, message: "Veuillez entrer une URL d'image" }]}
-                        style={{ flex: 1 }}
-                      >
-                        <Input placeholder="URL de l'image" style={{ width: "100%" }} />
-                      </Form.Item>
-                      <Button
-                        icon={<DeleteOutlined />}
-                        danger
-                        onClick={() => remove(field.name)}
-                      />
-                      {form.getFieldValue(['images', index]) &&
-                        <img
-                          src={form.getFieldValue(['images', index])}
-                          alt={`Remorque img ${index + 1}`}
-                          style={{ width: 60, marginLeft: 8, objectFit: "cover" }}
-                        />
-                      }
-                    </Space>
-                  ))}
-                  <Button type="dashed" onClick={() => add()} block icon={<PlusCircleOutlined />}>
-                    Ajouter une image
-                  </Button>
-                </>
-              )}
-            </Form.List>
+            <ImageUpload />
           </Form.Item>
           {/* Association avec un modèle du catalogue */}
           <Form.Item label="Modèle catalogue" style={{ marginBottom: 0 }}>
