@@ -27,6 +27,7 @@ import {
   SearchOutlined,
 } from "@ant-design/icons";
 import axios from "axios";
+import ImageUpload from './ImageUpload.tsx';
 import dayjs from "dayjs";
 import clients from "./clients";
 import LocationPicker from "./LocationPicker.tsx";
@@ -410,40 +411,7 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
             <LocationPicker />
           </Form.Item>
           <Form.Item label="Images" name="images">
-            <Form.List name="images">
-              {(fields, { add, remove }) => (
-                <>
-                  {fields.map((field, index) => (
-                    <Space key={field.key} align="baseline" style={{ display: 'flex', marginBottom: 8 }}>
-                      <Form.Item
-                        {...field}
-                        name={[field.name]}
-                        fieldKey={[field.fieldKey ?? field.key]}
-                        rules={[{ required: true, message: "Veuillez entrer une URL d'image" }]}
-                        style={{ flex: 1 }}
-                      >
-                        <Input placeholder="URL de l'image" style={{ width: '100%' }} />
-                      </Form.Item>
-                      <Button
-                        icon={<DeleteOutlined />}
-                        danger
-                        onClick={() => remove(field.name)}
-                      />
-                      {form.getFieldValue(['images', index]) &&
-                        <img
-                          src={form.getFieldValue(['images', index])}
-                          alt={`Bateau img ${index + 1}`}
-                          style={{ width: 80, marginLeft: 8, objectFit: 'cover' }}
-                        />
-                      }
-                    </Space>
-                  ))}
-                  <Button type="dashed" onClick={() => add()} block icon={<PlusCircleOutlined />}>
-                    Ajouter une image
-                  </Button>
-                </>
-              )}
-            </Form.List>
+            <ImageUpload />
           </Form.Item>
           {/* Association avec un bateau du catalogue */}
           <Form.Item label="Modèle catalogue" style={{ marginBottom: 0 }}>
@@ -610,32 +578,7 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
             <Rate allowHalf />
           </Form.Item>
           <Form.Item name="images" label="Images">
-            <Form.List name="images">
-              {(fields, { add, remove }) => (
-                <>
-                  {fields.map((field, index) => (
-                    <Space key={field.key} align="baseline" style={{ display: 'flex', marginBottom: 8 }}>
-                      <Form.Item
-                        {...field}
-                        name={[field.name]}
-                        fieldKey={[field.fieldKey ?? field.key]}
-                        rules={[{ required: true, message: "Veuillez entrer une URL d'image" }]}
-                        style={{ flex: 1 }}
-                      >
-                        <Input placeholder="URL de l'image" style={{ width: '100%' }} />
-                      </Form.Item>
-                      <Button icon={<DeleteOutlined />} danger onClick={() => remove(field.name)} />
-                      {catalogueForm.getFieldValue(['images', index]) &&
-                        <Image width={100} src={catalogueForm.getFieldValue(['images', index])} />
-                      }
-                    </Space>
-                  ))}
-                  <Button type="dashed" onClick={() => add()} block icon={<PlusCircleOutlined />}>
-                    Ajouter une image
-                  </Button>
-                </>
-              )}
-            </Form.List>
+            <ImageUpload />
           </Form.Item>
           <Row gutter={16}>
             <Col span={12}>
@@ -877,32 +820,7 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
             <Input.TextArea rows={3} />
           </Form.Item>
           <Form.Item name="images" label="Images">
-            <Form.List name="images">
-              {(fields, { add, remove }) => (
-                <>
-                  {fields.map((field, index) => (
-                    <Space key={field.key} align="baseline" style={{ display: 'flex', marginBottom: 8 }}>
-                      <Form.Item
-                        {...field}
-                        name={[field.name]}
-                        fieldKey={[field.fieldKey ?? field.key]}
-                        rules={[{ required: true, message: "Veuillez entrer une URL d'image" }]}
-                        style={{ flex: 1 }}
-                      >
-                        <Input placeholder="URL de l'image" style={{ width: '100%' }} />
-                      </Form.Item>
-                      <Button icon={<DeleteOutlined />} danger onClick={() => remove(field.name)} />
-                      {moteurForm.getFieldValue(['images', index]) &&
-                        <Image width={80} src={moteurForm.getFieldValue(['images', index])} />
-                      }
-                    </Space>
-                  ))}
-                  <Button type="dashed" onClick={() => add()} block icon={<PlusCircleOutlined />}>
-                    Ajouter une image
-                  </Button>
-                </>
-              )}
-            </Form.List>
+            <ImageUpload />
           </Form.Item>
           <Row gutter={16}>
             <Col span={12}>
