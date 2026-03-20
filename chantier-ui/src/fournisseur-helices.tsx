@@ -28,6 +28,7 @@ import {
   ShrinkOutlined,
 } from "@ant-design/icons";
 import axios from "axios";
+import ImageUpload from './ImageUpload.tsx';
 
 const { Option } = Select;
 
@@ -659,36 +660,7 @@ const FournisseurHelices = ({
             <TextArea rows={2} />
           </Form.Item>
           <Form.Item name="images" label="Images">
-            <Form.List name="images">
-              {(fields, { add, remove }) => (
-                <>
-                  {fields.map((field, index) => (
-                    <Space key={field.key} align="baseline" style={{ display: 'flex', marginBottom: 8 }}>
-                      <Form.Item
-                        {...field}
-                        name={[field.name]}
-                        fieldKey={[field.fieldKey ?? field.key]}
-                        rules={[{ required: true, message: "Veuillez entrer une URL d'image" }]}
-                        style={{ flex: 1 }}
-                      >
-                        <Input placeholder="URL de l'image" style={{ width: '100%' }} />
-                      </Form.Item>
-                      <Button
-                        icon={<DeleteOutlined />}
-                        danger
-                        onClick={() => remove(field.name)}
-                      />
-                      {heliceForm.getFieldValue(['images', index]) &&
-                        <Image width={100} src={heliceForm.getFieldValue(['images', index])} />
-                      }
-                    </Space>
-                  ))}
-                  <Button type="dashed" onClick={() => add()} block icon={<PlusCircleOutlined />}>
-                    Ajouter une image
-                  </Button>
-                </>
-              )}
-            </Form.List>
+            <ImageUpload />
           </Form.Item>
           <Row gutter={16}>
             <Col span={12}>
