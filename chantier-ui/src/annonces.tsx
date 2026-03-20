@@ -16,6 +16,7 @@ import {
 } from 'antd';
 import { DeleteOutlined, EditOutlined, EyeOutlined, PlusCircleOutlined, SendOutlined, StopOutlined } from '@ant-design/icons';
 import axios from 'axios';
+import ImageUpload from './ImageUpload.tsx';
 
 interface ClientEntity {
     id: number;
@@ -121,7 +122,7 @@ export default function Annonces() {
             prix: annonce.prix,
             contact: annonce.contact,
             telephone: annonce.telephone,
-            photos: (annonce.photos || []).join('\n'),
+            photos: annonce.photos || [],
             status: annonce.status,
             clientId: annonce.client?.id,
             bateauId: annonce.bateau?.id,
@@ -137,9 +138,7 @@ export default function Annonces() {
     const handleSave = async () => {
         try {
             const values = await form.validateFields();
-            const photos = values.photos
-                ? values.photos.split('\n').map((s: string) => s.trim()).filter((s: string) => s)
-                : [];
+            const photos = values.photos || [];
             const payload: any = {
                 titre: values.titre,
                 description: values.description,
@@ -355,8 +354,8 @@ export default function Annonces() {
                     <Form.Item name="telephone" label="Telephone">
                         <Input placeholder="06 12 34 56 78" />
                     </Form.Item>
-                    <Form.Item name="photos" label="Photos (une URL par ligne)">
-                        <Input.TextArea rows={3} placeholder={"https://exemple.com/photo1.jpg\nhttps://exemple.com/photo2.jpg"} />
+                    <Form.Item name="photos" label="Photos">
+                        <ImageUpload />
                     </Form.Item>
                     <Form.Item name="status" label="Statut">
                         <Select
