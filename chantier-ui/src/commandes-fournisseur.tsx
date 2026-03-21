@@ -23,7 +23,6 @@ import {
   EditOutlined,
   DeleteOutlined,
   PlusCircleOutlined,
-  PlusOutlined,
   MinusCircleOutlined,
   SearchOutlined,
 } from "@ant-design/icons";
@@ -191,7 +190,7 @@ const CommandesFournisseur = ({ fournisseurId }: { fournisseurId?: number }) => 
 
   const handleFournisseurChange = (fId: number) => {
     setSelectedFournisseurId(fId);
-    setLignes([]);
+    setLignes([emptyLigne()]);
     setFournisseurProduits([]);
     fetchFournisseurProduits(fId);
   };
@@ -212,7 +211,7 @@ const CommandesFournisseur = ({ fournisseurId }: { fournisseurId?: number }) => 
 
   const handleNew = () => {
     setEditing(null);
-    setLignes([]);
+    setLignes([emptyLigne()]);
     setFournisseurProduits([]);
     if (!fournisseurId) {
       setSelectedFournisseurId(undefined);
@@ -261,14 +260,19 @@ const CommandesFournisseur = ({ fournisseurId }: { fournisseurId?: number }) => 
     }
   };
 
-  const handleAddLigne = () => {
-    setLignes([...lignes, { quantite: 1, prixUnitaireHT: 0, tva: 20, montantTVA: 0, prixTotalHT: 0, prixTotalTTC: 0 }]);
-  };
+  const emptyLigne = (): CommandeFournisseurLigne => ({ quantite: 0, prixUnitaireHT: 0, tva: 20, montantTVA: 0, prixTotalHT: 0, prixTotalTTC: 0 });
+
+  const isLigneComplete = (l: CommandeFournisseurLigne) => !!l.produit?.id && l.quantite > 0;
 
   const handleRemoveLigne = (index: number) => {
     const updated = lignes.filter((_, i) => i !== index);
-    setLignes(updated);
-    recalcTotals(updated);
+    if (updated.length === 0) {
+      setLignes([emptyLigne()]);
+      recalcTotals([]);
+    } else {
+      setLignes(updated);
+      recalcTotals(updated);
+    }
   };
 
   const handleLigneChange = (index: number, field: string, value: any) => {
@@ -290,6 +294,13 @@ const CommandesFournisseur = ({ fournisseurId }: { fournisseurId?: number }) => 
     ligne.prixTotalTTC = Math.round((ligne.prixTotalHT + ligne.montantTVA) * 100) / 100;
 
     updated[index] = ligne;
+
+    // Auto-add a new empty line when the last line is complete
+    const lastLine = updated[updated.length - 1];
+    if (isLigneComplete(lastLine)) {
+      updated.push(emptyLigne());
+    }
+
     setLignes(updated);
     recalcTotals(updated);
   };
@@ -302,7 +313,7 @@ const CommandesFournisseur = ({ fournisseurId }: { fournisseurId?: number }) => 
         fournisseur: { id: fournisseurId || values.fournisseurId },
         date: values.date ? values.date.format("YYYY-MM-DD HH:mm:ss") : null,
         dateReception: values.dateReception ? values.dateReception.format("YYYY-MM-DD HH:mm:ss") : null,
-        lignes: lignes.map((l) => ({
+        lignes: lignes.filter((l) => l.produit?.id && l.quantite > 0).map((l) => ({
           produit: l.produit ? { id: l.produit.id } : null,
           quantite: l.quantite,
           prixUnitaireHT: l.prixUnitaireHT,
@@ -420,10 +431,10 @@ const CommandesFournisseur = ({ fournisseurId }: { fournisseurId?: number }) => 
         onCancel={() => setModalVisible(false)}
         onOk={handleModalOk}
         destroyOnHidden
+        width={1024}
         title={editing ? "Modifier la commande" : "Nouvelle commande fournisseur"}
         okText="Enregistrer"
         cancelText="Annuler"
-        width={900}
         maskClosable={false}
         confirmLoading={loading}
       >
@@ -527,10 +538,10 @@ const CommandesFournisseur = ({ fournisseurId }: { fournisseurId?: number }) => 
               </Col>
               <Col span={3}>
                 <InputNumber
-                  min={1}
+                  min={0}
                   placeholder="Qté"
-                  value={ligne.quantite}
-                  onChange={(val) => handleLigneChange(index, "quantite", val || 1)}
+                  value={ligne.quantite || undefined}
+                  onChange={(val) => handleLigneChange(index, "quantite", val || 0)}
                   style={{ width: "100%" }}
                 />
               </Col>
@@ -560,7 +571,7 @@ const CommandesFournisseur = ({ fournisseurId }: { fournisseurId?: number }) => 
                   value={ligne.prixTotalTTC}
                   disabled
                   style={{ width: "100%" }}
-                  addonAfter="€ TTC"
+                  addonAfter="€"
                 />
               </Col>
               <Col span={2}>
@@ -574,14 +585,6 @@ const CommandesFournisseur = ({ fournisseurId }: { fournisseurId?: number }) => 
             </Row>
           ))}
 
-          <Button
-            type="dashed"
-            onClick={handleAddLigne}
-            icon={<PlusOutlined />}
-            style={{ width: "100%", marginBottom: 16 }}
-          >
-            Ajouter un produit
-          </Button>
 
           <Divider orientation="left">Totaux</Divider>
 
