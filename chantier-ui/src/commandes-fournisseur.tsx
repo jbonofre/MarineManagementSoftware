@@ -302,20 +302,6 @@ const CommandesFournisseur = ({ fournisseurId }: { fournisseurId?: number }) => 
     }
   };
 
-  const handleSearch = async (value: string) => {
-    setLoading(true);
-    try {
-      const params: any = { q: value };
-      if (fournisseurId) params.fournisseurId = fournisseurId;
-      const { data } = await axios.get("/commandes-fournisseur/search", { params });
-      setCommandes(data);
-    } catch {
-      message.error("Erreur lors de la recherche");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleNew = () => {
     setEditing(null);
     setLignes([emptyLigne()]);
