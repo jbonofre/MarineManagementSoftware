@@ -16,8 +16,10 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import net.nanthrax.moussaillon.persistence.BateauCatalogueEntity;
 import net.nanthrax.moussaillon.persistence.CommandeFournisseurEntity;
 import net.nanthrax.moussaillon.persistence.CommandeFournisseurLigneEntity;
+import net.nanthrax.moussaillon.persistence.MoteurCatalogueEntity;
 import net.nanthrax.moussaillon.persistence.ProduitCatalogueEntity;
 
 @Path("/commandes-fournisseur")
@@ -34,23 +36,41 @@ public class CommandeFournisseurResource {
     @GET
     @Path("/search")
     public List<CommandeFournisseurEntity> search(
+            @QueryParam("q") String q,
             @QueryParam("status") String status,
             @QueryParam("fournisseurId") Long fournisseurId
     ) {
         CommandeFournisseurEntity.Status parsedStatus = parseStatus(status);
         boolean hasStatus = parsedStatus != null;
         boolean hasFournisseurId = fournisseurId != null;
+        boolean hasQuery = q != null && !q.trim().isEmpty();
 
-        if (hasStatus && hasFournisseurId) {
-            return CommandeFournisseurEntity.list("status = ?1 and fournisseur.id = ?2", parsedStatus, fournisseurId);
+        StringBuilder query = new StringBuilder();
+        List<Object> params = new java.util.ArrayList<>();
+        int paramIndex = 1;
+
+        if (hasQuery) {
+            String likePattern = "%" + q.toLowerCase() + "%";
+            query.append("(LOWER(reference) like ?").append(paramIndex++).append(" or LOWER(referenceFournisseur) like ?").append(paramIndex++).append(" or LOWER(fournisseur.nom) like ?").append(paramIndex++).append(")");
+            params.add(likePattern);
+            params.add(likePattern);
+            params.add(likePattern);
         }
         if (hasStatus) {
-            return CommandeFournisseurEntity.list("status = ?1", parsedStatus);
+            if (query.length() > 0) query.append(" and ");
+            query.append("status = ?").append(paramIndex++);
+            params.add(parsedStatus);
         }
         if (hasFournisseurId) {
-            return CommandeFournisseurEntity.list("fournisseur.id = ?1", fournisseurId);
+            if (query.length() > 0) query.append(" and ");
+            query.append("fournisseur.id = ?").append(paramIndex++);
+            params.add(fournisseurId);
         }
-        return CommandeFournisseurEntity.listAll();
+
+        if (query.length() == 0) {
+            return CommandeFournisseurEntity.listAll();
+        }
+        return CommandeFournisseurEntity.list(query.toString(), params.toArray());
     }
 
     @POST
@@ -112,6 +132,9 @@ public class CommandeFournisseurResource {
             for (CommandeFournisseurLigneEntity incomingLigne : commande.lignes) {
                 CommandeFournisseurLigneEntity clonedLigne = new CommandeFournisseurLigneEntity();
                 clonedLigne.produit = incomingLigne.produit;
+                clonedLigne.bateau = incomingLigne.bateau;
+                clonedLigne.moteur = incomingLigne.moteur;
+                clonedLigne.helice = incomingLigne.helice;
                 clonedLigne.quantite = incomingLigne.quantite;
                 clonedLigne.prixUnitaireHT = incomingLigne.prixUnitaireHT;
                 clonedLigne.tva = incomingLigne.tva;
@@ -138,6 +161,18 @@ public class CommandeFournisseurResource {
                     ProduitCatalogueEntity p = ProduitCatalogueEntity.findById(ligne.produit.id);
                     if (p != null) {
                         p.stock = p.stock + ligne.quantite;
+                    }
+                }
+                if (ligne.bateau != null) {
+                    BateauCatalogueEntity b = BateauCatalogueEntity.findById(ligne.bateau.id);
+                    if (b != null) {
+                        b.stock = b.stock + ligne.quantite;
+                    }
+                }
+                if (ligne.moteur != null) {
+                    MoteurCatalogueEntity m = MoteurCatalogueEntity.findById(ligne.moteur.id);
+                    if (m != null) {
+                        m.stock = m.stock + ligne.quantite;
                     }
                 }
             }

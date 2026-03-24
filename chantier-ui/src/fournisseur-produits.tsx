@@ -134,7 +134,7 @@ const FournisseurProduits = ({
       if (isProduitMode && produitId) {
         url = `/catalogue/produits/${produitId}/fournisseurs`;
       } else if (isFournisseurMode && fournisseurId) {
-        url = `/fournisseur-produit/fournisseur/${fournisseurId}/produits`;
+        url = `/fournisseur-produit/fournisseur/${fournisseurId}`;
       }
       if (url) {
         const { data } = await axios.get(url);
