@@ -44,6 +44,24 @@ type Produit = {
   categorie?: string;
 };
 
+type Bateau = {
+  id: number;
+  marque: string;
+  modele: string;
+};
+
+type Moteur = {
+  id: number;
+  marque: string;
+  modele: string;
+};
+
+type Helice = {
+  id: number;
+  marque: string;
+  modele: string;
+};
+
 type FournisseurProduit = {
   id: number;
   produit: Produit;
@@ -56,9 +74,45 @@ type FournisseurProduit = {
   nombreMinACommander: number;
 };
 
+type FournisseurBateau = {
+  id: number;
+  bateau: Bateau;
+  prixAchatHT: number;
+  tva: number;
+};
+
+type FournisseurMoteur = {
+  id: number;
+  moteur: Moteur;
+  prixAchatHT: number;
+  tva: number;
+};
+
+type FournisseurHelice = {
+  id: number;
+  helice: Helice;
+  prixAchatHT: number;
+  tva: number;
+};
+
+type ArticleType = "produit" | "bateau" | "moteur" | "helice";
+
+type ArticleItem = {
+  key: string;
+  type: ArticleType;
+  id: number;
+  label: string;
+  prixAchatHT: number;
+  tva: number;
+};
+
 type CommandeFournisseurLigne = {
   id?: number;
   produit?: Produit;
+  bateau?: Bateau;
+  moteur?: Moteur;
+  helice?: Helice;
+  articleKey?: string;
   quantite: number;
   prixUnitaireHT: number;
   tva: number;
@@ -108,7 +162,7 @@ const statusLabels: Record<CommandeFournisseurStatus, string> = {
 const CommandesFournisseur = ({ fournisseurId }: { fournisseurId?: number }) => {
   const [commandes, setCommandes] = useState<CommandeFournisseur[]>([]);
   const [fournisseurs, setFournisseurs] = useState<Fournisseur[]>([]);
-  const [fournisseurProduits, setFournisseurProduits] = useState<FournisseurProduit[]>([]);
+  const [articles, setArticles] = useState<ArticleItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [editing, setEditing] = useState<CommandeFournisseur | null>(null);
@@ -142,12 +196,51 @@ const CommandesFournisseur = ({ fournisseurId }: { fournisseurId?: number }) => 
     }
   };
 
-  const fetchFournisseurProduits = async (fId: number) => {
+  const fetchFournisseurArticles = async (fId: number) => {
     try {
-      const { data } = await axios.get(`/fournisseur-produit/fournisseur/${fId}/produits`);
-      setFournisseurProduits(data);
+      const [produits, bateaux, moteurs, helices] = await Promise.all([
+        axios.get(`/fournisseur-produit/fournisseur/${fId}`),
+        axios.get(`/fournisseur-bateau/fournisseur/${fId}`),
+        axios.get(`/fournisseur-moteur/fournisseur/${fId}`),
+        axios.get(`/fournisseur-helice/fournisseur/${fId}`),
+      ]);
+      const items: ArticleItem[] = [
+        ...(produits.data as FournisseurProduit[]).filter((fp) => fp.produit).map((fp) => ({
+          key: `produit-${fp.produit.id}`,
+          type: "produit" as ArticleType,
+          id: fp.produit.id,
+          label: `${fp.produit.nom}${fp.produit.marque ? ` (${fp.produit.marque})` : ""}`,
+          prixAchatHT: fp.prixAchatHT,
+          tva: fp.tva,
+        })),
+        ...(bateaux.data as FournisseurBateau[]).filter((fb) => fb.bateau).map((fb) => ({
+          key: `bateau-${fb.bateau.id}`,
+          type: "bateau" as ArticleType,
+          id: fb.bateau.id,
+          label: `${fb.bateau.marque} ${fb.bateau.modele}`,
+          prixAchatHT: fb.prixAchatHT,
+          tva: fb.tva,
+        })),
+        ...(moteurs.data as FournisseurMoteur[]).filter((fm) => fm.moteur).map((fm) => ({
+          key: `moteur-${fm.moteur.id}`,
+          type: "moteur" as ArticleType,
+          id: fm.moteur.id,
+          label: `${fm.moteur.marque} ${fm.moteur.modele}`,
+          prixAchatHT: fm.prixAchatHT,
+          tva: fm.tva,
+        })),
+        ...(helices.data as FournisseurHelice[]).filter((fh) => fh.helice).map((fh) => ({
+          key: `helice-${fh.helice.id}`,
+          type: "helice" as ArticleType,
+          id: fh.helice.id,
+          label: `${fh.helice.marque} ${fh.helice.modele}`,
+          prixAchatHT: fh.prixAchatHT,
+          tva: fh.tva,
+        })),
+      ];
+      setArticles(items);
     } catch {
-      message.error("Erreur lors du chargement des produits du fournisseur");
+      message.error("Erreur lors du chargement des articles du fournisseur");
     }
   };
 
@@ -170,7 +263,7 @@ const CommandesFournisseur = ({ fournisseurId }: { fournisseurId?: number }) => 
   useEffect(() => {
     fetchCommandes();
     if (fournisseurId) {
-      fetchFournisseurProduits(fournisseurId);
+      fetchFournisseurArticles(fournisseurId);
     } else {
       fetchFournisseurs();
     }
@@ -191,8 +284,8 @@ const CommandesFournisseur = ({ fournisseurId }: { fournisseurId?: number }) => 
   const handleFournisseurChange = (fId: number) => {
     setSelectedFournisseurId(fId);
     setLignes([emptyLigne()]);
-    setFournisseurProduits([]);
-    fetchFournisseurProduits(fId);
+    setArticles([]);
+    fetchFournisseurArticles(fId);
   };
 
   const handleSearch = async (value: string) => {
@@ -212,9 +305,11 @@ const CommandesFournisseur = ({ fournisseurId }: { fournisseurId?: number }) => 
   const handleNew = () => {
     setEditing(null);
     setLignes([emptyLigne()]);
-    setFournisseurProduits([]);
+    setArticles([]);
     if (!fournisseurId) {
       setSelectedFournisseurId(undefined);
+    } else {
+      fetchFournisseurArticles(fournisseurId);
     }
     form.resetFields();
     form.setFieldsValue({
@@ -230,12 +325,18 @@ const CommandesFournisseur = ({ fournisseurId }: { fournisseurId?: number }) => 
 
   const handleEdit = (record: CommandeFournisseur) => {
     setEditing(record);
-    setLignes(record.lignes || []);
+    const editLignes = (record.lignes || []).map((l) => {
+      let articleKey: string | undefined;
+      if (l.produit?.id) articleKey = `produit-${l.produit.id}`;
+      else if (l.bateau?.id) articleKey = `bateau-${l.bateau.id}`;
+      else if (l.moteur?.id) articleKey = `moteur-${l.moteur.id}`;
+      else if (l.helice?.id) articleKey = `helice-${l.helice.id}`;
+      return { ...l, articleKey };
+    });
+    setLignes([...editLignes, emptyLigne()]);
     if (record.fournisseur?.id) {
       setSelectedFournisseurId(record.fournisseur.id);
-      if (!fournisseurId) {
-        fetchFournisseurProduits(record.fournisseur.id);
-      }
+      fetchFournisseurArticles(record.fournisseur.id);
     }
     form.setFieldsValue({
       ...record,
@@ -262,7 +363,7 @@ const CommandesFournisseur = ({ fournisseurId }: { fournisseurId?: number }) => 
 
   const emptyLigne = (): CommandeFournisseurLigne => ({ quantite: 0, prixUnitaireHT: 0, tva: 20, montantTVA: 0, prixTotalHT: 0, prixTotalTTC: 0 });
 
-  const isLigneComplete = (l: CommandeFournisseurLigne) => !!l.produit?.id && l.quantite > 0;
+  const isLigneComplete = (l: CommandeFournisseurLigne) => !!l.articleKey && l.quantite > 0;
 
   const handleRemoveLigne = (index: number) => {
     const updated = lignes.filter((_, i) => i !== index);
@@ -279,12 +380,20 @@ const CommandesFournisseur = ({ fournisseurId }: { fournisseurId?: number }) => 
     const updated = [...lignes];
     const ligne = { ...updated[index], [field]: value };
 
-    if (field === "produitId") {
-      const fp = fournisseurProduits.find((fp) => fp.produit?.id === value);
-      if (fp) {
-        ligne.produit = fp.produit;
-        ligne.prixUnitaireHT = fp.prixAchatHT;
-        ligne.tva = fp.tva;
+    if (field === "articleKey") {
+      const article = articles.find((a) => a.key === value);
+      if (article) {
+        ligne.articleKey = article.key;
+        ligne.produit = undefined;
+        ligne.bateau = undefined;
+        ligne.moteur = undefined;
+        ligne.helice = undefined;
+        if (article.type === "produit") ligne.produit = { id: article.id, nom: article.label };
+        else if (article.type === "bateau") ligne.bateau = { id: article.id, marque: "", modele: article.label };
+        else if (article.type === "moteur") ligne.moteur = { id: article.id, marque: "", modele: article.label };
+        else if (article.type === "helice") ligne.helice = { id: article.id, marque: "", modele: article.label };
+        ligne.prixUnitaireHT = article.prixAchatHT;
+        ligne.tva = article.tva;
       }
     }
 
@@ -313,8 +422,11 @@ const CommandesFournisseur = ({ fournisseurId }: { fournisseurId?: number }) => 
         fournisseur: { id: fournisseurId || values.fournisseurId },
         date: values.date ? values.date.format("YYYY-MM-DD HH:mm:ss") : null,
         dateReception: values.dateReception ? values.dateReception.format("YYYY-MM-DD HH:mm:ss") : null,
-        lignes: lignes.filter((l) => l.produit?.id && l.quantite > 0).map((l) => ({
+        lignes: lignes.filter((l) => l.articleKey && l.quantite > 0).map((l) => ({
           produit: l.produit ? { id: l.produit.id } : null,
+          bateau: l.bateau ? { id: l.bateau.id } : null,
+          moteur: l.moteur ? { id: l.moteur.id } : null,
+          helice: l.helice ? { id: l.helice.id } : null,
           quantite: l.quantite,
           prixUnitaireHT: l.prixUnitaireHT,
           tva: l.tva,
@@ -520,21 +632,18 @@ const CommandesFournisseur = ({ fournisseurId }: { fournisseurId?: number }) => 
               <Col span={8}>
                 <Select
                   showSearch
-                  placeholder="Produit"
-                  optionFilterProp="children"
-                  filterOption={(input, option: any) =>
-                    `${option.children}`.toLowerCase().includes(input.toLowerCase())
-                  }
-                  value={ligne.produit?.id}
-                  onChange={(val) => handleLigneChange(index, "produitId", val)}
+                  placeholder="Article"
+                  optionFilterProp="label"
+                  value={ligne.articleKey}
+                  onChange={(val) => handleLigneChange(index, "articleKey", val)}
                   style={{ width: "100%" }}
-                >
-                  {fournisseurProduits.filter((fp) => fp.produit).map((fp) => (
-                    <Option key={fp.produit.id} value={fp.produit.id}>
-                      {fp.produit.nom}{fp.produit.marque ? ` (${fp.produit.marque})` : ""}
-                    </Option>
-                  ))}
-                </Select>
+                  options={[
+                    { label: "Produits", options: articles.filter((a) => a.type === "produit").map((a) => ({ value: a.key, label: a.label })) },
+                    { label: "Bateaux", options: articles.filter((a) => a.type === "bateau").map((a) => ({ value: a.key, label: a.label })) },
+                    { label: "Moteurs", options: articles.filter((a) => a.type === "moteur").map((a) => ({ value: a.key, label: a.label })) },
+                    { label: "Hélices", options: articles.filter((a) => a.type === "helice").map((a) => ({ value: a.key, label: a.label })) },
+                  ].filter((g) => g.options.length > 0)}
+                />
               </Col>
               <Col span={3}>
                 <InputNumber
