@@ -987,66 +987,81 @@ export default function Comptoir() {
                         <Form.List name="produits">
                             {(fields, { remove }) => (
                                 <>
-                                    {fields.map((field) => {
-                                        const produitId = form.getFieldValue(['produits', field.name, 'produitId']);
-                                        const prixUnitaire = produits.find((p) => p.id === produitId)?.prixVenteTTC;
-                                        const isEmptyLine = !produitId;
-                                        return (
-                                        <Space key={field.key} align="baseline" style={{ display: 'flex', marginBottom: 8 }}>
-                                            <Form.Item
-                                                {...field}
-                                                name={[field.name, 'produitId']}
-                                                rules={[
-                                                    {
-                                                        validator: async (_, value) => {
-                                                            const line = form.getFieldValue(['produits', field.name]);
-                                                            const quantite = Number(line?.quantite || 0);
-                                                            if (!value && quantite > 0) {
-                                                                throw new Error('Produit requis');
+                                    {fields.map((field) => (
+                                        <Form.Item key={field.key} shouldUpdate noStyle>
+                                            {() => {
+                                                const produitId = form.getFieldValue(['produits', field.name, 'produitId']);
+                                                const prixUnitaire = produits.find((p) => p.id === produitId)?.prixVenteTTC;
+                                                const quantite = form.getFieldValue(['produits', field.name, 'quantite']);
+                                                const totalLigne = (prixUnitaire && quantite) ? Math.round(prixUnitaire * quantite * 100) / 100 : undefined;
+                                                const isEmptyLine = !produitId;
+                                                return (
+                                                <Space align="baseline" style={{ display: 'flex', marginBottom: 8 }}>
+                                                    <Form.Item
+                                                        {...field}
+                                                        name={[field.name, 'produitId']}
+                                                        rules={[
+                                                            {
+                                                                validator: async (_, value) => {
+                                                                    const line = form.getFieldValue(['produits', field.name]);
+                                                                    const quantite = Number(line?.quantite || 0);
+                                                                    if (!value && quantite > 0) {
+                                                                        throw new Error('Produit requis');
+                                                                    }
+                                                                }
                                                             }
-                                                        }
-                                                    }
-                                                ]}
-                                                style={{ width: 420 }}
-                                            >
-                                                <Select allowClear showSearch options={produitOptions} placeholder="Produit" />
-                                            </Form.Item>
-                                            <Form.Item style={{ width: 150 }}>
-                                                <InputNumber
-                                                    addonAfter="EUR"
-                                                    value={prixUnitaire ?? undefined}
-                                                    disabled
-                                                    style={{ width: '100%' }}
-                                                    placeholder="P.U."
-                                                />
-                                            </Form.Item>
-                                            <Form.Item
-                                                {...field}
-                                                name={[field.name, 'quantite']}
-                                                rules={[
-                                                    {
-                                                        validator: async (_, value) => {
-                                                            const line = form.getFieldValue(['produits', field.name]);
-                                                            if (!line?.produitId && (value === undefined || value === null)) {
-                                                                return;
+                                                        ]}
+                                                        style={{ width: 420 }}
+                                                    >
+                                                        <Select allowClear showSearch options={produitOptions} placeholder="Produit" />
+                                                    </Form.Item>
+                                                    <Form.Item style={{ width: 150 }}>
+                                                        <InputNumber
+                                                            addonAfter="EUR"
+                                                            value={prixUnitaire ?? undefined}
+                                                            disabled
+                                                            style={{ width: '100%' }}
+                                                            placeholder="P.U."
+                                                        />
+                                                    </Form.Item>
+                                                    <Form.Item
+                                                        {...field}
+                                                        name={[field.name, 'quantite']}
+                                                        rules={[
+                                                            {
+                                                                validator: async (_, value) => {
+                                                                    const line = form.getFieldValue(['produits', field.name]);
+                                                                    if (!line?.produitId && (value === undefined || value === null)) {
+                                                                        return;
+                                                                    }
+                                                                    if (!value || value <= 0) {
+                                                                        throw new Error('Quantite requise');
+                                                                    }
+                                                                }
                                                             }
-                                                            if (!value || value <= 0) {
-                                                                throw new Error('Quantite requise');
-                                                            }
-                                                        }
-                                                    }
-                                                ]}
-                                                style={{ width: 150 }}
-                                            >
-                                                <InputNumber min={1} step={1} style={{ width: '100%' }} placeholder="Qte" />
-                                            </Form.Item>
-                                            {isEmptyLine && (
-                                                <Button icon={<PlusOutlined />} title="Créer un produit" onClick={() => openNewProduitModal(field.name)} />
-                                            )}
-                                            <Button danger icon={<DeleteOutlined />} onClick={() => remove(field.name)} />
-                                        </Space>
-                                        );
-                                    })}
+                                                        ]}
+                                                        style={{ width: 150 }}
+                                                    >
+                                                        <InputNumber min={1} step={1} style={{ width: '100%' }} placeholder="Qte" />
+                                                    </Form.Item>
+                                                    <Form.Item style={{ width: 150 }}>
+                                                        <InputNumber
+                                                            addonAfter="EUR"
+                                                            value={totalLigne}
+                                                            disabled
+                                                            style={{ width: '100%' }}
+                                                            placeholder="Total"
+                                                        />
+                                                    </Form.Item>
+                                                    {isEmptyLine && (
+                                                        <Button icon={<PlusOutlined />} title="Créer un produit" onClick={() => openNewProduitModal(field.name)} />
+                                                    )}
+                                                    <Button danger icon={<DeleteOutlined />} onClick={() => remove(field.name)} />
+                                                </Space>
+                                                );
+                                            }}
+                                        </Form.Item>
+                                    ))}
                                 </>
                             )}
                         </Form.List>
