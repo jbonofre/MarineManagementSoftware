@@ -314,6 +314,7 @@ const CommandesFournisseur = ({ fournisseurId }: { fournisseurId?: number }) => 
     form.resetFields();
     form.setFieldsValue({
       status: "BROUILLON",
+      date: dayjs(),
       portTotal: 0,
       montantHT: 0,
       montantTVA: 0,
