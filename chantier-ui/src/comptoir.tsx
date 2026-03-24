@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
+    AutoComplete,
     Button,
     Card,
     Col,
@@ -8,6 +9,7 @@ import {
     InputNumber,
     Modal,
     Popconfirm,
+    Rate,
     Row,
     Select,
     Space,
@@ -16,8 +18,9 @@ import {
     Dropdown,
     message
 } from 'antd';
-import { CreditCardOutlined, DeleteOutlined, EditOutlined, PlusCircleOutlined, PrinterOutlined, FileTextOutlined } from '@ant-design/icons';
+import { CreditCardOutlined, DeleteOutlined, EditOutlined, PlusCircleOutlined, PlusOutlined, PrinterOutlined, FileTextOutlined } from '@ant-design/icons';
 import axios from 'axios';
+import ImageUpload from './ImageUpload.tsx';
 
 interface ClientEntity {
     id: number;
@@ -58,8 +61,55 @@ interface ProduitCatalogueEntity {
     id: number;
     nom: string;
     marque?: string;
+    categorie?: string;
+    ref?: string;
+    refs?: string[];
+    images?: string[];
+    description?: string;
+    evaluation?: number;
+    stock?: number;
+    stockMini?: number;
+    emplacement?: string;
+    prixPublic?: number;
+    frais?: number;
+    tauxMarge?: number;
+    tauxMarque?: number;
+    prixVenteHT?: number;
+    tva?: number;
+    montantTVA?: number;
     prixVenteTTC?: number;
 }
+
+const PRODUIT_CATEGORIES = [
+    { text: 'Pièces Moteur', value: 'Pièces Moteur', label: 'Pièces Moteur' },
+    { text: 'Pièces Remorque', value: 'Pièces Remorque', label: 'Pièces Remorque' },
+    { text: 'Electronique', value: 'Electronique', label: 'Electronique' },
+    { text: 'Sécurité', value: 'Sécurité', label: 'Sécurité' },
+    { text: 'Equipement & Accessoires', value: 'Equipement & Accessoires', label: 'Equipement & Accessoires' },
+    { text: 'Loisirs', value: 'Loisirs', label: 'Loisirs' },
+];
+
+const defaultNewProduit = {
+    nom: '',
+    marque: '',
+    categorie: '',
+    ref: '',
+    refs: [],
+    images: [],
+    description: '',
+    evaluation: 0,
+    stock: 0,
+    stockMini: 0,
+    emplacement: '',
+    prixPublic: 0,
+    frais: 0,
+    tauxMarge: 0,
+    tauxMarque: 0,
+    prixVenteHT: 0,
+    tva: 20,
+    montantTVA: 0,
+    prixVenteTTC: 0,
+};
 
 interface ServiceEntity {
     id: number;
@@ -219,6 +269,14 @@ export default function Comptoir() {
     const [filters, setFilters] = useState<SearchFilters>({});
     const [searchForm] = Form.useForm<SearchFilters>();
     const [form] = Form.useForm<VenteFormValues>();
+    const [newProduitModalVisible, setNewProduitModalVisible] = useState(false);
+    const [newProduitTargetLine, setNewProduitTargetLine] = useState<number | null>(null);
+    const [newProduitForm] = Form.useForm();
+
+    const marqueOptions = useMemo(() => {
+        const unique = Array.from(new Set(produits.map((p) => p.marque).filter(Boolean))) as string[];
+        return unique.map((marque) => ({ value: marque }));
+    }, [produits]);
 
     const clientOptions = useMemo(
         () => clients.map((client) => ({ value: client.id, label: getClientLabel(client) })),
@@ -308,6 +366,53 @@ export default function Comptoir() {
         fetchVentes();
         fetchOptions();
     }, []);
+
+    const openNewProduitModal = (lineIndex: number) => {
+        setNewProduitTargetLine(lineIndex);
+        newProduitForm.resetFields();
+        newProduitForm.setFieldsValue(defaultNewProduit);
+        setNewProduitModalVisible(true);
+    };
+
+    const handleNewProduitSave = async () => {
+        try {
+            const values = await newProduitForm.validateFields();
+            values.images = values.images || [];
+            const res = await axios.post('/catalogue/produits', values);
+            const created = res.data as ProduitCatalogueEntity;
+            message.success('Produit ajouté avec succès');
+            setProduits((prev) => [...prev, created]);
+            if (newProduitTargetLine !== null && created.id) {
+                const currentLines = form.getFieldValue('produits') || [];
+                const updated = [...currentLines];
+                updated[newProduitTargetLine] = { ...updated[newProduitTargetLine], produitId: created.id };
+                form.setFieldValue('produits', updated);
+                recalculateFromLines('auto');
+            }
+            setNewProduitModalVisible(false);
+        } catch {
+            // validation errors shown in form
+        }
+    };
+
+    const onNewProduitValuesChange = (changedValues: Record<string, unknown>) => {
+        if (changedValues.prixVenteHT !== undefined || changedValues.tva !== undefined) {
+            const prixVenteHT = newProduitForm.getFieldValue('prixVenteHT') || 0;
+            const tva = newProduitForm.getFieldValue('tva') || 0;
+            const montantTVA = Math.round(((prixVenteHT * (tva / 100)) + Number.EPSILON) * 100) / 100;
+            newProduitForm.setFieldValue('montantTVA', montantTVA);
+            const prixVenteTTC = Math.round(((prixVenteHT + montantTVA) + Number.EPSILON) * 100) / 100;
+            newProduitForm.setFieldValue('prixVenteTTC', prixVenteTTC);
+        }
+        if (changedValues.prixVenteTTC !== undefined) {
+            const prixVenteTTC = newProduitForm.getFieldValue('prixVenteTTC') || 0;
+            const tva = newProduitForm.getFieldValue('tva') || 0;
+            const montantTVA = Math.round((((prixVenteTTC / (100 + tva)) * tva) + Number.EPSILON) * 100) / 100;
+            newProduitForm.setFieldValue('montantTVA', montantTVA);
+            const prixVenteHT = Math.round(((prixVenteTTC - montantTVA) + Number.EPSILON) * 100) / 100;
+            newProduitForm.setFieldValue('prixVenteHT', prixVenteHT);
+        }
+    };
 
     const openModal = (vente?: VenteEntity) => {
         if (vente) {
@@ -883,47 +988,79 @@ export default function Comptoir() {
                             {(fields, { remove }) => (
                                 <>
                                     {fields.map((field) => (
-                                        <Space key={field.key} align="baseline" style={{ display: 'flex', marginBottom: 8 }}>
-                                            <Form.Item
-                                                {...field}
-                                                name={[field.name, 'produitId']}
-                                                rules={[
-                                                    {
-                                                        validator: async (_, value) => {
-                                                            const line = form.getFieldValue(['produits', field.name]);
-                                                            const quantite = Number(line?.quantite || 0);
-                                                            if (!value && quantite > 0) {
-                                                                throw new Error('Produit requis');
+                                        <Form.Item key={field.key} shouldUpdate noStyle>
+                                            {() => {
+                                                const produitId = form.getFieldValue(['produits', field.name, 'produitId']);
+                                                const prixUnitaire = produits.find((p) => p.id === produitId)?.prixVenteTTC;
+                                                const quantite = form.getFieldValue(['produits', field.name, 'quantite']);
+                                                const totalLigne = (prixUnitaire && quantite) ? Math.round(prixUnitaire * quantite * 100) / 100 : undefined;
+                                                const isEmptyLine = !produitId;
+                                                return (
+                                                <Space align="baseline" style={{ display: 'flex', marginBottom: 8 }}>
+                                                    <Form.Item
+                                                        {...field}
+                                                        name={[field.name, 'produitId']}
+                                                        rules={[
+                                                            {
+                                                                validator: async (_, value) => {
+                                                                    const line = form.getFieldValue(['produits', field.name]);
+                                                                    const quantite = Number(line?.quantite || 0);
+                                                                    if (!value && quantite > 0) {
+                                                                        throw new Error('Produit requis');
+                                                                    }
+                                                                }
                                                             }
-                                                        }
-                                                    }
-                                                ]}
-                                                style={{ width: 520 }}
-                                            >
-                                                <Select allowClear showSearch options={produitOptions} placeholder="Produit" />
-                                            </Form.Item>
-                                            <Form.Item
-                                                {...field}
-                                                name={[field.name, 'quantite']}
-                                                rules={[
-                                                    {
-                                                        validator: async (_, value) => {
-                                                            const line = form.getFieldValue(['produits', field.name]);
-                                                            if (!line?.produitId && (value === undefined || value === null)) {
-                                                                return;
+                                                        ]}
+                                                        style={{ width: 420 }}
+                                                    >
+                                                        <Select allowClear showSearch options={produitOptions} placeholder="Produit" />
+                                                    </Form.Item>
+                                                    <Form.Item style={{ width: 150 }}>
+                                                        <InputNumber
+                                                            addonAfter="EUR"
+                                                            value={prixUnitaire ?? undefined}
+                                                            disabled
+                                                            style={{ width: '100%' }}
+                                                            placeholder="P.U."
+                                                        />
+                                                    </Form.Item>
+                                                    <Form.Item
+                                                        {...field}
+                                                        name={[field.name, 'quantite']}
+                                                        rules={[
+                                                            {
+                                                                validator: async (_, value) => {
+                                                                    const line = form.getFieldValue(['produits', field.name]);
+                                                                    if (!line?.produitId && (value === undefined || value === null)) {
+                                                                        return;
+                                                                    }
+                                                                    if (!value || value <= 0) {
+                                                                        throw new Error('Quantite requise');
+                                                                    }
+                                                                }
                                                             }
-                                                            if (!value || value <= 0) {
-                                                                throw new Error('Quantite requise');
-                                                            }
-                                                        }
-                                                    }
-                                                ]}
-                                                style={{ width: 180 }}
-                                            >
-                                                <InputNumber min={1} step={1} style={{ width: '100%' }} placeholder="Qte" />
-                                            </Form.Item>
-                                            <Button danger icon={<DeleteOutlined />} onClick={() => remove(field.name)} />
-                                        </Space>
+                                                        ]}
+                                                        style={{ width: 150 }}
+                                                    >
+                                                        <InputNumber min={1} step={1} style={{ width: '100%' }} placeholder="Qte" />
+                                                    </Form.Item>
+                                                    <Form.Item style={{ width: 150 }}>
+                                                        <InputNumber
+                                                            addonAfter="EUR"
+                                                            value={totalLigne}
+                                                            disabled
+                                                            style={{ width: '100%' }}
+                                                            placeholder="Total"
+                                                        />
+                                                    </Form.Item>
+                                                    {isEmptyLine && (
+                                                        <Button icon={<PlusOutlined />} title="Créer un produit" onClick={() => openNewProduitModal(field.name)} />
+                                                    )}
+                                                    <Button danger icon={<DeleteOutlined />} onClick={() => remove(field.name)} />
+                                                </Space>
+                                                );
+                                            }}
+                                        </Form.Item>
                                     ))}
                                 </>
                             )}
@@ -971,6 +1108,145 @@ export default function Comptoir() {
                         </Col>
                     </Row>
                 </Form>
+
+                <Modal
+                    title="Créer un produit"
+                    open={newProduitModalVisible}
+                    onOk={handleNewProduitSave}
+                    onCancel={() => setNewProduitModalVisible(false)}
+                    maskClosable={false}
+                    width={1024}
+                    okText="Enregistrer"
+                    cancelText="Annuler"
+                    destroyOnHidden
+                >
+                    <Form
+                        form={newProduitForm}
+                        layout="vertical"
+                        initialValues={defaultNewProduit}
+                        onValuesChange={onNewProduitValuesChange}
+                    >
+                        <Row gutter={16}>
+                            <Col span={12}>
+                                <Form.Item name="marque" label="Marque">
+                                    <AutoComplete allowClear options={marqueOptions} placeholder="Saisir/select. une marque" />
+                                </Form.Item>
+                            </Col>
+                            <Col span={12}>
+                                <Form.Item name="nom" label="Nom" rules={[{ required: true, message: 'Le nom est requis' }]}>
+                                    <Input />
+                                </Form.Item>
+                            </Col>
+                        </Row>
+                        <Row gutter={16}>
+                            <Col span={12}>
+                                <Form.Item name="categorie" label="Catégorie" rules={[{ required: true, message: 'La catégorie est requise' }]}>
+                                    <Select options={PRODUIT_CATEGORIES} placeholder="Choisir une catégorie" />
+                                </Form.Item>
+                            </Col>
+                            <Col span={12}>
+                                <Form.Item name="ref" label="Référence interne">
+                                    <Input />
+                                </Form.Item>
+                            </Col>
+                        </Row>
+                        <Form.Item name="images" label="Images">
+                            <ImageUpload />
+                        </Form.Item>
+                        <Form.Item name="refs" label="Références complémentaires">
+                            <Form.List name="refs">
+                                {(fields, { add, remove: removeRef }) => (
+                                    <>
+                                        {fields.map((field) => (
+                                            <Space key={field.key} align="baseline">
+                                                <Form.Item
+                                                    {...field}
+                                                    name={[field.name]}
+                                                    style={{ flex: 1 }}
+                                                >
+                                                    <Input placeholder="Réf. complémentaire" style={{ width: 200 }} />
+                                                </Form.Item>
+                                                <Button icon={<DeleteOutlined />} danger onClick={() => removeRef(field.name)} />
+                                            </Space>
+                                        ))}
+                                        <Button type="dashed" onClick={() => add()} block style={{ marginTop: 8 }}>
+                                            Ajouter une référence
+                                        </Button>
+                                    </>
+                                )}
+                            </Form.List>
+                        </Form.Item>
+                        <Form.Item name="description" label="Description">
+                            <Input.TextArea rows={3} placeholder="Description du produit" allowClear />
+                        </Form.Item>
+                        <Form.Item name="evaluation" label="Évaluation">
+                            <Rate allowHalf />
+                        </Form.Item>
+                        <Row gutter={16}>
+                            <Col span={12}>
+                                <Form.Item name="stock" label="Stock">
+                                    <InputNumber min={0} step={1} style={{ width: '100%' }} />
+                                </Form.Item>
+                            </Col>
+                            <Col span={12}>
+                                <Form.Item name="stockMini" label="Stock minimal d'alerte">
+                                    <InputNumber min={0} step={1} style={{ width: '100%' }} />
+                                </Form.Item>
+                            </Col>
+                        </Row>
+                        <Form.Item name="emplacement" label="Emplacement">
+                            <Input />
+                        </Form.Item>
+                        <Row gutter={16}>
+                            <Col span={12}>
+                                <Form.Item name="prixPublic" label="Prix public">
+                                    <InputNumber min={0} step={0.01} style={{ width: '100%' }} addonAfter="€" />
+                                </Form.Item>
+                            </Col>
+                            <Col span={12}>
+                                <Form.Item name="frais" label="Frais">
+                                    <InputNumber min={0} step={0.01} style={{ width: '100%' }} addonAfter="€" />
+                                </Form.Item>
+                            </Col>
+                        </Row>
+                        <Row gutter={16}>
+                            <Col span={12}>
+                                <Form.Item name="tauxMarge" label="Taux de marge (%)">
+                                    <InputNumber min={0} max={100} step={0.01} style={{ width: '100%' }} addonAfter="%" />
+                                </Form.Item>
+                            </Col>
+                            <Col span={12}>
+                                <Form.Item name="tauxMarque" label="Taux de marque (%)">
+                                    <InputNumber min={0} max={100} step={0.01} style={{ width: '100%' }} addonAfter="%" />
+                                </Form.Item>
+                            </Col>
+                        </Row>
+                        <Row gutter={16}>
+                            <Col span={12}>
+                                <Form.Item name="prixVenteHT" label="Prix de vente HT">
+                                    <InputNumber min={0} step={0.01} style={{ width: '100%' }} addonAfter="€" />
+                                </Form.Item>
+                            </Col>
+                            <Col span={12}>
+                                <Form.Item name="tva" label="TVA (%)">
+                                    <InputNumber min={0} max={100} step={0.01} style={{ width: '100%' }} addonAfter="%" />
+                                </Form.Item>
+                            </Col>
+                        </Row>
+                        <Row gutter={16}>
+                            <Col span={12}>
+                                <Form.Item name="montantTVA" label="Montant TVA">
+                                    <InputNumber min={0} step={0.01} style={{ width: '100%' }} addonAfter="€" />
+                                </Form.Item>
+                            </Col>
+                            <Col span={12}>
+                                <Form.Item name="prixVenteTTC" label="Prix de vente TTC">
+                                    <InputNumber min={0} step={0.01} style={{ width: '100%' }} addonAfter="€" />
+                                </Form.Item>
+                            </Col>
+                        </Row>
+                    </Form>
+                </Modal>
             </Modal>
         </Card>
     );
