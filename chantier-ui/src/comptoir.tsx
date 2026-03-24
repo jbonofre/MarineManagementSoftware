@@ -647,6 +647,62 @@ export default function Comptoir() {
             }
         }
 
+        if (changedValues.montantTTC !== undefined) {
+            const tva = allValues.tva || 0;
+            const montantTTC = changedValues.montantTTC || 0;
+            const montantTVA = Math.round((((montantTTC / (100 + tva)) * tva) + Number.EPSILON) * 100) / 100;
+            const montantHT = Math.round(((montantTTC - montantTVA) + Number.EPSILON) * 100) / 100;
+            const remise = allValues.remise || 0;
+            const remisePourcentage = montantTTC > 0
+                ? Math.round((((remise / montantTTC) * 100) + Number.EPSILON) * 100) / 100
+                : 0;
+            const prixVenteTTC = Math.round(((montantTTC - remise) + Number.EPSILON) * 100) / 100;
+            form.setFieldValue('montantHT', montantHT);
+            form.setFieldValue('montantTVA', montantTVA);
+            form.setFieldValue('remisePourcentage', remisePourcentage);
+            form.setFieldValue('prixVenteTTC', prixVenteTTC);
+            return;
+        }
+
+        if (changedValues.montantHT !== undefined) {
+            const tva = allValues.tva || 0;
+            const montantHT = changedValues.montantHT || 0;
+            const montantTVA = Math.round(((montantHT * tva / 100) + Number.EPSILON) * 100) / 100;
+            const montantTTC = Math.round(((montantHT + montantTVA) + Number.EPSILON) * 100) / 100;
+            const remise = allValues.remise || 0;
+            const remisePourcentage = montantTTC > 0
+                ? Math.round((((remise / montantTTC) * 100) + Number.EPSILON) * 100) / 100
+                : 0;
+            const prixVenteTTC = Math.round(((montantTTC - remise) + Number.EPSILON) * 100) / 100;
+            form.setFieldValue('montantTTC', montantTTC);
+            form.setFieldValue('montantTVA', montantTVA);
+            form.setFieldValue('remisePourcentage', remisePourcentage);
+            form.setFieldValue('prixVenteTTC', prixVenteTTC);
+            return;
+        }
+
+        if (changedValues.montantTVA !== undefined) {
+            const montantTTC = allValues.montantTTC || 0;
+            const montantTVA = changedValues.montantTVA || 0;
+            const montantHT = Math.round(((montantTTC - montantTVA) + Number.EPSILON) * 100) / 100;
+            const prixVenteTTC = Math.round(((montantTTC - (allValues.remise || 0)) + Number.EPSILON) * 100) / 100;
+            form.setFieldValue('montantHT', montantHT);
+            form.setFieldValue('prixVenteTTC', prixVenteTTC);
+            return;
+        }
+
+        if (changedValues.prixVenteTTC !== undefined) {
+            const montantTTC = allValues.montantTTC || 0;
+            const prixVenteTTC = changedValues.prixVenteTTC || 0;
+            const remise = Math.round(((montantTTC - prixVenteTTC) + Number.EPSILON) * 100) / 100;
+            const remisePourcentage = montantTTC > 0
+                ? Math.round((((remise / montantTTC) * 100) + Number.EPSILON) * 100) / 100
+                : 0;
+            form.setFieldValue('remise', remise);
+            form.setFieldValue('remisePourcentage', remisePourcentage);
+            return;
+        }
+
         if (
             changedValues.forfaits !== undefined ||
             changedValues.produits !== undefined ||
@@ -877,7 +933,7 @@ export default function Comptoir() {
                     <Row gutter={16}>
                         <Col span={6}>
                             <Form.Item name="montantHT" label="Montant HT">
-                                <InputNumber addonAfter="EUR" min={0} step={0.01} style={{ width: '100%' }} disabled />
+                                <InputNumber addonAfter="EUR" min={0} step={0.01} style={{ width: '100%' }} />
                             </Form.Item>
                         </Col>
                         <Col span={6}>
@@ -900,17 +956,17 @@ export default function Comptoir() {
                     <Row gutter={16}>
                         <Col span={8}>
                             <Form.Item name="montantTVA" label="Montant TVA">
-                                <InputNumber addonAfter="EUR" min={0} step={0.01} style={{ width: '100%' }} disabled />
+                                <InputNumber addonAfter="EUR" min={0} step={0.01} style={{ width: '100%' }} />
                             </Form.Item>
                         </Col>
                         <Col span={8}>
                             <Form.Item name="montantTTC" label="Montant TTC">
-                                <InputNumber addonAfter="EUR" min={0} step={0.01} style={{ width: '100%' }} disabled />
+                                <InputNumber addonAfter="EUR" min={0} step={0.01} style={{ width: '100%' }} />
                             </Form.Item>
                         </Col>
                         <Col span={8}>
                             <Form.Item name="prixVenteTTC" label="Prix vente TTC">
-                                <InputNumber addonAfter="EUR" min={0} step={0.01} style={{ width: '100%' }} disabled />
+                                <InputNumber addonAfter="EUR" min={0} step={0.01} style={{ width: '100%' }} />
                             </Form.Item>
                         </Col>
                     </Row>
