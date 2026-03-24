@@ -16,8 +16,10 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import net.nanthrax.moussaillon.persistence.BateauCatalogueEntity;
 import net.nanthrax.moussaillon.persistence.CommandeFournisseurEntity;
 import net.nanthrax.moussaillon.persistence.CommandeFournisseurLigneEntity;
+import net.nanthrax.moussaillon.persistence.MoteurCatalogueEntity;
 import net.nanthrax.moussaillon.persistence.ProduitCatalogueEntity;
 
 @Path("/commandes-fournisseur")
@@ -130,6 +132,9 @@ public class CommandeFournisseurResource {
             for (CommandeFournisseurLigneEntity incomingLigne : commande.lignes) {
                 CommandeFournisseurLigneEntity clonedLigne = new CommandeFournisseurLigneEntity();
                 clonedLigne.produit = incomingLigne.produit;
+                clonedLigne.bateau = incomingLigne.bateau;
+                clonedLigne.moteur = incomingLigne.moteur;
+                clonedLigne.helice = incomingLigne.helice;
                 clonedLigne.quantite = incomingLigne.quantite;
                 clonedLigne.prixUnitaireHT = incomingLigne.prixUnitaireHT;
                 clonedLigne.tva = incomingLigne.tva;
@@ -156,6 +161,18 @@ public class CommandeFournisseurResource {
                     ProduitCatalogueEntity p = ProduitCatalogueEntity.findById(ligne.produit.id);
                     if (p != null) {
                         p.stock = p.stock + ligne.quantite;
+                    }
+                }
+                if (ligne.bateau != null) {
+                    BateauCatalogueEntity b = BateauCatalogueEntity.findById(ligne.bateau.id);
+                    if (b != null) {
+                        b.stock = b.stock + ligne.quantite;
+                    }
+                }
+                if (ligne.moteur != null) {
+                    MoteurCatalogueEntity m = MoteurCatalogueEntity.findById(ligne.moteur.id);
+                    if (m != null) {
+                        m.stock = m.stock + ligne.quantite;
                     }
                 }
             }
