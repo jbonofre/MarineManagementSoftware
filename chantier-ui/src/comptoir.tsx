@@ -20,6 +20,7 @@ import {
 } from 'antd';
 import { CreditCardOutlined, DeleteOutlined, EditOutlined, PlusCircleOutlined, PlusOutlined, PrinterOutlined, FileTextOutlined } from '@ant-design/icons';
 import axios from 'axios';
+import ImageUpload from './ImageUpload.tsx';
 
 interface ClientEntity {
     id: number;
@@ -1135,28 +1136,7 @@ export default function Comptoir() {
                             </Col>
                         </Row>
                         <Form.Item name="images" label="Images">
-                            <Form.List name="images">
-                                {(fields, { add, remove: removeImage }) => (
-                                    <>
-                                        {fields.map((field) => (
-                                            <Space key={field.key} align="baseline" style={{ display: 'flex', marginBottom: 8 }}>
-                                                <Form.Item
-                                                    {...field}
-                                                    name={[field.name]}
-                                                    rules={[{ required: true, message: "Veuillez entrer une URL d'image" }]}
-                                                    style={{ flex: 1 }}
-                                                >
-                                                    <Input placeholder="URL de l'image" style={{ width: '100%' }} />
-                                                </Form.Item>
-                                                <Button icon={<DeleteOutlined />} danger onClick={() => removeImage(field.name)} />
-                                            </Space>
-                                        ))}
-                                        <Button type="dashed" onClick={() => add()} block icon={<PlusCircleOutlined />}>
-                                            Ajouter une image
-                                        </Button>
-                                    </>
-                                )}
-                            </Form.List>
+                            <ImageUpload />
                         </Form.Item>
                         <Form.Item name="refs" label="Références complémentaires">
                             <Form.List name="refs">
