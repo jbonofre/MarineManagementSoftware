@@ -25,7 +25,7 @@ import BateauxClients from './clients-bateaux.tsx';
 import ClientsMoteurs from './clients-moteurs.tsx';
 import RemorquesClients from './clients-remorques.tsx';
 import Techniciens from './techniciens.tsx';
-import Services from './services.tsx';
+import MainOeuvres from './main-oeuvres.tsx';
 import Vente from './vente.tsx';
 import Planning from './planning.tsx';
 import Comptoir from './comptoir.tsx';
@@ -73,7 +73,7 @@ function SideMenu(props) {
         { key: 'prestations', label: <Link to="/prestations">Prestations</Link>, icon: <CheckSquareOutlined/> },
       ]},
       { key: 'atelier', label: 'Atelier', icon: <ToolOutlined/>, requiredRole: 'admin', children: [
-        { key: 'services', label: <Link to="/services">Services & Main d'Oeuvre</Link>, icon: <RedoOutlined/> },
+        { key: 'main-oeuvres', label: <Link to="/main-oeuvres">Main d'Oeuvres</Link>, icon: <RedoOutlined/> },
         { key: 'forfaits', label: <Link to="/forfaits">Forfaits</Link>, icon: <FileDoneOutlined/> },
         { key: 'equipe', label: <Link to="/techniciens">Equipe</Link>, icon: <TeamOutlined/> },
         { key: 'planning', label: <Link to="/planning">Planning</Link>, icon: <CalendarOutlined/> },
@@ -433,8 +433,8 @@ export default function Workspace(props) {
                         <Route path="/techniciens" key="techniciens">
                             <ProtectedRoute roles={props.roles} requiredRole="admin"><Techniciens /></ProtectedRoute>
                         </Route>
-                        <Route path="/services" key="services">
-                            <ProtectedRoute roles={props.roles} requiredRole="admin"><Services /></ProtectedRoute>
+                        <Route path="/main-oeuvres" key="main-oeuvres">
+                            <ProtectedRoute roles={props.roles} requiredRole="admin"><MainOeuvres /></ProtectedRoute>
                         </Route>
                         <Route path="/planning" key="planning">
                             <ProtectedRoute roles={props.roles} requiredRole="admin"><Planning /></ProtectedRoute>

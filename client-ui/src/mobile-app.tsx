@@ -81,7 +81,6 @@ interface TaskEntity {
     description?: string;
     notes?: string;
     technicien?: { id: number; nom: string; prenom?: string };
-    dureeEstimee: number;
     dureeReelle: number;
     incidentDate?: string;
     incidentDetails?: string;
@@ -425,7 +424,6 @@ export default function MobileApp({ user, onLogout }: MobileAppProps) {
                         <p><strong>Technicien:</strong>{' '}
                             {detailTask.technicien ? `${detailTask.technicien.prenom || ''} ${detailTask.technicien.nom}`.trim() : 'Non assigne'}
                         </p>
-                        <p><strong>Duree estimee:</strong> {detailTask.dureeEstimee != null ? `${detailTask.dureeEstimee}h` : '-'}</p>
                         <p><strong>Duree reelle:</strong> {detailTask.dureeReelle != null ? `${detailTask.dureeReelle}h` : '-'}</p>
                         {detailTask.notes && <p><strong>Notes:</strong> {detailTask.notes}</p>}
                         {detailTask.status === 'INCIDENT' && (

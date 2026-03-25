@@ -31,7 +31,6 @@ interface TaskWithVente {
     statusDate?: string;
     description?: string;
     notes?: string;
-    dureeEstimee?: number;
     dureeReelle?: number;
     incidentDate?: string;
     incidentDetails?: string;
@@ -207,12 +206,6 @@ export default function Planning({ technicienId }: PlanningProps) {
             render: (val: string) => formatDate(val),
         },
         {
-            title: 'Estimee',
-            dataIndex: 'dureeEstimee',
-            key: 'dureeEstimee',
-            render: (val: number) => val ? `${val}h` : '-',
-        },
-        {
             title: 'Reelle',
             dataIndex: 'dureeReelle',
             key: 'dureeReelle',
@@ -371,7 +364,6 @@ export default function Planning({ technicienId }: PlanningProps) {
                         <p><strong>Client:</strong> {currentTask.clientNom || '-'}</p>
                         <p><strong>Bateau:</strong> {currentTask.bateauNom || '-'}</p>
                         <p><strong>Description:</strong> {currentTask.description || '-'}</p>
-                        <p><strong>Duree estimee:</strong> {currentTask.dureeEstimee ? `${currentTask.dureeEstimee}h` : '-'}</p>
                     </Card>
                 )}
                 <Form form={form} layout="vertical">

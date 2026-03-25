@@ -44,9 +44,7 @@ public class TechnicienKpiResource {
         kpi.tauxCompletion = kpi.totalTaches > 0 ? Math.round((double) kpi.tachesTerminees / kpi.totalTaches * 100.0 * 10) / 10.0 : 0;
         kpi.tauxIncident = kpi.totalTaches > 0 ? Math.round((double) kpi.tachesIncident / kpi.totalTaches * 100.0 * 10) / 10.0 : 0;
 
-        kpi.heuresEstimees = allTasks.stream().mapToDouble(t -> t.dureeEstimee).sum();
         kpi.heuresReelles = allTasks.stream().filter(t -> t.status == TaskEntity.Status.TERMINEE).mapToDouble(t -> t.dureeReelle).sum();
-        kpi.efficacite = kpi.heuresEstimees > 0 ? Math.round(kpi.heuresReelles / kpi.heuresEstimees * 100.0 * 10) / 10.0 : 0;
 
         // KPIs du mois
         List<TaskEntity> tachesDuMois = allTasks.stream()
@@ -74,9 +72,7 @@ public class TechnicienKpiResource {
         public int tachesAnnulees;
         public double tauxCompletion;
         public double tauxIncident;
-        public double heuresEstimees;
         public double heuresReelles;
-        public double efficacite;
         public int tachesMois;
         public int tachesTermineesMois;
         public double heuresReellesMois;

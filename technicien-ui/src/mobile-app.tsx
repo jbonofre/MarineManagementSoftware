@@ -47,7 +47,6 @@ interface TaskWithVente {
     statusDate?: string;
     description?: string;
     notes?: string;
-    dureeEstimee?: number;
     dureeReelle?: number;
     incidentDate?: string;
     incidentDetails?: string;
@@ -175,7 +174,6 @@ export default function MobileApp({ user, onLogout, onChangePassword }: MobileAp
             <p style={{ margin: '2px 0', color: '#666' }}>{task.clientNom || '-'} {task.bateauNom ? `/ ${task.bateauNom}` : ''}</p>
             {task.description && <p style={{ margin: '2px 0', fontSize: 12, color: '#999' }}>{task.description}</p>}
             <div style={{ display: 'flex', justifyContent: 'space-between', margin: '4px 0' }}>
-                <span>Estimee: {task.dureeEstimee ? `${task.dureeEstimee}h` : '-'}</span>
                 <span>Reelle: {task.dureeReelle ? `${task.dureeReelle}h` : '-'}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', margin: '2px 0', fontSize: 12 }}>
@@ -282,7 +280,6 @@ export default function MobileApp({ user, onLogout, onChangePassword }: MobileAp
                         <p style={{ margin: '2px 0' }}><strong>Client:</strong> {currentTask.clientNom || '-'}</p>
                         <p style={{ margin: '2px 0' }}><strong>Bateau:</strong> {currentTask.bateauNom || '-'}</p>
                         {currentTask.description && <p style={{ margin: '2px 0' }}><strong>Description:</strong> {currentTask.description}</p>}
-                        <p style={{ margin: '2px 0' }}><strong>Estimee:</strong> {currentTask.dureeEstimee ? `${currentTask.dureeEstimee}h` : '-'}</p>
                     </Card>
                 )}
                 <Form form={form} layout="vertical">

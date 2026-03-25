@@ -65,7 +65,6 @@ public class TechnicienPortalResource {
         public String statusDate;
         public String description;
         public String notes;
-        public double dureeEstimee;
         public double dureeReelle;
         public String incidentDate;
         public String incidentDetails;
@@ -84,7 +83,6 @@ public class TechnicienPortalResource {
             tw.statusDate = task.statusDate != null ? task.statusDate.toString() : null;
             tw.description = task.description;
             tw.notes = task.notes;
-            tw.dureeEstimee = task.dureeEstimee;
             tw.dureeReelle = task.dureeReelle;
             tw.incidentDate = task.incidentDate != null ? task.incidentDate.toString() : null;
             tw.incidentDetails = task.incidentDetails;

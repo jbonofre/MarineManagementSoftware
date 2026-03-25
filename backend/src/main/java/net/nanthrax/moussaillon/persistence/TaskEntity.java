@@ -38,8 +38,6 @@ public class TaskEntity extends PanacheEntity {
     @ManyToOne
     public TechnicienEntity technicien;
 
-    public double dureeEstimee;
-
     public double dureeReelle;
 
     public Date incidentDate;

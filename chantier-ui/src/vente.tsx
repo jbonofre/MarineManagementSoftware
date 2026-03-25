@@ -64,7 +64,6 @@ interface TaskEntity {
     description?: string;
     notes?: string;
     technicien?: TechnicienEntity;
-    dureeEstimee?: number;
     dureeReelle?: number;
     incidentDate?: string;
     incidentDetails?: string;
@@ -139,7 +138,7 @@ const defaultNewProduit = {
     prixVenteTTC: 0,
 };
 
-interface ServiceEntity {
+interface MainOeuvreEntity {
     id: number;
     nom: string;
     description?: string;
@@ -149,8 +148,36 @@ interface ServiceEntity {
     prixTTC?: number;
 }
 
+interface ServiceMainOeuvreEntity {
+    id?: number;
+    mainOeuvre?: MainOeuvreEntity;
+    quantite: number;
+}
+
+interface ServiceProduitEntity {
+    id?: number;
+    produit?: ProduitCatalogueEntity;
+    quantite: number;
+}
+
+interface ServiceEntity {
+    id: number;
+    nom: string;
+    description?: string;
+    mainOeuvres?: ServiceMainOeuvreEntity[];
+    produits?: ServiceProduitEntity[];
+    prixHT?: number;
+    tva?: number;
+    montantTVA?: number;
+    prixTTC?: number;
+}
+
 const defaultNewService = {
-    nom: '', description: '', prixHT: 0, tva: 20, montantTVA: 0, prixTTC: 0,
+    nom: '', description: '',
+    dureeEstimee: 0,
+    mainOeuvres: [{}] as Array<{ mainOeuvreId?: number; quantite?: number }>,
+    produits: [{}] as Array<{ produitId?: number; quantite?: number }>,
+    prixHT: 0, tva: 20, montantTVA: 0, prixTTC: 0,
 };
 
 type VenteStatus = 'EN_ATTENTE' | 'EN_COURS' | 'PAYEE' | 'ANNULEE';
@@ -211,7 +238,6 @@ interface VenteFormValues {
         description?: string;
         notes?: string;
         technicienId?: number;
-        dureeEstimee?: number;
         dureeReelle?: number;
         incidentDate?: string;
         incidentDetails?: string;
@@ -351,6 +377,7 @@ export default function Vente() {
     const [forfaits, setForfaits] = useState<ForfaitEntity[]>([]);
     const [produits, setProduits] = useState<ProduitCatalogueEntity[]>([]);
     const [services, setServices] = useState<ServiceEntity[]>([]);
+    const [mainOeuvres, setMainOeuvres] = useState<MainOeuvreEntity[]>([]);
     const [techniciens, setTechniciens] = useState<TechnicienEntity[]>([]);
     const [loading, setLoading] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
@@ -415,6 +442,16 @@ export default function Vente() {
         [services]
     );
 
+    const mainOeuvreOptions = useMemo(
+        () => mainOeuvres.map((mo) => ({ value: mo.id, label: mo.nom })),
+        [mainOeuvres]
+    );
+
+    const produitOptionsForService = useMemo(
+        () => produits.map((p) => ({ value: p.id, label: `${p.nom}${p.marque ? ` (${p.marque})` : ''}` })),
+        [produits]
+    );
+
     const technicienOptions = useMemo(
         () =>
             techniciens.map((technicien) => ({
@@ -457,6 +494,7 @@ export default function Vente() {
                 forfaitsRes,
                 produitsRes,
                 servicesRes,
+                mainOeuvresRes,
                 techniciensRes
             ] = await Promise.all([
                 axios.get('/clients'),
@@ -466,6 +504,7 @@ export default function Vente() {
                 axios.get('/forfaits'),
                 axios.get('/catalogue/produits'),
                 axios.get('/services'),
+                axios.get('/main-oeuvres'),
                 axios.get('/techniciens')
             ]);
             setClients(clientsRes.data || []);
@@ -475,6 +514,7 @@ export default function Vente() {
             setForfaits(forfaitsRes.data || []);
             setProduits(produitsRes.data || []);
             setServices(servicesRes.data || []);
+            setMainOeuvres(mainOeuvresRes.data || []);
             setTechniciens(techniciensRes.data || []);
         } catch {
             message.error('Erreur lors du chargement des listes de reference.');
@@ -543,7 +583,28 @@ export default function Vente() {
     const handleNewServiceSave = async () => {
         try {
             const values = await newServiceForm.validateFields();
-            const res = await axios.post('/services', values);
+            const payload = {
+                nom: values.nom,
+                description: values.description,
+                dureeEstimee: values.dureeEstimee || 0,
+                mainOeuvres: (values.mainOeuvres || [])
+                    .filter((item: { mainOeuvreId?: number }) => item.mainOeuvreId)
+                    .map((item: { mainOeuvreId?: number; quantite?: number }) => ({
+                        mainOeuvre: mainOeuvres.find((mo) => mo.id === item.mainOeuvreId),
+                        quantite: item.quantite || 1
+                    })),
+                produits: (values.produits || [])
+                    .filter((item: { produitId?: number }) => item.produitId)
+                    .map((item: { produitId?: number; quantite?: number }) => ({
+                        produit: produits.find((p) => p.id === item.produitId),
+                        quantite: item.quantite || 1
+                    })),
+                prixHT: values.prixHT || 0,
+                tva: values.tva || 0,
+                montantTVA: values.montantTVA || 0,
+                prixTTC: values.prixTTC || 0
+            };
+            const res = await axios.post('/services', payload);
             const created = res.data as ServiceEntity;
             message.success('Service ajouté avec succès');
             setServices((prev) => [...prev, created]);
@@ -561,6 +622,52 @@ export default function Vente() {
     };
 
     const onNewServiceValuesChange = (changedValues: Record<string, unknown>) => {
+        // Auto-add new line when last line is complete
+        if (changedValues.mainOeuvres !== undefined) {
+            const currentLines = newServiceForm.getFieldValue('mainOeuvres') || [];
+            if (currentLines.length === 0) {
+                newServiceForm.setFieldValue('mainOeuvres', [{}]);
+                return;
+            }
+            const lastLine = currentLines[currentLines.length - 1];
+            if (!!lastLine?.mainOeuvreId && (lastLine?.quantite || 0) > 0) {
+                newServiceForm.setFieldValue('mainOeuvres', [...currentLines, {}]);
+            }
+        }
+        if (changedValues.produits !== undefined) {
+            const currentLines = newServiceForm.getFieldValue('produits') || [];
+            if (currentLines.length === 0) {
+                newServiceForm.setFieldValue('produits', [{}]);
+                return;
+            }
+            const lastLine = currentLines[currentLines.length - 1];
+            if (!!lastLine?.produitId && (lastLine?.quantite || 0) > 0) {
+                newServiceForm.setFieldValue('produits', [...currentLines, {}]);
+            }
+        }
+
+        // Recalculate totals from lines
+        if (changedValues.mainOeuvres !== undefined || changedValues.produits !== undefined) {
+            const round2 = (v: number) => Math.round((v + Number.EPSILON) * 100) / 100;
+            const moValues = newServiceForm.getFieldValue('mainOeuvres') || [];
+            const prodValues = newServiceForm.getFieldValue('produits') || [];
+            const totalMoTTC = moValues.reduce((total: number, item: { mainOeuvreId?: number; quantite?: number }) => {
+                const prix = mainOeuvres.find((mo) => mo.id === item.mainOeuvreId)?.prixTTC || 0;
+                return total + (prix * (item.quantite || 0));
+            }, 0);
+            const totalProdTTC = prodValues.reduce((total: number, item: { produitId?: number; quantite?: number }) => {
+                const prix = produits.find((p) => p.id === item.produitId)?.prixVenteTTC || 0;
+                return total + (prix * (item.quantite || 0));
+            }, 0);
+            const prixTTC = round2(totalMoTTC + totalProdTTC);
+            const tva = newServiceForm.getFieldValue('tva') || 0;
+            const montantTVA = round2((prixTTC / (100 + tva)) * tva);
+            const prixHT = round2(prixTTC - montantTVA);
+            newServiceForm.setFieldValue('prixTTC', prixTTC);
+            newServiceForm.setFieldValue('montantTVA', montantTVA);
+            newServiceForm.setFieldValue('prixHT', prixHT);
+        }
+
         if (changedValues.prixHT !== undefined || changedValues.tva !== undefined) {
             const prixHT = newServiceForm.getFieldValue('prixHT') || 0;
             const tva = newServiceForm.getFieldValue('tva') || 0;
@@ -663,7 +770,6 @@ export default function Vente() {
                     description: tache.description || '',
                     notes: tache.notes || '',
                     technicienId: tache.technicien?.id,
-                    dureeEstimee: tache.dureeEstimee || 0,
                     dureeReelle: tache.dureeReelle || 0
                 }));
             form.setFieldsValue({
@@ -724,7 +830,6 @@ export default function Vente() {
                     description: tache.description || '',
                     notes: tache.notes || '',
                     technicienId: tache.technicien?.id,
-                    dureeEstimee: tache.dureeEstimee || 0,
                     dureeReelle: tache.dureeReelle || 0
                 }));
                 return expandByQuantity(tasksForOneForfait, line.quantite || 1);
@@ -769,7 +874,6 @@ export default function Vente() {
                     || tache.dateDebut
                     || tache.dateFin
                     || tache.statusDate
-                    || (tache.dureeEstimee || 0) > 0
                     || (tache.dureeReelle || 0) > 0
                     || tache.incidentDate
                     || tache.incidentDetails
@@ -785,7 +889,6 @@ export default function Vente() {
                 description: tache.description || '',
                 notes: tache.notes || '',
                 technicien: techniciens.find((technicien) => technicien.id === tache.technicienId),
-                dureeEstimee: tache.dureeEstimee || 0,
                 dureeReelle: tache.dureeReelle || 0,
                 incidentDate: tache.incidentDate,
                 incidentDetails: tache.incidentDetails
@@ -1187,7 +1290,6 @@ export default function Vente() {
                 || lastTaskLine?.dateDebut
                 || lastTaskLine?.dateFin
                 || lastTaskLine?.statusDate
-                || (lastTaskLine?.dureeEstimee || 0) > 0
                 || (lastTaskLine?.dureeReelle || 0) > 0
             );
             if (isLastLineComplete) {
@@ -1911,30 +2013,15 @@ export default function Vente() {
                                                                 </Form.Item>
                                                             </Col>
                                                         </Row>
-                                                        <Row gutter={12}>
-                                                            <Col span={12}>
-                                                                <Form.Item {...field} name={[field.name, 'dureeEstimee']} label="Durée estimée">
-                                                                    <InputNumber
-                                                                        min={0}
-                                                                        step={0.25}
-                                                                        precision={2}
-                                                                        style={{ width: '100%' }}
-                                                                        addonAfter="h"
-                                                                    />
-                                                                </Form.Item>
-                                                            </Col>
-                                                            <Col span={12}>
-                                                                <Form.Item {...field} name={[field.name, 'dureeReelle']} label="Durée réelle">
-                                                                    <InputNumber
-                                                                        min={0}
-                                                                        step={0.25}
-                                                                        precision={2}
-                                                                        style={{ width: '100%' }}
-                                                                        addonAfter="h"
-                                                                    />
-                                                                </Form.Item>
-                                                            </Col>
-                                                        </Row>
+                                                        <Form.Item {...field} name={[field.name, 'dureeReelle']} label="Durée réelle">
+                                                            <InputNumber
+                                                                min={0}
+                                                                step={0.25}
+                                                                precision={2}
+                                                                style={{ width: '100%' }}
+                                                                addonAfter="h"
+                                                            />
+                                                        </Form.Item>
                                                         <Form.Item {...field} name={[field.name, 'description']} label="Description">
                                                             <Input.TextArea rows={2} />
                                                         </Form.Item>
@@ -2160,7 +2247,7 @@ export default function Vente() {
                     onOk={handleNewServiceSave}
                     onCancel={() => setNewServiceModalVisible(false)}
                     maskClosable={false}
-                    width={900}
+                    width={1000}
                     okText="Enregistrer"
                     cancelText="Annuler"
                     destroyOnHidden
@@ -2170,15 +2257,119 @@ export default function Vente() {
                             <Input allowClear />
                         </Form.Item>
                         <Form.Item name="description" label="Description">
-                            <Input.TextArea rows={3} allowClear />
+                            <Input.TextArea rows={2} allowClear />
                         </Form.Item>
-                        <Row gutter={16}>
-                            <Col span={12}><Form.Item name="prixHT" label="Prix HT"><InputNumber addonAfter="€" min={0} step={0.01} style={{ width: '100%' }} /></Form.Item></Col>
-                            <Col span={12}><Form.Item name="tva" label="TVA (%)"><InputNumber addonAfter="%" min={0} max={100} step={0.01} style={{ width: '100%' }} /></Form.Item></Col>
-                        </Row>
-                        <Row gutter={16}>
-                            <Col span={12}><Form.Item name="montantTVA" label="Montant TVA"><InputNumber addonAfter="€" min={0} step={0.01} style={{ width: '100%' }} /></Form.Item></Col>
-                            <Col span={12}><Form.Item name="prixTTC" label="Prix TTC"><InputNumber addonAfter="€" min={0} step={0.01} style={{ width: '100%' }} /></Form.Item></Col>
+                        <Form.Item name="dureeEstimee" label="Durée estimée">
+                            <InputNumber min={0} step={0.25} precision={2} style={{ width: '100%' }} addonAfter="h" />
+                        </Form.Item>
+                        <Tabs
+                            defaultActiveKey="mainOeuvres"
+                            items={[
+                                {
+                                    key: 'mainOeuvres',
+                                    label: "Main d'Oeuvres",
+                                    children: (
+                                        <Form.List name="mainOeuvres">
+                                            {(fields, { remove }) => (
+                                                <>
+                                                    {fields.map((field, index) => (
+                                                        <Row gutter={8} key={field.key} align="middle">
+                                                            <Col span={16}>
+                                                                <Form.Item
+                                                                    {...field}
+                                                                    name={[field.name, 'mainOeuvreId']}
+                                                                    label={index === 0 ? "Main d'Oeuvre" : undefined}
+                                                                >
+                                                                    <Select
+                                                                        showSearch
+                                                                        allowClear
+                                                                        placeholder="Sélectionner une main d'oeuvre"
+                                                                        options={mainOeuvreOptions}
+                                                                        filterOption={(input, option) =>
+                                                                            (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                                                                        }
+                                                                    />
+                                                                </Form.Item>
+                                                            </Col>
+                                                            <Col span={5}>
+                                                                <Form.Item
+                                                                    {...field}
+                                                                    name={[field.name, 'quantite']}
+                                                                    label={index === 0 ? 'Quantité' : undefined}
+                                                                >
+                                                                    <InputNumber min={1} style={{ width: '100%' }} />
+                                                                </Form.Item>
+                                                            </Col>
+                                                            <Col span={3}>
+                                                                <Form.Item label={index === 0 ? ' ' : undefined}>
+                                                                    {fields.length > 1 && (
+                                                                        <Button danger icon={<DeleteOutlined />} onClick={() => remove(field.name)} />
+                                                                    )}
+                                                                </Form.Item>
+                                                            </Col>
+                                                        </Row>
+                                                    ))}
+                                                </>
+                                            )}
+                                        </Form.List>
+                                    )
+                                },
+                                {
+                                    key: 'produits',
+                                    label: 'Produits',
+                                    children: (
+                                        <Form.List name="produits">
+                                            {(fields, { remove }) => (
+                                                <>
+                                                    {fields.map((field, index) => (
+                                                        <Row gutter={8} key={field.key} align="middle">
+                                                            <Col span={16}>
+                                                                <Form.Item
+                                                                    {...field}
+                                                                    name={[field.name, 'produitId']}
+                                                                    label={index === 0 ? 'Produit' : undefined}
+                                                                >
+                                                                    <Select
+                                                                        showSearch
+                                                                        allowClear
+                                                                        placeholder="Sélectionner un produit"
+                                                                        options={produitOptionsForService}
+                                                                        filterOption={(input, option) =>
+                                                                            (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                                                                        }
+                                                                    />
+                                                                </Form.Item>
+                                                            </Col>
+                                                            <Col span={5}>
+                                                                <Form.Item
+                                                                    {...field}
+                                                                    name={[field.name, 'quantite']}
+                                                                    label={index === 0 ? 'Quantité' : undefined}
+                                                                >
+                                                                    <InputNumber min={1} style={{ width: '100%' }} />
+                                                                </Form.Item>
+                                                            </Col>
+                                                            <Col span={3}>
+                                                                <Form.Item label={index === 0 ? ' ' : undefined}>
+                                                                    {fields.length > 1 && (
+                                                                        <Button danger icon={<DeleteOutlined />} onClick={() => remove(field.name)} />
+                                                                    )}
+                                                                </Form.Item>
+                                                            </Col>
+                                                        </Row>
+                                                    ))}
+                                                </>
+                                            )}
+                                        </Form.List>
+                                    )
+                                }
+                            ]}
+                        />
+                        <Row gutter={16} style={{ marginTop: 16 }}>
+                            <Col span={6}><Form.Item name="prixHT" label="Prix HT"><InputNumber addonAfter="€" min={0} step={0.01} style={{ width: '100%' }} /></Form.Item></Col>
+                            <Col span={6}><Form.Item name="tva" label="TVA (%)"><InputNumber addonAfter="%" min={0} max={100} step={0.01} style={{ width: '100%' }} /></Form.Item></Col>
+                            <Col span={6}><Form.Item name="montantTVA" label="Montant TVA"><InputNumber addonAfter="€" min={0} step={0.01} style={{ width: '100%' }} /></Form.Item></Col>
+                            <Col span={6}><Form.Item name="prixTTC" label="Prix TTC"><InputNumber addonAfter="€" min={0} step={0.01} style={{ width: '100%' }} /></Form.Item></Col>
                         </Row>
                     </Form>
                 </Modal>

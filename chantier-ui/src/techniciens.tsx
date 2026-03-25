@@ -24,9 +24,7 @@ interface TechnicienKpi {
     tachesAnnulees: number;
     tauxCompletion: number;
     tauxIncident: number;
-    heuresEstimees: number;
     heuresReelles: number;
-    efficacite: number;
     tachesMois: number;
     tachesTermineesMois: number;
     heuresReellesMois: number;
@@ -396,19 +394,10 @@ const Techniciens: React.FC = () => {
                                     <div style={{ marginTop: 8 }}>Incidents</div>
                                 </div>
                             </Col>
-                            <Col span={8}>
-                                <div style={{ textAlign: 'center' }}>
-                                    <Progress type="circle" percent={kpiData.efficacite} size={80} strokeColor={kpiData.efficacite <= 100 ? '#52c41a' : '#faad14'} />
-                                    <div style={{ marginTop: 8 }}>Efficacité</div>
-                                </div>
-                            </Col>
                         </Row>
 
                         <Divider orientation="left">Heures</Divider>
                         <Row gutter={[16, 16]}>
-                            <Col span={8}>
-                                <Statistic title="Estimées" value={kpiData.heuresEstimees} suffix="h" precision={1} />
-                            </Col>
                             <Col span={8}>
                                 <Statistic title="Réelles" value={kpiData.heuresReelles} suffix="h" precision={1} />
                             </Col>

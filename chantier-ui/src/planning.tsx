@@ -28,7 +28,6 @@ interface TaskEntity {
     dateDebut?: string;
     dateFin?: string;
     statusDate?: string;
-    dureeEstimee?: number;
     technicien?: TechnicienEntity;
     incidentDate?: string;
     incidentDetails?: string;
@@ -324,10 +323,7 @@ export default function Planning() {
                     }
 
                     const endSource = task.dateFin;
-                    const estimatedDurationMinutes = Math.max(
-                        1,
-                        Math.round(((task.dureeEstimee || 0) > 0 ? (task.dureeEstimee || 0) * 60 : 60))
-                    );
+                    const estimatedDurationMinutes = 60;
                     const endDate = endSource && dayjs(endSource).isValid()
                         ? dayjs(endSource)
                         : startDate.add(estimatedDurationMinutes, 'minute');

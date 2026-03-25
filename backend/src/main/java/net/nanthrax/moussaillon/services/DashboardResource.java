@@ -82,11 +82,10 @@ public class DashboardResource {
         }
 
         // Objectifs mensuels
-        // Heures atelier facturees: ratio dureeReelle / dureeEstimee for tasks this month
+        // Heures atelier: heures reelles des taches terminees ce mois
         List<TaskEntity> tachesDuMois = TaskEntity.list("dateDebut >= ?1", Date.valueOf(startOfMonth));
-        double totalEstimee = tachesDuMois.stream().mapToDouble(t -> t.dureeEstimee).sum();
         double totalReelle = tachesDuMois.stream().filter(t -> t.status == TaskEntity.Status.TERMINEE).mapToDouble(t -> t.dureeReelle).sum();
-        data.heuresAtelierPct = totalEstimee > 0 ? (int) Math.round(totalReelle / totalEstimee * 100) : 0;
+        data.heuresAtelierPct = totalReelle > 0 ? (int) Math.min(100, Math.round(totalReelle)) : 0;
 
         // Ventes comptoir: ratio of PAYEE comptoir sales vs total comptoir sales this month
         long comptoirTotal = VenteEntity.count("type = ?1 and date >= ?2", VenteEntity.Type.COMPTOIR, monthStart);

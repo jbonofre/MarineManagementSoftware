@@ -13,8 +13,13 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import net.nanthrax.moussaillon.persistence.MainOeuvreEntity;
+import net.nanthrax.moussaillon.persistence.ProduitCatalogueEntity;
 import net.nanthrax.moussaillon.persistence.ServiceEntity;
+import net.nanthrax.moussaillon.persistence.ServiceMainOeuvreEntity;
+import net.nanthrax.moussaillon.persistence.ServiceProduitEntity;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Path("/services")
@@ -41,6 +46,7 @@ public class ServiceResource {
     @POST
     @Transactional
     public ServiceEntity create(ServiceEntity service) {
+        resolveRelations(service);
         service.persist();
         return service;
     }
@@ -78,11 +84,61 @@ public class ServiceResource {
 
         entity.nom = service.nom;
         entity.description = service.description;
+        entity.dureeEstimee = service.dureeEstimee;
         entity.prixHT = service.prixHT;
         entity.tva = service.tva;
         entity.montantTVA = service.montantTVA;
         entity.prixTTC = service.prixTTC;
 
+        // Update main d'oeuvres
+        entity.mainOeuvres.clear();
+        if (service.mainOeuvres != null) {
+            for (ServiceMainOeuvreEntity item : service.mainOeuvres) {
+                ServiceMainOeuvreEntity newItem = new ServiceMainOeuvreEntity();
+                if (item.mainOeuvre != null && item.mainOeuvre.id != null) {
+                    newItem.mainOeuvre = MainOeuvreEntity.findById(item.mainOeuvre.id);
+                }
+                newItem.quantite = item.quantite;
+                entity.mainOeuvres.add(newItem);
+            }
+        }
+
+        // Update produits
+        entity.produits.clear();
+        if (service.produits != null) {
+            for (ServiceProduitEntity item : service.produits) {
+                ServiceProduitEntity newItem = new ServiceProduitEntity();
+                if (item.produit != null && item.produit.id != null) {
+                    newItem.produit = ProduitCatalogueEntity.findById(item.produit.id);
+                }
+                newItem.quantite = item.quantite;
+                entity.produits.add(newItem);
+            }
+        }
+
         return entity;
+    }
+
+    private void resolveRelations(ServiceEntity service) {
+        if (service.mainOeuvres != null) {
+            List<ServiceMainOeuvreEntity> resolved = new ArrayList<>();
+            for (ServiceMainOeuvreEntity item : service.mainOeuvres) {
+                if (item.mainOeuvre != null && item.mainOeuvre.id != null) {
+                    item.mainOeuvre = MainOeuvreEntity.findById(item.mainOeuvre.id);
+                }
+                resolved.add(item);
+            }
+            service.mainOeuvres = resolved;
+        }
+        if (service.produits != null) {
+            List<ServiceProduitEntity> resolved = new ArrayList<>();
+            for (ServiceProduitEntity item : service.produits) {
+                if (item.produit != null && item.produit.id != null) {
+                    item.produit = ProduitCatalogueEntity.findById(item.produit.id);
+                }
+                resolved.add(item);
+            }
+            service.produits = resolved;
+        }
     }
 }

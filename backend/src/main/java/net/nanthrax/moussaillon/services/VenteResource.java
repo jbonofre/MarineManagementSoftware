@@ -192,7 +192,6 @@ public class VenteResource {
                 clonedTask.description = incomingTask.description;
                 clonedTask.notes = incomingTask.notes;
                 clonedTask.technicien = incomingTask.technicien;
-                clonedTask.dureeEstimee = incomingTask.dureeEstimee;
                 clonedTask.dureeReelle = incomingTask.dureeReelle;
                 clonedTask.incidentDate = incomingTask.incidentDate;
                 clonedTask.incidentDetails = incomingTask.incidentDetails;
