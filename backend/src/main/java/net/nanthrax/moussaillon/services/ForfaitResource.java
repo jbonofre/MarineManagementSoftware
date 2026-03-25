@@ -97,6 +97,7 @@ public class ForfaitResource {
         entity.montantTVA = forfait.montantTVA;
         entity.prixTTC = forfait.prixTTC;
         entity.reference = forfait.reference;
+        entity.dureeEstimee = forfait.dureeEstimee;
         entity.taches.clear();
         if (forfait.taches != null) {
             entity.taches.addAll(forfait.taches);

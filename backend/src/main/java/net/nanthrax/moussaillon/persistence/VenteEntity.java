@@ -94,6 +94,6 @@ public class VenteEntity extends PanacheEntity {
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "vente_id")
-    public List<TaskEntity> taches = new ArrayList<TaskEntity>();
+    public List<PrestationEntity> prestations = new ArrayList<PrestationEntity>();
 
 }

@@ -3,11 +3,13 @@ import {
     Badge,
     Button,
     Card,
+    Checkbox,
     Col,
     Empty,
     Form,
     Input,
     InputNumber,
+    List,
     Modal,
     Row,
     Select,
@@ -21,11 +23,11 @@ import axios from 'axios';
 
 type TaskStatus = 'EN_ATTENTE' | 'PLANIFIEE' | 'EN_COURS' | 'TERMINEE' | 'INCIDENT' | 'ANNULEE';
 
-interface TaskWithVente {
-    taskId: number;
+interface PrestationWithVente {
+    prestationId: number;
     venteId: number;
-    taskNom?: string;
-    taskStatus?: TaskStatus;
+    prestationNom?: string;
+    prestationStatus?: TaskStatus;
     dateDebut?: string;
     dateFin?: string;
     statusDate?: string;
@@ -38,6 +40,7 @@ interface TaskWithVente {
     clientNom?: string;
     venteType?: string;
     bateauNom?: string;
+    taches?: Array<{ id: number; nom?: string; description?: string; completed: boolean }>;
 }
 
 interface PlanningProps {
@@ -85,21 +88,21 @@ const todayIso = () => {
 };
 
 export default function Planning({ technicienId }: PlanningProps) {
-    const [tasks, setTasks] = useState<TaskWithVente[]>([]);
+    const [tasks, setTasks] = useState<PrestationWithVente[]>([]);
     const [loading, setLoading] = useState(false);
     const [filterStatus, setFilterStatus] = useState<TaskStatus | undefined>(undefined);
     const [modalVisible, setModalVisible] = useState(false);
-    const [currentTask, setCurrentTask] = useState<TaskWithVente | null>(null);
+    const [currentTask, setCurrentTask] = useState<PrestationWithVente | null>(null);
     const [form] = Form.useForm();
     const [saving, setSaving] = useState(false);
 
     const fetchTasks = async () => {
         setLoading(true);
         try {
-            const res = await axios.get(`/technicien-portal/techniciens/${technicienId}/taches`);
+            const res = await axios.get(`/technicien-portal/techniciens/${technicienId}/prestations`);
             setTasks(res.data || []);
         } catch {
-            message.error('Erreur lors du chargement des taches');
+            message.error('Erreur lors du chargement des prestations');
         } finally {
             setLoading(false);
         }
@@ -110,7 +113,7 @@ export default function Planning({ technicienId }: PlanningProps) {
     }, [technicienId]);
 
     const filteredTasks = filterStatus
-        ? tasks.filter((t) => t.taskStatus === filterStatus)
+        ? tasks.filter((t) => t.prestationStatus === filterStatus)
         : tasks;
 
     const todayTasks = filteredTasks.filter((t) => {
@@ -118,13 +121,13 @@ export default function Planning({ technicienId }: PlanningProps) {
         return t.statusDate.startsWith(todayIso());
     });
 
-    const pendingTasks = filteredTasks.filter((t) => t.taskStatus === 'EN_ATTENTE' || t.taskStatus === 'PLANIFIEE' || t.taskStatus === 'EN_COURS');
-    const incidentTasks = filteredTasks.filter((t) => t.taskStatus === 'INCIDENT');
+    const pendingTasks = filteredTasks.filter((t) => t.prestationStatus === 'EN_ATTENTE' || t.prestationStatus === 'PLANIFIEE' || t.prestationStatus === 'EN_COURS');
+    const incidentTasks = filteredTasks.filter((t) => t.prestationStatus === 'INCIDENT');
 
-    const openUpdateModal = (task: TaskWithVente) => {
+    const openUpdateModal = (task: PrestationWithVente) => {
         setCurrentTask(task);
         form.setFieldsValue({
-            status: task.taskStatus || 'EN_COURS',
+            status: task.prestationStatus || 'EN_COURS',
             dureeReelle: task.dureeReelle || 0,
             notes: task.notes || '',
             incidentDate: task.incidentDate || todayIso(),
@@ -138,18 +141,18 @@ export default function Planning({ technicienId }: PlanningProps) {
         try {
             const values = await form.validateFields();
             setSaving(true);
-            const res = await axios.put(`/technicien-portal/taches/${currentTask.taskId}`, {
+            const res = await axios.put(`/technicien-portal/prestations/${currentTask.prestationId}`, {
                 status: values.status,
                 dureeReelle: values.dureeReelle || 0,
                 notes: values.notes || '',
                 incidentDate: values.status === 'INCIDENT' ? values.incidentDate : null,
                 incidentDetails: values.status === 'INCIDENT' ? values.incidentDetails : null,
             });
-            message.success('Tache mise a jour');
+            message.success('Prestation mise a jour');
             const updated = res.data;
-            setCurrentTask({ ...currentTask, ...updated, taskStatus: updated.taskStatus || values.status });
+            setCurrentTask({ ...currentTask, ...updated, prestationStatus: updated.prestationStatus || values.status });
             form.setFieldsValue({
-                status: updated.taskStatus || values.status,
+                status: updated.prestationStatus || values.status,
                 dureeReelle: updated.dureeReelle ?? values.dureeReelle,
                 notes: updated.notes ?? values.notes,
                 incidentDate: updated.incidentDate || values.incidentDate,
@@ -163,11 +166,31 @@ export default function Planning({ technicienId }: PlanningProps) {
         }
     };
 
+    const handleToggleTache = async (tache: { id: number; nom?: string; description?: string; completed: boolean }) => {
+        if (!currentTask) return;
+        try {
+            await axios.put(`/technicien-portal/prestations/${currentTask.prestationId}/taches/${tache.id}`, {
+                completed: !tache.completed,
+            });
+            const updatedTaches = currentTask.taches?.map((t) =>
+                t.id === tache.id ? { ...t, completed: !tache.completed } : t
+            );
+            setCurrentTask({ ...currentTask, taches: updatedTaches });
+            setTasks((prev) =>
+                prev.map((p) =>
+                    p.prestationId === currentTask.prestationId ? { ...p, taches: updatedTaches } : p
+                )
+            );
+        } catch {
+            message.error('Erreur lors de la mise a jour de la tache');
+        }
+    };
+
     const columns = [
         {
-            title: 'Tache',
-            dataIndex: 'taskNom',
-            key: 'taskNom',
+            title: 'Prestation',
+            dataIndex: 'prestationNom',
+            key: 'prestationNom',
             render: (val: string) => val || '-',
         },
         {
@@ -184,8 +207,8 @@ export default function Planning({ technicienId }: PlanningProps) {
         },
         {
             title: 'Statut',
-            dataIndex: 'taskStatus',
-            key: 'taskStatus',
+            dataIndex: 'prestationStatus',
+            key: 'prestationStatus',
             render: (val: string) => <Tag color={statusColor[val]}>{statusLabel[val] || val}</Tag>,
         },
         {
@@ -221,9 +244,9 @@ export default function Planning({ technicienId }: PlanningProps) {
         {
             title: 'Actions',
             key: 'actions',
-            render: (_: unknown, record: TaskWithVente) => (
+            render: (_: unknown, record: PrestationWithVente) => (
                 <Space>
-                    {(record.taskStatus === 'EN_ATTENTE' || record.taskStatus === 'PLANIFIEE') && (
+                    {(record.prestationStatus === 'EN_ATTENTE' || record.prestationStatus === 'PLANIFIEE') && (
                         <Button
                             size="small"
                             icon={<ClockCircleOutlined />}
@@ -242,7 +265,7 @@ export default function Planning({ technicienId }: PlanningProps) {
                             Demarrer
                         </Button>
                     )}
-                    {(record.taskStatus === 'PLANIFIEE' || record.taskStatus === 'EN_COURS') && (
+                    {(record.prestationStatus === 'PLANIFIEE' || record.prestationStatus === 'EN_COURS') && (
                         <Button
                             size="small"
                             type="primary"
@@ -262,7 +285,7 @@ export default function Planning({ technicienId }: PlanningProps) {
                             Terminer
                         </Button>
                     )}
-                    {(record.taskStatus !== 'ANNULEE') && (
+                    {(record.prestationStatus !== 'ANNULEE') && (
                         <Button
                             size="small"
                             danger
@@ -295,7 +318,7 @@ export default function Planning({ technicienId }: PlanningProps) {
             <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
                 <Col xs={24} sm={8} lg={6}>
                     <Card>
-                        <Badge status="processing" /> Aujourd'hui: <strong>{todayTasks.length}</strong> tache(s)
+                        <Badge status="processing" /> Aujourd'hui: <strong>{todayTasks.length}</strong> prestation(s)
                     </Card>
                 </Col>
                 <Col xs={24} sm={8} lg={6}>
@@ -325,10 +348,10 @@ export default function Planning({ technicienId }: PlanningProps) {
                 </Col>
             </Row>
 
-            <Card title={`Taches du jour (${todayIso()})`} style={{ marginBottom: 16 }}>
+            <Card title={`Prestations du jour (${todayIso()})`} style={{ marginBottom: 16 }}>
                 {todayTasks.length > 0 ? (
                     <Table
-                        rowKey="taskId"
+                        rowKey="prestationId"
                         dataSource={todayTasks}
                         columns={columns}
                         loading={loading}
@@ -336,13 +359,13 @@ export default function Planning({ technicienId }: PlanningProps) {
                         bordered
                     />
                 ) : (
-                    <Empty description="Aucune tache planifiee aujourd'hui" />
+                    <Empty description="Aucune prestation planifiee aujourd'hui" />
                 )}
             </Card>
 
-            <Card title="Toutes mes taches">
+            <Card title="Toutes mes prestations">
                 <Table
-                    rowKey="taskId"
+                    rowKey="prestationId"
                     dataSource={filteredTasks}
                     columns={columns}
                     loading={loading}
@@ -353,7 +376,7 @@ export default function Planning({ technicienId }: PlanningProps) {
 
             <Modal
                 open={modalVisible}
-                title={currentTask ? `Mise a jour: ${currentTask.taskNom || 'Tache'}` : 'Mise a jour'}
+                title={currentTask ? `Mise a jour: ${currentTask.prestationNom || 'Prestation'}` : 'Mise a jour'}
                 onOk={handleSave}
                 okText="Enregistrer"
                 cancelText="Annuler"
@@ -418,6 +441,26 @@ export default function Planning({ technicienId }: PlanningProps) {
                         }}
                     </Form.Item>
                 </Form>
+                {currentTask?.taches && currentTask.taches.length > 0 && (
+                    <Card size="small" title="Taches" style={{ marginTop: 12 }}>
+                        <List
+                            dataSource={currentTask.taches}
+                            renderItem={(tache) => (
+                                <List.Item style={{ padding: '4px 0' }}>
+                                    <Checkbox
+                                        checked={tache.completed}
+                                        onChange={() => handleToggleTache(tache)}
+                                    >
+                                        <span style={{ fontWeight: 500 }}>{tache.nom || `Tache #${tache.id}`}</span>
+                                        {tache.description && (
+                                            <span style={{ color: '#999', marginLeft: 8, fontSize: 12 }}>{tache.description}</span>
+                                        )}
+                                    </Checkbox>
+                                </List.Item>
+                            )}
+                        />
+                    </Card>
+                )}
             </Modal>
         </div>
     );

@@ -11,7 +11,7 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
-import net.nanthrax.moussaillon.persistence.TaskEntity;
+import net.nanthrax.moussaillon.persistence.PrestationEntity;
 import net.nanthrax.moussaillon.persistence.TechnicienEntity;
 
 @Path("/techniciens/{id}/kpi")
@@ -23,10 +23,10 @@ public class TechnicienKpiResource {
     public TechnicienKpi get(@PathParam("id") long id) {
         TechnicienEntity technicien = TechnicienEntity.findById(id);
         if (technicien == null) {
-            throw new WebApplicationException("Le technicien (" + id + ") n'est pas trouvé", 404);
+            throw new WebApplicationException("Le technicien (" + id + ") n'est pas trouve", 404);
         }
 
-        List<TaskEntity> allTasks = TaskEntity.list("technicien.id = ?1", id);
+        List<PrestationEntity> allPrestations = PrestationEntity.list("technicien.id = ?1", id);
 
         LocalDate now = LocalDate.now();
         LocalDate startOfMonth = now.withDayOfMonth(1);
@@ -34,51 +34,51 @@ public class TechnicienKpiResource {
 
         TechnicienKpi kpi = new TechnicienKpi();
 
-        kpi.totalTaches = allTasks.size();
-        kpi.tachesTerminees = (int) allTasks.stream().filter(t -> t.status == TaskEntity.Status.TERMINEE).count();
-        kpi.tachesEnCours = (int) allTasks.stream().filter(t -> t.status == TaskEntity.Status.EN_COURS).count();
-        kpi.tachesEnAttente = (int) allTasks.stream().filter(t -> t.status == TaskEntity.Status.EN_ATTENTE || t.status == TaskEntity.Status.PLANIFIEE).count();
-        kpi.tachesIncident = (int) allTasks.stream().filter(t -> t.status == TaskEntity.Status.INCIDENT).count();
-        kpi.tachesAnnulees = (int) allTasks.stream().filter(t -> t.status == TaskEntity.Status.ANNULEE).count();
+        kpi.totalPrestations = allPrestations.size();
+        kpi.prestationsTerminees = (int) allPrestations.stream().filter(p -> p.status == PrestationEntity.Status.TERMINEE).count();
+        kpi.prestationsEnCours = (int) allPrestations.stream().filter(p -> p.status == PrestationEntity.Status.EN_COURS).count();
+        kpi.prestationsEnAttente = (int) allPrestations.stream().filter(p -> p.status == PrestationEntity.Status.EN_ATTENTE || p.status == PrestationEntity.Status.PLANIFIEE).count();
+        kpi.prestationsIncident = (int) allPrestations.stream().filter(p -> p.status == PrestationEntity.Status.INCIDENT).count();
+        kpi.prestationsAnnulees = (int) allPrestations.stream().filter(p -> p.status == PrestationEntity.Status.ANNULEE).count();
 
-        kpi.tauxCompletion = kpi.totalTaches > 0 ? Math.round((double) kpi.tachesTerminees / kpi.totalTaches * 100.0 * 10) / 10.0 : 0;
-        kpi.tauxIncident = kpi.totalTaches > 0 ? Math.round((double) kpi.tachesIncident / kpi.totalTaches * 100.0 * 10) / 10.0 : 0;
+        kpi.tauxCompletion = kpi.totalPrestations > 0 ? Math.round((double) kpi.prestationsTerminees / kpi.totalPrestations * 100.0 * 10) / 10.0 : 0;
+        kpi.tauxIncident = kpi.totalPrestations > 0 ? Math.round((double) kpi.prestationsIncident / kpi.totalPrestations * 100.0 * 10) / 10.0 : 0;
 
-        kpi.heuresEstimees = allTasks.stream().mapToDouble(t -> t.dureeEstimee).sum();
-        kpi.heuresReelles = allTasks.stream().filter(t -> t.status == TaskEntity.Status.TERMINEE).mapToDouble(t -> t.dureeReelle).sum();
+        kpi.heuresEstimees = allPrestations.stream().mapToDouble(p -> p.dureeEstimee).sum();
+        kpi.heuresReelles = allPrestations.stream().filter(p -> p.status == PrestationEntity.Status.TERMINEE).mapToDouble(p -> p.dureeReelle).sum();
         kpi.efficacite = kpi.heuresEstimees > 0 ? Math.round(kpi.heuresReelles / kpi.heuresEstimees * 100.0 * 10) / 10.0 : 0;
 
         // KPIs du mois
-        List<TaskEntity> tachesDuMois = allTasks.stream()
-                .filter(t -> t.dateDebut != null && !t.dateDebut.before(monthStart))
+        List<PrestationEntity> prestationsDuMois = allPrestations.stream()
+                .filter(p -> p.dateDebut != null && !p.dateDebut.before(monthStart))
                 .toList();
-        kpi.tachesMois = tachesDuMois.size();
-        kpi.tachesTermineesMois = (int) tachesDuMois.stream().filter(t -> t.status == TaskEntity.Status.TERMINEE).count();
-        kpi.heuresReellesMois = tachesDuMois.stream().filter(t -> t.status == TaskEntity.Status.TERMINEE).mapToDouble(t -> t.dureeReelle).sum();
+        kpi.prestationsMois = prestationsDuMois.size();
+        kpi.prestationsTermineesMois = (int) prestationsDuMois.stream().filter(p -> p.status == PrestationEntity.Status.TERMINEE).count();
+        kpi.heuresReellesMois = prestationsDuMois.stream().filter(p -> p.status == PrestationEntity.Status.TERMINEE).mapToDouble(p -> p.dureeReelle).sum();
 
         // Retards > 48h
         Date twoDaysAgo = Date.valueOf(now.minusDays(2));
-        kpi.retards48h = (int) allTasks.stream()
-                .filter(t -> t.status == TaskEntity.Status.EN_COURS && t.dateDebut != null && t.dateDebut.before(twoDaysAgo))
+        kpi.retards48h = (int) allPrestations.stream()
+                .filter(p -> p.status == PrestationEntity.Status.EN_COURS && p.dateDebut != null && p.dateDebut.before(twoDaysAgo))
                 .count();
 
         return kpi;
     }
 
     public static class TechnicienKpi {
-        public int totalTaches;
-        public int tachesTerminees;
-        public int tachesEnCours;
-        public int tachesEnAttente;
-        public int tachesIncident;
-        public int tachesAnnulees;
+        public int totalPrestations;
+        public int prestationsTerminees;
+        public int prestationsEnCours;
+        public int prestationsEnAttente;
+        public int prestationsIncident;
+        public int prestationsAnnulees;
         public double tauxCompletion;
         public double tauxIncident;
         public double heuresEstimees;
         public double heuresReelles;
         public double efficacite;
-        public int tachesMois;
-        public int tachesTermineesMois;
+        public int prestationsMois;
+        public int prestationsTermineesMois;
         public double heuresReellesMois;
         public int retards48h;
     }

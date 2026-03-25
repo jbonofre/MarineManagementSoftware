@@ -10,7 +10,7 @@ import {
 } from '@ant-design/icons';
 import axios from 'axios';
 
-interface TaskEntity {
+interface PrestationEntity {
     id: number;
     nom: string;
     status: string;
@@ -24,6 +24,7 @@ interface TaskEntity {
     dureeReelle: number;
     incidentDate?: string;
     incidentDetails?: string;
+    taches?: Array<{ id: number; nom?: string; description?: string; completed: boolean }>;
 }
 
 interface VenteEntity {
@@ -34,7 +35,7 @@ interface VenteEntity {
     bateau?: { name?: string; immatriculation?: string };
     moteur?: { numeroSerie?: string; modele?: { nom?: string; marque?: string } };
     remorque?: { immatriculation?: string };
-    taches?: TaskEntity[];
+    prestations?: PrestationEntity[];
 }
 
 interface MesPrestationsProps {
@@ -85,10 +86,10 @@ const typeLabel: Record<string, string> = {
 
 const statusOrder = ['EN_ATTENTE', 'PLANIFIEE', 'EN_COURS', 'TERMINEE'];
 
-function computeProgress(taches: TaskEntity[]): number {
-    if (taches.length === 0) return 0;
-    const done = taches.filter((t) => t.status === 'TERMINEE').length;
-    return Math.round((done / taches.length) * 100);
+function computeProgress(prestations: PrestationEntity[]): number {
+    if (prestations.length === 0) return 0;
+    const done = prestations.filter((t) => t.status === 'TERMINEE').length;
+    return Math.round((done / prestations.length) * 100);
 }
 
 function stepIndex(status: string): number {
@@ -109,17 +110,17 @@ function assetLabel(vente: VenteEntity): string {
 export default function MesPrestations({ clientId }: MesPrestationsProps) {
     const [ventes, setVentes] = useState<VenteEntity[]>([]);
     const [loading, setLoading] = useState(false);
-    const [detailTask, setDetailTask] = useState<TaskEntity | null>(null);
+    const [detailTask, setDetailTask] = useState<PrestationEntity | null>(null);
 
     useEffect(() => {
         setLoading(true);
         axios.get(`/portal/clients/${clientId}/ventes`)
-            .then((res) => setVentes((res.data || []).filter((v: VenteEntity) => (v.taches || []).length > 0)))
+            .then((res) => setVentes((res.data || []).filter((v: VenteEntity) => (v.prestations || []).length > 0)))
             .catch(() => message.error('Erreur lors du chargement des prestations'))
             .finally(() => setLoading(false));
     }, [clientId]);
 
-    const allTasks = ventes.flatMap((v) => (v.taches || []).map((t) => ({ ...t, venteId: v.id, venteType: v.type })));
+    const allTasks = ventes.flatMap((v) => (v.prestations || []).map((t) => ({ ...t, venteId: v.id, venteType: v.type })));
     const enCours = allTasks.filter((t) => t.status === 'EN_COURS').length;
     const terminees = allTasks.filter((t) => t.status === 'TERMINEE').length;
     const incidents = allTasks.filter((t) => t.status === 'INCIDENT').length;
@@ -130,7 +131,7 @@ export default function MesPrestations({ clientId }: MesPrestationsProps) {
             title: 'Prestation',
             dataIndex: 'nom',
             key: 'nom',
-            render: (val: string, record: TaskEntity) => (
+            render: (val: string, record: PrestationEntity) => (
                 <a onClick={() => setDetailTask(record)}>{val || `Tache #${record.id}`}</a>
             ),
         },
@@ -160,7 +161,7 @@ export default function MesPrestations({ clientId }: MesPrestationsProps) {
             title: 'Technicien',
             dataIndex: 'technicien',
             key: 'technicien',
-            render: (tech: TaskEntity['technicien']) =>
+            render: (tech: PrestationEntity['technicien']) =>
                 tech ? `${tech.prenom || ''} ${tech.nom}`.trim() : '-',
         },
     ];
@@ -200,10 +201,10 @@ export default function MesPrestations({ clientId }: MesPrestationsProps) {
 
                 {/* Ventes with tasks */}
                 <Collapse
-                    defaultActiveKey={ventes.filter((v) => (v.taches || []).some((t) => t.status !== 'TERMINEE' && t.status !== 'ANNULEE')).map((v) => String(v.id))}
+                    defaultActiveKey={ventes.filter((v) => (v.prestations || []).some((t) => t.status !== 'TERMINEE' && t.status !== 'ANNULEE')).map((v) => String(v.id))}
                     items={ventes.map((vente) => {
-                        const taches = vente.taches || [];
-                        const progress = computeProgress(taches);
+                        const prestations = vente.prestations || [];
+                        const progress = computeProgress(prestations);
                         const asset = assetLabel(vente);
                         const title = `${typeLabel[vente.type] || vente.type} #${vente.id}${asset ? ` - ${asset}` : ''} (${formatDate(vente.date)})`;
 
@@ -218,7 +219,7 @@ export default function MesPrestations({ clientId }: MesPrestationsProps) {
                             children: (
                                 <Table
                                     rowKey="id"
-                                    dataSource={taches}
+                                    dataSource={prestations}
                                     columns={columns}
                                     pagination={false}
                                     size="small"
@@ -272,6 +273,22 @@ export default function MesPrestations({ clientId }: MesPrestationsProps) {
                         <p><strong>Duree reelle :</strong> {detailTask.dureeReelle != null ? `${detailTask.dureeReelle}h` : '-'}</p>
                         {detailTask.notes && (
                             <p><strong>Notes :</strong> {detailTask.notes}</p>
+                        )}
+
+                        {(detailTask.taches || []).length > 0 && (
+                            <div style={{ marginTop: 12 }}>
+                                <strong>Checklist :</strong>
+                                <ul style={{ listStyle: 'none', padding: 0, marginTop: 8 }}>
+                                    {detailTask.taches!.map((tache) => (
+                                        <li key={tache.id} style={{ padding: '4px 0', display: 'flex', alignItems: 'center', gap: 8 }}>
+                                            <CheckCircleOutlined style={{ color: tache.completed ? '#52c41a' : '#d9d9d9' }} />
+                                            <span style={{ textDecoration: tache.completed ? 'line-through' : 'none', color: tache.completed ? '#999' : undefined }}>
+                                                {tache.nom || tache.description || `Tache #${tache.id}`}
+                                            </span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
                         )}
 
                         {detailTask.status === 'INCIDENT' && (

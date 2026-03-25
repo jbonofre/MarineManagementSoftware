@@ -21,9 +21,10 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import net.nanthrax.moussaillon.persistence.ForfaitEntity;
 import net.nanthrax.moussaillon.persistence.ForfaitProduitEntity;
+import net.nanthrax.moussaillon.persistence.PrestationEntity;
+import net.nanthrax.moussaillon.persistence.PrestationTaskEntity;
 import net.nanthrax.moussaillon.persistence.ProduitCatalogueEntity;
 import net.nanthrax.moussaillon.persistence.SocieteEntity;
-import net.nanthrax.moussaillon.persistence.TaskEntity;
 import net.nanthrax.moussaillon.persistence.VenteEntity;
 
 @Path("/ventes")
@@ -175,44 +176,53 @@ public class VenteResource {
             }
         }
 
-        if (entity.taches != null) {
-            entity.taches.clear();
+        if (entity.prestations != null) {
+            entity.prestations.clear();
         }
-        if (vente.taches != null) {
-            if (entity.taches == null) {
-                throw new IllegalStateException("La collection de taches n'est pas initialisee");
+        if (vente.prestations != null) {
+            if (entity.prestations == null) {
+                throw new IllegalStateException("La collection de prestations n'est pas initialisee");
             }
-            for (TaskEntity incomingTask : vente.taches) {
-                TaskEntity clonedTask = new TaskEntity();
-                clonedTask.nom = incomingTask.nom;
-                clonedTask.status = incomingTask.status;
-                clonedTask.dateDebut = incomingTask.dateDebut;
-                clonedTask.dateFin = incomingTask.dateFin;
-                clonedTask.statusDate = incomingTask.statusDate;
-                clonedTask.description = incomingTask.description;
-                clonedTask.notes = incomingTask.notes;
-                clonedTask.technicien = incomingTask.technicien;
-                clonedTask.dureeEstimee = incomingTask.dureeEstimee;
-                clonedTask.dureeReelle = incomingTask.dureeReelle;
-                clonedTask.incidentDate = incomingTask.incidentDate;
-                clonedTask.incidentDetails = incomingTask.incidentDetails;
-                entity.taches.add(clonedTask);
+            for (PrestationEntity incomingPrestation : vente.prestations) {
+                PrestationEntity cloned = new PrestationEntity();
+                cloned.nom = incomingPrestation.nom;
+                cloned.status = incomingPrestation.status;
+                cloned.dateDebut = incomingPrestation.dateDebut;
+                cloned.dateFin = incomingPrestation.dateFin;
+                cloned.statusDate = incomingPrestation.statusDate;
+                cloned.description = incomingPrestation.description;
+                cloned.notes = incomingPrestation.notes;
+                cloned.technicien = incomingPrestation.technicien;
+                cloned.dureeEstimee = incomingPrestation.dureeEstimee;
+                cloned.dureeReelle = incomingPrestation.dureeReelle;
+                cloned.incidentDate = incomingPrestation.incidentDate;
+                cloned.incidentDetails = incomingPrestation.incidentDetails;
+                if (incomingPrestation.taches != null) {
+                    for (PrestationTaskEntity incomingTask : incomingPrestation.taches) {
+                        PrestationTaskEntity clonedTask = new PrestationTaskEntity();
+                        clonedTask.nom = incomingTask.nom;
+                        clonedTask.description = incomingTask.description;
+                        clonedTask.completed = incomingTask.completed;
+                        cloned.taches.add(clonedTask);
+                    }
+                }
+                entity.prestations.add(cloned);
             }
         }
 
-        // Send incident notification email to client for any INCIDENT tasks
+        // Send incident notification email to client for any INCIDENT prestations
         if (entity.client != null && entity.client.email != null && !entity.client.email.isBlank()) {
-            for (TaskEntity t : entity.taches) {
-                if (t.status == TaskEntity.Status.INCIDENT) {
-                    sendIncidentNotification(entity, t);
+            for (PrestationEntity p : entity.prestations) {
+                if (p.status == PrestationEntity.Status.INCIDENT) {
+                    sendIncidentNotification(entity, p);
                 }
             }
         }
 
-        // Decrement stock when a task transitions to EN_COURS (once per vente)
+        // Decrement stock when a prestation transitions to EN_COURS (once per vente)
         if (!entity.stockDecremented) {
-            boolean hasEnCours = entity.taches.stream()
-                    .anyMatch(t -> t.status == TaskEntity.Status.EN_COURS);
+            boolean hasEnCours = entity.prestations.stream()
+                    .anyMatch(p -> p.status == PrestationEntity.Status.EN_COURS);
             if (hasEnCours) {
                 decrementStock(entity);
                 entity.stockDecremented = true;
@@ -244,19 +254,19 @@ public class VenteResource {
         return entity;
     }
 
-    private void sendIncidentNotification(VenteEntity vente, TaskEntity task) {
+    private void sendIncidentNotification(VenteEntity vente, PrestationEntity prestation) {
         SocieteEntity societe = SocieteEntity.findById(1L);
         String societeNom = societe != null ? societe.nom : "moussAIllon";
         String clientName = vente.client.prenom != null ? vente.client.prenom : vente.client.nom;
 
         String subject = "Incident sur votre intervention - " + societeNom;
         String body = "Bonjour " + clientName + ",\n\n"
-                + "Nous vous informons qu'un incident a ete signale sur l'intervention \"" + task.nom + "\".\n\n";
-        if (task.incidentDetails != null && !task.incidentDetails.isBlank()) {
-            body += "Details : " + task.incidentDetails + "\n\n";
+                + "Nous vous informons qu'un incident a ete signale sur l'intervention \"" + prestation.nom + "\".\n\n";
+        if (prestation.incidentDetails != null && !prestation.incidentDetails.isBlank()) {
+            body += "Details : " + prestation.incidentDetails + "\n\n";
         }
-        if (task.incidentDate != null) {
-            body += "Date de l'incident : " + task.incidentDate + "\n\n";
+        if (prestation.incidentDate != null) {
+            body += "Date de l'incident : " + prestation.incidentDate + "\n\n";
         }
         body += "Notre equipe met tout en oeuvre pour resoudre la situation dans les meilleurs delais.\n\n"
                 + "Cordialement,\n" + societeNom;

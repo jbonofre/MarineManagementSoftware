@@ -108,39 +108,50 @@ public class TechnicienPortalResourceTest {
     }
 
     @Test
-    void testObtenirTachesTechnicien() {
+    void testObtenirPrestationsTechnicien() {
         given()
-            .when().get("/technicien-portal/techniciens/100/taches")
+            .when().get("/technicien-portal/techniciens/100/prestations")
             .then()
             .statusCode(200);
     }
 
     @Test
-    void testObtenirTachesTechnicienNonTrouve() {
+    void testObtenirPrestationsTechnicienNonTrouve() {
         given()
-            .when().get("/technicien-portal/techniciens/9999/taches")
+            .when().get("/technicien-portal/techniciens/9999/prestations")
             .then()
             .statusCode(404);
     }
 
     @Test
-    void testModifierTache() {
+    void testModifierPrestation() {
         given()
             .contentType("application/json")
             .body("{\"status\":\"EN_COURS\",\"dureeReelle\":1.5,\"notes\":\"En cours de traitement\"}")
-            .when().put("/technicien-portal/taches/100")
+            .when().put("/technicien-portal/prestations/100")
             .then()
             .statusCode(200)
-            .body("taskStatus", is("EN_COURS"));
+            .body("prestationStatus", is("EN_COURS"));
     }
 
     @Test
-    void testModifierTacheNonTrouvee() {
+    void testModifierPrestationNonTrouvee() {
         given()
             .contentType("application/json")
             .body("{\"status\":\"EN_COURS\",\"dureeReelle\":1.0}")
-            .when().put("/technicien-portal/taches/9999")
+            .when().put("/technicien-portal/prestations/9999")
             .then()
             .statusCode(404);
+    }
+
+    @Test
+    void testToggleTask() {
+        given()
+            .contentType("application/json")
+            .body("{\"completed\":true}")
+            .when().put("/technicien-portal/prestations/100/taches/100")
+            .then()
+            .statusCode(200)
+            .body("completed", is(true));
     }
 }

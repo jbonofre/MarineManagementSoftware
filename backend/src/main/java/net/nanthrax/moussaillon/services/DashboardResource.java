@@ -11,8 +11,8 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
+import net.nanthrax.moussaillon.persistence.PrestationEntity;
 import net.nanthrax.moussaillon.persistence.ProduitCatalogueEntity;
-import net.nanthrax.moussaillon.persistence.TaskEntity;
 import net.nanthrax.moussaillon.persistence.VenteEntity;
 
 @Path("/dashboard")
@@ -27,45 +27,41 @@ public class DashboardResource {
         LocalDate now = LocalDate.now();
         LocalDate startOfMonth = now.withDayOfMonth(1);
         Timestamp monthStart = Timestamp.valueOf(startOfMonth.atStartOfDay());
-        Timestamp todayStart = Timestamp.valueOf(now.atStartOfDay());
-        Timestamp todayEnd = Timestamp.valueOf(now.plusDays(1).atStartOfDay());
-        Timestamp threshold48h = Timestamp.valueOf(now.atStartOfDay().minusHours(48));
 
         // CA du mois: sum of prixVenteTTC for PAYEE ventes this month
         List<VenteEntity> ventesDuMois = VenteEntity.list("status = ?1 and date >= ?2", VenteEntity.Status.PAYEE, monthStart);
         data.caDuMois = ventesDuMois.stream().mapToDouble(v -> v.prixVenteTTC).sum();
 
         // Interventions ouvertes
-        data.interventionsOuvertes = (int) TaskEntity.count("status in (?1, ?2)", TaskEntity.Status.EN_ATTENTE, TaskEntity.Status.EN_COURS);
+        data.interventionsOuvertes = (int) PrestationEntity.count("status in (?1, ?2)", PrestationEntity.Status.EN_ATTENTE, PrestationEntity.Status.EN_COURS);
 
-        // Retards > 48h: tasks EN_COURS started more than 48h ago
-        data.retards48h = (int) TaskEntity.count("status = ?1 and dateDebut < ?2", TaskEntity.Status.EN_COURS, Date.valueOf(now.minusDays(2)));
+        // Retards > 48h: prestations EN_COURS started more than 48h ago
+        data.retards48h = (int) PrestationEntity.count("status = ?1 and dateDebut < ?2", PrestationEntity.Status.EN_COURS, Date.valueOf(now.minusDays(2)));
 
         // Alertes stock: products where stock <= stockMini
         List<ProduitCatalogueEntity> produitsEnAlerte = ProduitCatalogueEntity.list("stock <= stockMini");
         data.alertesStock = produitsEnAlerte.size();
 
-        // Interventions du jour: tasks starting today
-        // TaskEntity.dateDebut is java.sql.Date, so we compare dates
+        // Interventions du jour: prestations starting today
         Date today = Date.valueOf(now);
-        List<VenteEntity> ventesAvecTaches = VenteEntity.list(
-                "select v from VenteEntity v join v.taches t where t.dateDebut = ?1", today);
+        List<VenteEntity> ventesAvecPrestations = VenteEntity.list(
+                "select v from VenteEntity v join v.prestations p where p.dateDebut = ?1", today);
 
         data.interventions = new ArrayList<>();
-        for (VenteEntity vente : ventesAvecTaches) {
-            for (TaskEntity task : vente.taches) {
-                if (task.dateDebut != null && task.dateDebut.equals(today)) {
+        for (VenteEntity vente : ventesAvecPrestations) {
+            for (PrestationEntity prestation : vente.prestations) {
+                if (prestation.dateDebut != null && prestation.dateDebut.equals(today)) {
                     InterventionRow row = new InterventionRow();
-                    row.key = String.valueOf(task.id);
+                    row.key = String.valueOf(prestation.id);
                     row.client = vente.client != null
                             ? (vente.client.prenom != null ? vente.client.prenom + " " : "") + vente.client.nom
                             : "";
                     row.unite = vente.bateau != null ? vente.bateau.name : (vente.moteur != null ? "Moteur" : "");
-                    row.type = task.nom != null ? task.nom : "";
-                    row.technicien = task.technicien != null
-                            ? (task.technicien.prenom != null ? task.technicien.prenom.substring(0, 1) + ". " : "") + task.technicien.nom
+                    row.type = prestation.nom != null ? prestation.nom : "";
+                    row.technicien = prestation.technicien != null
+                            ? (prestation.technicien.prenom != null ? prestation.technicien.prenom.substring(0, 1) + ". " : "") + prestation.technicien.nom
                             : "";
-                    row.statut = mapStatut(task.status);
+                    row.statut = mapStatut(prestation.status);
                     data.interventions.add(row);
                 }
             }
@@ -82,10 +78,10 @@ public class DashboardResource {
         }
 
         // Objectifs mensuels
-        // Heures atelier facturees: ratio dureeReelle / dureeEstimee for tasks this month
-        List<TaskEntity> tachesDuMois = TaskEntity.list("dateDebut >= ?1", Date.valueOf(startOfMonth));
-        double totalEstimee = tachesDuMois.stream().mapToDouble(t -> t.dureeEstimee).sum();
-        double totalReelle = tachesDuMois.stream().filter(t -> t.status == TaskEntity.Status.TERMINEE).mapToDouble(t -> t.dureeReelle).sum();
+        // Heures atelier facturees: ratio dureeReelle / dureeEstimee for prestations this month
+        List<PrestationEntity> prestationsDuMois = PrestationEntity.list("dateDebut >= ?1", Date.valueOf(startOfMonth));
+        double totalEstimee = prestationsDuMois.stream().mapToDouble(p -> p.dureeEstimee).sum();
+        double totalReelle = prestationsDuMois.stream().filter(p -> p.status == PrestationEntity.Status.TERMINEE).mapToDouble(p -> p.dureeReelle).sum();
         data.heuresAtelierPct = totalEstimee > 0 ? (int) Math.round(totalReelle / totalEstimee * 100) : 0;
 
         // Ventes comptoir: ratio of PAYEE comptoir sales vs total comptoir sales this month
@@ -93,15 +89,15 @@ public class DashboardResource {
         long comptoirPayees = VenteEntity.count("type = ?1 and status = ?2 and date >= ?3", VenteEntity.Type.COMPTOIR, VenteEntity.Status.PAYEE, monthStart);
         data.ventesComptoirPct = comptoirTotal > 0 ? (int) Math.round((double) comptoirPayees / comptoirTotal * 100) : 0;
 
-        // Contrats de maintenance: ratio of completed tasks vs total tasks this month
-        long tachesTotal = tachesDuMois.size();
-        long tachesTerminees = tachesDuMois.stream().filter(t -> t.status == TaskEntity.Status.TERMINEE).count();
-        data.contratsMaintenancePct = tachesTotal > 0 ? (int) Math.round((double) tachesTerminees / tachesTotal * 100) : 0;
+        // Contrats de maintenance: ratio of completed prestations vs total prestations this month
+        long prestationsTotal = prestationsDuMois.size();
+        long prestationsTerminees = prestationsDuMois.stream().filter(p -> p.status == PrestationEntity.Status.TERMINEE).count();
+        data.contratsMaintenancePct = prestationsTotal > 0 ? (int) Math.round((double) prestationsTerminees / prestationsTotal * 100) : 0;
 
         return data;
     }
 
-    private String mapStatut(TaskEntity.Status status) {
+    private String mapStatut(PrestationEntity.Status status) {
         if (status == null) return "A faire";
         return switch (status) {
             case PLANIFIEE -> "Planifiee";

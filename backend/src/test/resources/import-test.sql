@@ -37,7 +37,7 @@ INSERT INTO ProduitCatalogueEntity (id, nom, marque, categorie, description, eva
 INSERT INTO ServiceEntity (id, nom, description, prixHT, tva, montantTVA, prixTTC) VALUES (100, 'Revision annuelle', 'Revision complete moteur', 150.0, 20.0, 30.0, 180.0);
 
 -- Forfaits (all primitive fields included)
-INSERT INTO ForfaitEntity (id, nom, reference, heuresFonctionnement, joursFrequence, prixHT, tva, montantTVA, prixTTC) VALUES (100, 'Pack entretien complet', 'FORFAIT-001', 0, 0, 250.0, 20.0, 50.0, 300.0);
+INSERT INTO ForfaitEntity (id, nom, reference, heuresFonctionnement, joursFrequence, prixHT, tva, montantTVA, prixTTC, dureeEstimee) VALUES (100, 'Pack entretien complet', 'FORFAIT-001', 0, 0, 250.0, 20.0, 50.0, 300.0, 3.0);
 
 -- Transactions (all primitive fields included)
 INSERT INTO TransactionEntity (id, status, montantHT, remise, dateCreation) VALUES (100, 'EN_ATTENTE', 1500, 0, '2025-06-01');
@@ -48,8 +48,12 @@ INSERT INTO AnnonceEntity (id, titre, description, prix, contact, telephone, sta
 -- Ventes (all primitive fields included)
 INSERT INTO VenteEntity (id, status, type, client_id, date, prixVenteTTC, montantTTC, tva, montantTVA, montantHT, remise, stockDecremented, rappel1Envoye, rappel2Envoye, rappel3Envoye) VALUES (100, 2, 4, 100, '2025-06-15 10:00:00', 500.0, 500.0, 20.0, 100.0, 400.0, 0.0, false, false, false, false);
 
--- Tasks (linked to vente 100)
-INSERT INTO TaskEntity (id, nom, status, dateDebut, dateFin, description, dureeEstimee, dureeReelle, technicien_id, vente_id) VALUES (100, 'Revision moteur', 1, CURRENT_DATE, CURRENT_DATE, 'Revision complete', 2.0, 0.0, 100, 100);
+-- Prestations (linked to vente 100)
+INSERT INTO PrestationEntity (id, nom, status, dateDebut, dateFin, description, dureeEstimee, dureeReelle, technicien_id, vente_id) VALUES (100, 'Revision moteur', 1, CURRENT_DATE, CURRENT_DATE, 'Revision complete', 2.0, 0.0, 100, 100);
+
+-- Prestation tasks (linked to prestation 100)
+INSERT INTO PrestationTaskEntity (id, nom, description, completed, prestation_id) VALUES (100, 'Vidange huile', 'Vidanger huile moteur', false, 100);
+INSERT INTO PrestationTaskEntity (id, nom, description, completed, prestation_id) VALUES (101, 'Filtre a huile', 'Remplacer filtre a huile', false, 100);
 
 -- Fournisseur-Produit associations
 INSERT INTO FournisseurProduitEntity (id, fournisseur_id, produit_id, reference, prixAchatHT, tva, montantTVA, prixAchatTTC, portForfaitaire, portParUnite, nombreMinACommander) VALUES (100, 100, 100, 'MP-H4T', 15.0, 20.0, 3.0, 18.0, 10.0, 0.5, 5);
@@ -74,7 +78,8 @@ ALTER TABLE FournisseurEntity ALTER COLUMN id RESTART WITH 200;
 ALTER TABLE TransactionEntity ALTER COLUMN id RESTART WITH 200;
 ALTER TABLE AnnonceEntity ALTER COLUMN id RESTART WITH 200;
 ALTER TABLE VenteEntity ALTER COLUMN id RESTART WITH 200;
-ALTER TABLE TaskEntity ALTER COLUMN id RESTART WITH 200;
+ALTER TABLE PrestationEntity ALTER COLUMN id RESTART WITH 200;
+ALTER TABLE PrestationTaskEntity ALTER COLUMN id RESTART WITH 200;
 ALTER TABLE SocieteEntity ALTER COLUMN id RESTART WITH 200;
 ALTER TABLE FournisseurProduitEntity ALTER COLUMN id RESTART WITH 200;
 ALTER TABLE CommandeFournisseurEntity ALTER COLUMN id RESTART WITH 200;

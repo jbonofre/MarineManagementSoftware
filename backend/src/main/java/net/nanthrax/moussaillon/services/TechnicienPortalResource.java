@@ -21,9 +21,10 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import net.nanthrax.moussaillon.persistence.ForfaitEntity;
 import net.nanthrax.moussaillon.persistence.ForfaitProduitEntity;
+import net.nanthrax.moussaillon.persistence.PrestationEntity;
+import net.nanthrax.moussaillon.persistence.PrestationTaskEntity;
 import net.nanthrax.moussaillon.persistence.ProduitCatalogueEntity;
 import net.nanthrax.moussaillon.persistence.SocieteEntity;
-import net.nanthrax.moussaillon.persistence.TaskEntity;
 import net.nanthrax.moussaillon.persistence.TechnicienEntity;
 import net.nanthrax.moussaillon.persistence.VenteEntity;
 
@@ -47,7 +48,7 @@ public class TechnicienPortalResource {
         public String newPassword;
     }
 
-    public static class TaskUpdateRequest {
+    public static class PrestationUpdateRequest {
         public String status;
         public double dureeReelle;
         public String incidentDate;
@@ -55,11 +56,31 @@ public class TechnicienPortalResource {
         public String notes;
     }
 
-    public static class TaskWithVente {
-        public Long taskId;
+    public static class TaskToggleRequest {
+        public boolean completed;
+    }
+
+    public static class PrestationTaskDto {
+        public Long id;
+        public String nom;
+        public String description;
+        public boolean completed;
+
+        public static PrestationTaskDto from(PrestationTaskEntity task) {
+            PrestationTaskDto dto = new PrestationTaskDto();
+            dto.id = task.id;
+            dto.nom = task.nom;
+            dto.description = task.description;
+            dto.completed = task.completed;
+            return dto;
+        }
+    }
+
+    public static class PrestationWithVente {
+        public Long prestationId;
         public Long venteId;
-        public String taskNom;
-        public String taskStatus;
+        public String prestationNom;
+        public String prestationStatus;
         public String dateDebut;
         public String dateFin;
         public String statusDate;
@@ -72,30 +93,37 @@ public class TechnicienPortalResource {
         public String clientNom;
         public String venteType;
         public String bateauNom;
+        public List<PrestationTaskDto> taches;
 
-        public static TaskWithVente from(TaskEntity task, VenteEntity vente) {
-            TaskWithVente tw = new TaskWithVente();
-            tw.taskId = task.id;
-            tw.venteId = vente.id;
-            tw.taskNom = task.nom;
-            tw.taskStatus = task.status != null ? task.status.name() : null;
-            tw.dateDebut = task.dateDebut != null ? task.dateDebut.toString() : null;
-            tw.dateFin = task.dateFin != null ? task.dateFin.toString() : null;
-            tw.statusDate = task.statusDate != null ? task.statusDate.toString() : null;
-            tw.description = task.description;
-            tw.notes = task.notes;
-            tw.dureeEstimee = task.dureeEstimee;
-            tw.dureeReelle = task.dureeReelle;
-            tw.incidentDate = task.incidentDate != null ? task.incidentDate.toString() : null;
-            tw.incidentDetails = task.incidentDetails;
+        public static PrestationWithVente from(PrestationEntity prestation, VenteEntity vente) {
+            PrestationWithVente pw = new PrestationWithVente();
+            pw.prestationId = prestation.id;
+            pw.venteId = vente.id;
+            pw.prestationNom = prestation.nom;
+            pw.prestationStatus = prestation.status != null ? prestation.status.name() : null;
+            pw.dateDebut = prestation.dateDebut != null ? prestation.dateDebut.toString() : null;
+            pw.dateFin = prestation.dateFin != null ? prestation.dateFin.toString() : null;
+            pw.statusDate = prestation.statusDate != null ? prestation.statusDate.toString() : null;
+            pw.description = prestation.description;
+            pw.notes = prestation.notes;
+            pw.dureeEstimee = prestation.dureeEstimee;
+            pw.dureeReelle = prestation.dureeReelle;
+            pw.incidentDate = prestation.incidentDate != null ? prestation.incidentDate.toString() : null;
+            pw.incidentDetails = prestation.incidentDetails;
             if (vente.client != null) {
-                tw.clientNom = (vente.client.prenom != null ? vente.client.prenom + " " : "") + vente.client.nom;
+                pw.clientNom = (vente.client.prenom != null ? vente.client.prenom + " " : "") + vente.client.nom;
             }
-            tw.venteType = vente.type != null ? vente.type.name() : null;
+            pw.venteType = vente.type != null ? vente.type.name() : null;
             if (vente.bateau != null) {
-                tw.bateauNom = vente.bateau.name;
+                pw.bateauNom = vente.bateau.name;
             }
-            return tw;
+            pw.taches = new ArrayList<>();
+            if (prestation.taches != null) {
+                for (PrestationTaskEntity task : prestation.taches) {
+                    pw.taches.add(PrestationTaskDto.from(task));
+                }
+            }
+            return pw;
         }
     }
 
@@ -143,20 +171,20 @@ public class TechnicienPortalResource {
     }
 
     @GET
-    @Path("/techniciens/{id}/taches")
-    public List<TaskWithVente> getTechnicienTasks(@PathParam("id") long technicienId) {
+    @Path("/techniciens/{id}/prestations")
+    public List<PrestationWithVente> getTechnicienPrestations(@PathParam("id") long technicienId) {
         TechnicienEntity technicien = TechnicienEntity.findById(technicienId);
         if (technicien == null) {
             throw new WebApplicationException("Technicien non trouve", Response.Status.NOT_FOUND);
         }
 
         List<VenteEntity> ventes = VenteEntity.listAll();
-        List<TaskWithVente> result = new ArrayList<>();
+        List<PrestationWithVente> result = new ArrayList<>();
         for (VenteEntity vente : ventes) {
-            if (vente.taches == null) continue;
-            for (TaskEntity task : vente.taches) {
-                if (task.technicien != null && task.technicien.id.equals(technicienId)) {
-                    result.add(TaskWithVente.from(task, vente));
+            if (vente.prestations == null) continue;
+            for (PrestationEntity prestation : vente.prestations) {
+                if (prestation.technicien != null && prestation.technicien.id.equals(technicienId)) {
+                    result.add(PrestationWithVente.from(prestation, vente));
                 }
             }
         }
@@ -164,72 +192,90 @@ public class TechnicienPortalResource {
     }
 
     @PUT
-    @Path("/taches/{taskId}")
+    @Path("/prestations/{prestationId}")
     @Transactional
-    public TaskWithVente updateTask(@PathParam("taskId") long taskId, TaskUpdateRequest request) {
-        TaskEntity task = TaskEntity.findById(taskId);
-        if (task == null) {
-            throw new WebApplicationException("Tache non trouvee", Response.Status.NOT_FOUND);
+    public PrestationWithVente updatePrestation(@PathParam("prestationId") long prestationId, PrestationUpdateRequest request) {
+        PrestationEntity prestation = PrestationEntity.findById(prestationId);
+        if (prestation == null) {
+            throw new WebApplicationException("Prestation non trouvee", Response.Status.NOT_FOUND);
         }
 
         if (request.status != null && !request.status.isBlank()) {
-            task.status = TaskEntity.Status.valueOf(request.status);
+            prestation.status = PrestationEntity.Status.valueOf(request.status);
         }
-        task.dureeReelle = request.dureeReelle;
+        prestation.dureeReelle = request.dureeReelle;
         if (request.notes != null) {
-            task.notes = request.notes;
+            prestation.notes = request.notes;
         }
 
         if ("INCIDENT".equals(request.status)) {
             if (request.incidentDate != null && !request.incidentDate.isBlank()) {
-                task.incidentDate = Date.valueOf(request.incidentDate);
+                prestation.incidentDate = Date.valueOf(request.incidentDate);
             }
-            task.incidentDetails = request.incidentDetails;
+            prestation.incidentDetails = request.incidentDetails;
         }
 
         // Find the parent vente for the response
-        List<VenteEntity> ventes = VenteEntity.list("SELECT v FROM VenteEntity v JOIN v.taches t WHERE t.id = ?1", taskId);
+        List<VenteEntity> ventes = VenteEntity.list("SELECT v FROM VenteEntity v JOIN v.prestations p WHERE p.id = ?1", prestationId);
         VenteEntity parentVente = ventes.isEmpty() ? null : ventes.get(0);
 
         // Send incident notification email to client
-        if (task.status == TaskEntity.Status.INCIDENT && parentVente != null
+        if (prestation.status == PrestationEntity.Status.INCIDENT && parentVente != null
                 && parentVente.client != null && parentVente.client.email != null && !parentVente.client.email.isBlank()) {
-            sendIncidentNotification(parentVente, task);
+            sendIncidentNotification(parentVente, prestation);
         }
 
-        // Decrement stock when a task transitions to EN_COURS (once per vente)
-        if (task.status == TaskEntity.Status.EN_COURS && parentVente != null && !parentVente.stockDecremented) {
+        // Decrement stock when a prestation transitions to EN_COURS (once per vente)
+        if (prestation.status == PrestationEntity.Status.EN_COURS && parentVente != null && !parentVente.stockDecremented) {
             decrementStock(parentVente);
             parentVente.stockDecremented = true;
         }
         if (parentVente == null) {
             // fallback: return a minimal response
-            TaskWithVente tw = new TaskWithVente();
-            tw.taskId = task.id;
-            tw.taskNom = task.nom;
-            tw.taskStatus = task.status != null ? task.status.name() : null;
-            tw.dureeReelle = task.dureeReelle;
-            tw.incidentDate = task.incidentDate != null ? task.incidentDate.toString() : null;
-            tw.incidentDetails = task.incidentDetails;
-            tw.notes = task.notes;
-            return tw;
+            PrestationWithVente pw = new PrestationWithVente();
+            pw.prestationId = prestation.id;
+            pw.prestationNom = prestation.nom;
+            pw.prestationStatus = prestation.status != null ? prestation.status.name() : null;
+            pw.dureeReelle = prestation.dureeReelle;
+            pw.incidentDate = prestation.incidentDate != null ? prestation.incidentDate.toString() : null;
+            pw.incidentDetails = prestation.incidentDetails;
+            pw.notes = prestation.notes;
+            pw.taches = new ArrayList<>();
+            if (prestation.taches != null) {
+                for (PrestationTaskEntity task : prestation.taches) {
+                    pw.taches.add(PrestationTaskDto.from(task));
+                }
+            }
+            return pw;
         }
-        return TaskWithVente.from(task, parentVente);
+        return PrestationWithVente.from(prestation, parentVente);
     }
 
-    private void sendIncidentNotification(VenteEntity vente, TaskEntity task) {
+    @PUT
+    @Path("/prestations/{prestationId}/taches/{taskId}")
+    @Transactional
+    public PrestationTaskDto toggleTask(@PathParam("prestationId") long prestationId, @PathParam("taskId") long taskId, TaskToggleRequest request) {
+        PrestationTaskEntity task = PrestationTaskEntity.findById(taskId);
+        if (task == null) {
+            throw new WebApplicationException("Tache non trouvee", Response.Status.NOT_FOUND);
+        }
+        task.completed = request.completed;
+        return PrestationTaskDto.from(task);
+    }
+
+    private void sendIncidentNotification(VenteEntity vente, PrestationEntity prestation) {
         SocieteEntity societe = SocieteEntity.findById(1L);
         String societeNom = societe != null ? societe.nom : "moussAIllon";
         String clientName = vente.client.prenom != null ? vente.client.prenom : vente.client.nom;
 
         String subject = "Incident sur votre intervention - " + societeNom;
         String body = "Bonjour " + clientName + ",\n\n"
-                + "Nous vous informons qu'un incident a ete signale sur l'intervention \"" + task.nom + "\".\n\n";
-        if (task.incidentDetails != null && !task.incidentDetails.isBlank()) {
-            body += "Details : " + task.incidentDetails + "\n\n";
+                + "Nous vous informons qu'un incident a ete signale sur l'intervention \"" + prestation.nom + "\".\n\n";
+        if (prestation.incidentDetails != null && !prestation.incidentDetails.isBlank()) {
+            body += "Details : " + prestation.incidentDetails + "\n\n";
         }
-        if (task.incidentDate != null) {
-            body += "Date de l'incident : " + task.incidentDate + "\n\n";
+        if (prestation.incidentDate != null) {
+            body += "Date de l'incident : " + prestation.incidentDate + "\n\n";
         }
         body += "Notre equipe met tout en oeuvre pour resoudre la situation dans les meilleurs delais.\n\n"
                 + "Cordialement,\n" + societeNom;

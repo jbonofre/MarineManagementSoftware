@@ -44,9 +44,27 @@ interface RemorqueClientEntity {
     immatriculation?: string;
 }
 
-interface TaskEntity {
-    id: number;
+interface PrestationEntity {
+    id?: number;
     nom?: string;
+    status?: string;
+    dateDebut?: string;
+    dateFin?: string;
+    statusDate?: string;
+    description?: string;
+    notes?: string;
+    technicien?: string;
+    dureeEstimee?: number;
+    dureeReelle?: number;
+    incidentDate?: string;
+    incidentDetails?: string;
+    taches?: Array<{ id?: number; nom?: string; description?: string; completed?: boolean }>;
+}
+
+interface TaskEntity {
+    id?: number;
+    nom?: string;
+    description?: string;
 }
 
 interface ForfaitEntity {
@@ -54,6 +72,7 @@ interface ForfaitEntity {
     reference?: string;
     nom: string;
     prixTTC?: number;
+    dureeEstimee?: number;
     taches?: TaskEntity[];
 }
 
@@ -117,9 +136,21 @@ interface ServiceEntity {
     prixTTC?: number;
 }
 
-interface TaskEntity {
+interface PrestationEntity {
     id?: number;
     nom?: string;
+    status?: string;
+    dateDebut?: string;
+    dateFin?: string;
+    statusDate?: string;
+    description?: string;
+    notes?: string;
+    technicien?: string;
+    dureeEstimee?: number;
+    dureeReelle?: number;
+    incidentDate?: string;
+    incidentDetails?: string;
+    taches?: Array<{ id?: number; nom?: string; description?: string; completed?: boolean }>;
 }
 
 type VenteStatus = 'PAYEE';
@@ -137,7 +168,7 @@ interface VenteEntity {
     forfaits?: ForfaitEntity[];
     produits?: ProduitCatalogueEntity[];
     services?: ServiceEntity[];
-    taches?: TaskEntity[];
+    prestations?: PrestationEntity[];
     date?: string;
     montantHT?: number;
     remise?: number;

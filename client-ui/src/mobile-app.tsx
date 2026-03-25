@@ -71,7 +71,7 @@ interface RemorqueClientEntity {
     modele?: { nom?: string; marque?: string };
 }
 
-interface TaskEntity {
+interface PrestationEntity {
     id: number;
     nom: string;
     status: string;
@@ -85,6 +85,7 @@ interface TaskEntity {
     dureeReelle: number;
     incidentDate?: string;
     incidentDetails?: string;
+    taches?: Array<{ id: number; nom?: string; description?: string; completed: boolean }>;
 }
 
 interface VenteEntity {
@@ -101,7 +102,7 @@ interface VenteEntity {
     forfaits?: Array<{ id: number; nom: string; reference?: string; prixTTC?: number }>;
     produits?: Array<{ id: number; nom: string; marque?: string; prixVenteTTC?: number }>;
     services?: Array<{ id: number; nom: string; prixTTC?: number }>;
-    taches?: TaskEntity[];
+    prestations?: PrestationEntity[];
     bateau?: { name?: string; immatriculation?: string };
     moteur?: { numeroSerie?: string; modele?: { nom?: string; marque?: string } };
     remorque?: { immatriculation?: string };
@@ -165,7 +166,7 @@ export default function MobileApp({ user, onLogout }: MobileAppProps) {
     const [detailAnnonce, setDetailAnnonce] = useState<Annonce | null>(null);
     const [annonceFormOpen, setAnnonceFormOpen] = useState(false);
     const [profile, setProfile] = useState<Client | null>(null);
-    const [detailTask, setDetailTask] = useState<TaskEntity | null>(null);
+    const [detailTask, setDetailTask] = useState<PrestationEntity | null>(null);
 
     const clientName = `${user.prenom || ''} ${user.nom}`.trim();
     const clientId = user.id;
@@ -357,8 +358,8 @@ export default function MobileApp({ user, onLogout }: MobileAppProps) {
         </>
     );
 
-    const ventesWithTasks = ventes.filter((v) => (v.taches || []).length > 0);
-    const allTasks = ventesWithTasks.flatMap((v) => v.taches || []);
+    const ventesWithTasks = ventes.filter((v) => (v.prestations || []).length > 0);
+    const allTasks = ventesWithTasks.flatMap((v) => v.prestations || []);
     const tasksDone = allTasks.filter((t) => t.status === 'TERMINEE').length;
     const globalProgress = allTasks.length > 0 ? Math.round((tasksDone / allTasks.length) * 100) : 0;
 
@@ -377,9 +378,9 @@ export default function MobileApp({ user, onLogout }: MobileAppProps) {
             )}
 
             {ventesWithTasks.map((v) => {
-                const taches = v.taches || [];
-                const done = taches.filter((t) => t.status === 'TERMINEE').length;
-                const pct = taches.length > 0 ? Math.round((done / taches.length) * 100) : 0;
+                const prestations = v.prestations || [];
+                const done = prestations.filter((t) => t.status === 'TERMINEE').length;
+                const pct = prestations.length > 0 ? Math.round((done / prestations.length) * 100) : 0;
                 const asset = v.bateau?.name || v.bateau?.immatriculation || '';
                 return (
                     <Card
@@ -389,16 +390,27 @@ export default function MobileApp({ user, onLogout }: MobileAppProps) {
                         extra={<span style={{ fontSize: 12 }}>{pct}%</span>}
                         style={{ marginBottom: 8 }}
                     >
-                        {taches.map((t) => (
-                            <div
-                                key={t.id}
-                                onClick={() => setDetailTask(t)}
-                                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: '1px solid #f0f0f0', cursor: 'pointer' }}
-                            >
-                                <span>{t.nom || `Tache #${t.id}`}</span>
-                                <Tag icon={taskStatusIcon[t.status]} color={taskStatusColor[t.status]}>{taskStatusLabel[t.status] || t.status}</Tag>
-                            </div>
-                        ))}
+                        {prestations.map((t) => {
+                            const checklistTotal = (t.taches || []).length;
+                            const checklistDone = (t.taches || []).filter((c) => c.completed).length;
+                            return (
+                                <div
+                                    key={t.id}
+                                    onClick={() => setDetailTask(t)}
+                                    style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: '1px solid #f0f0f0', cursor: 'pointer' }}
+                                >
+                                    <div>
+                                        <span>{t.nom || `Tache #${t.id}`}</span>
+                                        {checklistTotal > 0 && (
+                                            <span style={{ fontSize: 11, color: '#999', marginLeft: 8 }}>
+                                                ({checklistDone}/{checklistTotal})
+                                            </span>
+                                        )}
+                                    </div>
+                                    <Tag icon={taskStatusIcon[t.status]} color={taskStatusColor[t.status]}>{taskStatusLabel[t.status] || t.status}</Tag>
+                                </div>
+                            );
+                        })}
                     </Card>
                 );
             })}
@@ -428,6 +440,21 @@ export default function MobileApp({ user, onLogout }: MobileAppProps) {
                         <p><strong>Duree estimee:</strong> {detailTask.dureeEstimee != null ? `${detailTask.dureeEstimee}h` : '-'}</p>
                         <p><strong>Duree reelle:</strong> {detailTask.dureeReelle != null ? `${detailTask.dureeReelle}h` : '-'}</p>
                         {detailTask.notes && <p><strong>Notes:</strong> {detailTask.notes}</p>}
+                        {(detailTask.taches || []).length > 0 && (
+                            <div style={{ marginTop: 8 }}>
+                                <strong>Checklist :</strong>
+                                <ul style={{ listStyle: 'none', padding: 0, marginTop: 8 }}>
+                                    {detailTask.taches!.map((tache) => (
+                                        <li key={tache.id} style={{ padding: '4px 0', display: 'flex', alignItems: 'center', gap: 8 }}>
+                                            <CheckCircleOutlined style={{ color: tache.completed ? '#52c41a' : '#d9d9d9' }} />
+                                            <span style={{ textDecoration: tache.completed ? 'line-through' : 'none', color: tache.completed ? '#999' : undefined }}>
+                                                {tache.nom || tache.description || `Tache #${tache.id}`}
+                                            </span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
                         {detailTask.status === 'INCIDENT' && (
                             <Card size="small" style={{ background: '#fff2f0', borderColor: '#ffccc7', marginTop: 8 }}>
                                 <p style={{ color: '#ff4d4f', fontWeight: 'bold', marginBottom: 4 }}>

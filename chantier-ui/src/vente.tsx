@@ -52,12 +52,19 @@ interface TechnicienEntity {
     nom?: string;
 }
 
-type TaskStatus = 'EN_ATTENTE' | 'EN_COURS' | 'TERMINEE' | 'INCIDENT' | 'ANNULEE';
+type PrestationStatus = 'EN_ATTENTE' | 'EN_COURS' | 'TERMINEE' | 'INCIDENT' | 'ANNULEE';
 
-interface TaskEntity {
+interface PrestationTaskEntity {
     id?: number;
     nom?: string;
-    status?: TaskStatus;
+    description?: string;
+    completed?: boolean;
+}
+
+interface PrestationEntity {
+    id?: number;
+    nom?: string;
+    status?: PrestationStatus;
     dateDebut?: string;
     dateFin?: string;
     statusDate?: string;
@@ -68,6 +75,13 @@ interface TaskEntity {
     dureeReelle?: number;
     incidentDate?: string;
     incidentDetails?: string;
+    taches?: PrestationTaskEntity[];
+}
+
+interface TaskEntity {
+    id?: number;
+    nom?: string;
+    description?: string;
 }
 
 interface ForfaitEntity {
@@ -78,6 +92,7 @@ interface ForfaitEntity {
     tva?: number;
     montantTVA?: number;
     prixTTC?: number;
+    dureeEstimee?: number;
     taches?: TaskEntity[];
 }
 
@@ -168,7 +183,7 @@ interface VenteEntity {
     forfaits?: ForfaitEntity[];
     produits?: ProduitCatalogueEntity[];
     services?: ServiceEntity[];
-    taches?: TaskEntity[];
+    prestations?: PrestationEntity[];
     date?: string;
     montantHT?: number;
     remise?: number;
@@ -201,10 +216,10 @@ interface VenteFormValues {
     forfaits: Array<{ forfaitId?: number; quantite?: number }>;
     produits: Array<{ produitId?: number; quantite?: number }>;
     services: Array<{ serviceId?: number; quantite?: number }>;
-    taches: Array<{
+    prestations: Array<{
         id?: number;
         nom?: string;
-        status?: TaskStatus;
+        status?: PrestationStatus;
         dateDebut?: string;
         dateFin?: string;
         statusDate?: string;
@@ -215,6 +230,7 @@ interface VenteFormValues {
         dureeReelle?: number;
         incidentDate?: string;
         incidentDetails?: string;
+        taches?: Array<{ id?: number; nom?: string; description?: string; completed?: boolean }>;
     }>;
     date?: string;
     montantHT: number;
@@ -314,7 +330,7 @@ const defaultVente: VenteFormValues = {
     forfaits: [{}],
     produits: [{}],
     services: [{}],
-    taches: [{}],
+    prestations: [{}],
     montantHT: 0,
     remise: 0,
     remisePourcentage: 0,
@@ -652,19 +668,20 @@ export default function Vente() {
             const forfaitLines = Array.from(forfaitLinesMap.entries()).map(([forfaitId, quantite]) => ({ forfaitId, quantite }));
             const produitLines = Array.from(produitLinesMap.entries()).map(([produitId, quantite]) => ({ produitId, quantite }));
             const serviceLines = Array.from(serviceLinesMap.entries()).map(([serviceId, quantite]) => ({ serviceId, quantite }));
-            const taskLines = (vente.taches || [])
-                .map<VenteFormValues['taches'][number]>((tache) => ({
-                    id: tache.id,
-                    nom: tache.nom || '',
-                    status: tache.status || 'EN_ATTENTE',
-                    dateDebut: toDateInputValue(tache.dateDebut),
-                    dateFin: toDateInputValue(tache.dateFin),
-                    statusDate: toDateInputValue(tache.statusDate),
-                    description: tache.description || '',
-                    notes: tache.notes || '',
-                    technicienId: tache.technicien?.id,
-                    dureeEstimee: tache.dureeEstimee || 0,
-                    dureeReelle: tache.dureeReelle || 0
+            const prestationLines = (vente.prestations || [])
+                .map<VenteFormValues['prestations'][number]>((prestation) => ({
+                    id: prestation.id,
+                    nom: prestation.nom || '',
+                    status: prestation.status || 'EN_ATTENTE',
+                    dateDebut: toDateInputValue(prestation.dateDebut),
+                    dateFin: toDateInputValue(prestation.dateFin),
+                    statusDate: toDateInputValue(prestation.statusDate),
+                    description: prestation.description || '',
+                    notes: prestation.notes || '',
+                    technicienId: prestation.technicien?.id,
+                    dureeEstimee: prestation.dureeEstimee || 0,
+                    dureeReelle: prestation.dureeReelle || 0,
+                    taches: prestation.taches || []
                 }));
             form.setFieldsValue({
                 status: vente.status || 'EN_ATTENTE',
@@ -676,7 +693,7 @@ export default function Vente() {
                 forfaits: [...forfaitLines, {}],
                 produits: [...produitLines, {}],
                 services: [...serviceLines, {}],
-                taches: [...taskLines, {}],
+                prestations: [...prestationLines, {}],
                 date: toDateInputValue(vente.date),
                 montantHT: vente.montantHT || 0,
                 remise: vente.remise || 0,
@@ -705,32 +722,29 @@ export default function Vente() {
         return Array.from({ length: safeQuantity }, () => items).flat();
     };
 
-    const buildTasksFromForfaitLines = (forfaitLines: VenteFormValues['forfaits']): VenteFormValues['taches'] => {
-        const copiedTasks = (forfaitLines || [])
+    const buildPrestationsFromForfaitLines = (forfaitLines: VenteFormValues['forfaits']): VenteFormValues['prestations'] => {
+        const copiedPrestations = (forfaitLines || [])
             .filter((line) => line.forfaitId && (line.quantite || 0) > 0)
             .flatMap((line) => {
                 const selectedForfait = forfaits.find((forfait) => forfait.id === line.forfaitId);
-                if (!selectedForfait?.taches?.length) {
+                if (!selectedForfait) {
                     return [];
                 }
-                const tasksForOneForfait = selectedForfait.taches.map<VenteFormValues['taches'][number]>((tache) => ({
-                    // We copy values from forfait tasks into vente tasks.
-                    // IDs are omitted so the sale owns its own task rows.
-                    nom: tache.nom || '',
-                    status: tache.status || 'EN_ATTENTE',
-                    dateDebut: toDateInputValue(tache.dateDebut),
-                    dateFin: toDateInputValue(tache.dateFin),
-                    statusDate: toDateInputValue(tache.statusDate),
-                    description: tache.description || '',
-                    notes: tache.notes || '',
-                    technicienId: tache.technicien?.id,
-                    dureeEstimee: tache.dureeEstimee || 0,
-                    dureeReelle: tache.dureeReelle || 0
-                }));
-                return expandByQuantity(tasksForOneForfait, line.quantite || 1);
+                const prestationForOneForfait: VenteFormValues['prestations'][number] = {
+                    nom: selectedForfait.nom || '',
+                    status: 'EN_ATTENTE',
+                    description: '',
+                    notes: '',
+                    dureeEstimee: selectedForfait.dureeEstimee || 0,
+                    dureeReelle: 0,
+                    taches: (selectedForfait.taches || [])
+                        .filter((t) => t.nom || t.description)
+                        .map((t) => ({ nom: t.nom || '', description: t.description || '', completed: false }))
+                };
+                return expandByQuantity([prestationForOneForfait], line.quantite || 1);
             });
 
-        return [...copiedTasks, {}];
+        return [...copiedPrestations, {}];
     };
 
     const toPayload = (values: VenteFormValues): VenteEntity => ({
@@ -758,37 +772,38 @@ export default function Vente() {
                 const item = services.find((service) => service.id === line.serviceId);
                 return item ? expandByQuantity([item], line.quantite || 1) : [];
             }) as ServiceEntity[],
-        taches: (values.taches || [])
-            .filter((tache) =>
+        prestations: (values.prestations || [])
+            .filter((prestation) =>
                 Boolean(
-                    tache.nom
-                    || tache.description
-                    || tache.notes
-                    || tache.status
-                    || tache.technicienId
-                    || tache.dateDebut
-                    || tache.dateFin
-                    || tache.statusDate
-                    || (tache.dureeEstimee || 0) > 0
-                    || (tache.dureeReelle || 0) > 0
-                    || tache.incidentDate
-                    || tache.incidentDetails
+                    prestation.nom
+                    || prestation.description
+                    || prestation.notes
+                    || prestation.status
+                    || prestation.technicienId
+                    || prestation.dateDebut
+                    || prestation.dateFin
+                    || prestation.statusDate
+                    || (prestation.dureeEstimee || 0) > 0
+                    || (prestation.dureeReelle || 0) > 0
+                    || prestation.incidentDate
+                    || prestation.incidentDetails
                 )
             )
-            .map<TaskEntity>((tache) => ({
-                id: tache.id,
-                nom: tache.nom || '',
-                status: tache.status || 'EN_ATTENTE',
-                dateDebut: tache.dateDebut,
-                dateFin: tache.dateFin,
-                statusDate: tache.statusDate,
-                description: tache.description || '',
-                notes: tache.notes || '',
-                technicien: techniciens.find((technicien) => technicien.id === tache.technicienId),
-                dureeEstimee: tache.dureeEstimee || 0,
-                dureeReelle: tache.dureeReelle || 0,
-                incidentDate: tache.incidentDate,
-                incidentDetails: tache.incidentDetails
+            .map<PrestationEntity>((prestation) => ({
+                id: prestation.id,
+                nom: prestation.nom || '',
+                status: prestation.status || 'EN_ATTENTE',
+                dateDebut: prestation.dateDebut,
+                dateFin: prestation.dateFin,
+                statusDate: prestation.statusDate,
+                description: prestation.description || '',
+                notes: prestation.notes || '',
+                technicien: techniciens.find((technicien) => technicien.id === prestation.technicienId),
+                dureeEstimee: prestation.dureeEstimee || 0,
+                dureeReelle: prestation.dureeReelle || 0,
+                incidentDate: prestation.incidentDate,
+                incidentDetails: prestation.incidentDetails,
+                taches: prestation.taches || []
             })),
         date: toBackendDateValue(values.date),
         montantHT: values.montantHT || 0,
@@ -1130,7 +1145,7 @@ export default function Vente() {
     const onValuesChange = (changedValues: Partial<VenteFormValues>, allValues: VenteFormValues) => {
         if (changedValues.forfaits !== undefined) {
             const currentForfaitLines = allValues.forfaits || [];
-            form.setFieldValue('taches', buildTasksFromForfaitLines(currentForfaitLines));
+            form.setFieldValue('prestations', buildPrestationsFromForfaitLines(currentForfaitLines));
             if (currentForfaitLines.length === 0) {
                 form.setFieldValue('forfaits', [{}]);
                 return;
@@ -1171,27 +1186,27 @@ export default function Vente() {
             }
         }
 
-        if (changedValues.taches !== undefined) {
-            const currentTaskLines = allValues.taches || [];
-            if (currentTaskLines.length === 0) {
-                form.setFieldValue('taches', [{}]);
+        if (changedValues.prestations !== undefined) {
+            const currentLines = allValues.prestations || [];
+            if (currentLines.length === 0) {
+                form.setFieldValue('prestations', [{}]);
                 return;
             }
-            const lastTaskLine = currentTaskLines[currentTaskLines.length - 1];
+            const lastLine = currentLines[currentLines.length - 1];
             const isLastLineComplete = Boolean(
-                lastTaskLine?.nom?.trim()
-                || lastTaskLine?.description?.trim()
-                || lastTaskLine?.notes?.trim()
-                || lastTaskLine?.status
-                || lastTaskLine?.technicienId
-                || lastTaskLine?.dateDebut
-                || lastTaskLine?.dateFin
-                || lastTaskLine?.statusDate
-                || (lastTaskLine?.dureeEstimee || 0) > 0
-                || (lastTaskLine?.dureeReelle || 0) > 0
+                lastLine?.nom?.trim()
+                || lastLine?.description?.trim()
+                || lastLine?.notes?.trim()
+                || lastLine?.status
+                || lastLine?.technicienId
+                || lastLine?.dateDebut
+                || lastLine?.dateFin
+                || lastLine?.statusDate
+                || (lastLine?.dureeEstimee || 0) > 0
+                || (lastLine?.dureeReelle || 0) > 0
             );
             if (isLastLineComplete) {
-                form.setFieldValue('taches', [...currentTaskLines, {}]);
+                form.setFieldValue('prestations', [...currentLines, {}]);
                 return;
             }
         }
@@ -1864,17 +1879,17 @@ export default function Vente() {
                                 )
                             },
                             {
-                                key: 'taches',
-                                label: 'Tâches Associées',
+                                key: 'prestations',
+                                label: 'Prestations',
                                 children: (
-                                    <Form.List name="taches">
+                                    <Form.List name="prestations">
                                         {(fields, { remove }) => (
                                             <Space direction="vertical" style={{ width: '100%' }} size={12}>
                                                 {fields.map((field) => (
                                                     <Card
                                                         key={field.key}
                                                         size="small"
-                                                        title={`Tâche ${field.name + 1}`}
+                                                        title={`Prestation ${field.name + 1}`}
                                                         extra={<Button danger icon={<DeleteOutlined />} onClick={() => remove(field.name)} />}
                                                     >
                                                         <Row gutter={12}>
@@ -1941,9 +1956,9 @@ export default function Vente() {
                                                         <Form.Item {...field} name={[field.name, 'notes']} label="Notes">
                                                             <Input.TextArea rows={2} />
                                                         </Form.Item>
-                                                        <Form.Item noStyle shouldUpdate={(prev, cur) => prev?.taches?.[field.name]?.status !== cur?.taches?.[field.name]?.status}>
+                                                        <Form.Item noStyle shouldUpdate={(prev, cur) => prev?.prestations?.[field.name]?.status !== cur?.prestations?.[field.name]?.status}>
                                                             {({ getFieldValue }) => {
-                                                                const status = getFieldValue(['taches', field.name, 'status']);
+                                                                const status = getFieldValue(['prestations', field.name, 'status']);
                                                                 if (status !== 'INCIDENT') return null;
                                                                 return (
                                                                     <Card size="small" title="Incident" style={{ marginBottom: 12, borderColor: '#ff4d4f' }}>

@@ -101,23 +101,7 @@ interface ForfaitServiceEntity {
 interface TaskEntity {
     id?: number;
     nom?: string;
-    status?: TaskStatus;
-    dateDebut?: string;
-    dateFin?: string;
-    statusDate?: string;
     description?: string;
-    notes?: string;
-    technicien?: TechnicienEntity;
-    dureeEstimee?: number;
-    dureeReelle?: number;
-}
-
-type TaskStatus = 'EN_ATTENTE' | 'EN_COURS' | 'TERMINEE' | 'INCIDENT' | 'ANNULEE';
-
-interface TechnicienEntity {
-    id: number;
-    prenom?: string;
-    nom?: string;
 }
 
 interface ForfaitEntity {
@@ -134,6 +118,7 @@ interface ForfaitEntity {
     tva: number;
     montantTVA: number;
     prixTTC: number;
+    dureeEstimee: number;
     taches?: TaskEntity[];
 }
 
@@ -147,16 +132,9 @@ interface ForfaitFormValues {
     taches: Array<{
         id?: number;
         nom?: string;
-        status?: TaskStatus;
-        dateDebut?: string;
-        dateFin?: string;
-        statusDate?: string;
         description?: string;
-        notes?: string;
-        technicienId?: number;
-        dureeEstimee?: number;
-        dureeReelle?: number;
     }>;
+    dureeEstimee: number;
     heuresFonctionnement: number;
     joursFrequence: number;
     prixHT: number;
@@ -175,6 +153,7 @@ const defaultForfait: ForfaitFormValues = {
     produits: [{}],
     services: [{}],
     taches: [{}],
+    dureeEstimee: 0,
     heuresFonctionnement: 0,
     joursFrequence: 0,
     prixHT: 0,
@@ -409,17 +388,10 @@ export default function Forfaits() {
                     .map<ForfaitFormValues['taches'][number]>((tache) => ({
                         id: tache.id,
                         nom: tache.nom || '',
-                        status: tache.status || 'EN_ATTENTE',
-                        dateDebut: toDateInputValue(tache.dateDebut),
-                        dateFin: toDateInputValue(tache.dateFin),
-                        statusDate: toDateInputValue(tache.statusDate),
-                        description: tache.description || '',
-                        notes: tache.notes || '',
-                        technicienId: tache.technicien?.id,
-                        dureeEstimee: tache.dureeEstimee || 0,
-                        dureeReelle: tache.dureeReelle || 0
+                        description: tache.description || ''
                     }))
                     .concat({}),
+                dureeEstimee: forfait.dureeEstimee || 0,
                 heuresFonctionnement: forfait.heuresFonctionnement || 0,
                 joursFrequence: forfait.joursFrequence || 0,
                 prixHT: forfait.prixHT || 0,
@@ -460,33 +432,13 @@ export default function Forfaits() {
                 quantite: item.quantite || 1
             })),
         taches: (values.taches || [])
-            .filter((tache) =>
-                Boolean(
-                    tache.nom
-                    || tache.description
-                    || tache.notes
-                    || tache.status
-                    || tache.technicienId
-                    || tache.dateDebut
-                    || tache.dateFin
-                    || tache.statusDate
-                    || (tache.dureeEstimee || 0) > 0
-                    || (tache.dureeReelle || 0) > 0
-                )
-            )
+            .filter((tache) => Boolean(tache.nom || tache.description))
             .map((tache) => ({
                 id: tache.id,
                 nom: tache.nom || '',
-                status: tache.status || 'EN_ATTENTE',
-                dateDebut: tache.dateDebut,
-                dateFin: tache.dateFin,
-                statusDate: tache.statusDate,
-                description: tache.description || '',
-                notes: tache.notes || '',
-                technicien: techniciens.find((technicien) => technicien.id === tache.technicienId),
-                dureeEstimee: tache.dureeEstimee || 0,
-                dureeReelle: tache.dureeReelle || 0
+                description: tache.description || ''
             })),
+        dureeEstimee: values.dureeEstimee || 0,
         heuresFonctionnement: values.heuresFonctionnement || 0,
         joursFrequence: values.joursFrequence || 0,
         prixHT: values.prixHT || 0,
@@ -535,13 +487,12 @@ export default function Forfaits() {
             const currentProduitLines = allValues.produits || [];
             if (currentProduitLines.length === 0) {
                 form.setFieldValue('produits', [{}]);
-                return;
-            }
-            const lastProduitLine = currentProduitLines[currentProduitLines.length - 1];
-            const isLastLineComplete = !!lastProduitLine?.produitId && (lastProduitLine?.quantite || 0) > 0;
-            if (isLastLineComplete) {
-                form.setFieldValue('produits', [...currentProduitLines, {}]);
-                return;
+            } else {
+                const lastProduitLine = currentProduitLines[currentProduitLines.length - 1];
+                const isLastLineComplete = !!lastProduitLine?.produitId && (lastProduitLine?.quantite || 0) > 0;
+                if (isLastLineComplete) {
+                    form.setFieldValue('produits', [...currentProduitLines, {}]);
+                }
             }
         }
 
@@ -549,13 +500,12 @@ export default function Forfaits() {
             const currentServiceLines = allValues.services || [];
             if (currentServiceLines.length === 0) {
                 form.setFieldValue('services', [{}]);
-                return;
-            }
-            const lastServiceLine = currentServiceLines[currentServiceLines.length - 1];
-            const isLastLineComplete = !!lastServiceLine?.serviceId && (lastServiceLine?.quantite || 0) > 0;
-            if (isLastLineComplete) {
-                form.setFieldValue('services', [...currentServiceLines, {}]);
-                return;
+            } else {
+                const lastServiceLine = currentServiceLines[currentServiceLines.length - 1];
+                const isLastLineComplete = !!lastServiceLine?.serviceId && (lastServiceLine?.quantite || 0) > 0;
+                if (isLastLineComplete) {
+                    form.setFieldValue('services', [...currentServiceLines, {}]);
+                }
             }
         }
 
@@ -977,42 +927,38 @@ export default function Forfaits() {
                                 key: 'taches',
                                 label: 'Tâches Associées',
                                 children: (
-                                    <Form.List name="taches">
-                                        {(fields, { remove }) => (
-                                            <Space direction="vertical" style={{ width: '100%' }} size={12}>
-                                                {fields.map((field) => (
-                                                    <Card
-                                                        key={field.key}
-                                                        size="small"
-                                                        title={`Tâche ${field.name + 1}`}
-                                                        extra={<Button danger icon={<DeleteOutlined />} onClick={() => remove(field.name)} />}
-                                                    >
-                                                        <Row gutter={12}>
-                                                            <Col span={12}>
-                                                                <Form.Item {...field} name={[field.name, 'nom']} label="Nom">
-                                                                    <Input allowClear />
-                                                                </Form.Item>
-                                                            </Col>
-                                                            <Col span={12}>
-                                                                <Form.Item {...field} name={[field.name, 'dureeEstimee']} label="Durée estimée">
-                                                                    <InputNumber
-                                                                        min={0}
-                                                                        step={0.25}
-                                                                        precision={2}
-                                                                        style={{ width: '100%' }}
-                                                                        addonAfter="h"
-                                                                    />
-                                                                </Form.Item>
-                                                            </Col>
-                                                        </Row>
-                                                        <Form.Item {...field} name={[field.name, 'description']} label="Description">
-                                                            <Input.TextArea rows={2} />
-                                                        </Form.Item>
-                                                    </Card>
-                                                ))}
-                                            </Space>
-                                        )}
-                                    </Form.List>
+                                    <>
+                                        <Form.Item name="dureeEstimee" label="Durée estimée du forfait">
+                                            <InputNumber
+                                                min={0}
+                                                step={0.25}
+                                                precision={2}
+                                                style={{ width: '100%' }}
+                                                addonAfter="h"
+                                            />
+                                        </Form.Item>
+                                        <Form.List name="taches">
+                                            {(fields, { remove }) => (
+                                                <Space direction="vertical" style={{ width: '100%' }} size={12}>
+                                                    {fields.map((field) => (
+                                                        <Card
+                                                            key={field.key}
+                                                            size="small"
+                                                            title={`Tâche ${field.name + 1}`}
+                                                            extra={<Button danger icon={<DeleteOutlined />} onClick={() => remove(field.name)} />}
+                                                        >
+                                                            <Form.Item {...field} name={[field.name, 'nom']} label="Nom">
+                                                                <Input allowClear />
+                                                            </Form.Item>
+                                                            <Form.Item {...field} name={[field.name, 'description']} label="Description">
+                                                                <Input.TextArea rows={2} />
+                                                            </Form.Item>
+                                                        </Card>
+                                                    ))}
+                                                </Space>
+                                            )}
+                                        </Form.List>
+                                    </>
                                 )
                             }
                         ]}

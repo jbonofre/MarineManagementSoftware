@@ -3,6 +3,7 @@ import {
     Badge,
     Button,
     Card,
+    Checkbox,
     Form,
     Input,
     InputNumber,
@@ -37,11 +38,11 @@ interface Technicien {
 
 type TaskStatus = 'EN_ATTENTE' | 'PLANIFIEE' | 'EN_COURS' | 'TERMINEE' | 'INCIDENT' | 'ANNULEE';
 
-interface TaskWithVente {
-    taskId: number;
+interface PrestationWithVente {
+    prestationId: number;
     venteId: number;
-    taskNom?: string;
-    taskStatus?: TaskStatus;
+    prestationNom?: string;
+    prestationStatus?: TaskStatus;
     dateDebut?: string;
     dateFin?: string;
     statusDate?: string;
@@ -54,6 +55,7 @@ interface TaskWithVente {
     clientNom?: string;
     venteType?: string;
     bateauNom?: string;
+    taches?: Array<{ id: number; nom?: string; description?: string; completed: boolean }>;
 }
 
 interface MobileAppProps {
@@ -94,11 +96,11 @@ const formatDate = (value?: string) => {
 };
 
 export default function MobileApp({ user, onLogout, onChangePassword }: MobileAppProps) {
-    const [tasks, setTasks] = useState<TaskWithVente[]>([]);
+    const [tasks, setTasks] = useState<PrestationWithVente[]>([]);
     const [loading, setLoading] = useState(false);
     const [tab, setTab] = useState<Tab>('today');
     const [modalVisible, setModalVisible] = useState(false);
-    const [currentTask, setCurrentTask] = useState<TaskWithVente | null>(null);
+    const [currentTask, setCurrentTask] = useState<PrestationWithVente | null>(null);
     const [form] = Form.useForm();
     const [saving, setSaving] = useState(false);
 
@@ -107,7 +109,7 @@ export default function MobileApp({ user, onLogout, onChangePassword }: MobileAp
     const fetchTasks = async () => {
         setLoading(true);
         try {
-            const res = await axios.get(`/technicien-portal/techniciens/${user.id}/taches`);
+            const res = await axios.get(`/technicien-portal/techniciens/${user.id}/prestations`);
             setTasks(res.data || []);
         } catch {
             message.error('Erreur lors du chargement');
@@ -119,15 +121,15 @@ export default function MobileApp({ user, onLogout, onChangePassword }: MobileAp
     useEffect(() => { fetchTasks(); }, [user.id]);
 
     const todayTasks = tasks.filter((t) => t.statusDate && t.statusDate.startsWith(todayIso()));
-    const incidentTasks = tasks.filter((t) => t.taskStatus === 'INCIDENT');
-    const pendingCount = tasks.filter((t) => t.taskStatus === 'EN_ATTENTE' || t.taskStatus === 'PLANIFIEE' || t.taskStatus === 'EN_COURS').length;
+    const incidentTasks = tasks.filter((t) => t.prestationStatus === 'INCIDENT');
+    const pendingCount = tasks.filter((t) => t.prestationStatus === 'EN_ATTENTE' || t.prestationStatus === 'PLANIFIEE' || t.prestationStatus === 'EN_COURS').length;
 
     const displayedTasks = tab === 'today' ? todayTasks : tab === 'incidents' ? incidentTasks : tasks;
 
-    const openModal = (task: TaskWithVente, presetStatus?: TaskStatus) => {
+    const openModal = (task: PrestationWithVente, presetStatus?: TaskStatus) => {
         setCurrentTask(task);
         form.setFieldsValue({
-            status: presetStatus || task.taskStatus || 'EN_COURS',
+            status: presetStatus || task.prestationStatus || 'EN_COURS',
             dureeReelle: task.dureeReelle || 0,
             notes: task.notes || '',
             incidentDate: task.incidentDate || todayIso(),
@@ -141,18 +143,18 @@ export default function MobileApp({ user, onLogout, onChangePassword }: MobileAp
         try {
             const values = await form.validateFields();
             setSaving(true);
-            const res = await axios.put(`/technicien-portal/taches/${currentTask.taskId}`, {
+            const res = await axios.put(`/technicien-portal/prestations/${currentTask.prestationId}`, {
                 status: values.status,
                 dureeReelle: values.dureeReelle || 0,
                 notes: values.notes || '',
                 incidentDate: values.status === 'INCIDENT' ? values.incidentDate : null,
                 incidentDetails: values.status === 'INCIDENT' ? values.incidentDetails : null,
             });
-            message.success('Tache mise a jour');
+            message.success('Prestation mise a jour');
             const updated = res.data;
-            setCurrentTask({ ...currentTask, ...updated, taskStatus: updated.taskStatus || values.status });
+            setCurrentTask({ ...currentTask, ...updated, prestationStatus: updated.prestationStatus || values.status });
             form.setFieldsValue({
-                status: updated.taskStatus || values.status,
+                status: updated.prestationStatus || values.status,
                 dureeReelle: updated.dureeReelle ?? values.dureeReelle,
                 notes: updated.notes ?? values.notes,
                 incidentDate: updated.incidentDate || values.incidentDate,
@@ -166,11 +168,31 @@ export default function MobileApp({ user, onLogout, onChangePassword }: MobileAp
         }
     };
 
-    const renderTaskCard = (task: TaskWithVente) => (
-        <Card size="small" style={{ marginBottom: 8 }} key={task.taskId}>
+    const handleToggleTache = async (tache: { id: number; nom?: string; description?: string; completed: boolean }) => {
+        if (!currentTask) return;
+        try {
+            await axios.put(`/technicien-portal/prestations/${currentTask.prestationId}/taches/${tache.id}`, {
+                completed: !tache.completed,
+            });
+            const updatedTaches = currentTask.taches?.map((t) =>
+                t.id === tache.id ? { ...t, completed: !tache.completed } : t
+            );
+            setCurrentTask({ ...currentTask, taches: updatedTaches });
+            setTasks((prev) =>
+                prev.map((p) =>
+                    p.prestationId === currentTask.prestationId ? { ...p, taches: updatedTaches } : p
+                )
+            );
+        } catch {
+            message.error('Erreur lors de la mise a jour de la tache');
+        }
+    };
+
+    const renderTaskCard = (task: PrestationWithVente) => (
+        <Card size="small" style={{ marginBottom: 8 }} key={task.prestationId}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                <span style={{ fontWeight: 'bold', fontSize: 14 }}>{task.taskNom || 'Tache'}</span>
-                <Tag color={statusColor[task.taskStatus || '']}>{statusLabel[task.taskStatus || ''] || task.taskStatus}</Tag>
+                <span style={{ fontWeight: 'bold', fontSize: 14 }}>{task.prestationNom || 'Prestation'}</span>
+                <Tag color={statusColor[task.prestationStatus || '']}>{statusLabel[task.prestationStatus || ''] || task.prestationStatus}</Tag>
             </div>
             <p style={{ margin: '2px 0', color: '#666' }}>{task.clientNom || '-'} {task.bateauNom ? `/ ${task.bateauNom}` : ''}</p>
             {task.description && <p style={{ margin: '2px 0', fontSize: 12, color: '#999' }}>{task.description}</p>}
@@ -183,7 +205,7 @@ export default function MobileApp({ user, onLogout, onChangePassword }: MobileAp
                 {task.dateFin && <span>Fin: {formatDate(task.dateFin)}</span>}
             </div>
             {task.statusDate && <p style={{ margin: '2px 0', fontSize: 12 }}>Planifiee: {formatDate(task.statusDate)}</p>}
-            {task.taskStatus === 'INCIDENT' && task.incidentDetails && (
+            {task.prestationStatus === 'INCIDENT' && task.incidentDetails && (
                 <Card size="small" style={{ background: '#fff2f0', borderColor: '#ffccc7', marginTop: 4 }}>
                     <p style={{ margin: 0, fontSize: 12, color: '#cf1322' }}>
                         <WarningOutlined /> {task.incidentDetails}
@@ -192,17 +214,17 @@ export default function MobileApp({ user, onLogout, onChangePassword }: MobileAp
                 </Card>
             )}
             <Space style={{ marginTop: 8 }} wrap>
-                {(task.taskStatus === 'EN_ATTENTE' || task.taskStatus === 'PLANIFIEE') && (
+                {(task.prestationStatus === 'EN_ATTENTE' || task.prestationStatus === 'PLANIFIEE') && (
                     <Button size="small" type="primary" icon={<ClockCircleOutlined />} onClick={() => openModal(task, 'EN_COURS')}>
                         Demarrer
                     </Button>
                 )}
-                {task.taskStatus === 'EN_COURS' && (
+                {task.prestationStatus === 'EN_COURS' && (
                     <Button size="small" type="primary" icon={<CheckCircleOutlined />} style={{ background: '#52c41a', borderColor: '#52c41a' }} onClick={() => openModal(task, 'TERMINEE')}>
                         Terminer
                     </Button>
                 )}
-                {task.taskStatus !== 'ANNULEE' && task.taskStatus !== 'TERMINEE' && (
+                {task.prestationStatus !== 'ANNULEE' && task.prestationStatus !== 'TERMINEE' && (
                     <Button size="small" danger icon={<ExclamationCircleOutlined />} onClick={() => openModal(task, 'INCIDENT')}>
                         Incident
                     </Button>
@@ -235,7 +257,7 @@ export default function MobileApp({ user, onLogout, onChangePassword }: MobileAp
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                     <h3 style={{ margin: 0 }}>
                         {tab === 'today' && `Aujourd'hui (${todayIso()})`}
-                        {tab === 'all' && 'Toutes les taches'}
+                        {tab === 'all' && 'Toutes les prestations'}
                         {tab === 'incidents' && 'Incidents'}
                     </h3>
                     <Button size="small" icon={<ReloadOutlined />} onClick={fetchTasks} />
@@ -244,7 +266,7 @@ export default function MobileApp({ user, onLogout, onChangePassword }: MobileAp
                     {displayedTasks.length > 0 ? (
                         <List dataSource={displayedTasks} renderItem={renderTaskCard} />
                     ) : (
-                        <Card style={{ textAlign: 'center', color: '#999' }}>Aucune tache</Card>
+                        <Card style={{ textAlign: 'center', color: '#999' }}>Aucune prestation</Card>
                     )}
                 </Spin>
             </div>
@@ -267,7 +289,7 @@ export default function MobileApp({ user, onLogout, onChangePassword }: MobileAp
             {/* Update modal */}
             <Modal
                 open={modalVisible}
-                title={currentTask?.taskNom || 'Mise a jour'}
+                title={currentTask?.prestationNom || 'Mise a jour'}
                 onOk={handleSave}
                 okText="Enregistrer"
                 cancelText="Annuler"
@@ -311,6 +333,26 @@ export default function MobileApp({ user, onLogout, onChangePassword }: MobileAp
                         }}
                     </Form.Item>
                 </Form>
+                {currentTask?.taches && currentTask.taches.length > 0 && (
+                    <Card size="small" title="Taches" style={{ marginTop: 12 }}>
+                        <List
+                            dataSource={currentTask.taches}
+                            renderItem={(tache) => (
+                                <List.Item style={{ padding: '4px 0' }}>
+                                    <Checkbox
+                                        checked={tache.completed}
+                                        onChange={() => handleToggleTache(tache)}
+                                    >
+                                        <span style={{ fontWeight: 500 }}>{tache.nom || `Tache #${tache.id}`}</span>
+                                        {tache.description && (
+                                            <span style={{ color: '#999', marginLeft: 8, fontSize: 12 }}>{tache.description}</span>
+                                        )}
+                                    </Checkbox>
+                                </List.Item>
+                            )}
+                        />
+                    </Card>
+                )}
             </Modal>
         </div>
     );

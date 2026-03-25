@@ -25,7 +25,52 @@ public class VenteResourceTest {
             .when().get("/ventes/100")
             .then()
             .statusCode(200)
-            .body("status", is("PAYEE"));
+            .body("status", is("PAYEE"))
+            .body("prestations.size()", is(1))
+            .body("prestations[0].nom", is("Revision moteur"))
+            .body("prestations[0].taches.size()", is(2));
+    }
+
+    @Test
+    void testCreerVenteAvecPrestations() {
+        String body = """
+            {
+                "status": "EN_ATTENTE",
+                "type": "DEVIS",
+                "prixVenteTTC": 500.0,
+                "prestations": [
+                    {
+                        "nom": "Test prestation",
+                        "status": "EN_ATTENTE",
+                        "dureeEstimee": 3.0,
+                        "taches": [
+                            {"nom": "Tache 1", "description": "Desc 1", "completed": false},
+                            {"nom": "Tache 2", "description": "Desc 2", "completed": false}
+                        ]
+                    }
+                ]
+            }
+            """;
+        int id = given()
+            .contentType("application/json")
+            .body(body)
+            .when().post("/ventes")
+            .then()
+            .statusCode(201)
+            .body("prestations.size()", is(1))
+            .body("prestations[0].nom", is("Test prestation"))
+            .body("prestations[0].status", is("EN_ATTENTE"))
+            .body("prestations[0].taches.size()", is(2))
+            .extract().path("id");
+
+        // Verify GET returns the same data
+        given()
+            .when().get("/ventes/" + id)
+            .then()
+            .statusCode(200)
+            .body("prestations.size()", is(1))
+            .body("prestations[0].nom", is("Test prestation"))
+            .body("prestations[0].taches.size()", is(2));
     }
 
     @Test
