@@ -1980,17 +1980,6 @@ export default function Vente() {
                                                                 >
                                                                     <Select allowClear showSearch options={produitOptions} placeholder="Produit" />
                                                                 </Form.Item>
-                                                                <Form.Item noStyle shouldUpdate>
-                                                                    {({ getFieldValue }) => {
-                                                                        const pid = getFieldValue(['produits', field.name, 'produitId']);
-                                                                        const pu = produits.find((item) => item.id === pid)?.prixVenteTTC;
-                                                                        return (
-                                                                            <Form.Item style={{ width: 150 }}>
-                                                                                <InputNumber addonAfter="EUR" value={pu ?? undefined} style={{ width: '100%' }} disabled placeholder="P.U." />
-                                                                            </Form.Item>
-                                                                        );
-                                                                    }}
-                                                                </Form.Item>
                                                                 <Form.Item
                                                                     {...field}
                                                                     name={[field.name, 'quantite']}
@@ -2010,6 +1999,17 @@ export default function Vente() {
                                                                     style={{ width: 120 }}
                                                                 >
                                                                     <InputNumber min={1} step={1} style={{ width: '100%' }} placeholder="Qte" />
+                                                                </Form.Item>
+                                                                <Form.Item noStyle shouldUpdate>
+                                                                    {({ getFieldValue }) => {
+                                                                        const pid = getFieldValue(['produits', field.name, 'produitId']);
+                                                                        const pu = produits.find((item) => item.id === pid)?.prixVenteTTC;
+                                                                        return (
+                                                                            <Form.Item style={{ width: 150 }}>
+                                                                                <InputNumber addonAfter="EUR" value={pu ?? undefined} style={{ width: '100%' }} disabled placeholder="P.U." />
+                                                                            </Form.Item>
+                                                                        );
+                                                                    }}
                                                                 </Form.Item>
                                                                 <Form.Item noStyle shouldUpdate>
                                                                     {({ getFieldValue }) => {
