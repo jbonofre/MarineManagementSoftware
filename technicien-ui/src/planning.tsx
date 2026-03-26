@@ -339,6 +339,27 @@ export default function Planning({ technicienId }: PlanningProps) {
                             Demarrer
                         </Button>
                     )}
+                    {(record.itemStatus !== 'ANNULEE') && (
+                        <Button
+                            size="small"
+                            danger
+                            icon={<ExclamationCircleOutlined />}
+                            onClick={() => {
+                                setCurrentItem(record);
+                                setChecklist((record.taches || []).map((t) => ({ ...t })));
+                                form.setFieldsValue({
+                                    status: 'INCIDENT',
+                                    dureeReelle: record.dureeReelle || 0,
+                                    notes: record.notes || '',
+                                    incidentDate: record.incidentDate || todayIso(),
+                                    incidentDetails: record.incidentDetails || '',
+                                });
+                                setModalVisible(true);
+                            }}
+                        >
+                            Incident
+                        </Button>
+                    )}
                     {(record.itemStatus === 'PLANIFIEE' || record.itemStatus === 'EN_COURS') && (
                         <Button
                             size="small"
@@ -366,27 +387,6 @@ export default function Planning({ technicienId }: PlanningProps) {
                             }}
                         >
                             Terminer
-                        </Button>
-                    )}
-                    {(record.itemStatus !== 'ANNULEE') && (
-                        <Button
-                            size="small"
-                            danger
-                            icon={<ExclamationCircleOutlined />}
-                            onClick={() => {
-                                setCurrentItem(record);
-                                setChecklist((record.taches || []).map((t) => ({ ...t })));
-                                form.setFieldsValue({
-                                    status: 'INCIDENT',
-                                    dureeReelle: record.dureeReelle || 0,
-                                    notes: record.notes || '',
-                                    incidentDate: record.incidentDate || todayIso(),
-                                    incidentDetails: record.incidentDetails || '',
-                                });
-                                setModalVisible(true);
-                            }}
-                        >
-                            Incident
                         </Button>
                     )}
                 </Space>

@@ -228,14 +228,14 @@ export default function MobileApp({ user, onLogout, onChangePassword }: MobileAp
                         Demarrer
                     </Button>
                 )}
-                {item.itemStatus === 'EN_COURS' && (
-                    <Button size="small" type="primary" icon={<CheckCircleOutlined />} style={{ background: '#52c41a', borderColor: '#52c41a' }} onClick={() => openModal(item, 'TERMINEE')}>
-                        Terminer
-                    </Button>
-                )}
                 {item.itemStatus !== 'ANNULEE' && item.itemStatus !== 'TERMINEE' && (
                     <Button size="small" danger icon={<ExclamationCircleOutlined />} onClick={() => openModal(item, 'INCIDENT')}>
                         Incident
+                    </Button>
+                )}
+                {item.itemStatus === 'EN_COURS' && (
+                    <Button size="small" type="primary" icon={<CheckCircleOutlined />} style={{ background: '#52c41a', borderColor: '#52c41a' }} onClick={() => openModal(item, 'TERMINEE')}>
+                        Terminer
                     </Button>
                 )}
             </Space>
