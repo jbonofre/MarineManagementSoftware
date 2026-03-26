@@ -1,6 +1,6 @@
 package net.nanthrax.moussaillon.services;
 
-import java.sql.Date;
+import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -46,7 +46,7 @@ public class TechnicienKpiResource {
 
         LocalDate now = LocalDate.now();
         LocalDate startOfMonth = now.withDayOfMonth(1);
-        Date monthStart = Date.valueOf(startOfMonth);
+        Timestamp monthStart = Timestamp.valueOf(startOfMonth.atStartOfDay());
 
         TechnicienKpi kpi = new TechnicienKpi();
 
@@ -71,7 +71,7 @@ public class TechnicienKpiResource {
         kpi.heuresReellesMois = itemsDuMois.stream().filter(i -> "TERMINEE".equals(i.status)).mapToDouble(i -> i.dureeReelle).sum();
 
         // Retards > 48h
-        Date twoDaysAgo = Date.valueOf(now.minusDays(2));
+        Timestamp twoDaysAgo = Timestamp.valueOf(now.minusDays(2).atStartOfDay());
         kpi.retards48h = (int) allItems.stream()
                 .filter(i -> "EN_COURS".equals(i.status) && i.dateDebut != null && i.dateDebut.before(twoDaysAgo))
                 .count();
@@ -79,7 +79,7 @@ public class TechnicienKpiResource {
         return kpi;
     }
 
-    private record PlanningItem(String status, Date dateDebut, double dureeReelle) {}
+    private record PlanningItem(String status, Timestamp dateDebut, double dureeReelle) {}
 
     public static class TechnicienKpi {
         public int totalTaches;

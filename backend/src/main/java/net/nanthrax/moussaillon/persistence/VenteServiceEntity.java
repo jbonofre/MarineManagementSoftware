@@ -24,11 +24,14 @@ public class VenteServiceEntity extends PanacheEntity {
     @ManyToOne
     public TechnicienEntity technicien;
 
-    public Date datePlanification;
+    @JsonbTypeAdapter(TimestampJsonbAdapter.class)
+    public Timestamp datePlanification;
 
-    public Date dateDebut;
+    @JsonbTypeAdapter(TimestampJsonbAdapter.class)
+    public Timestamp dateDebut;
 
-    public Date dateFin;
+    @JsonbTypeAdapter(TimestampJsonbAdapter.class)
+    public Timestamp dateFin;
 
     public enum Status {
         EN_ATTENTE,

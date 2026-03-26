@@ -1,6 +1,5 @@
 package net.nanthrax.moussaillon.services;
 
-import java.sql.Date;
 import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -28,8 +27,7 @@ public class DashboardResource {
         LocalDate now = LocalDate.now();
         LocalDate startOfMonth = now.withDayOfMonth(1);
         Timestamp monthStart = Timestamp.valueOf(startOfMonth.atStartOfDay());
-        Date today = Date.valueOf(now);
-        Date monthStartDate = Date.valueOf(startOfMonth);
+        Timestamp monthStartTimestamp = Timestamp.valueOf(startOfMonth.atStartOfDay());
 
         // CA du mois: sum of prixVenteTTC for PAYEE ventes this month
         List<VenteEntity> ventesDuMois = VenteEntity.list("status = ?1 and date >= ?2", VenteEntity.Status.PAYEE, monthStart);
@@ -43,7 +41,7 @@ public class DashboardResource {
         data.interventionsOuvertes = (int) (forfaitsOuverts + servicesOuverts);
 
         // Retards > 48h
-        Date twoDaysAgo = Date.valueOf(now.minusDays(2));
+        Timestamp twoDaysAgo = Timestamp.valueOf(now.minusDays(2).atStartOfDay());
         long forfaitsRetard = VenteForfaitEntity.count("status = ?1 and dateDebut < ?2",
                 VenteForfaitEntity.Status.EN_COURS, twoDaysAgo);
         long servicesRetard = VenteServiceEntity.count("status = ?1 and dateDebut < ?2",
@@ -55,12 +53,14 @@ public class DashboardResource {
         data.alertesStock = produitsEnAlerte.size();
 
         // Interventions du jour
+        Timestamp todayStart = Timestamp.valueOf(now.atStartOfDay());
+        Timestamp tomorrowStart = Timestamp.valueOf(now.plusDays(1).atStartOfDay());
         data.interventions = new ArrayList<>();
         List<VenteEntity> ventesAvecForfaits = VenteEntity.list(
-                "select distinct v from VenteEntity v join v.venteForfaits vf where vf.dateDebut = ?1", today);
+                "select distinct v from VenteEntity v join v.venteForfaits vf where vf.dateDebut >= ?1 and vf.dateDebut < ?2", todayStart, tomorrowStart);
         for (VenteEntity vente : ventesAvecForfaits) {
             for (VenteForfaitEntity vf : vente.venteForfaits) {
-                if (vf.dateDebut != null && vf.dateDebut.equals(today)) {
+                if (vf.dateDebut != null && !vf.dateDebut.before(todayStart) && vf.dateDebut.before(tomorrowStart)) {
                     InterventionRow row = new InterventionRow();
                     row.key = "f-" + vf.id;
                     row.client = vente.client != null
@@ -77,10 +77,10 @@ public class DashboardResource {
             }
         }
         List<VenteEntity> ventesAvecServices = VenteEntity.list(
-                "select distinct v from VenteEntity v join v.venteServices vs where vs.dateDebut = ?1", today);
+                "select distinct v from VenteEntity v join v.venteServices vs where vs.dateDebut >= ?1 and vs.dateDebut < ?2", todayStart, tomorrowStart);
         for (VenteEntity vente : ventesAvecServices) {
             for (VenteServiceEntity vs : vente.venteServices) {
-                if (vs.dateDebut != null && vs.dateDebut.equals(today)) {
+                if (vs.dateDebut != null && !vs.dateDebut.before(todayStart) && vs.dateDebut.before(tomorrowStart)) {
                     InterventionRow row = new InterventionRow();
                     row.key = "s-" + vs.id;
                     row.client = vente.client != null
@@ -108,8 +108,8 @@ public class DashboardResource {
         }
 
         // Objectifs mensuels
-        List<VenteForfaitEntity> forfaitsDuMois = VenteForfaitEntity.list("dateDebut >= ?1", monthStartDate);
-        List<VenteServiceEntity> servicesDuMois = VenteServiceEntity.list("dateDebut >= ?1", monthStartDate);
+        List<VenteForfaitEntity> forfaitsDuMois = VenteForfaitEntity.list("dateDebut >= ?1", monthStartTimestamp);
+        List<VenteServiceEntity> servicesDuMois = VenteServiceEntity.list("dateDebut >= ?1", monthStartTimestamp);
         double totalReelle = forfaitsDuMois.stream()
                 .filter(vf -> vf.status == VenteForfaitEntity.Status.TERMINEE).mapToDouble(vf -> vf.dureeReelle).sum()
                 + servicesDuMois.stream()

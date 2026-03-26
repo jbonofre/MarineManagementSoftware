@@ -18,6 +18,7 @@ interface TechnicienEntity {
     id: number;
     prenom?: string;
     nom?: string;
+    couleur?: string;
 }
 
 interface ProduitCatalogueEntity {
@@ -179,6 +180,9 @@ const toDateTimeLocalValue = (value?: string) => {
 const getTechnicienColor = (technicien?: TechnicienEntity) => {
     if (!technicien?.id) {
         return '#8c8c8c';
+    }
+    if (technicien.couleur) {
+        return technicien.couleur;
     }
     const index = Math.abs(technicien.id) % technicienPalette.length;
     return technicienPalette[index];
@@ -572,9 +576,16 @@ export default function Planning() {
             title: 'Actions',
             key: 'actions',
             render: (_: unknown, record: PlanningItemRow) => (
-                <Button icon={<EditOutlined />} onClick={() => openPlanningModal(record)}>
-                    Replanifier
-                </Button>
+                <Space>
+                    <Button icon={<EditOutlined />} onClick={() => openPlanningModal(record)}>
+                        Replanifier
+                    </Button>
+                    {record.vente.id && (
+                        <Button onClick={() => history.push(`/prestations?venteId=${record.vente.id}`)}>
+                            Voir prestation
+                        </Button>
+                    )}
+                </Space>
             )
         }
     ];
@@ -668,7 +679,7 @@ export default function Planning() {
                                         }}
                                         onClick={() => setSelectedDate(dayStr)}
                                         style={{
-                                            minHeight: 120,
+                                            minHeight: 320,
                                             border: dragOverDay === dayStr ? '2px dashed #1677ff' : isSelected ? '2px solid #1677ff' : '1px solid #d9d9d9',
                                             borderRadius: 6,
                                             padding: 4,
@@ -792,12 +803,12 @@ export default function Planning() {
                     <Row gutter={16}>
                         <Col span={12}>
                             <Form.Item name="dateDebut" label="Date de debut">
-                                <Input type="date" />
+                                <Input type="datetime-local" />
                             </Form.Item>
                         </Col>
                         <Col span={12}>
                             <Form.Item name="dateFin" label="Date de fin">
-                                <Input type="date" />
+                                <Input type="datetime-local" />
                             </Form.Item>
                         </Col>
                     </Row>

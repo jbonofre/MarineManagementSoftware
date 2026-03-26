@@ -19,8 +19,9 @@ import {
     Dropdown,
     message
 } from 'antd';
-import { CreditCardOutlined, DeleteOutlined, EditOutlined, MailOutlined, PlusCircleOutlined, PlusOutlined, PrinterOutlined, SendOutlined } from '@ant-design/icons';
+import { CalendarOutlined, CreditCardOutlined, DeleteOutlined, EditOutlined, MailOutlined, PlusCircleOutlined, PlusOutlined, PrinterOutlined, SendOutlined } from '@ant-design/icons';
 import axios from 'axios';
+import { useHistory } from 'react-router-dom';
 import ImageUpload from './ImageUpload.tsx';
 
 interface ClientEntity {
@@ -190,6 +191,7 @@ interface ServiceEntity {
     id: number;
     nom: string;
     description?: string;
+    dureeEstimee?: number;
     mainOeuvres?: ServiceMainOeuvreEntity[];
     produits?: ServiceProduitEntity[];
     prixHT?: number;
@@ -350,6 +352,10 @@ const toDateInputValue = (value?: string) => {
     if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
         return value;
     }
+    // Handle ISO datetime like "2025-06-15T10:00:00"
+    if (/^\d{4}-\d{2}-\d{2}T/.test(value)) {
+        return value.slice(0, 10);
+    }
     const parsedDate = new Date(value);
     if (Number.isNaN(parsedDate.getTime())) {
         return undefined;
@@ -357,6 +363,7 @@ const toDateInputValue = (value?: string) => {
     const timezoneOffsetMs = parsedDate.getTimezoneOffset() * 60000;
     return new Date(parsedDate.getTime() - timezoneOffsetMs).toISOString().split('T')[0];
 };
+
 
 const toBackendDateValue = (value?: string) => {
     if (!value) {
@@ -406,6 +413,7 @@ const getClientLabel = (client?: ClientEntity) => {
 };
 
 export default function Vente() {
+    const history = useHistory();
     const [ventes, setVentes] = useState<VenteEntity[]>([]);
     const [clients, setClients] = useState<ClientEntity[]>([]);
     const [bateaux, setBateaux] = useState<BateauClientEntity[]>([]);
@@ -429,6 +437,7 @@ export default function Vente() {
     const [newProduitForm] = Form.useForm();
     const [newServiceModalVisible, setNewServiceModalVisible] = useState(false);
     const [newServiceTargetLine, setNewServiceTargetLine] = useState<number | null>(null);
+    const [editServiceId, setEditServiceId] = useState<number | null>(null);
     const [newServiceForm] = Form.useForm();
     const [newForfaitModalVisible, setNewForfaitModalVisible] = useState(false);
     const [newForfaitTargetLine, setNewForfaitTargetLine] = useState<number | null>(null);
@@ -612,8 +621,35 @@ export default function Vente() {
 
     const openNewServiceModal = (lineIndex: number) => {
         setNewServiceTargetLine(lineIndex);
+        setEditServiceId(null);
         newServiceForm.resetFields();
         newServiceForm.setFieldsValue(defaultNewService);
+        setNewServiceModalVisible(true);
+    };
+
+    const openEditServiceModal = (serviceId: number) => {
+        setNewServiceTargetLine(null);
+        setEditServiceId(serviceId);
+        const service = services.find((s) => s.id === serviceId);
+        if (!service) return;
+        newServiceForm.resetFields();
+        newServiceForm.setFieldsValue({
+            nom: service.nom || '',
+            description: service.description || '',
+            dureeEstimee: service.dureeEstimee || 0,
+            mainOeuvres: (service.mainOeuvres || [])
+                .filter((item) => item.mainOeuvre?.id)
+                .map((item) => ({ mainOeuvreId: item.mainOeuvre!.id, quantite: item.quantite || 1 }))
+                .concat([{}]),
+            produits: (service.produits || [])
+                .filter((item) => item.produit?.id)
+                .map((item) => ({ produitId: item.produit!.id, quantite: item.quantite || 1 }))
+                .concat([{}]),
+            prixHT: service.prixHT || 0,
+            tva: service.tva || 0,
+            montantTVA: service.montantTVA || 0,
+            prixTTC: service.prixTTC || 0,
+        });
         setNewServiceModalVisible(true);
     };
 
@@ -641,16 +677,24 @@ export default function Vente() {
                 montantTVA: values.montantTVA || 0,
                 prixTTC: values.prixTTC || 0
             };
-            const res = await axios.post('/services', payload);
-            const created = res.data as ServiceEntity;
-            message.success('Service ajouté avec succès');
-            setServices((prev) => [...prev, created]);
-            if (newServiceTargetLine !== null && created.id) {
-                const currentLines = form.getFieldValue('venteServices') || [];
-                const updated = [...currentLines];
-                updated[newServiceTargetLine] = { ...updated[newServiceTargetLine], serviceId: created.id };
-                form.setFieldValue('venteServices', updated);
+            if (editServiceId) {
+                const res = await axios.put(`/services/${editServiceId}`, { id: editServiceId, ...payload });
+                const updated = res.data as ServiceEntity;
+                message.success('Service modifié avec succès');
+                setServices((prev) => prev.map((s) => s.id === editServiceId ? updated : s));
                 recalculateFromLines('auto');
+            } else {
+                const res = await axios.post('/services', payload);
+                const created = res.data as ServiceEntity;
+                message.success('Service ajouté avec succès');
+                setServices((prev) => [...prev, created]);
+                if (newServiceTargetLine !== null && created.id) {
+                    const currentLines = form.getFieldValue('venteServices') || [];
+                    const updatedLines = [...currentLines];
+                    updatedLines[newServiceTargetLine] = { ...updatedLines[newServiceTargetLine], serviceId: created.id };
+                    form.setFieldValue('venteServices', updatedLines);
+                    recalculateFromLines('auto');
+                }
             }
             setNewServiceModalVisible(false);
         } catch {
@@ -765,80 +809,96 @@ export default function Vente() {
         }
     };
 
-    const openModal = (vente?: VenteEntity) => {
+    const populateForm = (vente: VenteEntity) => {
+        const venteForfaitLines = (vente.venteForfaits || []).map(vf => ({
+            forfaitId: vf.forfait?.id,
+            quantite: vf.quantite || 1,
+            technicienId: vf.technicien?.id,
+            status: vf.status || 'EN_ATTENTE',
+            datePlanification: vf.datePlanification,
+            dateDebut: vf.dateDebut,
+            dateFin: vf.dateFin,
+            dureeReelle: vf.dureeReelle || 0,
+            notes: vf.notes || '',
+            incidentDate: toDateInputValue(vf.incidentDate),
+            incidentDetails: vf.incidentDetails || '',
+            taches: (vf.taches || []).map(t => ({ nom: t.nom || '', description: t.description || '', done: t.done || false })),
+        }));
+        const venteServiceLines = (vente.venteServices || []).map(vs => ({
+            serviceId: vs.service?.id,
+            quantite: vs.quantite || 1,
+            technicienId: vs.technicien?.id,
+            status: vs.status || 'EN_ATTENTE',
+            datePlanification: vs.datePlanification,
+            dateDebut: vs.dateDebut,
+            dateFin: vs.dateFin,
+            dureeReelle: vs.dureeReelle || 0,
+            notes: vs.notes || '',
+            incidentDate: toDateInputValue(vs.incidentDate),
+            incidentDetails: vs.incidentDetails || '',
+            taches: (vs.taches || []).map(t => ({ nom: t.nom || '', description: t.description || '', done: t.done || false })),
+        }));
+        const produitLinesMap = (vente.produits || []).reduce((acc, item) => {
+            if (!item?.id) {
+                return acc;
+            }
+            acc.set(item.id, (acc.get(item.id) || 0) + 1);
+            return acc;
+        }, new Map<number, number>());
+        const produitLines = Array.from(produitLinesMap.entries()).map(([produitId, quantite]) => ({ produitId, quantite }));
+        form.resetFields();
+        form.setFieldsValue({
+            status: vente.status || 'EN_ATTENTE',
+            type: vente.type || 'DEVIS',
+            clientId: vente.client?.id,
+            bateauId: vente.bateau?.id,
+            moteurId: vente.moteur?.id,
+            remorqueId: vente.remorque?.id,
+            venteForfaits: [...venteForfaitLines, {}],
+            venteServices: [...venteServiceLines, {}],
+            produits: [...produitLines, {}],
+            date: toDateInputValue(vente.date) || getTodayIsoDate(),
+            montantHT: vente.montantHT || 0,
+            remise: vente.remise || 0,
+            remisePourcentage: vente.montantTTC ? Math.round((((vente.remise || 0) / vente.montantTTC) * 100 + Number.EPSILON) * 100) / 100 : 0,
+            tva: vente.tva || 0,
+            montantTVA: vente.montantTVA || 0,
+            montantTTC: vente.montantTTC || 0,
+            prixVenteTTC: vente.prixVenteTTC || 0,
+            modePaiement: vente.modePaiement,
+            rappel1Jours: vente.rappel1Jours,
+            rappel2Jours: vente.rappel2Jours,
+            rappel3Jours: vente.rappel3Jours
+        });
+    };
+
+    const openModal = async (vente?: VenteEntity) => {
         if (vente) {
             setIsEdit(true);
             setCurrentVente(vente);
+            setModalVisible(true);
             if (vente.id) {
                 axios.get<RappelHistoriqueEntity[]>(`/rappels/vente/${vente.id}`).then(res => setRappelHistorique(res.data)).catch(() => setRappelHistorique([]));
-            }
-            const venteForfaitLines = (vente.venteForfaits || []).map(vf => ({
-                forfaitId: vf.forfait?.id,
-                quantite: vf.quantite || 1,
-                technicienId: vf.technicien?.id,
-                status: vf.status || 'EN_ATTENTE',
-                datePlanification: toDateInputValue(vf.datePlanification),
-                dateDebut: toDateInputValue(vf.dateDebut),
-                dateFin: toDateInputValue(vf.dateFin),
-                dureeReelle: vf.dureeReelle || 0,
-                notes: vf.notes || '',
-                incidentDate: toDateInputValue(vf.incidentDate),
-                incidentDetails: vf.incidentDetails || '',
-                taches: (vf.taches || []).map(t => ({ nom: t.nom || '', description: t.description || '', done: t.done || false })),
-            }));
-            const venteServiceLines = (vente.venteServices || []).map(vs => ({
-                serviceId: vs.service?.id,
-                quantite: vs.quantite || 1,
-                technicienId: vs.technicien?.id,
-                status: vs.status || 'EN_ATTENTE',
-                datePlanification: toDateInputValue(vs.datePlanification),
-                dateDebut: toDateInputValue(vs.dateDebut),
-                dateFin: toDateInputValue(vs.dateFin),
-                dureeReelle: vs.dureeReelle || 0,
-                notes: vs.notes || '',
-                incidentDate: toDateInputValue(vs.incidentDate),
-                incidentDetails: vs.incidentDetails || '',
-                taches: (vs.taches || []).map(t => ({ nom: t.nom || '', description: t.description || '', done: t.done || false })),
-            }));
-            const produitLinesMap = (vente.produits || []).reduce((acc, item) => {
-                if (!item?.id) {
-                    return acc;
+                // Fetch the full vente to ensure all nested data is loaded
+                try {
+                    const res = await axios.get<VenteEntity>(`/ventes/${vente.id}`);
+                    const fullVente = res.data;
+                    setCurrentVente(fullVente);
+                    populateForm(fullVente);
+                } catch {
+                    populateForm(vente);
                 }
-                acc.set(item.id, (acc.get(item.id) || 0) + 1);
-                return acc;
-            }, new Map<number, number>());
-            const produitLines = Array.from(produitLinesMap.entries()).map(([produitId, quantite]) => ({ produitId, quantite }));
-            form.setFieldsValue({
-                status: vente.status || 'EN_ATTENTE',
-                type: vente.type || 'DEVIS',
-                clientId: vente.client?.id,
-                bateauId: vente.bateau?.id,
-                moteurId: vente.moteur?.id,
-                remorqueId: vente.remorque?.id,
-                venteForfaits: [...venteForfaitLines, {}],
-                venteServices: [...venteServiceLines, {}],
-                produits: [...produitLines, {}],
-                date: toDateInputValue(vente.date),
-                montantHT: vente.montantHT || 0,
-                remise: vente.remise || 0,
-                remisePourcentage: vente.montantTTC ? Math.round((((vente.remise || 0) / vente.montantTTC) * 100 + Number.EPSILON) * 100) / 100 : 0,
-                tva: vente.tva || 0,
-                montantTVA: vente.montantTVA || 0,
-                montantTTC: vente.montantTTC || 0,
-                prixVenteTTC: vente.prixVenteTTC || 0,
-                modePaiement: vente.modePaiement,
-                rappel1Jours: vente.rappel1Jours,
-                rappel2Jours: vente.rappel2Jours,
-                rappel3Jours: vente.rappel3Jours
-            });
+            } else {
+                populateForm(vente);
+            }
         } else {
             setIsEdit(false);
             setCurrentVente(null);
             setRappelHistorique([]);
             form.resetFields();
             form.setFieldsValue({ ...defaultVente, date: getTodayIsoDate() });
+            setModalVisible(true);
         }
-        setModalVisible(true);
     };
 
     const toPayload = (values: VenteFormValues): VenteEntity => ({
@@ -1506,7 +1566,7 @@ export default function Vente() {
                 ]}
                 maskClosable={false}
                 destroyOnHidden
-                width={1100}
+                width={1400}
             >
                 <Form form={form} layout="vertical" initialValues={defaultVente} onValuesChange={onValuesChange}>
                     <Row gutter={16}>
@@ -1582,7 +1642,7 @@ export default function Vente() {
                                                             const forfaitId = form.getFieldValue(['venteForfaits', field.name, 'forfaitId']);
                                                             const isEmptyLine = !forfaitId;
                                                             return (
-                                                            <Space key={field.key} align="baseline" style={{ display: 'flex', marginBottom: 8, flexWrap: 'wrap' }}>
+                                                            <Space key={field.key} align="baseline" style={{ display: 'flex', marginBottom: 8, flexWrap: 'nowrap' }}>
                                                                 <Form.Item
                                                                     {...field}
                                                                     name={[field.name, 'forfaitId']}
@@ -1643,22 +1703,10 @@ export default function Vente() {
                                                                 >
                                                                     <Select allowClear options={planningStatusOptions} placeholder="Statut" />
                                                                 </Form.Item>
-                                                                <Form.Item
-                                                                    {...field}
-                                                                    name={[field.name, 'dateDebut']}
-                                                                    style={{ width: 140 }}
-                                                                >
-                                                                    <Input type="date" placeholder="Debut" />
-                                                                </Form.Item>
-                                                                <Form.Item
-                                                                    {...field}
-                                                                    name={[field.name, 'dateFin']}
-                                                                    style={{ width: 140 }}
-                                                                >
-                                                                    <Input type="date" placeholder="Fin" />
-                                                                </Form.Item>
-                                                                {isEmptyLine && (
+                                                                {isEmptyLine ? (
                                                                     <Button icon={<PlusOutlined />} title="Créer un forfait" onClick={() => openNewForfaitModal(field.name)} />
+                                                                ) : (
+                                                                    <Button icon={<CalendarOutlined />} title="Planifier" onClick={() => { setModalVisible(false); history.push('/planning'); }} />
                                                                 )}
                                                                 <Button danger icon={<DeleteOutlined />} onClick={() => remove(field.name)} />
                                                             </Space>
@@ -1677,7 +1725,7 @@ export default function Vente() {
                                                             const serviceId = form.getFieldValue(['venteServices', field.name, 'serviceId']);
                                                             const isEmptyLine = !serviceId;
                                                             return (
-                                                            <Space key={field.key} align="baseline" style={{ display: 'flex', marginBottom: 8, flexWrap: 'wrap' }}>
+                                                            <Space key={field.key} align="baseline" style={{ display: 'flex', marginBottom: 8, flexWrap: 'nowrap' }}>
                                                                 <Form.Item
                                                                     {...field}
                                                                     name={[field.name, 'serviceId']}
@@ -1730,22 +1778,13 @@ export default function Vente() {
                                                                 >
                                                                     <Select allowClear options={planningStatusOptions} placeholder="Statut" />
                                                                 </Form.Item>
-                                                                <Form.Item
-                                                                    {...field}
-                                                                    name={[field.name, 'dateDebut']}
-                                                                    style={{ width: 140 }}
-                                                                >
-                                                                    <Input type="date" placeholder="Debut" />
-                                                                </Form.Item>
-                                                                <Form.Item
-                                                                    {...field}
-                                                                    name={[field.name, 'dateFin']}
-                                                                    style={{ width: 140 }}
-                                                                >
-                                                                    <Input type="date" placeholder="Fin" />
-                                                                </Form.Item>
-                                                                {isEmptyLine && (
+                                                                {isEmptyLine ? (
                                                                     <Button icon={<PlusOutlined />} title="Créer un service" onClick={() => openNewServiceModal(field.name)} />
+                                                                ) : (
+                                                                    <>
+                                                                        <Button icon={<EditOutlined />} title="Modifier le service" onClick={() => openEditServiceModal(serviceId)} />
+                                                                        <Button icon={<CalendarOutlined />} title="Planifier" onClick={() => { setModalVisible(false); history.push('/planning'); }} />
+                                                                    </>
                                                                 )}
                                                                 <Button danger icon={<DeleteOutlined />} onClick={() => remove(field.name)} />
                                                             </Space>
@@ -2111,7 +2150,7 @@ export default function Vente() {
                 </Modal>
 
                 <Modal
-                    title="Créer un service"
+                    title={editServiceId ? "Modifier un service" : "Créer un service"}
                     open={newServiceModalVisible}
                     onOk={handleNewServiceSave}
                     onCancel={() => setNewServiceModalVisible(false)}

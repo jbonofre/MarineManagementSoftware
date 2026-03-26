@@ -47,11 +47,11 @@ public class VenteEntity extends PanacheEntity {
     @ManyToOne
     public RemorqueClientEntity remorque;
 
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = jakarta.persistence.FetchType.EAGER)
     @JoinColumn(name = "vente_id")
     public List<VenteForfaitEntity> venteForfaits = new ArrayList<>();
 
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = jakarta.persistence.FetchType.EAGER)
     @JoinColumn(name = "vente_id")
     public List<VenteServiceEntity> venteServices = new ArrayList<>();
 
