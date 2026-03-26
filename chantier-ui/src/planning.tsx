@@ -810,18 +810,6 @@ export default function Planning() {
                     >
                         <Input type="datetime-local" />
                     </Form.Item>
-                    <Row gutter={16}>
-                        <Col span={12}>
-                            <Form.Item name="dateDebut" label="Date de debut">
-                                <Input type="datetime-local" />
-                            </Form.Item>
-                        </Col>
-                        <Col span={12}>
-                            <Form.Item name="dateFin" label="Date de fin">
-                                <Input type="datetime-local" />
-                            </Form.Item>
-                        </Col>
-                    </Row>
                     <Form.Item
                         name="status"
                         label="Statut"
@@ -829,8 +817,8 @@ export default function Planning() {
                     >
                         <Select options={statusOptions} />
                     </Form.Item>
-                    <Form.Item name="technicienId" label="Technicien">
-                        <Select allowClear showSearch options={technicienOptions} placeholder="Selectionner un technicien" />
+                    <Form.Item name="technicienId" label="Technicien" rules={[{ required: true, message: 'Le technicien est requis' }]}>
+                        <Select showSearch options={technicienOptions} placeholder="Selectionner un technicien" />
                     </Form.Item>
                     <Form.Item noStyle shouldUpdate={(prev, cur) => prev?.status !== cur?.status}>
                         {({ getFieldValue }) => {
