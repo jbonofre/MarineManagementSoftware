@@ -3,7 +3,6 @@ import { Badge, Button, Card, Col, Empty, Form, Input, Modal, Row, Select, Space
 import { CalendarOutlined, EditOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import dayjs from 'dayjs';
-import { WeeklyCalendar } from 'antd-weekly-calendar';
 import { useHistory } from 'react-router-dom';
 
 type VenteType = 'DEVIS' | 'FACTURE' | 'COMPTOIR';
@@ -94,10 +93,9 @@ interface PlanningFormValues {
     incidentDetails?: string;
 }
 
-interface WeeklyCalendarEvent {
+interface CalendarEvent {
     eventId: string;
     startTime: Date;
-    endTime: Date;
     title: string;
     backgroundColor?: string;
     textColor?: string;
@@ -316,43 +314,6 @@ export default function Planning() {
         setModalVisible(true);
     };
 
-    const getDropDate = (clientX: number): string | undefined => {
-        const container = calendarRef.current;
-        if (!container) return undefined;
-        const headerCells = container.querySelectorAll<HTMLElement>('.ant-table-thead th');
-        if (headerCells.length < 2) return undefined;
-        const dayCells = Array.from(headerCells).slice(1);
-        for (let i = 0; i < dayCells.length; i++) {
-            const rect = dayCells[i].getBoundingClientRect();
-            if (clientX >= rect.left && clientX <= rect.right) {
-                return calendarWeekStart.add(i, 'day').format('YYYY-MM-DD');
-            }
-        }
-        return undefined;
-    };
-
-    const handleCalendarDragOver = (e: React.DragEvent) => {
-        e.preventDefault();
-        e.dataTransfer.dropEffect = 'move';
-        const day = getDropDate(e.clientX);
-        setDragOverDay(day || null);
-    };
-
-    const handleCalendarDragLeave = () => {
-        setDragOverDay(null);
-    };
-
-    const handleCalendarDrop = (e: React.DragEvent) => {
-        e.preventDefault();
-        setDragOverDay(null);
-        const row = draggedRowRef.current;
-        draggedRowRef.current = null;
-        if (!row) return;
-        const day = getDropDate(e.clientX);
-        if (day) {
-            openPlanningModal(row, day);
-        }
-    };
 
     const allItems = useMemo<PlanningItemRow[]>(
         () => buildPlanningItems(ventes),
@@ -386,7 +347,7 @@ export default function Planning() {
         [allItems, selectedDate, selectedStatus, selectedTechnicien]
     );
 
-    const weeklyEvents = useMemo<WeeklyCalendarEvent[]>(
+    const weeklyEvents = useMemo<CalendarEvent[]>(
         () =>
             allItems
                 .filter((row) => row.item.status === 'PLANIFIEE' || row.item.status === 'EN_COURS')
@@ -402,24 +363,17 @@ export default function Planning() {
                         return null;
                     }
 
-                    const endSource = item.dateFin;
-                    const estimatedDurationMinutes = item.dureeEstimee || 60;
-                    const endDate = endSource && dayjs(endSource).isValid()
-                        ? dayjs(endSource)
-                        : startDate.add(estimatedDurationMinutes, 'minute');
-
                     const typeLabel = item.type === 'forfait' ? 'Forfait' : 'Service';
 
                     return {
                         eventId: row.key,
                         startTime: startDate.toDate(),
-                        endTime: endDate.toDate(),
                         title: `#${vente.id} [${typeLabel}] ${item.nom || 'Sans nom'} (${getClientLabel(vente.client)})`,
                         backgroundColor: getTechnicienColor(item.technicien),
                         textColor: '#ffffff'
-                    } as WeeklyCalendarEvent;
+                    } as CalendarEvent;
                 })
-                .filter(Boolean) as WeeklyCalendarEvent[],
+                .filter(Boolean) as CalendarEvent[],
         [allItems, selectedTechnicien]
     );
 
@@ -678,57 +632,81 @@ export default function Planning() {
             <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
                 <Col span={24}>
                     <Card size="small" title={<span>Vue semaine <Typography.Text type="secondary" style={{ fontWeight: 'normal', fontSize: 12 }}>(glisser-deposer un element depuis le tableau ci-dessous)</Typography.Text></span>}>
-                        <style>{`
-                            .planning-calendar .ant-table-tbody > tr:nth-child(-n+9),
-                            .planning-calendar .ant-table-tbody > tr:nth-child(n+24) {
-                                display: none;
-                            }
-                        `}</style>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                            <Button size="small" onClick={() => setCalendarWeekStart(calendarWeekStart.subtract(7, 'day'))}>&lt; Semaine precedente</Button>
+                            <Button size="small" onClick={() => setCalendarWeekStart(dayjs().startOf('week'))}>Aujourd'hui</Button>
+                            <Button size="small" onClick={() => setCalendarWeekStart(calendarWeekStart.add(7, 'day'))}>Semaine suivante &gt;</Button>
+                        </div>
                         <div
                             ref={calendarRef}
-                            className="planning-calendar"
-                            onDragOver={handleCalendarDragOver}
-                            onDragLeave={handleCalendarDragLeave}
-                            onDrop={handleCalendarDrop}
                             style={{
-                                position: 'relative',
+                                display: 'grid',
+                                gridTemplateColumns: 'repeat(7, 1fr)',
+                                gap: 4,
                                 border: dragOverDay ? '2px dashed #1677ff' : '2px dashed transparent',
                                 borderRadius: 8,
                                 transition: 'border-color 0.2s'
                             }}
                         >
-                            {dragOverDay && (
-                                <div style={{
-                                    position: 'absolute',
-                                    top: 0,
-                                    left: 0,
-                                    right: 0,
-                                    zIndex: 10,
-                                    textAlign: 'center',
-                                    background: 'rgba(22, 119, 255, 0.08)',
-                                    padding: '4px 0',
-                                    borderRadius: '8px 8px 0 0',
-                                    fontWeight: 500,
-                                    color: '#1677ff',
-                                    pointerEvents: 'none'
-                                }}>
-                                    Deposer pour planifier le {dayjs(dragOverDay).format('DD/MM/YYYY')}
-                                </div>
-                            )}
-                            <WeeklyCalendar
-                                events={weeklyEvents}
-                                weekends
-                                onSelectDate={(date) => {
-                                    setSelectedDate(dayjs(date).format('YYYY-MM-DD'));
-                                    setCalendarWeekStart(dayjs(date).startOf('week'));
-                                }}
-                                onEventClick={(event: WeeklyCalendarEvent) => {
-                                    const matchedRow = allItems.find((row) => row.key === event.eventId);
-                                    if (matchedRow) {
-                                        openPlanningModal(matchedRow);
-                                    }
-                                }}
-                            />
+                            {Array.from({ length: 7 }, (_, i) => {
+                                const day = calendarWeekStart.add(i, 'day');
+                                const dayStr = day.format('YYYY-MM-DD');
+                                const isToday = dayStr === todayIso();
+                                const isSelected = dayStr === selectedDate;
+                                const dayEvents = weeklyEvents.filter((ev) => dayjs(ev.startTime).format('YYYY-MM-DD') === dayStr);
+                                return (
+                                    <div
+                                        key={dayStr}
+                                        onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; setDragOverDay(dayStr); }}
+                                        onDragLeave={() => setDragOverDay(null)}
+                                        onDrop={(e) => {
+                                            e.preventDefault();
+                                            setDragOverDay(null);
+                                            const row = draggedRowRef.current;
+                                            draggedRowRef.current = null;
+                                            if (row) openPlanningModal(row, dayStr);
+                                        }}
+                                        onClick={() => setSelectedDate(dayStr)}
+                                        style={{
+                                            minHeight: 120,
+                                            border: dragOverDay === dayStr ? '2px dashed #1677ff' : isSelected ? '2px solid #1677ff' : '1px solid #d9d9d9',
+                                            borderRadius: 6,
+                                            padding: 4,
+                                            cursor: 'pointer',
+                                            background: isToday ? '#e6f4ff' : '#fff',
+                                        }}
+                                    >
+                                        <div style={{ fontWeight: isToday ? 700 : 500, fontSize: 12, marginBottom: 4, textAlign: 'center' }}>
+                                            {day.format('ddd DD/MM')}
+                                        </div>
+                                        {dayEvents.map((ev) => (
+                                            <div
+                                                key={ev.eventId}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    const matchedRow = allItems.find((row) => row.key === ev.eventId);
+                                                    if (matchedRow) openPlanningModal(matchedRow);
+                                                }}
+                                                style={{
+                                                    background: ev.backgroundColor || '#1677ff',
+                                                    color: ev.textColor || '#fff',
+                                                    borderRadius: 4,
+                                                    padding: '2px 6px',
+                                                    fontSize: 11,
+                                                    marginBottom: 2,
+                                                    cursor: 'pointer',
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis',
+                                                    whiteSpace: 'nowrap',
+                                                }}
+                                                title={ev.title}
+                                            >
+                                                {ev.title}
+                                            </div>
+                                        ))}
+                                    </div>
+                                );
+                            })}
                         </div>
                     </Card>
                 </Col>
