@@ -939,7 +939,7 @@ export default function Forfaits() {
                                                                     ]}
                                                                     style={{ width: 180 }}
                                                                 >
-                                                                    <InputNumber min={1} step={1} style={{ width: '100%' }} placeholder="Qte" />
+                                                                    <InputNumber min={0.25} step={0.25} style={{ width: '100%' }} placeholder="Qte" />
                                                                 </Form.Item>
                                                                 <Form.Item noStyle shouldUpdate>
                                                                     {({ getFieldValue }) => {

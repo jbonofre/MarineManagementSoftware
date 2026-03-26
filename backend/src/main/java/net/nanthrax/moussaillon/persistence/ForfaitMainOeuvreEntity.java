@@ -10,5 +10,5 @@ public class ForfaitMainOeuvreEntity extends PanacheEntity {
     @ManyToOne
     public MainOeuvreEntity mainOeuvre;
 
-    public int quantite;
+    public double quantite;
 }

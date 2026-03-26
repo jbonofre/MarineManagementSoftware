@@ -535,7 +535,7 @@ export default function Services() {
                                                                 name={[field.name, 'quantite']}
                                                                 label={index === 0 ? 'Quantité' : undefined}
                                                             >
-                                                                <InputNumber min={1} style={{ width: '100%' }} />
+                                                                <InputNumber min={0.25} step={0.25} style={{ width: '100%' }} />
                                                             </Form.Item>
                                                         </Col>
                                                         <Col span={3}>
