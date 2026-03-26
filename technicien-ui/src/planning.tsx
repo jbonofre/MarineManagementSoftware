@@ -389,9 +389,6 @@ export default function Planning({ technicienId }: PlanningProps) {
                             Incident
                         </Button>
                     )}
-                    <Button size="small" onClick={() => openUpdateModal(record)}>
-                        Modifier
-                    </Button>
                 </Space>
             ),
         },

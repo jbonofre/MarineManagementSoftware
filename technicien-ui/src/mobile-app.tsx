@@ -238,7 +238,6 @@ export default function MobileApp({ user, onLogout, onChangePassword }: MobileAp
                         Incident
                     </Button>
                 )}
-                <Button size="small" onClick={() => openModal(item)}>Modifier</Button>
             </Space>
         </Card>
     );
