@@ -535,13 +535,12 @@ export default function Forfaits() {
             const currentProduitLines = allValues.produits || [];
             if (currentProduitLines.length === 0) {
                 form.setFieldValue('produits', [{}]);
-                return;
-            }
-            const lastProduitLine = currentProduitLines[currentProduitLines.length - 1];
-            const isLastLineComplete = !!lastProduitLine?.produitId && (lastProduitLine?.quantite || 0) > 0;
-            if (isLastLineComplete) {
-                form.setFieldValue('produits', [...currentProduitLines, {}]);
-                return;
+            } else {
+                const lastProduitLine = currentProduitLines[currentProduitLines.length - 1];
+                const isLastLineComplete = !!lastProduitLine?.produitId && (lastProduitLine?.quantite || 0) > 0;
+                if (isLastLineComplete) {
+                    form.setFieldValue('produits', [...currentProduitLines, {}]);
+                }
             }
         }
 
@@ -549,13 +548,12 @@ export default function Forfaits() {
             const currentMoLines = allValues.mainOeuvres || [];
             if (currentMoLines.length === 0) {
                 form.setFieldValue('mainOeuvres', [{}]);
-                return;
-            }
-            const lastMoLine = currentMoLines[currentMoLines.length - 1];
-            const isLastLineComplete = !!lastMoLine?.mainOeuvreId && (lastMoLine?.quantite || 0) > 0;
-            if (isLastLineComplete) {
-                form.setFieldValue('mainOeuvres', [...currentMoLines, {}]);
-                return;
+            } else {
+                const lastMoLine = currentMoLines[currentMoLines.length - 1];
+                const isLastLineComplete = !!lastMoLine?.mainOeuvreId && (lastMoLine?.quantite || 0) > 0;
+                if (isLastLineComplete) {
+                    form.setFieldValue('mainOeuvres', [...currentMoLines, {}]);
+                }
             }
         }
 
@@ -563,13 +561,12 @@ export default function Forfaits() {
             const currentTaskLines = allValues.taches || [];
             if (currentTaskLines.length === 0) {
                 form.setFieldValue('taches', [{}]);
-                return;
-            }
-            const lastTaskLine = currentTaskLines[currentTaskLines.length - 1];
-            const isLastLineComplete = !!lastTaskLine?.nom?.trim();
-            if (isLastLineComplete) {
-                form.setFieldValue('taches', [...currentTaskLines, {}]);
-                return;
+            } else {
+                const lastTaskLine = currentTaskLines[currentTaskLines.length - 1];
+                const isLastLineComplete = !!lastTaskLine?.nom?.trim();
+                if (isLastLineComplete) {
+                    form.setFieldValue('taches', [...currentTaskLines, {}]);
+                }
             }
         }
 
