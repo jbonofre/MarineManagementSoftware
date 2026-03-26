@@ -1236,13 +1236,12 @@ export default function Vente() {
             form.setFieldValue('taches', buildTasksFromForfaitLines(currentForfaitLines));
             if (currentForfaitLines.length === 0) {
                 form.setFieldValue('forfaits', [{}]);
-                return;
-            }
-            const lastForfaitLine = currentForfaitLines[currentForfaitLines.length - 1];
-            const isLastLineComplete = !!lastForfaitLine?.forfaitId && (lastForfaitLine?.quantite || 0) > 0;
-            if (isLastLineComplete) {
-                form.setFieldValue('forfaits', [...currentForfaitLines, {}]);
-                return;
+            } else {
+                const lastForfaitLine = currentForfaitLines[currentForfaitLines.length - 1];
+                const isLastLineComplete = !!lastForfaitLine?.forfaitId && (lastForfaitLine?.quantite || 0) > 0;
+                if (isLastLineComplete) {
+                    form.setFieldValue('forfaits', [...currentForfaitLines, {}]);
+                }
             }
         }
 
@@ -1250,13 +1249,12 @@ export default function Vente() {
             const currentProduitLines = allValues.produits || [];
             if (currentProduitLines.length === 0) {
                 form.setFieldValue('produits', [{}]);
-                return;
-            }
-            const lastProduitLine = currentProduitLines[currentProduitLines.length - 1];
-            const isLastLineComplete = !!lastProduitLine?.produitId && (lastProduitLine?.quantite || 0) > 0;
-            if (isLastLineComplete) {
-                form.setFieldValue('produits', [...currentProduitLines, {}]);
-                return;
+            } else {
+                const lastProduitLine = currentProduitLines[currentProduitLines.length - 1];
+                const isLastLineComplete = !!lastProduitLine?.produitId && (lastProduitLine?.quantite || 0) > 0;
+                if (isLastLineComplete) {
+                    form.setFieldValue('produits', [...currentProduitLines, {}]);
+                }
             }
         }
 
@@ -1264,13 +1262,12 @@ export default function Vente() {
             const currentServiceLines = allValues.services || [];
             if (currentServiceLines.length === 0) {
                 form.setFieldValue('services', [{}]);
-                return;
-            }
-            const lastServiceLine = currentServiceLines[currentServiceLines.length - 1];
-            const isLastLineComplete = !!lastServiceLine?.serviceId && (lastServiceLine?.quantite || 0) > 0;
-            if (isLastLineComplete) {
-                form.setFieldValue('services', [...currentServiceLines, {}]);
-                return;
+            } else {
+                const lastServiceLine = currentServiceLines[currentServiceLines.length - 1];
+                const isLastLineComplete = !!lastServiceLine?.serviceId && (lastServiceLine?.quantite || 0) > 0;
+                if (isLastLineComplete) {
+                    form.setFieldValue('services', [...currentServiceLines, {}]);
+                }
             }
         }
 
@@ -1278,23 +1275,22 @@ export default function Vente() {
             const currentTaskLines = allValues.taches || [];
             if (currentTaskLines.length === 0) {
                 form.setFieldValue('taches', [{}]);
-                return;
-            }
-            const lastTaskLine = currentTaskLines[currentTaskLines.length - 1];
-            const isLastLineComplete = Boolean(
-                lastTaskLine?.nom?.trim()
-                || lastTaskLine?.description?.trim()
-                || lastTaskLine?.notes?.trim()
-                || lastTaskLine?.status
-                || lastTaskLine?.technicienId
-                || lastTaskLine?.dateDebut
-                || lastTaskLine?.dateFin
-                || lastTaskLine?.statusDate
-                || (lastTaskLine?.dureeReelle || 0) > 0
-            );
-            if (isLastLineComplete) {
-                form.setFieldValue('taches', [...currentTaskLines, {}]);
-                return;
+            } else {
+                const lastTaskLine = currentTaskLines[currentTaskLines.length - 1];
+                const isLastLineComplete = Boolean(
+                    lastTaskLine?.nom?.trim()
+                    || lastTaskLine?.description?.trim()
+                    || lastTaskLine?.notes?.trim()
+                    || lastTaskLine?.status
+                    || lastTaskLine?.technicienId
+                    || lastTaskLine?.dateDebut
+                    || lastTaskLine?.dateFin
+                    || lastTaskLine?.statusDate
+                    || (lastTaskLine?.dureeReelle || 0) > 0
+                );
+                if (isLastLineComplete) {
+                    form.setFieldValue('taches', [...currentTaskLines, {}]);
+                }
             }
         }
 
