@@ -100,6 +100,7 @@ interface CalendarEvent {
     title: string;
     backgroundColor?: string;
     textColor?: string;
+    dureeEstimee?: number;
 }
 
 interface PlanningItemRow {
@@ -374,7 +375,8 @@ export default function Planning() {
                         startTime: startDate.toDate(),
                         title: `#${vente.id} [${typeLabel}] ${item.nom || 'Sans nom'} (${getClientLabel(vente.client)})`,
                         backgroundColor: getTechnicienColor(item.technicien),
-                        textColor: '#ffffff'
+                        textColor: '#ffffff',
+                        dureeEstimee: item.dureeEstimee,
                     } as CalendarEvent;
                 })
                 .filter(Boolean) as CalendarEvent[],
@@ -690,7 +692,11 @@ export default function Planning() {
                                         <div style={{ fontWeight: isToday ? 700 : 500, fontSize: 12, marginBottom: 4, textAlign: 'center' }}>
                                             {day.format('ddd DD/MM')}
                                         </div>
-                                        {dayEvents.map((ev) => (
+                                        {dayEvents.map((ev) => {
+                                            const minH = 24;
+                                            const pxPerHour = 20;
+                                            const height = ev.dureeEstimee ? Math.max(minH, ev.dureeEstimee * pxPerHour) : minH;
+                                            return (
                                             <div
                                                 key={ev.eventId}
                                                 onClick={(e) => {
@@ -709,12 +715,16 @@ export default function Planning() {
                                                     overflow: 'hidden',
                                                     textOverflow: 'ellipsis',
                                                     whiteSpace: 'nowrap',
+                                                    minHeight: height,
+                                                    display: 'flex',
+                                                    alignItems: 'center',
                                                 }}
                                                 title={ev.title}
                                             >
                                                 {ev.title}
                                             </div>
-                                        ))}
+                                            );
+                                        })}
                                     </div>
                                 );
                             })}
