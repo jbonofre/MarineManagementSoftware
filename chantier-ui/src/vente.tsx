@@ -1764,13 +1764,7 @@ export default function Vente() {
                                                                     name={[field.name, 'forfaitId']}
                                                                     rules={[
                                                                         {
-                                                                            validator: async (_, value) => {
-                                                                                const line = form.getFieldValue(['venteForfaits', field.name]);
-                                                                                const quantite = Number(line?.quantite || 0);
-                                                                                if (!value && quantite > 0) {
-                                                                                    throw new Error('Forfait requis');
-                                                                                }
-                                                                            }
+                                                                            validator: async () => {}
                                                                         }
                                                                     ]}
                                                                     style={{ width: 280 }}
@@ -1967,13 +1961,7 @@ export default function Vente() {
                                                                     name={[field.name, 'produitId']}
                                                                     rules={[
                                                                         {
-                                                                            validator: async (_, value) => {
-                                                                                const line = form.getFieldValue(['produits', field.name]);
-                                                                                const quantite = Number(line?.quantite || 0);
-                                                                                if (!value && quantite > 0) {
-                                                                                    throw new Error('Produit requis');
-                                                                                }
-                                                                            }
+                                                                            validator: async () => {}
                                                                         }
                                                                     ]}
                                                                     style={{ width: 520 }}
