@@ -382,9 +382,9 @@ const toBackendDateValue = (value?: string) => {
 const defaultVente: VenteFormValues = {
     status: 'EN_ATTENTE',
     type: 'DEVIS',
-    venteForfaits: [{ status: 'EN_ATTENTE' }],
+    venteForfaits: [{ status: 'EN_ATTENTE', quantite: 1 }],
     venteServices: [{ status: 'EN_ATTENTE', quantite: 1 }],
-    produits: [{}],
+    produits: [{ quantite: 1 }],
     montantHT: 0,
     remise: 0,
     remisePourcentage: 0,
@@ -945,9 +945,9 @@ export default function Vente() {
             bateauId: vente.bateau?.id,
             moteurId: vente.moteur?.id,
             remorqueId: vente.remorque?.id,
-            venteForfaits: [...venteForfaitLines, { status: 'EN_ATTENTE' }],
+            venteForfaits: [...venteForfaitLines, { status: 'EN_ATTENTE', quantite: 1 }],
             venteServices: [...venteServiceLines, { status: 'EN_ATTENTE', quantite: 1 }],
-            produits: [...produitLines, {}],
+            produits: [...produitLines, { quantite: 1 }],
             date: toDateInputValue(vente.date) || getTodayIsoDate(),
             montantHT: vente.montantHT || 0,
             remise: vente.remise || 0,
@@ -1373,12 +1373,12 @@ export default function Vente() {
         if (changedValues.venteForfaits !== undefined) {
             const currentForfaitLines = allValues.venteForfaits || [];
             if (currentForfaitLines.length === 0) {
-                form.setFieldValue('venteForfaits', [{ status: 'EN_ATTENTE' }]);
+                form.setFieldValue('venteForfaits', [{ status: 'EN_ATTENTE', quantite: 1 }]);
             } else {
                 const lastForfaitLine = currentForfaitLines[currentForfaitLines.length - 1];
                 const isLastLineComplete = !!lastForfaitLine?.forfaitId && (lastForfaitLine?.quantite || 0) > 0;
                 if (isLastLineComplete) {
-                    form.setFieldValue('venteForfaits', [...currentForfaitLines, { status: 'EN_ATTENTE' }]);
+                    form.setFieldValue('venteForfaits', [...currentForfaitLines, { status: 'EN_ATTENTE', quantite: 1 }]);
                 }
             }
         }
@@ -1386,12 +1386,12 @@ export default function Vente() {
         if (changedValues.produits !== undefined) {
             const currentProduitLines = allValues.produits || [];
             if (currentProduitLines.length === 0) {
-                form.setFieldValue('produits', [{}]);
+                form.setFieldValue('produits', [{ quantite: 1 }]);
             } else {
                 const lastProduitLine = currentProduitLines[currentProduitLines.length - 1];
                 const isLastLineComplete = !!lastProduitLine?.produitId && (lastProduitLine?.quantite || 0) > 0;
                 if (isLastLineComplete) {
-                    form.setFieldValue('produits', [...currentProduitLines, {}]);
+                    form.setFieldValue('produits', [...currentProduitLines, { quantite: 1 }]);
                 }
             }
         }
