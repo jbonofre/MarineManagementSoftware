@@ -52,6 +52,8 @@ public class TechnicienPortalResource {
     public static class PlanningItemUpdateRequest {
         public String status;
         public double dureeReelle;
+        public String dateDebut;
+        public String dateFin;
         public String incidentDate;
         public String incidentDetails;
         public String notes;
@@ -253,6 +255,12 @@ public class TechnicienPortalResource {
             vf.status = VenteForfaitEntity.Status.valueOf(request.status);
         }
         vf.dureeReelle = request.dureeReelle;
+        if (request.dateDebut != null && !request.dateDebut.isBlank()) {
+            vf.dateDebut = java.sql.Timestamp.valueOf(java.time.LocalDateTime.parse(request.dateDebut));
+        }
+        if (request.dateFin != null && !request.dateFin.isBlank()) {
+            vf.dateFin = java.sql.Timestamp.valueOf(java.time.LocalDateTime.parse(request.dateFin));
+        }
         if (request.notes != null) {
             vf.notes = request.notes;
         }
@@ -311,6 +319,12 @@ public class TechnicienPortalResource {
             vs.status = VenteServiceEntity.Status.valueOf(request.status);
         }
         vs.dureeReelle = request.dureeReelle;
+        if (request.dateDebut != null && !request.dateDebut.isBlank()) {
+            vs.dateDebut = java.sql.Timestamp.valueOf(java.time.LocalDateTime.parse(request.dateDebut));
+        }
+        if (request.dateFin != null && !request.dateFin.isBlank()) {
+            vs.dateFin = java.sql.Timestamp.valueOf(java.time.LocalDateTime.parse(request.dateFin));
+        }
         if (request.notes != null) {
             vs.notes = request.notes;
         }

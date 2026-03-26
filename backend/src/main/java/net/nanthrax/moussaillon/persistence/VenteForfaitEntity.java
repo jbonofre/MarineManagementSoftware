@@ -55,7 +55,7 @@ public class VenteForfaitEntity extends PanacheEntity {
 
     public String notes;
 
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = jakarta.persistence.FetchType.EAGER)
     @JoinColumn(name = "vente_forfait_id")
     public List<TaskEntity> taches = new ArrayList<>();
 

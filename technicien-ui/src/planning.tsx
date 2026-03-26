@@ -146,8 +146,84 @@ export default function Planning({ technicienId }: PlanningProps) {
         setModalVisible(true);
     };
 
+    const nowIso = () => {
+        const now = new Date();
+        const offset = now.getTimezoneOffset() * 60000;
+        return new Date(now.getTime() - offset).toISOString().slice(0, 19);
+    };
+
+    const handleStart = async (item: PlanningItem) => {
+        try {
+            const endpoint = item.itemType === 'forfait'
+                ? `/technicien-portal/forfaits/${item.itemId}`
+                : `/technicien-portal/services/${item.itemId}`;
+            const res = await axios.put(endpoint, {
+                status: 'EN_COURS',
+                dateDebut: nowIso(),
+                dureeReelle: item.dureeReelle || 0,
+                notes: item.notes || '',
+            });
+            message.success('Intervention demarrée');
+            const updated = res.data;
+            setCurrentItem({ ...item, ...updated, itemStatus: updated.itemStatus || 'EN_COURS' });
+            setChecklist((updated.taches || item.taches || []).map((t: ChecklistItem) => ({ ...t })));
+            form.setFieldsValue({
+                status: 'EN_COURS',
+                dureeReelle: updated.dureeReelle ?? item.dureeReelle ?? 0,
+                notes: updated.notes ?? item.notes ?? '',
+                incidentDate: todayIso(),
+                incidentDetails: '',
+            });
+            setModalVisible(true);
+            fetchItems();
+        } catch {
+            message.error('Erreur lors du demarrage');
+        }
+    };
+
     const handleChecklistChange = (index: number, done: boolean) => {
-        setChecklist((prev) => prev.map((c, i) => i === index ? { ...c, done } : c));
+        setChecklist((prev) => {
+            const updated = prev.map((c, i) => i === index ? { ...c, done } : c);
+            // If all checked, auto-set status to TERMINEE and dateFin, compute dureeReelle
+            if (updated.length > 0 && updated.every((c) => c.done)) {
+                const finIso = nowIso();
+                let dureeReelle = 0;
+                if (currentItem?.dateDebut) {
+                    const debut = new Date(currentItem.dateDebut).getTime();
+                    const fin = new Date(finIso).getTime();
+                    if (!isNaN(debut) && !isNaN(fin) && fin > debut) {
+                        dureeReelle = Math.round(((fin - debut) / 3600000) * 100) / 100;
+                    }
+                }
+                form.setFieldsValue({ status: 'TERMINEE', dureeReelle });
+                // Auto-save with dateFin
+                const saveComplete = async () => {
+                    if (!currentItem) return;
+                    try {
+                        setSaving(true);
+                        const values = form.getFieldsValue();
+                        const endpoint = currentItem.itemType === 'forfait'
+                            ? `/technicien-portal/forfaits/${currentItem.itemId}`
+                            : `/technicien-portal/services/${currentItem.itemId}`;
+                        await axios.put(endpoint, {
+                            status: 'TERMINEE',
+                            dateFin: finIso,
+                            dureeReelle,
+                            notes: values.notes || '',
+                            taches: updated.map((c) => ({ taskId: c.id, done: c.done })),
+                        });
+                        message.success('Intervention terminée');
+                        fetchItems();
+                    } catch {
+                        message.error('Erreur lors de la cloture');
+                    } finally {
+                        setSaving(false);
+                    }
+                };
+                saveComplete();
+            }
+            return updated;
+        });
     };
 
     const handleSave = async () => {
@@ -161,6 +237,7 @@ export default function Planning({ technicienId }: PlanningProps) {
             const res = await axios.put(endpoint, {
                 status: values.status,
                 dureeReelle: values.dureeReelle || 0,
+                dateFin: values.status === 'TERMINEE' ? nowIso() : undefined,
                 notes: values.notes || '',
                 incidentDate: values.status === 'INCIDENT' ? values.incidentDate : null,
                 incidentDetails: values.status === 'INCIDENT' ? values.incidentDetails : null,
@@ -257,18 +334,7 @@ export default function Planning({ technicienId }: PlanningProps) {
                         <Button
                             size="small"
                             icon={<ClockCircleOutlined />}
-                            onClick={() => {
-                                setCurrentItem(record);
-                                setChecklist((record.taches || []).map((t) => ({ ...t })));
-                                form.setFieldsValue({
-                                    status: 'EN_COURS',
-                                    dureeReelle: record.dureeReelle || 0,
-                                    notes: record.notes || '',
-                                    incidentDate: todayIso(),
-                                    incidentDetails: '',
-                                });
-                                setModalVisible(true);
-                            }}
+                            onClick={() => handleStart(record)}
                         >
                             Demarrer
                         </Button>
@@ -279,11 +345,19 @@ export default function Planning({ technicienId }: PlanningProps) {
                             type="primary"
                             icon={<CheckCircleOutlined />}
                             onClick={() => {
+                                let dureeReelle = record.dureeReelle || 0;
+                                if (record.dateDebut) {
+                                    const debut = new Date(record.dateDebut).getTime();
+                                    const fin = Date.now();
+                                    if (!isNaN(debut) && fin > debut) {
+                                        dureeReelle = Math.round(((fin - debut) / 3600000) * 100) / 100;
+                                    }
+                                }
                                 setCurrentItem(record);
                                 setChecklist((record.taches || []).map((t) => ({ ...t })));
                                 form.setFieldsValue({
                                     status: 'TERMINEE',
-                                    dureeReelle: record.dureeReelle || 0,
+                                    dureeReelle,
                                     notes: record.notes || '',
                                     incidentDate: todayIso(),
                                     incidentDetails: '',
@@ -426,7 +500,7 @@ export default function Planning({ technicienId }: PlanningProps) {
                         </Col>
                         <Col span={12}>
                             <Form.Item name="dureeReelle" label="Temps passe (heures)">
-                                <InputNumber min={0} step={0.25} precision={2} style={{ width: '100%' }} addonAfter="h" />
+                                <InputNumber min={0} step={0.25} precision={2} style={{ width: '100%' }} addonAfter="h" disabled />
                             </Form.Item>
                         </Col>
                     </Row>

@@ -101,6 +101,24 @@ public class VenteResource {
     @Transactional
     public Response create(VenteEntity vente) {
         vente.id = null;
+        // Copy template taches from catalogue forfait if none provided
+        if (vente.venteForfaits != null) {
+            for (VenteForfaitEntity vf : vente.venteForfaits) {
+                if ((vf.taches == null || vf.taches.isEmpty()) && vf.forfait != null && vf.forfait.id != null) {
+                    ForfaitEntity catalogueForfait = ForfaitEntity.findById(vf.forfait.id);
+                    if (catalogueForfait != null && catalogueForfait.taches != null) {
+                        if (vf.taches == null) vf.taches = new java.util.ArrayList<>();
+                        for (TaskEntity t : catalogueForfait.taches) {
+                            TaskEntity ct = new TaskEntity();
+                            ct.nom = t.nom;
+                            ct.description = t.description;
+                            ct.done = false;
+                            vf.taches.add(ct);
+                        }
+                    }
+                }
+            }
+        }
         vente.persist();
         return Response.status(Response.Status.CREATED).entity(vente).build();
     }
@@ -161,13 +179,25 @@ public class VenteResource {
                 cloned.incidentDate = incoming.incidentDate;
                 cloned.incidentDetails = incoming.incidentDetails;
                 cloned.notes = incoming.notes;
-                if (incoming.taches != null) {
+                if (incoming.taches != null && !incoming.taches.isEmpty()) {
                     for (TaskEntity t : incoming.taches) {
                         TaskEntity ct = new TaskEntity();
                         ct.nom = t.nom;
                         ct.description = t.description;
                         ct.done = t.done;
                         cloned.taches.add(ct);
+                    }
+                } else if (cloned.forfait != null && cloned.forfait.id != null) {
+                    // Copy template taches from catalogue forfait if none provided
+                    ForfaitEntity catalogueForfait = ForfaitEntity.findById(cloned.forfait.id);
+                    if (catalogueForfait != null && catalogueForfait.taches != null) {
+                        for (TaskEntity t : catalogueForfait.taches) {
+                            TaskEntity ct = new TaskEntity();
+                            ct.nom = t.nom;
+                            ct.description = t.description;
+                            ct.done = false;
+                            cloned.taches.add(ct);
+                        }
                     }
                 }
                 entity.venteForfaits.add(cloned);
