@@ -383,7 +383,7 @@ const defaultVente: VenteFormValues = {
     status: 'EN_ATTENTE',
     type: 'DEVIS',
     venteForfaits: [{ status: 'EN_ATTENTE' }],
-    venteServices: [{ status: 'EN_ATTENTE' }],
+    venteServices: [{ status: 'EN_ATTENTE', quantite: 1 }],
     produits: [{}],
     montantHT: 0,
     remise: 0,
@@ -917,7 +917,7 @@ export default function Vente() {
         }));
         const venteServiceLines = (vente.venteServices || []).map(vs => ({
             serviceId: vs.service?.id,
-            quantite: vs.quantite || 1,
+            quantite: 1,
             technicienId: vs.technicien?.id,
             status: vs.status || 'EN_ATTENTE',
             datePlanification: vs.datePlanification,
@@ -946,7 +946,7 @@ export default function Vente() {
             moteurId: vente.moteur?.id,
             remorqueId: vente.remorque?.id,
             venteForfaits: [...venteForfaitLines, { status: 'EN_ATTENTE' }],
-            venteServices: [...venteServiceLines, { status: 'EN_ATTENTE' }],
+            venteServices: [...venteServiceLines, { status: 'EN_ATTENTE', quantite: 1 }],
             produits: [...produitLines, {}],
             date: toDateInputValue(vente.date) || getTodayIsoDate(),
             montantHT: vente.montantHT || 0,
@@ -1036,7 +1036,7 @@ export default function Vente() {
                     : (existingVs?.taches || []).map((t) => ({ nom: t.nom, description: t.description || '', done: t.done || false }));
                 return {
                     service: services.find((s) => s.id === line.serviceId),
-                    quantite: line.quantite || 1,
+                    quantite: 1,
                     technicien: techniciens.find((t) => t.id === line.technicienId),
                     datePlanification: line.datePlanification || existingVs?.datePlanification,
                     dateDebut: line.dateDebut || existingVs?.dateDebut,
@@ -1399,12 +1399,12 @@ export default function Vente() {
         if (changedValues.venteServices !== undefined) {
             const currentServiceLines = allValues.venteServices || [];
             if (currentServiceLines.length === 0) {
-                form.setFieldValue('venteServices', [{ status: 'EN_ATTENTE' }]);
+                form.setFieldValue('venteServices', [{ status: 'EN_ATTENTE', quantite: 1 }]);
             } else {
                 const lastServiceLine = currentServiceLines[currentServiceLines.length - 1];
                 const isLastLineComplete = !!lastServiceLine?.serviceId && (lastServiceLine?.quantite || 0) > 0;
                 if (isLastLineComplete) {
-                    form.setFieldValue('venteServices', [...currentServiceLines, { status: 'EN_ATTENTE' }]);
+                    form.setFieldValue('venteServices', [...currentServiceLines, { status: 'EN_ATTENTE', quantite: 1 }]);
                 }
             }
         }
@@ -1881,22 +1881,10 @@ export default function Vente() {
                                                                 <Form.Item
                                                                     {...field}
                                                                     name={[field.name, 'quantite']}
-                                                                    rules={[
-                                                                        {
-                                                                            validator: async (_, value) => {
-                                                                                const line = form.getFieldValue(['venteServices', field.name]);
-                                                                                if (!line?.serviceId && (value === undefined || value === null)) {
-                                                                                    return;
-                                                                                }
-                                                                                if (!value || value <= 0) {
-                                                                                    throw new Error('Quantite requise');
-                                                                                }
-                                                                            }
-                                                                        }
-                                                                    ]}
+                                                                    initialValue={1}
                                                                     style={{ width: 80 }}
                                                                 >
-                                                                    <InputNumber min={1} step={1} style={{ width: '100%' }} placeholder="Qte" />
+                                                                    <InputNumber min={1} max={1} step={1} disabled style={{ width: '100%' }} placeholder="Qte" />
                                                                 </Form.Item>
                                                                 <Form.Item noStyle shouldUpdate>
                                                                     {({ getFieldValue }) => {
