@@ -7,7 +7,7 @@ import { WeeklyCalendar } from 'antd-weekly-calendar';
 import { useHistory } from 'react-router-dom';
 
 type VenteType = 'DEVIS' | 'FACTURE' | 'COMPTOIR';
-type TaskStatus = 'EN_ATTENTE' | 'PLANIFIEE' | 'EN_COURS' | 'TERMINEE' | 'INCIDENT' | 'ANNULEE';
+type PlanningStatus = 'EN_ATTENTE' | 'PLANIFIEE' | 'EN_COURS' | 'TERMINEE' | 'INCIDENT' | 'ANNULEE';
 
 interface ClientEntity {
     id: number;
@@ -21,28 +21,36 @@ interface TechnicienEntity {
     nom?: string;
 }
 
-interface TaskEntity {
-    id?: number;
-    nom?: string;
-    status?: TaskStatus;
-    dateDebut?: string;
-    dateFin?: string;
-    statusDate?: string;
-    technicien?: TechnicienEntity;
-    incidentDate?: string;
-    incidentDetails?: string;
-}
-
-interface ForfaitEntity {
-    id: number;
-}
-
 interface ProduitCatalogueEntity {
     id: number;
 }
 
-interface ServiceEntity {
-    id: number;
+interface VenteForfaitEntry {
+    id?: number;
+    forfait?: { id: number; nom: string; dureeEstimee?: number };
+    quantite?: number;
+    technicien?: TechnicienEntity;
+    datePlanification?: string;
+    dateDebut?: string;
+    dateFin?: string;
+    status?: PlanningStatus;
+    statusDate?: string;
+    dureeReelle?: number;
+    notes?: string;
+}
+
+interface VenteServiceEntry {
+    id?: number;
+    service?: { id: number; nom: string; dureeEstimee?: number };
+    quantite?: number;
+    technicien?: TechnicienEntity;
+    datePlanification?: string;
+    dateDebut?: string;
+    dateFin?: string;
+    status?: PlanningStatus;
+    statusDate?: string;
+    dureeReelle?: number;
+    notes?: string;
 }
 
 interface VenteEntity {
@@ -50,21 +58,40 @@ interface VenteEntity {
     status: string;
     type?: VenteType;
     client?: ClientEntity;
-    forfaits?: ForfaitEntity[];
+    bateau?: { id: number; name?: string };
     produits?: ProduitCatalogueEntity[];
-    services?: ServiceEntity[];
-    taches?: TaskEntity[];
+    venteForfaits?: VenteForfaitEntry[];
+    venteServices?: VenteServiceEntry[];
     date?: string;
     prixVenteTTC?: number;
     modePaiement?: string;
+}
+
+interface PlanningItem {
+    id?: number;
+    type: 'forfait' | 'service';
+    nom: string;
+    technicien?: TechnicienEntity;
+    datePlanification?: string;
+    dateDebut?: string;
+    dateFin?: string;
+    status?: PlanningStatus;
+    statusDate?: string;
+    dureeEstimee?: number;
+    quantite?: number;
+    venteId?: number;
+    clientNom?: string;
+    bateauNom?: string;
 }
 
 interface PlanningFormValues {
     date: string;
     dateDebut?: string;
     dateFin?: string;
-    status: TaskStatus;
+    status: PlanningStatus;
     technicienId?: number;
+    incidentDate?: string;
+    incidentDetails?: string;
 }
 
 interface WeeklyCalendarEvent {
@@ -76,14 +103,15 @@ interface WeeklyCalendarEvent {
     textColor?: string;
 }
 
-interface PendingTaskRow {
+interface PlanningItemRow {
     key: string;
     vente: VenteEntity;
-    task: TaskEntity;
-    taskIndex: number;
+    item: PlanningItem;
+    itemType: 'forfait' | 'service';
+    itemIndex: number;
 }
 
-const taskStatusOptions: Array<{ value: TaskStatus; label: string }> = [
+const statusOptions: Array<{ value: PlanningStatus; label: string }> = [
     { value: 'EN_ATTENTE', label: 'En attente' },
     { value: 'PLANIFIEE', label: 'Planifiee' },
     { value: 'EN_COURS', label: 'En cours' },
@@ -98,7 +126,7 @@ const typeOptions: Array<{ value: VenteType; label: string }> = [
     { value: 'COMPTOIR', label: 'Comptoir' }
 ];
 
-const statusColor: Record<TaskStatus, string> = {
+const statusColor: Record<PlanningStatus, string> = {
     EN_ATTENTE: 'default',
     PLANIFIEE: 'cyan',
     EN_COURS: 'blue',
@@ -158,20 +186,83 @@ const getTechnicienColor = (technicien?: TechnicienEntity) => {
     return technicienPalette[index];
 };
 
+const buildPlanningItems = (ventes: VenteEntity[]): PlanningItemRow[] => {
+    const rows: PlanningItemRow[] = [];
+    for (const vente of ventes) {
+        const clientNom = vente.client ? `${vente.client.prenom || ''} ${vente.client.nom}`.trim() : '';
+        const bateauNom = vente.bateau?.name;
+
+        for (let i = 0; i < (vente.venteForfaits || []).length; i++) {
+            const vf = vente.venteForfaits![i];
+            const item: PlanningItem = {
+                id: vf.id,
+                type: 'forfait',
+                nom: vf.forfait?.nom || '',
+                technicien: vf.technicien,
+                datePlanification: vf.datePlanification,
+                dateDebut: vf.dateDebut,
+                dateFin: vf.dateFin,
+                status: vf.status,
+                statusDate: vf.statusDate,
+                dureeEstimee: vf.forfait?.dureeEstimee,
+                quantite: vf.quantite,
+                venteId: vente.id,
+                clientNom,
+                bateauNom,
+            };
+            rows.push({
+                key: `vf-${vente.id}-${vf.id || i}-${i}`,
+                vente,
+                item,
+                itemType: 'forfait',
+                itemIndex: i,
+            });
+        }
+
+        for (let i = 0; i < (vente.venteServices || []).length; i++) {
+            const vs = vente.venteServices![i];
+            const item: PlanningItem = {
+                id: vs.id,
+                type: 'service',
+                nom: vs.service?.nom || '',
+                technicien: vs.technicien,
+                datePlanification: vs.datePlanification,
+                dateDebut: vs.dateDebut,
+                dateFin: vs.dateFin,
+                status: vs.status,
+                statusDate: vs.statusDate,
+                dureeEstimee: vs.service?.dureeEstimee,
+                quantite: vs.quantite,
+                venteId: vente.id,
+                clientNom,
+                bateauNom,
+            };
+            rows.push({
+                key: `vs-${vente.id}-${vs.id || i}-${i}`,
+                vente,
+                item,
+                itemType: 'service',
+                itemIndex: i,
+            });
+        }
+    }
+    return rows;
+};
+
 export default function Planning() {
     const history = useHistory();
     const [ventes, setVentes] = useState<VenteEntity[]>([]);
     const [techniciens, setTechniciens] = useState<TechnicienEntity[]>([]);
     const [loading, setLoading] = useState(false);
     const [selectedDate, setSelectedDate] = useState(todayIso());
-    const [selectedStatus, setSelectedStatus] = useState<TaskStatus | undefined>(undefined);
+    const [selectedStatus, setSelectedStatus] = useState<PlanningStatus | undefined>(undefined);
     const [selectedTechnicien, setSelectedTechnicien] = useState<number | undefined>(undefined);
     const [modalVisible, setModalVisible] = useState(false);
     const [saving, setSaving] = useState(false);
-    const [currentTaskRow, setCurrentTaskRow] = useState<PendingTaskRow | null>(null);
+    const [currentRow, setCurrentRow] = useState<PlanningItemRow | null>(null);
     const [form] = Form.useForm<PlanningFormValues>();
     const calendarRef = useRef<HTMLDivElement>(null);
-    const draggedTaskRef = useRef<PendingTaskRow | null>(null);
+    const draggedRowRef = useRef<PlanningItemRow | null>(null);
     const [dragOverDay, setDragOverDay] = useState<string | null>(null);
     const [calendarWeekStart, setCalendarWeekStart] = useState<dayjs.Dayjs>(dayjs().startOf('week'));
 
@@ -210,19 +301,17 @@ export default function Planning() {
         [techniciens]
     );
 
-    const openPlanningModal = (taskRow: PendingTaskRow, forcedDate?: string) => {
-        setCurrentTaskRow(taskRow);
+    const openPlanningModal = (row: PlanningItemRow, forcedDate?: string) => {
+        setCurrentRow(row);
         form.setFieldsValue({
             date:
-                toDateTimeLocalValue(taskRow.task.statusDate)
+                toDateTimeLocalValue(row.item.statusDate)
                 || (forcedDate ? `${forcedDate}T08:00` : undefined)
                 || `${selectedDate || todayIso()}T08:00`,
-            dateDebut: taskRow.task.dateDebut || undefined,
-            dateFin: taskRow.task.dateFin || undefined,
-            status: taskRow.task.status === 'EN_ATTENTE' ? 'PLANIFIEE' : (taskRow.task.status || 'PLANIFIEE'),
-            technicienId: taskRow.task.technicien?.id,
-            incidentDate: taskRow.task.incidentDate,
-            incidentDetails: taskRow.task.incidentDetails
+            dateDebut: row.item.dateDebut || undefined,
+            dateFin: row.item.dateFin || undefined,
+            status: row.item.status === 'EN_ATTENTE' ? 'PLANIFIEE' : (row.item.status || 'PLANIFIEE'),
+            technicienId: row.item.technicien?.id,
         });
         setModalVisible(true);
     };
@@ -232,7 +321,6 @@ export default function Planning() {
         if (!container) return undefined;
         const headerCells = container.querySelectorAll<HTMLElement>('.ant-table-thead th');
         if (headerCells.length < 2) return undefined;
-        // Skip column 0 (time gutter), remaining columns are days starting from Sunday (week start)
         const dayCells = Array.from(headerCells).slice(1);
         for (let i = 0; i < dayCells.length; i++) {
             const rect = dayCells[i].getBoundingClientRect();
@@ -257,63 +345,55 @@ export default function Planning() {
     const handleCalendarDrop = (e: React.DragEvent) => {
         e.preventDefault();
         setDragOverDay(null);
-        const taskRow = draggedTaskRef.current;
-        draggedTaskRef.current = null;
-        if (!taskRow) return;
+        const row = draggedRowRef.current;
+        draggedRowRef.current = null;
+        if (!row) return;
         const day = getDropDate(e.clientX);
         if (day) {
-            openPlanningModal(taskRow, day);
+            openPlanningModal(row, day);
         }
     };
 
-    const allTasks = useMemo<PendingTaskRow[]>(
-        () =>
-            ventes.flatMap((vente, venteIndex) =>
-                (vente.taches || []).map((task, taskIndex) => ({
-                    key: `${vente.id || venteIndex}-${task.id || taskIndex}-${taskIndex}`,
-                    vente,
-                    task,
-                    taskIndex
-                }))
-            ),
+    const allItems = useMemo<PlanningItemRow[]>(
+        () => buildPlanningItems(ventes),
         [ventes]
     );
 
-    const matchesTechnicien = (row: PendingTaskRow) =>
-        !selectedTechnicien || row.task.technicien?.id === selectedTechnicien;
+    const matchesTechnicien = (row: PlanningItemRow) =>
+        !selectedTechnicien || row.item.technicien?.id === selectedTechnicien;
 
-    const pendingTasks = useMemo<PendingTaskRow[]>(
+    const pendingItems = useMemo<PlanningItemRow[]>(
         () =>
-            allTasks
-                .filter((row) => !row.task.status || row.task.status === 'EN_ATTENTE')
-                .filter((row) => !selectedStatus || row.task.status === selectedStatus)
+            allItems
+                .filter((row) => !row.item.status || row.item.status === 'EN_ATTENTE')
+                .filter((row) => !selectedStatus || row.item.status === selectedStatus)
                 .filter(matchesTechnicien),
-        [allTasks, selectedStatus, selectedTechnicien]
+        [allItems, selectedStatus, selectedTechnicien]
     );
 
-    const pendingTasksForDay = useMemo<PendingTaskRow[]>(
-        () => pendingTasks.filter((row) => toIsoDay(row.task.statusDate) === selectedDate),
-        [pendingTasks, selectedDate]
+    const pendingItemsForDay = useMemo<PlanningItemRow[]>(
+        () => pendingItems.filter((row) => toIsoDay(row.item.statusDate) === selectedDate),
+        [pendingItems, selectedDate]
     );
 
-    const plannedTasks = useMemo<PendingTaskRow[]>(
+    const plannedItems = useMemo<PlanningItemRow[]>(
         () =>
-            allTasks
-                .filter((row) => row.task.status === 'PLANIFIEE' || row.task.status === 'EN_COURS')
-                .filter((row) => toIsoDay(row.task.statusDate) === selectedDate)
-                .filter((row) => !selectedStatus || row.task.status === selectedStatus)
+            allItems
+                .filter((row) => row.item.status === 'PLANIFIEE' || row.item.status === 'EN_COURS')
+                .filter((row) => toIsoDay(row.item.statusDate) === selectedDate)
+                .filter((row) => !selectedStatus || row.item.status === selectedStatus)
                 .filter(matchesTechnicien),
-        [allTasks, selectedDate, selectedStatus, selectedTechnicien]
+        [allItems, selectedDate, selectedStatus, selectedTechnicien]
     );
 
     const weeklyEvents = useMemo<WeeklyCalendarEvent[]>(
         () =>
-            allTasks
-                .filter((row) => row.task.status === 'PLANIFIEE' || row.task.status === 'EN_COURS')
+            allItems
+                .filter((row) => row.item.status === 'PLANIFIEE' || row.item.status === 'EN_COURS')
                 .filter(matchesTechnicien)
                 .map((row) => {
-                    const { vente, task } = row;
-                    const startSource = task.dateDebut || task.statusDate || vente.date;
+                    const { vente, item } = row;
+                    const startSource = item.dateDebut || item.statusDate || vente.date;
                     if (!startSource) {
                         return null;
                     }
@@ -322,91 +402,128 @@ export default function Planning() {
                         return null;
                     }
 
-                    const endSource = task.dateFin;
-                    const estimatedDurationMinutes = 60;
+                    const endSource = item.dateFin;
+                    const estimatedDurationMinutes = item.dureeEstimee || 60;
                     const endDate = endSource && dayjs(endSource).isValid()
                         ? dayjs(endSource)
                         : startDate.add(estimatedDurationMinutes, 'minute');
+
+                    const typeLabel = item.type === 'forfait' ? 'Forfait' : 'Service';
 
                     return {
                         eventId: row.key,
                         startTime: startDate.toDate(),
                         endTime: endDate.toDate(),
-                        title: `#${vente.id} ${task.nom || 'Tache sans nom'} (${getClientLabel(vente.client)})`,
-                        backgroundColor: getTechnicienColor(task.technicien),
+                        title: `#${vente.id} [${typeLabel}] ${item.nom || 'Sans nom'} (${getClientLabel(vente.client)})`,
+                        backgroundColor: getTechnicienColor(item.technicien),
                         textColor: '#ffffff'
                     } as WeeklyCalendarEvent;
                 })
                 .filter(Boolean) as WeeklyCalendarEvent[],
-        [allTasks, selectedTechnicien]
+        [allItems, selectedTechnicien]
     );
 
     const handleSavePlanning = async () => {
-        if (!currentTaskRow?.vente?.id) {
+        if (!currentRow?.vente?.id) {
             return;
         }
         try {
             const values = await form.validateFields();
             setSaving(true);
-            const venteId = currentTaskRow.vente.id;
+            const venteId = currentRow.vente.id;
             const latestVenteResponse = await axios.get(`/ventes/${venteId}`);
-            const latestVente = (latestVenteResponse.data || currentTaskRow.vente) as VenteEntity;
-            const latestTasks = [...(latestVente.taches || [])];
+            const latestVente = (latestVenteResponse.data || currentRow.vente) as VenteEntity;
 
-            let taskToUpdateIndex = -1;
-            if (currentTaskRow.task.id !== undefined && currentTaskRow.task.id !== null) {
-                taskToUpdateIndex = latestTasks.findIndex((task) => task.id === currentTaskRow.task.id);
+            const listKey = currentRow.itemType === 'forfait' ? 'venteForfaits' : 'venteServices';
+            const latestList = [...(latestVente[listKey] || [])];
+
+            let itemToUpdateIndex = -1;
+            if (currentRow.item.id !== undefined && currentRow.item.id !== null) {
+                itemToUpdateIndex = latestList.findIndex((entry: VenteForfaitEntry | VenteServiceEntry) => entry.id === currentRow.item.id);
             }
-            if (taskToUpdateIndex < 0) {
-                taskToUpdateIndex = Math.min(currentTaskRow.taskIndex, latestTasks.length - 1);
+            if (itemToUpdateIndex < 0) {
+                itemToUpdateIndex = Math.min(currentRow.itemIndex, latestList.length - 1);
             }
-            if (taskToUpdateIndex < 0 || !latestTasks[taskToUpdateIndex]) {
-                message.error("Impossible de trouver la tâche à mettre à jour.");
+            if (itemToUpdateIndex < 0 || !latestList[itemToUpdateIndex]) {
+                message.error("Impossible de trouver l'element a mettre a jour.");
                 return;
             }
 
-            latestTasks[taskToUpdateIndex] = {
-                ...latestTasks[taskToUpdateIndex],
+            latestList[itemToUpdateIndex] = {
+                ...latestList[itemToUpdateIndex],
                 status: values.status,
                 statusDate: values.date,
-                dateDebut: values.dateDebut || latestTasks[taskToUpdateIndex].dateDebut,
-                dateFin: values.dateFin || latestTasks[taskToUpdateIndex].dateFin,
+                dateDebut: values.dateDebut || latestList[itemToUpdateIndex].dateDebut,
+                dateFin: values.dateFin || latestList[itemToUpdateIndex].dateFin,
                 technicien: techniciens.find((technicien) => technicien.id === values.technicienId),
-                incidentDate: values.status === 'INCIDENT' ? values.incidentDate : latestTasks[taskToUpdateIndex].incidentDate,
-                incidentDetails: values.status === 'INCIDENT' ? values.incidentDetails : latestTasks[taskToUpdateIndex].incidentDetails
             };
 
             const updatedVente: VenteEntity = {
                 ...latestVente,
-                taches: latestTasks
+                [listKey]: latestList
             };
 
             const res = await axios.put(`/ventes/${venteId}`, updatedVente);
-            message.success('Planning de la tâche mis a jour.');
+            message.success('Planning mis a jour.');
             const savedVente = res.data as VenteEntity;
-            const savedTask = (savedVente.taches || [])[taskToUpdateIndex] || latestTasks[taskToUpdateIndex];
-            setCurrentTaskRow({ ...currentTaskRow, vente: savedVente, task: savedTask });
+            const savedList = savedVente[listKey] || [];
+            const savedEntry = savedList[itemToUpdateIndex] || latestList[itemToUpdateIndex];
+
+            const clientNom = savedVente.client ? `${savedVente.client.prenom || ''} ${savedVente.client.nom}`.trim() : '';
+            const bateauNom = savedVente.bateau?.name;
+            const savedItem: PlanningItem = currentRow.itemType === 'forfait'
+                ? {
+                    id: (savedEntry as VenteForfaitEntry).id,
+                    type: 'forfait',
+                    nom: (savedEntry as VenteForfaitEntry).forfait?.nom || '',
+                    technicien: savedEntry.technicien,
+                    datePlanification: savedEntry.datePlanification,
+                    dateDebut: savedEntry.dateDebut,
+                    dateFin: savedEntry.dateFin,
+                    status: savedEntry.status,
+                    statusDate: savedEntry.statusDate,
+                    dureeEstimee: (savedEntry as VenteForfaitEntry).forfait?.dureeEstimee,
+                    quantite: savedEntry.quantite,
+                    venteId: savedVente.id,
+                    clientNom,
+                    bateauNom,
+                }
+                : {
+                    id: (savedEntry as VenteServiceEntry).id,
+                    type: 'service',
+                    nom: (savedEntry as VenteServiceEntry).service?.nom || '',
+                    technicien: savedEntry.technicien,
+                    datePlanification: savedEntry.datePlanification,
+                    dateDebut: savedEntry.dateDebut,
+                    dateFin: savedEntry.dateFin,
+                    status: savedEntry.status,
+                    statusDate: savedEntry.statusDate,
+                    dureeEstimee: (savedEntry as VenteServiceEntry).service?.dureeEstimee,
+                    quantite: savedEntry.quantite,
+                    venteId: savedVente.id,
+                    clientNom,
+                    bateauNom,
+                };
+
+            setCurrentRow({ ...currentRow, vente: savedVente, item: savedItem });
             form.setFieldsValue({
-                date: toDateTimeLocalValue(savedTask.statusDate) || values.date,
-                dateDebut: savedTask.dateDebut || values.dateDebut,
-                dateFin: savedTask.dateFin || values.dateFin,
-                status: savedTask.status || values.status,
-                technicienId: savedTask.technicien?.id || values.technicienId,
-                incidentDate: savedTask.incidentDate,
-                incidentDetails: savedTask.incidentDetails,
+                date: toDateTimeLocalValue(savedEntry.statusDate) || values.date,
+                dateDebut: savedEntry.dateDebut || values.dateDebut,
+                dateFin: savedEntry.dateFin || values.dateFin,
+                status: savedEntry.status || values.status,
+                technicienId: savedEntry.technicien?.id || values.technicienId,
             });
             fetchVentes();
         } catch (error) {
             const formError = error as { errorFields?: unknown[] };
             if (Array.isArray(formError.errorFields) && formError.errorFields.length > 0) {
-                // Les erreurs de validation sont affichees par le formulaire.
                 return;
             }
             if (axios.isAxiosError(error)) {
-                message.error(error.response?.data?.message || "Erreur lors de la mise à jour de la tâche.");
+                message.error(error.response?.data?.message || "Erreur lors de la mise a jour.");
                 return;
             }
-            message.error("Erreur lors de la mise à jour de la tâche.");
+            message.error("Erreur lors de la mise a jour.");
         } finally {
             setSaving(false);
         }
@@ -416,55 +533,64 @@ export default function Planning() {
         {
             title: 'Vente',
             dataIndex: 'id',
-            render: (_: unknown, record: PendingTaskRow) => `#${record.vente.id}`
+            render: (_: unknown, record: PlanningItemRow) => `#${record.vente.id}`
         },
         {
             title: 'Client',
             dataIndex: 'client',
-            render: (_: unknown, record: PendingTaskRow) => getClientLabel(record.vente.client)
+            render: (_: unknown, record: PlanningItemRow) => getClientLabel(record.vente.client)
+        },
+        {
+            title: 'Type vente',
+            dataIndex: 'type',
+            render: (_: unknown, record: PlanningItemRow) => typeOptions.find((item) => item.value === record.vente.type)?.label || record.vente.type || '-'
         },
         {
             title: 'Type',
-            dataIndex: 'type',
-            render: (_: unknown, record: PendingTaskRow) => typeOptions.find((item) => item.value === record.vente.type)?.label || record.vente.type || '-'
+            key: 'itemType',
+            render: (_: unknown, record: PlanningItemRow) => (
+                <Tag color={record.item.type === 'forfait' ? 'purple' : 'geekblue'}>
+                    {record.item.type === 'forfait' ? 'Forfait' : 'Service'}
+                </Tag>
+            )
         },
         {
-            title: 'Statut tâche',
-            dataIndex: 'taskStatus',
-            render: (_: unknown, record: PendingTaskRow) => {
-                const status = record.task.status || 'EN_ATTENTE';
-                const label = taskStatusOptions.find((item) => item.value === status)?.label || status;
+            title: 'Statut',
+            dataIndex: 'itemStatus',
+            render: (_: unknown, record: PlanningItemRow) => {
+                const status = record.item.status || 'EN_ATTENTE';
+                const label = statusOptions.find((item) => item.value === status)?.label || status;
                 return <Tag color={statusColor[status] || 'default'}>{label}</Tag>;
             }
         },
         {
-            title: 'Tâche',
-            key: 'taskName',
-            render: (_: unknown, record: PendingTaskRow) => record.task.nom || '(Sans nom)'
+            title: 'Nom',
+            key: 'itemName',
+            render: (_: unknown, record: PlanningItemRow) => record.item.nom || '(Sans nom)'
         },
         {
             title: 'Debut',
             key: 'dateDebut',
-            render: (_: unknown, record: PendingTaskRow) => record.task.dateDebut ? dayjs(record.task.dateDebut).format('DD/MM/YYYY') : '-'
+            render: (_: unknown, record: PlanningItemRow) => record.item.dateDebut ? dayjs(record.item.dateDebut).format('DD/MM/YYYY') : '-'
         },
         {
             title: 'Fin',
             key: 'dateFin',
-            render: (_: unknown, record: PendingTaskRow) => record.task.dateFin ? dayjs(record.task.dateFin).format('DD/MM/YYYY') : '-'
+            render: (_: unknown, record: PlanningItemRow) => record.item.dateFin ? dayjs(record.item.dateFin).format('DD/MM/YYYY') : '-'
         }
     ];
 
-    const pendingTaskColumns = [
+    const pendingColumns = [
         ...commonColumns,
         {
             title: 'Date statut',
             key: 'statusDate',
-            render: (_: unknown, record: PendingTaskRow) => toIsoDay(record.task.statusDate) || '-'
+            render: (_: unknown, record: PlanningItemRow) => toIsoDay(record.item.statusDate) || '-'
         },
         {
             title: 'Actions',
             key: 'actions',
-            render: (_: unknown, record: PendingTaskRow) => (
+            render: (_: unknown, record: PlanningItemRow) => (
                 <Space>
                     <Button type="primary" icon={<CalendarOutlined />} onClick={() => openPlanningModal(record, selectedDate)}>
                         Planifier
@@ -486,12 +612,12 @@ export default function Planning() {
         {
             title: 'Date statut',
             key: 'statusDate',
-            render: (_: unknown, record: PendingTaskRow) => toIsoDay(record.task.statusDate) || '-'
+            render: (_: unknown, record: PlanningItemRow) => toIsoDay(record.item.statusDate) || '-'
         },
         {
             title: 'Actions',
             key: 'actions',
-            render: (_: unknown, record: PendingTaskRow) => (
+            render: (_: unknown, record: PlanningItemRow) => (
                 <Button icon={<EditOutlined />} onClick={() => openPlanningModal(record)}>
                     Replanifier
                 </Button>
@@ -508,8 +634,8 @@ export default function Planning() {
                             <Input type="date" value={selectedDate} onChange={(event) => setSelectedDate(event.target.value || todayIso())} />
                             <Select
                                 allowClear
-                                options={taskStatusOptions}
-                                placeholder="Tous les statuts de tâche"
+                                options={statusOptions}
+                                placeholder="Tous les statuts"
                                 value={selectedStatus}
                                 onChange={(value) => setSelectedStatus(value)}
                                 style={{ width: '100%' }}
@@ -536,13 +662,13 @@ export default function Planning() {
                                 <Badge status="processing" /> Date: <strong>{selectedDate}</strong>
                             </div>
                             <div>
-                                <Badge status="success" /> Planifiees (jour): <strong>{plannedTasks.length}</strong>
+                                <Badge status="success" /> Planifiees (jour): <strong>{plannedItems.length}</strong>
                             </div>
                             <div>
-                                <Badge status="warning" /> En attente (jour): <strong>{pendingTasksForDay.length}</strong>
+                                <Badge status="warning" /> En attente (jour): <strong>{pendingItemsForDay.length}</strong>
                             </div>
                             <div>
-                                <Badge status="default" /> En attente (total): <strong>{pendingTasks.length}</strong>
+                                <Badge status="default" /> En attente (total): <strong>{pendingItems.length}</strong>
                             </div>
                         </Space>
                     </Card>
@@ -551,7 +677,7 @@ export default function Planning() {
 
             <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
                 <Col span={24}>
-                    <Card size="small" title={<span>Vue semaine <Typography.Text type="secondary" style={{ fontWeight: 'normal', fontSize: 12 }}>(glisser-deposer une tache depuis le tableau ci-dessous)</Typography.Text></span>}>
+                    <Card size="small" title={<span>Vue semaine <Typography.Text type="secondary" style={{ fontWeight: 'normal', fontSize: 12 }}>(glisser-deposer un element depuis le tableau ci-dessous)</Typography.Text></span>}>
                         <style>{`
                             .planning-calendar .ant-table-tbody > tr:nth-child(-n+9),
                             .planning-calendar .ant-table-tbody > tr:nth-child(n+24) {
@@ -597,9 +723,9 @@ export default function Planning() {
                                     setCalendarWeekStart(dayjs(date).startOf('week'));
                                 }}
                                 onEventClick={(event: WeeklyCalendarEvent) => {
-                                    const matchedTaskRow = allTasks.find((row) => row.key === event.eventId);
-                                    if (matchedTaskRow) {
-                                        openPlanningModal(matchedTaskRow);
+                                    const matchedRow = allItems.find((row) => row.key === event.eventId);
+                                    if (matchedRow) {
+                                        openPlanningModal(matchedRow);
                                     }
                                 }}
                             />
@@ -610,18 +736,18 @@ export default function Planning() {
 
             <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
                 <Col span={24}>
-                    <Card title={`Planifié le ${selectedDate}`} size="small" bodyStyle={{ padding: plannedTasks.length ? 12 : 24 }}>
-                        {plannedTasks.length ? (
+                    <Card title={`Planifie le ${selectedDate}`} size="small" bodyStyle={{ padding: plannedItems.length ? 12 : 24 }}>
+                        {plannedItems.length ? (
                             <Table
                                 rowKey="key"
                                 loading={loading}
-                                dataSource={plannedTasks}
+                                dataSource={plannedItems}
                                 columns={dayColumns}
                                 pagination={{ pageSize: 8 }}
                                 bordered
                             />
                         ) : (
-                            <Empty description="Aucune tache planifiee pour cette date." />
+                            <Empty description="Aucun element planifie pour cette date." />
                         )}
                     </Card>
                 </Col>
@@ -630,34 +756,34 @@ export default function Planning() {
             <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
                 <Col span={24}>
                     <Card
-                        title="A planifier (taches en attente)"
+                        title="A planifier (en attente)"
                         size="small"
-                        bodyStyle={{ padding: pendingTasks.length ? 12 : 24 }}
+                        bodyStyle={{ padding: pendingItems.length ? 12 : 24 }}
                     >
-                        {pendingTasks.length ? (
+                        {pendingItems.length ? (
                             <Table
                                 rowKey="key"
                                 loading={loading}
-                                dataSource={pendingTasks}
-                                columns={pendingTaskColumns}
+                                dataSource={pendingItems}
+                                columns={pendingColumns}
                                 pagination={{ pageSize: 6 }}
                                 bordered
                                 onRow={(record) => ({
                                     draggable: true,
                                     style: { cursor: 'grab' },
                                     onDragStart: (e) => {
-                                        draggedTaskRef.current = record;
+                                        draggedRowRef.current = record;
                                         e.dataTransfer.effectAllowed = 'move';
                                         e.dataTransfer.setData('text/plain', record.key);
                                     },
                                     onDragEnd: () => {
-                                        draggedTaskRef.current = null;
+                                        draggedRowRef.current = null;
                                         setDragOverDay(null);
                                     }
                                 })}
                             />
                         ) : (
-                            <Empty description="Aucune tache en attente." />
+                            <Empty description="Aucun element en attente." />
                         )}
                     </Card>
                 </Col>
@@ -665,14 +791,14 @@ export default function Planning() {
 
             <Modal
                 open={modalVisible}
-                title={currentTaskRow?.task?.nom ? `Planifier la tâche: ${currentTaskRow.task.nom}` : 'Planifier la tâche'}
+                title={currentRow?.item?.nom ? `Planifier: ${currentRow.item.nom}` : 'Planifier'}
                 onOk={handleSavePlanning}
                 okText="Enregistrer"
                 confirmLoading={saving}
                 cancelText="Annuler"
                 onCancel={() => {
                     setModalVisible(false);
-                    setCurrentTaskRow(null);
+                    setCurrentRow(null);
                     form.resetFields();
                 }}
                 destroyOnHidden
@@ -680,7 +806,7 @@ export default function Planning() {
                 <Form form={form} layout="vertical">
                     <Form.Item
                         name="date"
-                        label="Date et heure planifiées"
+                        label="Date et heure planifiees"
                         rules={[{ required: true, message: 'La date est requise' }]}
                     >
                         <Input type="datetime-local" />
@@ -702,7 +828,7 @@ export default function Planning() {
                         label="Statut"
                         rules={[{ required: true, message: 'Le statut est requis' }]}
                     >
-                        <Select options={taskStatusOptions} />
+                        <Select options={statusOptions} />
                     </Form.Item>
                     <Form.Item name="technicienId" label="Technicien">
                         <Select allowClear showSearch options={technicienOptions} placeholder="Selectionner un technicien" />

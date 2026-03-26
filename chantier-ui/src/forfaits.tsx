@@ -101,22 +101,8 @@ interface ForfaitMainOeuvreEntity {
 interface TaskEntity {
     id?: number;
     nom?: string;
-    status?: TaskStatus;
-    dateDebut?: string;
-    dateFin?: string;
-    statusDate?: string;
     description?: string;
-    notes?: string;
-    technicien?: TechnicienEntity;
-    dureeReelle?: number;
-}
-
-type TaskStatus = 'EN_ATTENTE' | 'EN_COURS' | 'TERMINEE' | 'INCIDENT' | 'ANNULEE';
-
-interface TechnicienEntity {
-    id: number;
-    prenom?: string;
-    nom?: string;
+    done?: boolean;
 }
 
 interface ForfaitEntity {
@@ -148,14 +134,7 @@ interface ForfaitFormValues {
     taches: Array<{
         id?: number;
         nom?: string;
-        status?: TaskStatus;
-        dateDebut?: string;
-        dateFin?: string;
-        statusDate?: string;
         description?: string;
-        notes?: string;
-        technicienId?: number;
-        dureeReelle?: number;
     }>;
     heuresFonctionnement: number;
     joursFrequence: number;
@@ -187,28 +166,6 @@ const defaultForfait: ForfaitFormValues = {
 };
 
 const formatEuro = (value?: number) => `${(value || 0).toFixed(2)} €`;
-const toDateInputValue = (value?: string) => {
-    if (!value) {
-        return undefined;
-    }
-    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-        return value;
-    }
-    const parsedDate = new Date(value);
-    if (Number.isNaN(parsedDate.getTime())) {
-        return undefined;
-    }
-    const timezoneOffsetMs = parsedDate.getTimezoneOffset() * 60000;
-    return new Date(parsedDate.getTime() - timezoneOffsetMs).toISOString().split('T')[0];
-};
-
-const taskStatusOptions: Array<{ value: TaskStatus; label: string }> = [
-    { value: 'EN_ATTENTE', label: 'En attente' },
-    { value: 'EN_COURS', label: 'En cours' },
-    { value: 'TERMINEE', label: 'Terminee' },
-    { value: 'INCIDENT', label: 'Incident' },
-    { value: 'ANNULEE', label: 'Annulee' }
-];
 
 export default function Forfaits() {
     const [forfaits, setForfaits] = useState<ForfaitEntity[]>([]);
@@ -216,7 +173,6 @@ export default function Forfaits() {
     const [bateaux, setBateaux] = useState<BateauCatalogueEntity[]>([]);
     const [produits, setProduits] = useState<ProduitCatalogueEntity[]>([]);
     const [mainOeuvresList, setMainOeuvresList] = useState<MainOeuvreEntity[]>([]);
-    const [techniciens, setTechniciens] = useState<TechnicienEntity[]>([]);
     const [loading, setLoading] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
     const [isEdit, setIsEdit] = useState(false);
@@ -256,15 +212,6 @@ export default function Forfaits() {
     );
 
 
-    const technicienOptions = useMemo(
-        () =>
-            techniciens.map((technicien) => ({
-                value: technicien.id,
-                label: `${technicien.prenom || ''} ${technicien.nom || ''}`.trim() || `Technicien #${technicien.id}`
-            })),
-        [techniciens]
-    );
-
     const fetchForfaits = async (query?: string) => {
         setLoading(true);
         try {
@@ -280,18 +227,16 @@ export default function Forfaits() {
 
     const fetchOptions = async () => {
         try {
-            const [moteursRes, bateauxRes, produitsRes, mainOeuvresRes, techniciensRes] = await Promise.all([
+            const [moteursRes, bateauxRes, produitsRes, mainOeuvresRes] = await Promise.all([
                 axios.get('/catalogue/moteurs'),
                 axios.get('/catalogue/bateaux'),
                 axios.get('/catalogue/produits'),
                 axios.get('/main-oeuvres'),
-                axios.get('/techniciens')
             ]);
             setMoteurs(moteursRes.data || []);
             setBateaux(bateauxRes.data || []);
             setProduits(produitsRes.data || []);
             setMainOeuvresList(mainOeuvresRes.data || []);
-            setTechniciens(techniciensRes.data || []);
         } catch {
             message.error('Erreur lors du chargement des listes de référence.');
         }
@@ -411,14 +356,7 @@ export default function Forfaits() {
                     .map<ForfaitFormValues['taches'][number]>((tache) => ({
                         id: tache.id,
                         nom: tache.nom || '',
-                        status: tache.status || 'EN_ATTENTE',
-                        dateDebut: toDateInputValue(tache.dateDebut),
-                        dateFin: toDateInputValue(tache.dateFin),
-                        statusDate: toDateInputValue(tache.statusDate),
                         description: tache.description || '',
-                        notes: tache.notes || '',
-                        technicienId: tache.technicien?.id,
-                        dureeReelle: tache.dureeReelle || 0
                     }))
                     .concat({}),
                 heuresFonctionnement: forfait.heuresFonctionnement || 0,
@@ -462,30 +400,11 @@ export default function Forfaits() {
                 quantite: item.quantite || 1
             })),
         taches: (values.taches || [])
-            .filter((tache) =>
-                Boolean(
-                    tache.nom
-                    || tache.description
-                    || tache.notes
-                    || tache.status
-                    || tache.technicienId
-                    || tache.dateDebut
-                    || tache.dateFin
-                    || tache.statusDate
-                    || (tache.dureeReelle || 0) > 0
-                )
-            )
+            .filter((tache) => Boolean(tache.nom || tache.description))
             .map((tache) => ({
                 id: tache.id,
                 nom: tache.nom || '',
-                status: tache.status || 'EN_ATTENTE',
-                dateDebut: tache.dateDebut,
-                dateFin: tache.dateFin,
-                statusDate: tache.statusDate,
                 description: tache.description || '',
-                notes: tache.notes || '',
-                technicien: techniciens.find((technicien) => technicien.id === tache.technicienId),
-                dureeReelle: tache.dureeReelle || 0
             })),
         heuresFonctionnement: values.heuresFonctionnement || 0,
         joursFrequence: values.joursFrequence || 0,

@@ -52,8 +52,11 @@ INSERT INTO AnnonceEntity (id, titre, description, prix, contact, telephone, sta
 -- Ventes (all primitive fields included)
 INSERT INTO VenteEntity (id, status, type, client_id, date, prixVenteTTC, montantTTC, tva, montantTVA, montantHT, remise, stockDecremented, rappel1Envoye, rappel2Envoye, rappel3Envoye) VALUES (100, 2, 4, 100, '2025-06-15 10:00:00', 500.0, 500.0, 20.0, 100.0, 400.0, 0.0, false, false, false, false);
 
--- Tasks (linked to vente 100)
-INSERT INTO TaskEntity (id, nom, status, dateDebut, dateFin, description, dureeReelle, technicien_id, vente_id) VALUES (100, 'Revision moteur', 1, CURRENT_DATE, CURRENT_DATE, 'Revision complete', 0.0, 100, 100);
+-- VenteForfaits (linked to vente 100)
+INSERT INTO VenteForfaitEntity (id, forfait_id, quantite, technicien_id, status, dateDebut, dateFin, dureeReelle, vente_id) VALUES (100, 100, 1, 100, 1, CURRENT_DATE, CURRENT_DATE, 0.0, 100);
+
+-- Tasks (checklist items, linked to venteForfait 100)
+INSERT INTO TaskEntity (id, nom, description, done, vente_forfait_id) VALUES (100, 'Revision moteur', 'Revision complete', false, 100);
 
 -- Fournisseur-Produit associations
 INSERT INTO FournisseurProduitEntity (id, fournisseur_id, produit_id, reference, prixAchatHT, tva, montantTVA, prixAchatTTC, portForfaitaire, portParUnite, nombreMinACommander) VALUES (100, 100, 100, 'MP-H4T', 15.0, 20.0, 3.0, 18.0, 10.0, 0.5, 5);
@@ -82,6 +85,8 @@ ALTER TABLE FournisseurEntity ALTER COLUMN id RESTART WITH 200;
 ALTER TABLE TransactionEntity ALTER COLUMN id RESTART WITH 200;
 ALTER TABLE AnnonceEntity ALTER COLUMN id RESTART WITH 200;
 ALTER TABLE VenteEntity ALTER COLUMN id RESTART WITH 200;
+ALTER TABLE VenteForfaitEntity ALTER COLUMN id RESTART WITH 200;
+ALTER TABLE VenteServiceEntity ALTER COLUMN id RESTART WITH 200;
 ALTER TABLE TaskEntity ALTER COLUMN id RESTART WITH 200;
 ALTER TABLE SocieteEntity ALTER COLUMN id RESTART WITH 200;
 ALTER TABLE FournisseurProduitEntity ALTER COLUMN id RESTART WITH 200;

@@ -3,6 +3,7 @@ import {
     Badge,
     Button,
     Card,
+    Checkbox,
     Form,
     Input,
     InputNumber,
@@ -37,22 +38,33 @@ interface Technicien {
 
 type TaskStatus = 'EN_ATTENTE' | 'PLANIFIEE' | 'EN_COURS' | 'TERMINEE' | 'INCIDENT' | 'ANNULEE';
 
-interface TaskWithVente {
-    taskId: number;
-    venteId: number;
-    taskNom?: string;
-    taskStatus?: TaskStatus;
+interface ChecklistItem {
+    id?: number;
+    nom?: string;
+    description?: string;
+    done?: boolean;
+}
+
+interface PlanningItem {
+    itemId?: number;
+    venteId?: number;
+    itemType?: string;
+    itemNom?: string;
+    itemStatus?: TaskStatus;
+    datePlanification?: string;
     dateDebut?: string;
     dateFin?: string;
     statusDate?: string;
-    description?: string;
     notes?: string;
     dureeReelle?: number;
+    dureeEstimee?: number;
     incidentDate?: string;
     incidentDetails?: string;
     clientNom?: string;
     venteType?: string;
     bateauNom?: string;
+    quantite?: number;
+    taches?: ChecklistItem[];
 }
 
 interface MobileAppProps {
@@ -93,21 +105,22 @@ const formatDate = (value?: string) => {
 };
 
 export default function MobileApp({ user, onLogout, onChangePassword }: MobileAppProps) {
-    const [tasks, setTasks] = useState<TaskWithVente[]>([]);
+    const [items, setItems] = useState<PlanningItem[]>([]);
     const [loading, setLoading] = useState(false);
     const [tab, setTab] = useState<Tab>('today');
     const [modalVisible, setModalVisible] = useState(false);
-    const [currentTask, setCurrentTask] = useState<TaskWithVente | null>(null);
+    const [currentItem, setCurrentItem] = useState<PlanningItem | null>(null);
+    const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
     const [form] = Form.useForm();
     const [saving, setSaving] = useState(false);
 
     const technicienName = `${user.prenom || ''} ${user.nom}`.trim();
 
-    const fetchTasks = async () => {
+    const fetchItems = async () => {
         setLoading(true);
         try {
             const res = await axios.get(`/technicien-portal/techniciens/${user.id}/taches`);
-            setTasks(res.data || []);
+            setItems(res.data || []);
         } catch {
             message.error('Erreur lors du chargement');
         } finally {
@@ -115,49 +128,61 @@ export default function MobileApp({ user, onLogout, onChangePassword }: MobileAp
         }
     };
 
-    useEffect(() => { fetchTasks(); }, [user.id]);
+    useEffect(() => { fetchItems(); }, [user.id]);
 
-    const todayTasks = tasks.filter((t) => t.statusDate && t.statusDate.startsWith(todayIso()));
-    const incidentTasks = tasks.filter((t) => t.taskStatus === 'INCIDENT');
-    const pendingCount = tasks.filter((t) => t.taskStatus === 'EN_ATTENTE' || t.taskStatus === 'PLANIFIEE' || t.taskStatus === 'EN_COURS').length;
+    const todayItems = items.filter((t) => t.statusDate && t.statusDate.startsWith(todayIso()));
+    const incidentItems = items.filter((t) => t.itemStatus === 'INCIDENT');
+    const pendingCount = items.filter((t) => t.itemStatus === 'EN_ATTENTE' || t.itemStatus === 'PLANIFIEE' || t.itemStatus === 'EN_COURS').length;
 
-    const displayedTasks = tab === 'today' ? todayTasks : tab === 'incidents' ? incidentTasks : tasks;
+    const displayedItems = tab === 'today' ? todayItems : tab === 'incidents' ? incidentItems : items;
 
-    const openModal = (task: TaskWithVente, presetStatus?: TaskStatus) => {
-        setCurrentTask(task);
+    const openModal = (item: PlanningItem, presetStatus?: TaskStatus) => {
+        setCurrentItem(item);
+        setChecklist((item.taches || []).map((t) => ({ ...t })));
         form.setFieldsValue({
-            status: presetStatus || task.taskStatus || 'EN_COURS',
-            dureeReelle: task.dureeReelle || 0,
-            notes: task.notes || '',
-            incidentDate: task.incidentDate || todayIso(),
-            incidentDetails: task.incidentDetails || '',
+            status: presetStatus || item.itemStatus || 'EN_COURS',
+            dureeReelle: item.dureeReelle || 0,
+            notes: item.notes || '',
+            incidentDate: item.incidentDate || todayIso(),
+            incidentDetails: item.incidentDetails || '',
         });
         setModalVisible(true);
     };
 
+    const handleChecklistChange = (index: number, done: boolean) => {
+        setChecklist((prev) => prev.map((c, i) => i === index ? { ...c, done } : c));
+    };
+
     const handleSave = async () => {
-        if (!currentTask) return;
+        if (!currentItem) return;
         try {
             const values = await form.validateFields();
             setSaving(true);
-            const res = await axios.put(`/technicien-portal/taches/${currentTask.taskId}`, {
+            const endpoint = currentItem.itemType === 'forfait'
+                ? `/technicien-portal/forfaits/${currentItem.itemId}`
+                : `/technicien-portal/services/${currentItem.itemId}`;
+            const res = await axios.put(endpoint, {
                 status: values.status,
                 dureeReelle: values.dureeReelle || 0,
                 notes: values.notes || '',
                 incidentDate: values.status === 'INCIDENT' ? values.incidentDate : null,
                 incidentDetails: values.status === 'INCIDENT' ? values.incidentDetails : null,
+                taches: checklist.map((c) => ({ taskId: c.id, done: c.done })),
             });
             message.success('Tache mise a jour');
             const updated = res.data;
-            setCurrentTask({ ...currentTask, ...updated, taskStatus: updated.taskStatus || values.status });
+            setCurrentItem({ ...currentItem, ...updated, itemStatus: updated.itemStatus || values.status });
+            if (updated.taches) {
+                setChecklist(updated.taches.map((t: ChecklistItem) => ({ ...t })));
+            }
             form.setFieldsValue({
-                status: updated.taskStatus || values.status,
+                status: updated.itemStatus || values.status,
                 dureeReelle: updated.dureeReelle ?? values.dureeReelle,
                 notes: updated.notes ?? values.notes,
                 incidentDate: updated.incidentDate || values.incidentDate,
                 incidentDetails: updated.incidentDetails || values.incidentDetails,
             });
-            fetchTasks();
+            fetchItems();
         } catch {
             message.error('Erreur lors de la mise a jour');
         } finally {
@@ -165,47 +190,55 @@ export default function MobileApp({ user, onLogout, onChangePassword }: MobileAp
         }
     };
 
-    const renderTaskCard = (task: TaskWithVente) => (
-        <Card size="small" style={{ marginBottom: 8 }} key={task.taskId}>
+    const renderItemCard = (item: PlanningItem) => (
+        <Card size="small" style={{ marginBottom: 8 }} key={item.itemId}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                <span style={{ fontWeight: 'bold', fontSize: 14 }}>{task.taskNom || 'Tache'}</span>
-                <Tag color={statusColor[task.taskStatus || '']}>{statusLabel[task.taskStatus || ''] || task.taskStatus}</Tag>
+                <span style={{ fontWeight: 'bold', fontSize: 14 }}>{item.itemNom || 'Tache'}</span>
+                <Space size={4}>
+                    {item.itemType && <Tag>{item.itemType}</Tag>}
+                    <Tag color={statusColor[item.itemStatus || '']}>{statusLabel[item.itemStatus || ''] || item.itemStatus}</Tag>
+                </Space>
             </div>
-            <p style={{ margin: '2px 0', color: '#666' }}>{task.clientNom || '-'} {task.bateauNom ? `/ ${task.bateauNom}` : ''}</p>
-            {task.description && <p style={{ margin: '2px 0', fontSize: 12, color: '#999' }}>{task.description}</p>}
+            <p style={{ margin: '2px 0', color: '#666' }}>{item.clientNom || '-'} {item.bateauNom ? `/ ${item.bateauNom}` : ''}</p>
             <div style={{ display: 'flex', justifyContent: 'space-between', margin: '4px 0' }}>
-                <span>Reelle: {task.dureeReelle ? `${task.dureeReelle}h` : '-'}</span>
+                <span>Reelle: {item.dureeReelle ? `${item.dureeReelle}h` : '-'}</span>
+                {item.dureeEstimee != null && item.dureeEstimee > 0 && <span>Estimee: {item.dureeEstimee}h</span>}
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', margin: '2px 0', fontSize: 12 }}>
-                {task.dateDebut && <span>Debut: {formatDate(task.dateDebut)}</span>}
-                {task.dateFin && <span>Fin: {formatDate(task.dateFin)}</span>}
+                {item.dateDebut && <span>Debut: {formatDate(item.dateDebut)}</span>}
+                {item.dateFin && <span>Fin: {formatDate(item.dateFin)}</span>}
             </div>
-            {task.statusDate && <p style={{ margin: '2px 0', fontSize: 12 }}>Planifiee: {formatDate(task.statusDate)}</p>}
-            {task.taskStatus === 'INCIDENT' && task.incidentDetails && (
+            {item.statusDate && <p style={{ margin: '2px 0', fontSize: 12 }}>Planifiee: {formatDate(item.statusDate)}</p>}
+            {item.taches && item.taches.length > 0 && (
+                <div style={{ margin: '4px 0', fontSize: 12, color: '#666' }}>
+                    Checklist: {item.taches.filter((t) => t.done).length}/{item.taches.length}
+                </div>
+            )}
+            {item.itemStatus === 'INCIDENT' && item.incidentDetails && (
                 <Card size="small" style={{ background: '#fff2f0', borderColor: '#ffccc7', marginTop: 4 }}>
                     <p style={{ margin: 0, fontSize: 12, color: '#cf1322' }}>
-                        <WarningOutlined /> {task.incidentDetails}
+                        <WarningOutlined /> {item.incidentDetails}
                     </p>
-                    {task.incidentDate && <p style={{ margin: 0, fontSize: 11, color: '#999' }}>Le {formatDate(task.incidentDate)}</p>}
+                    {item.incidentDate && <p style={{ margin: 0, fontSize: 11, color: '#999' }}>Le {formatDate(item.incidentDate)}</p>}
                 </Card>
             )}
             <Space style={{ marginTop: 8 }} wrap>
-                {(task.taskStatus === 'EN_ATTENTE' || task.taskStatus === 'PLANIFIEE') && (
-                    <Button size="small" type="primary" icon={<ClockCircleOutlined />} onClick={() => openModal(task, 'EN_COURS')}>
+                {(item.itemStatus === 'EN_ATTENTE' || item.itemStatus === 'PLANIFIEE') && (
+                    <Button size="small" type="primary" icon={<ClockCircleOutlined />} onClick={() => openModal(item, 'EN_COURS')}>
                         Demarrer
                     </Button>
                 )}
-                {task.taskStatus === 'EN_COURS' && (
-                    <Button size="small" type="primary" icon={<CheckCircleOutlined />} style={{ background: '#52c41a', borderColor: '#52c41a' }} onClick={() => openModal(task, 'TERMINEE')}>
+                {item.itemStatus === 'EN_COURS' && (
+                    <Button size="small" type="primary" icon={<CheckCircleOutlined />} style={{ background: '#52c41a', borderColor: '#52c41a' }} onClick={() => openModal(item, 'TERMINEE')}>
                         Terminer
                     </Button>
                 )}
-                {task.taskStatus !== 'ANNULEE' && task.taskStatus !== 'TERMINEE' && (
-                    <Button size="small" danger icon={<ExclamationCircleOutlined />} onClick={() => openModal(task, 'INCIDENT')}>
+                {item.itemStatus !== 'ANNULEE' && item.itemStatus !== 'TERMINEE' && (
+                    <Button size="small" danger icon={<ExclamationCircleOutlined />} onClick={() => openModal(item, 'INCIDENT')}>
                         Incident
                     </Button>
                 )}
-                <Button size="small" onClick={() => openModal(task)}>Modifier</Button>
+                <Button size="small" onClick={() => openModal(item)}>Modifier</Button>
             </Space>
         </Card>
     );
@@ -223,9 +256,9 @@ export default function MobileApp({ user, onLogout, onChangePassword }: MobileAp
 
             {/* Summary */}
             <div style={{ display: 'flex', justifyContent: 'space-around', padding: '8px 12px', background: '#fafafa', borderBottom: '1px solid #e8e8e8' }}>
-                <span><Badge status="processing" /> Aujourd'hui: <strong>{todayTasks.length}</strong></span>
+                <span><Badge status="processing" /> Aujourd'hui: <strong>{todayItems.length}</strong></span>
                 <span><Badge status="warning" /> A faire: <strong>{pendingCount}</strong></span>
-                <span><Badge status="error" /> Incidents: <strong>{incidentTasks.length}</strong></span>
+                <span><Badge status="error" /> Incidents: <strong>{incidentItems.length}</strong></span>
             </div>
 
             {/* Content */}
@@ -236,11 +269,11 @@ export default function MobileApp({ user, onLogout, onChangePassword }: MobileAp
                         {tab === 'all' && 'Toutes les taches'}
                         {tab === 'incidents' && 'Incidents'}
                     </h3>
-                    <Button size="small" icon={<ReloadOutlined />} onClick={fetchTasks} />
+                    <Button size="small" icon={<ReloadOutlined />} onClick={fetchItems} />
                 </div>
                 <Spin spinning={loading}>
-                    {displayedTasks.length > 0 ? (
-                        <List dataSource={displayedTasks} renderItem={renderTaskCard} />
+                    {displayedItems.length > 0 ? (
+                        <List dataSource={displayedItems} renderItem={renderItemCard} />
                     ) : (
                         <Card style={{ textAlign: 'center', color: '#999' }}>Aucune tache</Card>
                     )}
@@ -265,21 +298,27 @@ export default function MobileApp({ user, onLogout, onChangePassword }: MobileAp
             {/* Update modal */}
             <Modal
                 open={modalVisible}
-                title={currentTask?.taskNom || 'Mise a jour'}
+                title={currentItem?.itemNom || 'Mise a jour'}
                 onOk={handleSave}
                 okText="Enregistrer"
                 cancelText="Annuler"
                 confirmLoading={saving}
-                onCancel={() => { setModalVisible(false); setCurrentTask(null); form.resetFields(); }}
+                onCancel={() => { setModalVisible(false); setCurrentItem(null); setChecklist([]); form.resetFields(); }}
                 destroyOnHidden
                 width="95vw"
                 style={{ top: 20 }}
             >
-                {currentTask && (
+                {currentItem && (
                     <Card size="small" style={{ marginBottom: 12, background: '#fafafa' }}>
-                        <p style={{ margin: '2px 0' }}><strong>Client:</strong> {currentTask.clientNom || '-'}</p>
-                        <p style={{ margin: '2px 0' }}><strong>Bateau:</strong> {currentTask.bateauNom || '-'}</p>
-                        {currentTask.description && <p style={{ margin: '2px 0' }}><strong>Description:</strong> {currentTask.description}</p>}
+                        <p style={{ margin: '2px 0' }}><strong>Client:</strong> {currentItem.clientNom || '-'}</p>
+                        <p style={{ margin: '2px 0' }}><strong>Bateau:</strong> {currentItem.bateauNom || '-'}</p>
+                        <p style={{ margin: '2px 0' }}><strong>Type:</strong> {currentItem.itemType || '-'}</p>
+                        {currentItem.quantite != null && currentItem.quantite > 0 && (
+                            <p style={{ margin: '2px 0' }}><strong>Quantite:</strong> {currentItem.quantite}</p>
+                        )}
+                        {currentItem.dureeEstimee != null && currentItem.dureeEstimee > 0 && (
+                            <p style={{ margin: '2px 0' }}><strong>Duree estimee:</strong> {currentItem.dureeEstimee}h</p>
+                        )}
                     </Card>
                 )}
                 <Form form={form} layout="vertical">
@@ -292,6 +331,23 @@ export default function MobileApp({ user, onLogout, onChangePassword }: MobileAp
                     <Form.Item name="notes" label="Notes">
                         <Input.TextArea rows={3} />
                     </Form.Item>
+                    {checklist.length > 0 && (
+                        <Card size="small" title="Checklist" style={{ marginBottom: 12 }}>
+                            {checklist.map((item, index) => (
+                                <div key={item.id || index} style={{ marginBottom: 4 }}>
+                                    <Checkbox
+                                        checked={item.done}
+                                        onChange={(e) => handleChecklistChange(index, e.target.checked)}
+                                    >
+                                        <span style={{ fontWeight: 500 }}>{item.nom || `Tache ${index + 1}`}</span>
+                                    </Checkbox>
+                                    {item.description && (
+                                        <p style={{ margin: '0 0 0 24px', fontSize: 12, color: '#999' }}>{item.description}</p>
+                                    )}
+                                </div>
+                            ))}
+                        </Card>
+                    )}
                     <Form.Item noStyle shouldUpdate={(prev, cur) => prev?.status !== cur?.status}>
                         {({ getFieldValue }) => {
                             if (getFieldValue('status') !== 'INCIDENT') return null;

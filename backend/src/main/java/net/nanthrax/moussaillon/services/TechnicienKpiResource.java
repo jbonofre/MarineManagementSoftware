@@ -2,6 +2,7 @@ package net.nanthrax.moussaillon.services;
 
 import java.sql.Date;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 import jakarta.enterprise.context.ApplicationScoped;
@@ -11,8 +12,9 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
-import net.nanthrax.moussaillon.persistence.TaskEntity;
 import net.nanthrax.moussaillon.persistence.TechnicienEntity;
+import net.nanthrax.moussaillon.persistence.VenteForfaitEntity;
+import net.nanthrax.moussaillon.persistence.VenteServiceEntity;
 
 @Path("/techniciens/{id}/kpi")
 @ApplicationScoped
@@ -26,7 +28,21 @@ public class TechnicienKpiResource {
             throw new WebApplicationException("Le technicien (" + id + ") n'est pas trouvé", 404);
         }
 
-        List<TaskEntity> allTasks = TaskEntity.list("technicien.id = ?1", id);
+        List<VenteForfaitEntity> allForfaits = VenteForfaitEntity.list("technicien.id = ?1", id);
+        List<VenteServiceEntity> allServices = VenteServiceEntity.list("technicien.id = ?1", id);
+
+        // Combine into a unified list of status/dates/dureeReelle
+        List<PlanningItem> allItems = new ArrayList<>();
+        for (VenteForfaitEntity vf : allForfaits) {
+            allItems.add(new PlanningItem(
+                    vf.status != null ? vf.status.name() : null,
+                    vf.dateDebut, vf.dureeReelle));
+        }
+        for (VenteServiceEntity vs : allServices) {
+            allItems.add(new PlanningItem(
+                    vs.status != null ? vs.status.name() : null,
+                    vs.dateDebut, vs.dureeReelle));
+        }
 
         LocalDate now = LocalDate.now();
         LocalDate startOfMonth = now.withDayOfMonth(1);
@@ -34,34 +50,36 @@ public class TechnicienKpiResource {
 
         TechnicienKpi kpi = new TechnicienKpi();
 
-        kpi.totalTaches = allTasks.size();
-        kpi.tachesTerminees = (int) allTasks.stream().filter(t -> t.status == TaskEntity.Status.TERMINEE).count();
-        kpi.tachesEnCours = (int) allTasks.stream().filter(t -> t.status == TaskEntity.Status.EN_COURS).count();
-        kpi.tachesEnAttente = (int) allTasks.stream().filter(t -> t.status == TaskEntity.Status.EN_ATTENTE || t.status == TaskEntity.Status.PLANIFIEE).count();
-        kpi.tachesIncident = (int) allTasks.stream().filter(t -> t.status == TaskEntity.Status.INCIDENT).count();
-        kpi.tachesAnnulees = (int) allTasks.stream().filter(t -> t.status == TaskEntity.Status.ANNULEE).count();
+        kpi.totalTaches = allItems.size();
+        kpi.tachesTerminees = (int) allItems.stream().filter(i -> "TERMINEE".equals(i.status)).count();
+        kpi.tachesEnCours = (int) allItems.stream().filter(i -> "EN_COURS".equals(i.status)).count();
+        kpi.tachesEnAttente = (int) allItems.stream().filter(i -> "EN_ATTENTE".equals(i.status) || "PLANIFIEE".equals(i.status)).count();
+        kpi.tachesIncident = (int) allItems.stream().filter(i -> "INCIDENT".equals(i.status)).count();
+        kpi.tachesAnnulees = (int) allItems.stream().filter(i -> "ANNULEE".equals(i.status)).count();
 
         kpi.tauxCompletion = kpi.totalTaches > 0 ? Math.round((double) kpi.tachesTerminees / kpi.totalTaches * 100.0 * 10) / 10.0 : 0;
         kpi.tauxIncident = kpi.totalTaches > 0 ? Math.round((double) kpi.tachesIncident / kpi.totalTaches * 100.0 * 10) / 10.0 : 0;
 
-        kpi.heuresReelles = allTasks.stream().filter(t -> t.status == TaskEntity.Status.TERMINEE).mapToDouble(t -> t.dureeReelle).sum();
+        kpi.heuresReelles = allItems.stream().filter(i -> "TERMINEE".equals(i.status)).mapToDouble(i -> i.dureeReelle).sum();
 
         // KPIs du mois
-        List<TaskEntity> tachesDuMois = allTasks.stream()
-                .filter(t -> t.dateDebut != null && !t.dateDebut.before(monthStart))
+        List<PlanningItem> itemsDuMois = allItems.stream()
+                .filter(i -> i.dateDebut != null && !i.dateDebut.before(monthStart))
                 .toList();
-        kpi.tachesMois = tachesDuMois.size();
-        kpi.tachesTermineesMois = (int) tachesDuMois.stream().filter(t -> t.status == TaskEntity.Status.TERMINEE).count();
-        kpi.heuresReellesMois = tachesDuMois.stream().filter(t -> t.status == TaskEntity.Status.TERMINEE).mapToDouble(t -> t.dureeReelle).sum();
+        kpi.tachesMois = itemsDuMois.size();
+        kpi.tachesTermineesMois = (int) itemsDuMois.stream().filter(i -> "TERMINEE".equals(i.status)).count();
+        kpi.heuresReellesMois = itemsDuMois.stream().filter(i -> "TERMINEE".equals(i.status)).mapToDouble(i -> i.dureeReelle).sum();
 
         // Retards > 48h
         Date twoDaysAgo = Date.valueOf(now.minusDays(2));
-        kpi.retards48h = (int) allTasks.stream()
-                .filter(t -> t.status == TaskEntity.Status.EN_COURS && t.dateDebut != null && t.dateDebut.before(twoDaysAgo))
+        kpi.retards48h = (int) allItems.stream()
+                .filter(i -> "EN_COURS".equals(i.status) && i.dateDebut != null && i.dateDebut.before(twoDaysAgo))
                 .count();
 
         return kpi;
     }
+
+    private record PlanningItem(String status, Date dateDebut, double dureeReelle) {}
 
     public static class TechnicienKpi {
         public int totalTaches;

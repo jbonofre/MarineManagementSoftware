@@ -52,21 +52,47 @@ interface TechnicienEntity {
     nom?: string;
 }
 
-type TaskStatus = 'EN_ATTENTE' | 'EN_COURS' | 'TERMINEE' | 'INCIDENT' | 'ANNULEE';
+type PlanningStatus = 'EN_ATTENTE' | 'PLANIFIEE' | 'EN_COURS' | 'TERMINEE' | 'INCIDENT' | 'ANNULEE';
 
 interface TaskEntity {
     id?: number;
     nom?: string;
-    status?: TaskStatus;
+    description?: string;
+    done?: boolean;
+}
+
+interface VenteForfaitEntity {
+    id?: number;
+    forfait?: ForfaitEntity;
+    quantite?: number;
+    technicien?: TechnicienEntity;
+    datePlanification?: string;
     dateDebut?: string;
     dateFin?: string;
+    status?: PlanningStatus;
     statusDate?: string;
-    description?: string;
-    notes?: string;
-    technicien?: TechnicienEntity;
     dureeReelle?: number;
     incidentDate?: string;
     incidentDetails?: string;
+    notes?: string;
+    taches?: TaskEntity[];
+}
+
+interface VenteServiceEntity {
+    id?: number;
+    service?: ServiceEntity;
+    quantite?: number;
+    technicien?: TechnicienEntity;
+    datePlanification?: string;
+    dateDebut?: string;
+    dateFin?: string;
+    status?: PlanningStatus;
+    statusDate?: string;
+    dureeReelle?: number;
+    incidentDate?: string;
+    incidentDetails?: string;
+    notes?: string;
+    taches?: TaskEntity[];
 }
 
 interface ForfaitEntity {
@@ -192,10 +218,9 @@ interface VenteEntity {
     bateau?: BateauClientEntity;
     moteur?: MoteurClientEntity;
     remorque?: RemorqueClientEntity;
-    forfaits?: ForfaitEntity[];
+    venteForfaits?: VenteForfaitEntity[];
+    venteServices?: VenteServiceEntity[];
     produits?: ProduitCatalogueEntity[];
-    services?: ServiceEntity[];
-    taches?: TaskEntity[];
     date?: string;
     montantHT?: number;
     remise?: number;
@@ -225,23 +250,35 @@ interface VenteFormValues {
     bateauId?: number;
     moteurId?: number;
     remorqueId?: number;
-    forfaits: Array<{ forfaitId?: number; quantite?: number }>;
-    produits: Array<{ produitId?: number; quantite?: number }>;
-    services: Array<{ serviceId?: number; quantite?: number }>;
-    taches: Array<{
-        id?: number;
-        nom?: string;
-        status?: TaskStatus;
+    venteForfaits: Array<{
+        forfaitId?: number;
+        quantite?: number;
+        technicienId?: number;
+        status?: PlanningStatus;
+        datePlanification?: string;
         dateDebut?: string;
         dateFin?: string;
-        statusDate?: string;
-        description?: string;
-        notes?: string;
-        technicienId?: number;
         dureeReelle?: number;
+        notes?: string;
         incidentDate?: string;
         incidentDetails?: string;
+        taches?: Array<{ nom?: string; description?: string; done?: boolean }>;
     }>;
+    venteServices: Array<{
+        serviceId?: number;
+        quantite?: number;
+        technicienId?: number;
+        status?: PlanningStatus;
+        datePlanification?: string;
+        dateDebut?: string;
+        dateFin?: string;
+        dureeReelle?: number;
+        notes?: string;
+        incidentDate?: string;
+        incidentDetails?: string;
+        taches?: Array<{ nom?: string; description?: string; done?: boolean }>;
+    }>;
+    produits: Array<{ produitId?: number; quantite?: number }>;
     date?: string;
     montantHT: number;
     remise: number;
@@ -284,8 +321,9 @@ const modePaiementOptions: Array<{ value: ModePaiement; label: string }> = [
     { value: 'ESPÈCES', label: 'Especes' }
 ];
 
-const taskStatusOptions: Array<{ value: TaskStatus; label: string }> = [
+const planningStatusOptions: Array<{ value: PlanningStatus; label: string }> = [
     { value: 'EN_ATTENTE', label: 'En attente' },
+    { value: 'PLANIFIEE', label: 'Planifiee' },
     { value: 'EN_COURS', label: 'En cours' },
     { value: 'TERMINEE', label: 'Terminee' },
     { value: 'INCIDENT', label: 'Incident' },
@@ -337,10 +375,9 @@ const toBackendDateValue = (value?: string) => {
 const defaultVente: VenteFormValues = {
     status: 'EN_ATTENTE',
     type: 'DEVIS',
-    forfaits: [{}],
+    venteForfaits: [{}],
+    venteServices: [{}],
     produits: [{}],
-    services: [{}],
-    taches: [{}],
     montantHT: 0,
     remise: 0,
     remisePourcentage: 0,
@@ -609,10 +646,10 @@ export default function Vente() {
             message.success('Service ajouté avec succès');
             setServices((prev) => [...prev, created]);
             if (newServiceTargetLine !== null && created.id) {
-                const currentLines = form.getFieldValue('services') || [];
+                const currentLines = form.getFieldValue('venteServices') || [];
                 const updated = [...currentLines];
                 updated[newServiceTargetLine] = { ...updated[newServiceTargetLine], serviceId: created.id };
-                form.setFieldValue('services', updated);
+                form.setFieldValue('venteServices', updated);
                 recalculateFromLines('auto');
             }
             setNewServiceModalVisible(false);
@@ -699,10 +736,10 @@ export default function Vente() {
             message.success('Forfait ajouté avec succès');
             setForfaits((prev) => [...prev, created]);
             if (newForfaitTargetLine !== null && created.id) {
-                const currentLines = form.getFieldValue('forfaits') || [];
+                const currentLines = form.getFieldValue('venteForfaits') || [];
                 const updated = [...currentLines];
                 updated[newForfaitTargetLine] = { ...updated[newForfaitTargetLine], forfaitId: created.id };
-                form.setFieldValue('forfaits', updated);
+                form.setFieldValue('venteForfaits', updated);
                 recalculateFromLines('auto');
             }
             setNewForfaitModalVisible(false);
@@ -735,13 +772,34 @@ export default function Vente() {
             if (vente.id) {
                 axios.get<RappelHistoriqueEntity[]>(`/rappels/vente/${vente.id}`).then(res => setRappelHistorique(res.data)).catch(() => setRappelHistorique([]));
             }
-            const forfaitLinesMap = (vente.forfaits || []).reduce((acc, item) => {
-                if (!item?.id) {
-                    return acc;
-                }
-                acc.set(item.id, (acc.get(item.id) || 0) + 1);
-                return acc;
-            }, new Map<number, number>());
+            const venteForfaitLines = (vente.venteForfaits || []).map(vf => ({
+                forfaitId: vf.forfait?.id,
+                quantite: vf.quantite || 1,
+                technicienId: vf.technicien?.id,
+                status: vf.status || 'EN_ATTENTE',
+                datePlanification: toDateInputValue(vf.datePlanification),
+                dateDebut: toDateInputValue(vf.dateDebut),
+                dateFin: toDateInputValue(vf.dateFin),
+                dureeReelle: vf.dureeReelle || 0,
+                notes: vf.notes || '',
+                incidentDate: toDateInputValue(vf.incidentDate),
+                incidentDetails: vf.incidentDetails || '',
+                taches: (vf.taches || []).map(t => ({ nom: t.nom || '', description: t.description || '', done: t.done || false })),
+            }));
+            const venteServiceLines = (vente.venteServices || []).map(vs => ({
+                serviceId: vs.service?.id,
+                quantite: vs.quantite || 1,
+                technicienId: vs.technicien?.id,
+                status: vs.status || 'EN_ATTENTE',
+                datePlanification: toDateInputValue(vs.datePlanification),
+                dateDebut: toDateInputValue(vs.dateDebut),
+                dateFin: toDateInputValue(vs.dateFin),
+                dureeReelle: vs.dureeReelle || 0,
+                notes: vs.notes || '',
+                incidentDate: toDateInputValue(vs.incidentDate),
+                incidentDetails: vs.incidentDetails || '',
+                taches: (vs.taches || []).map(t => ({ nom: t.nom || '', description: t.description || '', done: t.done || false })),
+            }));
             const produitLinesMap = (vente.produits || []).reduce((acc, item) => {
                 if (!item?.id) {
                     return acc;
@@ -749,29 +807,7 @@ export default function Vente() {
                 acc.set(item.id, (acc.get(item.id) || 0) + 1);
                 return acc;
             }, new Map<number, number>());
-            const serviceLinesMap = (vente.services || []).reduce((acc, item) => {
-                if (!item?.id) {
-                    return acc;
-                }
-                acc.set(item.id, (acc.get(item.id) || 0) + 1);
-                return acc;
-            }, new Map<number, number>());
-            const forfaitLines = Array.from(forfaitLinesMap.entries()).map(([forfaitId, quantite]) => ({ forfaitId, quantite }));
             const produitLines = Array.from(produitLinesMap.entries()).map(([produitId, quantite]) => ({ produitId, quantite }));
-            const serviceLines = Array.from(serviceLinesMap.entries()).map(([serviceId, quantite]) => ({ serviceId, quantite }));
-            const taskLines = (vente.taches || [])
-                .map<VenteFormValues['taches'][number]>((tache) => ({
-                    id: tache.id,
-                    nom: tache.nom || '',
-                    status: tache.status || 'EN_ATTENTE',
-                    dateDebut: toDateInputValue(tache.dateDebut),
-                    dateFin: toDateInputValue(tache.dateFin),
-                    statusDate: toDateInputValue(tache.statusDate),
-                    description: tache.description || '',
-                    notes: tache.notes || '',
-                    technicienId: tache.technicien?.id,
-                    dureeReelle: tache.dureeReelle || 0
-                }));
             form.setFieldsValue({
                 status: vente.status || 'EN_ATTENTE',
                 type: vente.type || 'DEVIS',
@@ -779,10 +815,9 @@ export default function Vente() {
                 bateauId: vente.bateau?.id,
                 moteurId: vente.moteur?.id,
                 remorqueId: vente.remorque?.id,
-                forfaits: [...forfaitLines, {}],
+                venteForfaits: [...venteForfaitLines, {}],
+                venteServices: [...venteServiceLines, {}],
                 produits: [...produitLines, {}],
-                services: [...serviceLines, {}],
-                taches: [...taskLines, {}],
                 date: toDateInputValue(vente.date),
                 montantHT: vente.montantHT || 0,
                 remise: vente.remise || 0,
@@ -806,38 +841,6 @@ export default function Vente() {
         setModalVisible(true);
     };
 
-    const expandByQuantity = <T,>(items: T[], quantite: number): T[] => {
-        const safeQuantity = Math.max(1, Math.floor(quantite || 1));
-        return Array.from({ length: safeQuantity }, () => items).flat();
-    };
-
-    const buildTasksFromForfaitLines = (forfaitLines: VenteFormValues['forfaits']): VenteFormValues['taches'] => {
-        const copiedTasks = (forfaitLines || [])
-            .filter((line) => line.forfaitId && (line.quantite || 0) > 0)
-            .flatMap((line) => {
-                const selectedForfait = forfaits.find((forfait) => forfait.id === line.forfaitId);
-                if (!selectedForfait?.taches?.length) {
-                    return [];
-                }
-                const tasksForOneForfait = selectedForfait.taches.map<VenteFormValues['taches'][number]>((tache) => ({
-                    // We copy values from forfait tasks into vente tasks.
-                    // IDs are omitted so the sale owns its own task rows.
-                    nom: tache.nom || '',
-                    status: tache.status || 'EN_ATTENTE',
-                    dateDebut: toDateInputValue(tache.dateDebut),
-                    dateFin: toDateInputValue(tache.dateFin),
-                    statusDate: toDateInputValue(tache.statusDate),
-                    description: tache.description || '',
-                    notes: tache.notes || '',
-                    technicienId: tache.technicien?.id,
-                    dureeReelle: tache.dureeReelle || 0
-                }));
-                return expandByQuantity(tasksForOneForfait, line.quantite || 1);
-            });
-
-        return [...copiedTasks, {}];
-    };
-
     const toPayload = (values: VenteFormValues): VenteEntity => ({
         status: values.status,
         type: values.type,
@@ -845,54 +848,45 @@ export default function Vente() {
         bateau: bateaux.find((bateau) => bateau.id === values.bateauId),
         moteur: moteurs.find((moteur) => moteur.id === values.moteurId),
         remorque: remorques.find((remorque) => remorque.id === values.remorqueId),
-        forfaits: (values.forfaits || [])
+        venteForfaits: (values.venteForfaits || [])
             .filter((line) => line.forfaitId)
-            .flatMap((line) => {
-                const item = forfaits.find((forfait) => forfait.id === line.forfaitId);
-                return item ? expandByQuantity([item], line.quantite || 1) : [];
-            }) as ForfaitEntity[],
+            .map((line) => ({
+                forfait: forfaits.find((f) => f.id === line.forfaitId),
+                quantite: line.quantite || 1,
+                technicien: techniciens.find((t) => t.id === line.technicienId),
+                datePlanification: line.datePlanification,
+                dateDebut: line.dateDebut,
+                dateFin: line.dateFin,
+                status: line.status || 'EN_ATTENTE',
+                dureeReelle: line.dureeReelle || 0,
+                notes: line.notes || '',
+                incidentDate: line.incidentDate,
+                incidentDetails: line.incidentDetails || '',
+                taches: (line.taches || []).filter((t) => t.nom?.trim()).map((t) => ({ nom: t.nom, description: t.description, done: t.done || false })),
+            })),
+        venteServices: (values.venteServices || [])
+            .filter((line) => line.serviceId)
+            .map((line) => ({
+                service: services.find((s) => s.id === line.serviceId),
+                quantite: line.quantite || 1,
+                technicien: techniciens.find((t) => t.id === line.technicienId),
+                datePlanification: line.datePlanification,
+                dateDebut: line.dateDebut,
+                dateFin: line.dateFin,
+                status: line.status || 'EN_ATTENTE',
+                dureeReelle: line.dureeReelle || 0,
+                notes: line.notes || '',
+                incidentDate: line.incidentDate,
+                incidentDetails: line.incidentDetails || '',
+                taches: (line.taches || []).filter((t) => t.nom?.trim()).map((t) => ({ nom: t.nom, description: t.description, done: t.done || false })),
+            })),
         produits: (values.produits || [])
             .filter((line) => line.produitId)
             .flatMap((line) => {
                 const item = produits.find((produit) => produit.id === line.produitId);
-                return item ? expandByQuantity([item], line.quantite || 1) : [];
+                const safeQuantity = Math.max(1, Math.floor(line.quantite || 1));
+                return item ? Array.from({ length: safeQuantity }, () => item) : [];
             }) as ProduitCatalogueEntity[],
-        services: (values.services || [])
-            .filter((line) => line.serviceId)
-            .flatMap((line) => {
-                const item = services.find((service) => service.id === line.serviceId);
-                return item ? expandByQuantity([item], line.quantite || 1) : [];
-            }) as ServiceEntity[],
-        taches: (values.taches || [])
-            .filter((tache) =>
-                Boolean(
-                    tache.nom
-                    || tache.description
-                    || tache.notes
-                    || tache.status
-                    || tache.technicienId
-                    || tache.dateDebut
-                    || tache.dateFin
-                    || tache.statusDate
-                    || (tache.dureeReelle || 0) > 0
-                    || tache.incidentDate
-                    || tache.incidentDetails
-                )
-            )
-            .map<TaskEntity>((tache) => ({
-                id: tache.id,
-                nom: tache.nom || '',
-                status: tache.status || 'EN_ATTENTE',
-                dateDebut: tache.dateDebut,
-                dateFin: tache.dateFin,
-                statusDate: tache.statusDate,
-                description: tache.description || '',
-                notes: tache.notes || '',
-                technicien: techniciens.find((technicien) => technicien.id === tache.technicienId),
-                dureeReelle: tache.dureeReelle || 0,
-                incidentDate: tache.incidentDate,
-                incidentDetails: tache.incidentDetails
-            })),
         date: toBackendDateValue(values.date),
         montantHT: values.montantHT || 0,
         remise: values.remise || 0,
@@ -976,18 +970,12 @@ export default function Vente() {
 
     const handlePrint = (vente: VenteEntity) => {
         const title = `Vente #${vente.id || '-'}`;
-        const forfaitLines = Array.from(
-            (vente.forfaits || []).reduce((acc, item) => {
-                const label = item.reference ? `${item.reference} - ${item.nom}` : item.nom;
-                const key = item.id ? `id-${item.id}` : `label-${label}`;
-                const current = acc.get(key) || { type: 'Forfait', label, quantite: 0, totalPrixTTC: 0 };
-                current.quantite += 1;
-                current.totalPrixTTC += item.prixTTC || 0;
-                acc.set(key, current);
-                return acc;
-            }, new Map<string, { type: string; label: string; quantite: number; totalPrixTTC: number }>())
-                .values()
-        );
+        const forfaitLines = (vente.venteForfaits || []).map(vf => ({
+            type: 'Forfait',
+            label: vf.forfait?.nom || '',
+            quantite: vf.quantite || 1,
+            totalPrixTTC: (vf.forfait?.prixTTC || 0) * (vf.quantite || 1)
+        }));
         const produitLines = Array.from(
             (vente.produits || []).reduce((acc, item) => {
                 const label = `${item.nom}${item.marque ? ` (${item.marque})` : ''}`;
@@ -1000,18 +988,12 @@ export default function Vente() {
             }, new Map<string, { type: string; label: string; quantite: number; totalPrixTTC: number }>())
                 .values()
         );
-        const serviceLines = Array.from(
-            (vente.services || []).reduce((acc, item) => {
-                const label = item.nom;
-                const key = item.id ? `id-${item.id}` : `label-${label}`;
-                const current = acc.get(key) || { type: 'Service', label, quantite: 0, totalPrixTTC: 0 };
-                current.quantite += 1;
-                current.totalPrixTTC += item.prixTTC || 0;
-                acc.set(key, current);
-                return acc;
-            }, new Map<string, { type: string; label: string; quantite: number; totalPrixTTC: number }>())
-                .values()
-        );
+        const serviceLines = (vente.venteServices || []).map(vs => ({
+            type: 'Service',
+            label: vs.service?.nom || '',
+            quantite: vs.quantite || 1,
+            totalPrixTTC: (vs.service?.prixTTC || 0) * (vs.quantite || 1)
+        }));
         const invoiceLines = [...forfaitLines, ...produitLines, ...serviceLines];
         const invoiceRowsHtml = invoiceLines.length > 0
             ? `
@@ -1087,18 +1069,12 @@ export default function Vente() {
             return;
         }
 
-        const forfaitLines = Array.from(
-            (vente.forfaits || []).reduce((acc, item) => {
-                const label = item.reference ? `${item.reference} - ${item.nom}` : item.nom;
-                const key = item.id ? `id-${item.id}` : `label-${label}`;
-                const current = acc.get(key) || { type: 'Forfait', label, quantite: 0, totalPrixTTC: 0 };
-                current.quantite += 1;
-                current.totalPrixTTC += item.prixTTC || 0;
-                acc.set(key, current);
-                return acc;
-            }, new Map<string, { type: string; label: string; quantite: number; totalPrixTTC: number }>())
-                .values()
-        );
+        const forfaitLines = (vente.venteForfaits || []).map(vf => ({
+            type: 'Forfait',
+            label: vf.forfait?.nom || '',
+            quantite: vf.quantite || 1,
+            totalPrixTTC: (vf.forfait?.prixTTC || 0) * (vf.quantite || 1)
+        }));
         const produitLines = Array.from(
             (vente.produits || []).reduce((acc, item) => {
                 const label = `${item.nom}${item.marque ? ` (${item.marque})` : ''}`;
@@ -1111,18 +1087,12 @@ export default function Vente() {
             }, new Map<string, { type: string; label: string; quantite: number; totalPrixTTC: number }>())
                 .values()
         );
-        const serviceLines = Array.from(
-            (vente.services || []).reduce((acc, item) => {
-                const label = item.nom;
-                const key = item.id ? `id-${item.id}` : `label-${label}`;
-                const current = acc.get(key) || { type: 'Service', label, quantite: 0, totalPrixTTC: 0 };
-                current.quantite += 1;
-                current.totalPrixTTC += item.prixTTC || 0;
-                acc.set(key, current);
-                return acc;
-            }, new Map<string, { type: string; label: string; quantite: number; totalPrixTTC: number }>())
-                .values()
-        );
+        const serviceLines = (vente.venteServices || []).map(vs => ({
+            type: 'Service',
+            label: vs.service?.nom || '',
+            quantite: vs.quantite || 1,
+            totalPrixTTC: (vs.service?.prixTTC || 0) * (vs.quantite || 1)
+        }));
         const invoiceLines = [...forfaitLines, ...produitLines, ...serviceLines];
         const formatColumn = (value: string, width: number, align: 'left' | 'right' = 'left') => {
             const truncated = value.length > width ? `${value.slice(0, width - 1)}.` : value;
@@ -1185,14 +1155,14 @@ export default function Vente() {
     ]);
 
     const recalculateFromLines = (remiseSource: 'amount' | 'percentage' | 'auto' = 'auto') => {
-        const forfaitLines = form.getFieldValue('forfaits') || [];
+        const venteForfaitLines = form.getFieldValue('venteForfaits') || [];
         const produitLines = form.getFieldValue('produits') || [];
-        const serviceLines = form.getFieldValue('services') || [];
+        const venteServiceLines = form.getFieldValue('venteServices') || [];
         let remise = form.getFieldValue('remise') || 0;
         let remisePourcentage = form.getFieldValue('remisePourcentage') || 0;
         const tva = form.getFieldValue('tva') || 0;
 
-        const forfaitsTTC = forfaitLines.reduce((sum: number, line: { forfaitId?: number; quantite?: number }) => {
+        const forfaitsTTC = venteForfaitLines.reduce((sum: number, line: { forfaitId?: number; quantite?: number }) => {
             const prixUnitaire = forfaits.find((item) => item.id === line.forfaitId)?.prixTTC || 0;
             const quantite = Math.max(1, Math.floor(line.quantite || 1));
             return sum + (prixUnitaire * quantite);
@@ -1202,7 +1172,7 @@ export default function Vente() {
             const quantite = Math.max(1, Math.floor(line.quantite || 1));
             return sum + (prixUnitaire * quantite);
         }, 0);
-        const servicesTTC = serviceLines.reduce((sum: number, line: { serviceId?: number; quantite?: number }) => {
+        const servicesTTC = venteServiceLines.reduce((sum: number, line: { serviceId?: number; quantite?: number }) => {
             const prixUnitaire = services.find((item) => item.id === line.serviceId)?.prixTTC || 0;
             const quantite = Math.max(1, Math.floor(line.quantite || 1));
             return sum + (prixUnitaire * quantite);
@@ -1231,16 +1201,28 @@ export default function Vente() {
     };
 
     const onValuesChange = (changedValues: Partial<VenteFormValues>, allValues: VenteFormValues) => {
-        if (changedValues.forfaits !== undefined) {
-            const currentForfaitLines = allValues.forfaits || [];
-            form.setFieldValue('taches', buildTasksFromForfaitLines(currentForfaitLines));
+        if (changedValues.venteForfaits !== undefined) {
+            const currentForfaitLines = allValues.venteForfaits || [];
             if (currentForfaitLines.length === 0) {
-                form.setFieldValue('forfaits', [{}]);
+                form.setFieldValue('venteForfaits', [{}]);
             } else {
+                // When a forfaitId is first set on a line, copy template taches from the catalogue forfait
+                const prevLines = form.getFieldValue('venteForfaits') || [];
+                currentForfaitLines.forEach((line, idx) => {
+                    if (line.forfaitId && (!prevLines[idx]?.taches || prevLines[idx]?.taches?.length === 0)) {
+                        const selectedForfait = forfaits.find((f) => f.id === line.forfaitId);
+                        if (selectedForfait?.taches?.length) {
+                            const taches = selectedForfait.taches.map((t) => ({ nom: t.nom || '', description: t.description || '', done: false }));
+                            const updated = [...currentForfaitLines];
+                            updated[idx] = { ...updated[idx], taches };
+                            form.setFieldValue('venteForfaits', updated);
+                        }
+                    }
+                });
                 const lastForfaitLine = currentForfaitLines[currentForfaitLines.length - 1];
                 const isLastLineComplete = !!lastForfaitLine?.forfaitId && (lastForfaitLine?.quantite || 0) > 0;
                 if (isLastLineComplete) {
-                    form.setFieldValue('forfaits', [...currentForfaitLines, {}]);
+                    form.setFieldValue('venteForfaits', [...currentForfaitLines, {}]);
                 }
             }
         }
@@ -1258,38 +1240,15 @@ export default function Vente() {
             }
         }
 
-        if (changedValues.services !== undefined) {
-            const currentServiceLines = allValues.services || [];
+        if (changedValues.venteServices !== undefined) {
+            const currentServiceLines = allValues.venteServices || [];
             if (currentServiceLines.length === 0) {
-                form.setFieldValue('services', [{}]);
+                form.setFieldValue('venteServices', [{}]);
             } else {
                 const lastServiceLine = currentServiceLines[currentServiceLines.length - 1];
                 const isLastLineComplete = !!lastServiceLine?.serviceId && (lastServiceLine?.quantite || 0) > 0;
                 if (isLastLineComplete) {
-                    form.setFieldValue('services', [...currentServiceLines, {}]);
-                }
-            }
-        }
-
-        if (changedValues.taches !== undefined) {
-            const currentTaskLines = allValues.taches || [];
-            if (currentTaskLines.length === 0) {
-                form.setFieldValue('taches', [{}]);
-            } else {
-                const lastTaskLine = currentTaskLines[currentTaskLines.length - 1];
-                const isLastLineComplete = Boolean(
-                    lastTaskLine?.nom?.trim()
-                    || lastTaskLine?.description?.trim()
-                    || lastTaskLine?.notes?.trim()
-                    || lastTaskLine?.status
-                    || lastTaskLine?.technicienId
-                    || lastTaskLine?.dateDebut
-                    || lastTaskLine?.dateFin
-                    || lastTaskLine?.statusDate
-                    || (lastTaskLine?.dureeReelle || 0) > 0
-                );
-                if (isLastLineComplete) {
-                    form.setFieldValue('taches', [...currentTaskLines, {}]);
+                    form.setFieldValue('venteServices', [...currentServiceLines, {}]);
                 }
             }
         }
@@ -1351,9 +1310,9 @@ export default function Vente() {
         }
 
         if (
-            changedValues.forfaits !== undefined ||
+            changedValues.venteForfaits !== undefined ||
             changedValues.produits !== undefined ||
-            changedValues.services !== undefined ||
+            changedValues.venteServices !== undefined ||
             changedValues.tva !== undefined ||
             changedValues.remisePourcentage !== undefined ||
             changedValues.remise !== undefined
@@ -1396,13 +1355,13 @@ export default function Vente() {
         },
         {
             title: 'Forfaits',
-            dataIndex: 'forfaits',
-            render: (values: ForfaitEntity[]) => values?.length || 0
+            dataIndex: 'venteForfaits',
+            render: (values: VenteForfaitEntity[]) => values?.length || 0
         },
         {
             title: 'Services',
-            dataIndex: 'services',
-            render: (values: ServiceEntity[]) => values?.length || 0
+            dataIndex: 'venteServices',
+            render: (values: VenteServiceEntity[]) => values?.length || 0
         },
         {
             title: 'Produits',
@@ -1616,21 +1575,21 @@ export default function Vente() {
                                 children: (
                                     <>
                                         <Form.Item label="Forfaits">
-                                            <Form.List name="forfaits">
+                                            <Form.List name="venteForfaits">
                                                 {(fields, { remove }) => (
                                                     <>
                                                         {fields.map((field) => {
-                                                            const forfaitId = form.getFieldValue(['forfaits', field.name, 'forfaitId']);
+                                                            const forfaitId = form.getFieldValue(['venteForfaits', field.name, 'forfaitId']);
                                                             const isEmptyLine = !forfaitId;
                                                             return (
-                                                            <Space key={field.key} align="baseline" style={{ display: 'flex', marginBottom: 8 }}>
+                                                            <Space key={field.key} align="baseline" style={{ display: 'flex', marginBottom: 8, flexWrap: 'wrap' }}>
                                                                 <Form.Item
                                                                     {...field}
                                                                     name={[field.name, 'forfaitId']}
                                                                     rules={[
                                                                         {
                                                                             validator: async (_, value) => {
-                                                                                const line = form.getFieldValue(['forfaits', field.name]);
+                                                                                const line = form.getFieldValue(['venteForfaits', field.name]);
                                                                                 const quantite = Number(line?.quantite || 0);
                                                                                 if (!value && quantite > 0) {
                                                                                     throw new Error('Forfait requis');
@@ -1638,7 +1597,7 @@ export default function Vente() {
                                                                             }
                                                                         }
                                                                     ]}
-                                                                    style={{ width: 520 }}
+                                                                    style={{ width: 280 }}
                                                                 >
                                                                     <Select
                                                                         allowClear
@@ -1650,24 +1609,13 @@ export default function Vente() {
                                                                         }
                                                                     />
                                                                 </Form.Item>
-                                                                <Form.Item noStyle shouldUpdate>
-                                                                    {({ getFieldValue }) => {
-                                                                        const fid = getFieldValue(['forfaits', field.name, 'forfaitId']);
-                                                                        const pu = forfaits.find((item) => item.id === fid)?.prixTTC;
-                                                                        return (
-                                                                            <Form.Item style={{ width: 150 }}>
-                                                                                <InputNumber addonAfter="EUR" value={pu ?? undefined} style={{ width: '100%' }} disabled placeholder="P.U." />
-                                                                            </Form.Item>
-                                                                        );
-                                                                    }}
-                                                                </Form.Item>
                                                                 <Form.Item
                                                                     {...field}
                                                                     name={[field.name, 'quantite']}
                                                                     rules={[
                                                                         {
                                                                             validator: async (_, value) => {
-                                                                                const line = form.getFieldValue(['forfaits', field.name]);
+                                                                                const line = form.getFieldValue(['venteForfaits', field.name]);
                                                                                 if (!line?.forfaitId && (value === undefined || value === null)) {
                                                                                     return;
                                                                                 }
@@ -1677,23 +1625,37 @@ export default function Vente() {
                                                                             }
                                                                         }
                                                                     ]}
-                                                                    style={{ width: 120 }}
+                                                                    style={{ width: 80 }}
                                                                 >
                                                                     <InputNumber min={1} step={1} style={{ width: '100%' }} placeholder="Qte" />
                                                                 </Form.Item>
-                                                                <Form.Item noStyle shouldUpdate>
-                                                                    {({ getFieldValue }) => {
-                                                                        const fid = getFieldValue(['forfaits', field.name, 'forfaitId']);
-                                                                        const quantite = getFieldValue(['forfaits', field.name, 'quantite']) || 0;
-                                                                        const prixUnitaireTTC = forfaits.find((item) => item.id === fid)?.prixTTC || 0;
-                                                                        const prixTTC = Math.round(((prixUnitaireTTC * quantite) + Number.EPSILON) * 100) / 100;
-
-                                                                        return (
-                                                                            <Form.Item style={{ width: 150 }}>
-                                                                                <InputNumber addonAfter="EUR" value={prixTTC} style={{ width: '100%' }} disabled />
-                                                                            </Form.Item>
-                                                                        );
-                                                                    }}
+                                                                <Form.Item
+                                                                    {...field}
+                                                                    name={[field.name, 'technicienId']}
+                                                                    style={{ width: 180 }}
+                                                                >
+                                                                    <Select allowClear showSearch options={technicienOptions} placeholder="Technicien" />
+                                                                </Form.Item>
+                                                                <Form.Item
+                                                                    {...field}
+                                                                    name={[field.name, 'status']}
+                                                                    style={{ width: 130 }}
+                                                                >
+                                                                    <Select allowClear options={planningStatusOptions} placeholder="Statut" />
+                                                                </Form.Item>
+                                                                <Form.Item
+                                                                    {...field}
+                                                                    name={[field.name, 'dateDebut']}
+                                                                    style={{ width: 140 }}
+                                                                >
+                                                                    <Input type="date" placeholder="Debut" />
+                                                                </Form.Item>
+                                                                <Form.Item
+                                                                    {...field}
+                                                                    name={[field.name, 'dateFin']}
+                                                                    style={{ width: 140 }}
+                                                                >
+                                                                    <Input type="date" placeholder="Fin" />
                                                                 </Form.Item>
                                                                 {isEmptyLine && (
                                                                     <Button icon={<PlusOutlined />} title="Créer un forfait" onClick={() => openNewForfaitModal(field.name)} />
@@ -1708,21 +1670,21 @@ export default function Vente() {
                                         </Form.Item>
 
                                         <Form.Item label="Services">
-                                            <Form.List name="services">
+                                            <Form.List name="venteServices">
                                                 {(fields, { remove }) => (
                                                     <>
                                                         {fields.map((field) => {
-                                                            const serviceId = form.getFieldValue(['services', field.name, 'serviceId']);
+                                                            const serviceId = form.getFieldValue(['venteServices', field.name, 'serviceId']);
                                                             const isEmptyLine = !serviceId;
                                                             return (
-                                                            <Space key={field.key} align="baseline" style={{ display: 'flex', marginBottom: 8 }}>
+                                                            <Space key={field.key} align="baseline" style={{ display: 'flex', marginBottom: 8, flexWrap: 'wrap' }}>
                                                                 <Form.Item
                                                                     {...field}
                                                                     name={[field.name, 'serviceId']}
                                                                     rules={[
                                                                         {
                                                                             validator: async (_, value) => {
-                                                                                const line = form.getFieldValue(['services', field.name]);
+                                                                                const line = form.getFieldValue(['venteServices', field.name]);
                                                                                 const quantite = Number(line?.quantite || 0);
                                                                                 if (!value && quantite > 0) {
                                                                                     throw new Error('Service requis');
@@ -1730,20 +1692,9 @@ export default function Vente() {
                                                                             }
                                                                         }
                                                                     ]}
-                                                                    style={{ width: 520 }}
+                                                                    style={{ width: 280 }}
                                                                 >
                                                                     <Select allowClear showSearch options={serviceOptions} placeholder="Service" />
-                                                                </Form.Item>
-                                                                <Form.Item noStyle shouldUpdate>
-                                                                    {({ getFieldValue }) => {
-                                                                        const sid = getFieldValue(['services', field.name, 'serviceId']);
-                                                                        const pu = services.find((item) => item.id === sid)?.prixTTC;
-                                                                        return (
-                                                                            <Form.Item style={{ width: 150 }}>
-                                                                                <InputNumber addonAfter="EUR" value={pu ?? undefined} style={{ width: '100%' }} disabled placeholder="P.U." />
-                                                                            </Form.Item>
-                                                                        );
-                                                                    }}
                                                                 </Form.Item>
                                                                 <Form.Item
                                                                     {...field}
@@ -1751,7 +1702,7 @@ export default function Vente() {
                                                                     rules={[
                                                                         {
                                                                             validator: async (_, value) => {
-                                                                                const line = form.getFieldValue(['services', field.name]);
+                                                                                const line = form.getFieldValue(['venteServices', field.name]);
                                                                                 if (!line?.serviceId && (value === undefined || value === null)) {
                                                                                     return;
                                                                                 }
@@ -1761,23 +1712,37 @@ export default function Vente() {
                                                                             }
                                                                         }
                                                                     ]}
-                                                                    style={{ width: 120 }}
+                                                                    style={{ width: 80 }}
                                                                 >
                                                                     <InputNumber min={1} step={1} style={{ width: '100%' }} placeholder="Qte" />
                                                                 </Form.Item>
-                                                                <Form.Item noStyle shouldUpdate>
-                                                                    {({ getFieldValue }) => {
-                                                                        const sid = getFieldValue(['services', field.name, 'serviceId']);
-                                                                        const quantite = getFieldValue(['services', field.name, 'quantite']) || 0;
-                                                                        const prixUnitaireTTC = services.find((item) => item.id === sid)?.prixTTC || 0;
-                                                                        const prixTTC = Math.round(((prixUnitaireTTC * quantite) + Number.EPSILON) * 100) / 100;
-
-                                                                        return (
-                                                                            <Form.Item style={{ width: 150 }}>
-                                                                                <InputNumber addonAfter="EUR" value={prixTTC} style={{ width: '100%' }} disabled />
-                                                                            </Form.Item>
-                                                                        );
-                                                                    }}
+                                                                <Form.Item
+                                                                    {...field}
+                                                                    name={[field.name, 'technicienId']}
+                                                                    style={{ width: 180 }}
+                                                                >
+                                                                    <Select allowClear showSearch options={technicienOptions} placeholder="Technicien" />
+                                                                </Form.Item>
+                                                                <Form.Item
+                                                                    {...field}
+                                                                    name={[field.name, 'status']}
+                                                                    style={{ width: 130 }}
+                                                                >
+                                                                    <Select allowClear options={planningStatusOptions} placeholder="Statut" />
+                                                                </Form.Item>
+                                                                <Form.Item
+                                                                    {...field}
+                                                                    name={[field.name, 'dateDebut']}
+                                                                    style={{ width: 140 }}
+                                                                >
+                                                                    <Input type="date" placeholder="Debut" />
+                                                                </Form.Item>
+                                                                <Form.Item
+                                                                    {...field}
+                                                                    name={[field.name, 'dateFin']}
+                                                                    style={{ width: 140 }}
+                                                                >
+                                                                    <Input type="date" placeholder="Fin" />
                                                                 </Form.Item>
                                                                 {isEmptyLine && (
                                                                     <Button icon={<PlusOutlined />} title="Créer un service" onClick={() => openNewServiceModal(field.name)} />
@@ -1961,98 +1926,6 @@ export default function Vente() {
                                     </>
                                 )
                             },
-                            {
-                                key: 'taches',
-                                label: 'Tâches Associées',
-                                children: (
-                                    <Form.List name="taches">
-                                        {(fields, { remove }) => (
-                                            <Space direction="vertical" style={{ width: '100%' }} size={12}>
-                                                {fields.map((field) => (
-                                                    <Card
-                                                        key={field.key}
-                                                        size="small"
-                                                        title={`Tâche ${field.name + 1}`}
-                                                        extra={<Button danger icon={<DeleteOutlined />} onClick={() => remove(field.name)} />}
-                                                    >
-                                                        <Row gutter={12}>
-                                                            <Col span={8}>
-                                                                <Form.Item {...field} name={[field.name, 'nom']} label="Nom">
-                                                                    <Input allowClear />
-                                                                </Form.Item>
-                                                            </Col>
-                                                            <Col span={8}>
-                                                                <Form.Item {...field} name={[field.name, 'status']} label="Statut">
-                                                                    <Select allowClear options={taskStatusOptions} placeholder="Statut" />
-                                                                </Form.Item>
-                                                            </Col>
-                                                            <Col span={8}>
-                                                                <Form.Item {...field} name={[field.name, 'technicienId']} label="Technicien">
-                                                                    <Select allowClear showSearch options={technicienOptions} placeholder="Technicien" />
-                                                                </Form.Item>
-                                                            </Col>
-                                                        </Row>
-                                                        <Row gutter={12}>
-                                                            <Col span={8}>
-                                                                <Form.Item {...field} name={[field.name, 'dateDebut']} label="Date debut">
-                                                                    <Input type="date" />
-                                                                </Form.Item>
-                                                            </Col>
-                                                            <Col span={8}>
-                                                                <Form.Item {...field} name={[field.name, 'dateFin']} label="Date fin">
-                                                                    <Input type="date" />
-                                                                </Form.Item>
-                                                            </Col>
-                                                            <Col span={8}>
-                                                                <Form.Item {...field} name={[field.name, 'statusDate']} label="Date statut">
-                                                                    <Input type="date" />
-                                                                </Form.Item>
-                                                            </Col>
-                                                        </Row>
-                                                        <Form.Item {...field} name={[field.name, 'dureeReelle']} label="Durée réelle">
-                                                            <InputNumber
-                                                                min={0}
-                                                                step={0.25}
-                                                                precision={2}
-                                                                style={{ width: '100%' }}
-                                                                addonAfter="h"
-                                                            />
-                                                        </Form.Item>
-                                                        <Form.Item {...field} name={[field.name, 'description']} label="Description">
-                                                            <Input.TextArea rows={2} />
-                                                        </Form.Item>
-                                                        <Form.Item {...field} name={[field.name, 'notes']} label="Notes">
-                                                            <Input.TextArea rows={2} />
-                                                        </Form.Item>
-                                                        <Form.Item noStyle shouldUpdate={(prev, cur) => prev?.taches?.[field.name]?.status !== cur?.taches?.[field.name]?.status}>
-                                                            {({ getFieldValue }) => {
-                                                                const status = getFieldValue(['taches', field.name, 'status']);
-                                                                if (status !== 'INCIDENT') return null;
-                                                                return (
-                                                                    <Card size="small" title="Incident" style={{ marginBottom: 12, borderColor: '#ff4d4f' }}>
-                                                                        <Row gutter={12}>
-                                                                            <Col span={8}>
-                                                                                <Form.Item {...field} name={[field.name, 'incidentDate']} label="Date de l'incident">
-                                                                                    <Input type="date" />
-                                                                                </Form.Item>
-                                                                            </Col>
-                                                                            <Col span={16}>
-                                                                                <Form.Item {...field} name={[field.name, 'incidentDetails']} label="Details de l'incident">
-                                                                                    <Input.TextArea rows={2} />
-                                                                                </Form.Item>
-                                                                            </Col>
-                                                                        </Row>
-                                                                    </Card>
-                                                                );
-                                                            }}
-                                                        </Form.Item>
-                                                    </Card>
-                                                ))}
-                                            </Space>
-                                        )}
-                                    </Form.List>
-                                )
-                            }
                         ]}
                     />
 
