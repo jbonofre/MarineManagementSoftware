@@ -642,7 +642,7 @@ export default function Planning() {
 
             <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
                 <Col span={24}>
-                    <Card size="small" title={<span>Vue semaine <Typography.Text type="secondary" style={{ fontWeight: 'normal', fontSize: 12 }}>(glisser-deposer un element depuis le tableau ci-dessous)</Typography.Text></span>}>
+                    <Card size="small" title="Vue semaine">
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
                             <Button size="small" onClick={() => setCalendarWeekStart(calendarWeekStart.subtract(7, 'day'))}>&lt; Semaine precedente</Button>
                             <Button size="small" onClick={() => setCalendarWeekStart(dayjs().startOf('week'))}>Aujourd'hui</Button>
