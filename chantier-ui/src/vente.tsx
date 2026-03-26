@@ -1869,20 +1869,14 @@ export default function Vente() {
                                                                 <Form.Item
                                                                     {...field}
                                                                     name={[field.name, 'serviceId']}
-                                                                    rules={[
-                                                                        {
-                                                                            validator: async (_, value) => {
-                                                                                const line = form.getFieldValue(['venteServices', field.name]);
-                                                                                const quantite = Number(line?.quantite || 0);
-                                                                                if (!value && quantite > 0) {
-                                                                                    throw new Error('Service requis');
-                                                                                }
-                                                                            }
-                                                                        }
-                                                                    ]}
+                                                                    hidden
+                                                                >
+                                                                    <InputNumber />
+                                                                </Form.Item>
+                                                                <Form.Item
                                                                     style={{ width: 280 }}
                                                                 >
-                                                                    <Select allowClear showSearch options={serviceOptions} placeholder="Service" />
+                                                                    <Input disabled value={services.find((s) => s.id === serviceId)?.nom || ''} placeholder="Service" />
                                                                 </Form.Item>
                                                                 <Form.Item
                                                                     {...field}
