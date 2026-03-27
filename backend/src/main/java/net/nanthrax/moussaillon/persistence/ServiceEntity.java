@@ -24,6 +24,10 @@ public class ServiceEntity extends PanacheEntity {
     @JoinColumn(name = "service_id")
     public List<ServiceProduitEntity> produits = new ArrayList<>();
 
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "service_id")
+    public List<TaskEntity> taches = new ArrayList<>();
+
     public double dureeEstimee;
 
     public double prixHT;
