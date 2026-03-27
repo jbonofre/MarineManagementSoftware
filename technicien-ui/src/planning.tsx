@@ -290,7 +290,7 @@ export default function Planning({ technicienId }: PlanningProps) {
             render: (val: string) => val || '-',
         },
         {
-            title: 'Status',
+            title: 'Statut',
             dataIndex: 'itemStatus',
             key: 'itemStatus',
             render: (val: string) => <Tag color={statusColor[val]}>{statusLabel[val] || val}</Tag>,
@@ -515,7 +515,7 @@ export default function Planning({ technicienId }: PlanningProps) {
                         <Col span={12}>
                             <Form.Item
                                 name="status"
-                                label="Status"
+                                label="Statut"
                                 rules={[{ required: true, message: 'Le statut est requis' }]}
                             >
                                 <Select options={taskStatusOptions} disabled />

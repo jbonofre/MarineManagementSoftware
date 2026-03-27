@@ -1828,7 +1828,7 @@ export default function Vente() {
                                                                     name={[field.name, 'status']}
                                                                     style={{ width: 130 }}
                                                                 >
-                                                                    <Select allowClear options={planningStatusOptions} placeholder="Status" />
+                                                                    <Select allowClear options={planningStatusOptions} placeholder="Statut" />
                                                                 </Form.Item>
                                                                 <Form.Item
                                                                     {...field}
@@ -1921,7 +1921,7 @@ export default function Vente() {
                                                                     name={[field.name, 'status']}
                                                                     style={{ width: 130 }}
                                                                 >
-                                                                    <Select allowClear options={planningStatusOptions} placeholder="Status" />
+                                                                    <Select allowClear options={planningStatusOptions} placeholder="Statut" />
                                                                 </Form.Item>
                                                                 <Form.Item
                                                                     {...field}
