@@ -1,13 +1,11 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Badge, Button, Card, Col, Empty, Form, Input, Modal, Row, Select, Space, Table, Tag, Typography, message } from 'antd';
-import { CalendarOutlined, EditOutlined } from '@ant-design/icons';
+import { CalendarOutlined, EditOutlined, EyeOutlined, WarningOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import dayjs from 'dayjs';
-import { WeeklyCalendar } from 'antd-weekly-calendar';
-import { useHistory } from 'react-router-dom';
 
 type VenteType = 'DEVIS' | 'FACTURE' | 'COMPTOIR';
-type TaskStatus = 'EN_ATTENTE' | 'PLANIFIEE' | 'EN_COURS' | 'TERMINEE' | 'INCIDENT' | 'ANNULEE';
+type PlanningStatus = 'EN_ATTENTE' | 'PLANIFIEE' | 'EN_COURS' | 'TERMINEE' | 'INCIDENT' | 'ANNULEE';
 
 interface ClientEntity {
     id: number;
@@ -19,31 +17,39 @@ interface TechnicienEntity {
     id: number;
     prenom?: string;
     nom?: string;
-}
-
-interface TaskEntity {
-    id?: number;
-    nom?: string;
-    status?: TaskStatus;
-    dateDebut?: string;
-    dateFin?: string;
-    statusDate?: string;
-    dureeEstimee?: number;
-    technicien?: TechnicienEntity;
-    incidentDate?: string;
-    incidentDetails?: string;
-}
-
-interface ForfaitEntity {
-    id: number;
+    couleur?: string;
 }
 
 interface ProduitCatalogueEntity {
     id: number;
 }
 
-interface ServiceEntity {
-    id: number;
+interface VenteForfaitEntry {
+    id?: number;
+    forfait?: { id: number; nom: string; dureeEstimee?: number };
+    quantite?: number;
+    technicien?: TechnicienEntity;
+    datePlanification?: string;
+    dateDebut?: string;
+    dateFin?: string;
+    status?: PlanningStatus;
+    statusDate?: string;
+    dureeReelle?: number;
+    notes?: string;
+}
+
+interface VenteServiceEntry {
+    id?: number;
+    service?: { id: number; nom: string; dureeEstimee?: number };
+    quantite?: number;
+    technicien?: TechnicienEntity;
+    datePlanification?: string;
+    dateDebut?: string;
+    dateFin?: string;
+    status?: PlanningStatus;
+    statusDate?: string;
+    dureeReelle?: number;
+    notes?: string;
 }
 
 interface VenteEntity {
@@ -51,40 +57,62 @@ interface VenteEntity {
     status: string;
     type?: VenteType;
     client?: ClientEntity;
-    forfaits?: ForfaitEntity[];
+    bateau?: { id: number; name?: string };
     produits?: ProduitCatalogueEntity[];
-    services?: ServiceEntity[];
-    taches?: TaskEntity[];
+    venteForfaits?: VenteForfaitEntry[];
+    venteServices?: VenteServiceEntry[];
     date?: string;
     prixVenteTTC?: number;
     modePaiement?: string;
+}
+
+interface PlanningItem {
+    id?: number;
+    type: 'forfait' | 'service';
+    nom: string;
+    technicien?: TechnicienEntity;
+    datePlanification?: string;
+    dateDebut?: string;
+    dateFin?: string;
+    status?: PlanningStatus;
+    statusDate?: string;
+    dureeEstimee?: number;
+    dureeReelle?: number;
+    quantite?: number;
+    venteId?: number;
+    clientNom?: string;
+    bateauNom?: string;
 }
 
 interface PlanningFormValues {
     date: string;
     dateDebut?: string;
     dateFin?: string;
-    status: TaskStatus;
+    dureeReelle?: number;
+    status: PlanningStatus;
     technicienId?: number;
+    incidentDate?: string;
+    incidentDetails?: string;
 }
 
-interface WeeklyCalendarEvent {
+interface CalendarEvent {
     eventId: string;
     startTime: Date;
-    endTime: Date;
     title: string;
     backgroundColor?: string;
     textColor?: string;
+    dureeEstimee?: number;
 }
 
-interface PendingTaskRow {
+interface PlanningItemRow {
     key: string;
     vente: VenteEntity;
-    task: TaskEntity;
-    taskIndex: number;
+    item: PlanningItem;
+    itemType: 'forfait' | 'service';
+    itemIndex: number;
 }
 
-const taskStatusOptions: Array<{ value: TaskStatus; label: string }> = [
+const statusOptions: Array<{ value: PlanningStatus; label: string }> = [
     { value: 'EN_ATTENTE', label: 'En attente' },
     { value: 'PLANIFIEE', label: 'Planifiee' },
     { value: 'EN_COURS', label: 'En cours' },
@@ -99,7 +127,7 @@ const typeOptions: Array<{ value: VenteType; label: string }> = [
     { value: 'COMPTOIR', label: 'Comptoir' }
 ];
 
-const statusColor: Record<TaskStatus, string> = {
+const statusColor: Record<PlanningStatus, string> = {
     EN_ATTENTE: 'default',
     PLANIFIEE: 'cyan',
     EN_COURS: 'blue',
@@ -155,25 +183,108 @@ const getTechnicienColor = (technicien?: TechnicienEntity) => {
     if (!technicien?.id) {
         return '#8c8c8c';
     }
+    if (technicien.couleur) {
+        return technicien.couleur;
+    }
     const index = Math.abs(technicien.id) % technicienPalette.length;
     return technicienPalette[index];
 };
 
+const buildPlanningItems = (ventes: VenteEntity[]): PlanningItemRow[] => {
+    const rows: PlanningItemRow[] = [];
+    for (const vente of ventes) {
+        const clientNom = vente.client ? `${vente.client.prenom || ''} ${vente.client.nom}`.trim() : '';
+        const bateauNom = vente.bateau?.name;
+
+        for (let i = 0; i < (vente.venteForfaits || []).length; i++) {
+            const vf = vente.venteForfaits![i];
+            const item: PlanningItem = {
+                id: vf.id,
+                type: 'forfait',
+                nom: vf.forfait?.nom || '',
+                technicien: vf.technicien,
+                datePlanification: vf.datePlanification,
+                dateDebut: vf.dateDebut,
+                dateFin: vf.dateFin,
+                status: vf.status,
+                statusDate: vf.statusDate,
+                dureeEstimee: vf.forfait?.dureeEstimee,
+                dureeReelle: vf.dureeReelle,
+                quantite: vf.quantite,
+                venteId: vente.id,
+                clientNom,
+                bateauNom,
+            };
+            rows.push({
+                key: `vf-${vente.id}-${vf.id || i}-${i}`,
+                vente,
+                item,
+                itemType: 'forfait',
+                itemIndex: i,
+            });
+        }
+
+        for (let i = 0; i < (vente.venteServices || []).length; i++) {
+            const vs = vente.venteServices![i];
+            const item: PlanningItem = {
+                id: vs.id,
+                type: 'service',
+                nom: vs.service?.nom || '',
+                technicien: vs.technicien,
+                datePlanification: vs.datePlanification,
+                dateDebut: vs.dateDebut,
+                dateFin: vs.dateFin,
+                status: vs.status,
+                statusDate: vs.statusDate,
+                dureeEstimee: vs.service?.dureeEstimee,
+                dureeReelle: vs.dureeReelle,
+                quantite: vs.quantite,
+                venteId: vente.id,
+                clientNom,
+                bateauNom,
+            };
+            rows.push({
+                key: `vs-${vente.id}-${vs.id || i}-${i}`,
+                vente,
+                item,
+                itemType: 'service',
+                itemIndex: i,
+            });
+        }
+    }
+    return rows;
+};
+
 export default function Planning() {
-    const history = useHistory();
     const [ventes, setVentes] = useState<VenteEntity[]>([]);
     const [techniciens, setTechniciens] = useState<TechnicienEntity[]>([]);
     const [loading, setLoading] = useState(false);
     const [selectedDate, setSelectedDate] = useState(todayIso());
-    const [selectedStatus, setSelectedStatus] = useState<TaskStatus | undefined>(undefined);
+    const [selectedStatus, setSelectedStatus] = useState<PlanningStatus | undefined>(undefined);
     const [selectedTechnicien, setSelectedTechnicien] = useState<number | undefined>(undefined);
     const [modalVisible, setModalVisible] = useState(false);
     const [saving, setSaving] = useState(false);
-    const [currentTaskRow, setCurrentTaskRow] = useState<PendingTaskRow | null>(null);
+    const [currentRow, setCurrentRow] = useState<PlanningItemRow | null>(null);
     const [form] = Form.useForm<PlanningFormValues>();
     const calendarRef = useRef<HTMLDivElement>(null);
-    const draggedTaskRef = useRef<PendingTaskRow | null>(null);
+    const draggedRowRef = useRef<PlanningItemRow | null>(null);
     const [dragOverDay, setDragOverDay] = useState<string | null>(null);
+    const [prestationModalVisible, setPrestationModalVisible] = useState(false);
+    const [prestationVente, setPrestationVente] = useState<VenteEntity | null>(null);
+    const [prestationLoading, setPrestationLoading] = useState(false);
+
+    const openPrestationModal = async (venteId: number) => {
+        setPrestationModalVisible(true);
+        setPrestationLoading(true);
+        try {
+            const res = await axios.get(`/ventes/${venteId}`);
+            setPrestationVente(res.data);
+        } catch {
+            message.error('Erreur lors du chargement de la prestation.');
+        } finally {
+            setPrestationLoading(false);
+        }
+    };
     const [calendarWeekStart, setCalendarWeekStart] = useState<dayjs.Dayjs>(dayjs().startOf('week'));
 
     const fetchVentes = async () => {
@@ -211,110 +322,93 @@ export default function Planning() {
         [techniciens]
     );
 
-    const openPlanningModal = (taskRow: PendingTaskRow, forcedDate?: string) => {
-        setCurrentTaskRow(taskRow);
+    const openPlanningModal = (row: PlanningItemRow, forcedDate?: string) => {
+        setCurrentRow(row);
         form.setFieldsValue({
             date:
-                toDateTimeLocalValue(taskRow.task.statusDate)
+                toDateTimeLocalValue(row.item.statusDate)
                 || (forcedDate ? `${forcedDate}T08:00` : undefined)
                 || `${selectedDate || todayIso()}T08:00`,
-            dateDebut: taskRow.task.dateDebut || undefined,
-            dateFin: taskRow.task.dateFin || undefined,
-            status: taskRow.task.status === 'EN_ATTENTE' ? 'PLANIFIEE' : (taskRow.task.status || 'PLANIFIEE'),
-            technicienId: taskRow.task.technicien?.id,
-            incidentDate: taskRow.task.incidentDate,
-            incidentDetails: taskRow.task.incidentDetails
+            dateDebut: toDateTimeLocalValue(row.item.dateDebut) || undefined,
+            dateFin: toDateTimeLocalValue(row.item.dateFin) || undefined,
+            dureeReelle: row.item.dureeReelle,
+            status: row.item.status === 'EN_ATTENTE' ? 'PLANIFIEE' : (row.item.status || 'PLANIFIEE'),
+            technicienId: row.item.technicien?.id,
         });
         setModalVisible(true);
     };
 
-    const getDropDate = (clientX: number): string | undefined => {
-        const container = calendarRef.current;
-        if (!container) return undefined;
-        const headerCells = container.querySelectorAll<HTMLElement>('.ant-table-thead th');
-        if (headerCells.length < 2) return undefined;
-        // Skip column 0 (time gutter), remaining columns are days starting from Sunday (week start)
-        const dayCells = Array.from(headerCells).slice(1);
-        for (let i = 0; i < dayCells.length; i++) {
-            const rect = dayCells[i].getBoundingClientRect();
-            if (clientX >= rect.left && clientX <= rect.right) {
-                return calendarWeekStart.add(i, 'day').format('YYYY-MM-DD');
-            }
-        }
-        return undefined;
-    };
 
-    const handleCalendarDragOver = (e: React.DragEvent) => {
-        e.preventDefault();
-        e.dataTransfer.dropEffect = 'move';
-        const day = getDropDate(e.clientX);
-        setDragOverDay(day || null);
-    };
-
-    const handleCalendarDragLeave = () => {
-        setDragOverDay(null);
-    };
-
-    const handleCalendarDrop = (e: React.DragEvent) => {
-        e.preventDefault();
-        setDragOverDay(null);
-        const taskRow = draggedTaskRef.current;
-        draggedTaskRef.current = null;
-        if (!taskRow) return;
-        const day = getDropDate(e.clientX);
-        if (day) {
-            openPlanningModal(taskRow, day);
-        }
-    };
-
-    const allTasks = useMemo<PendingTaskRow[]>(
-        () =>
-            ventes.flatMap((vente, venteIndex) =>
-                (vente.taches || []).map((task, taskIndex) => ({
-                    key: `${vente.id || venteIndex}-${task.id || taskIndex}-${taskIndex}`,
-                    vente,
-                    task,
-                    taskIndex
-                }))
-            ),
+    const allItems = useMemo<PlanningItemRow[]>(
+        () => buildPlanningItems(ventes),
         [ventes]
     );
 
-    const matchesTechnicien = (row: PendingTaskRow) =>
-        !selectedTechnicien || row.task.technicien?.id === selectedTechnicien;
+    const matchesTechnicien = (row: PlanningItemRow) =>
+        !selectedTechnicien || row.item.technicien?.id === selectedTechnicien;
 
-    const pendingTasks = useMemo<PendingTaskRow[]>(
+    const pendingItems = useMemo<PlanningItemRow[]>(
         () =>
-            allTasks
-                .filter((row) => !row.task.status || row.task.status === 'EN_ATTENTE')
-                .filter((row) => !selectedStatus || row.task.status === selectedStatus)
+            allItems
+                .filter((row) => !row.item.status || row.item.status === 'EN_ATTENTE')
+                .filter((row) => !selectedStatus || row.item.status === selectedStatus)
                 .filter(matchesTechnicien),
-        [allTasks, selectedStatus, selectedTechnicien]
+        [allItems, selectedStatus, selectedTechnicien]
     );
 
-    const pendingTasksForDay = useMemo<PendingTaskRow[]>(
-        () => pendingTasks.filter((row) => toIsoDay(row.task.statusDate) === selectedDate),
-        [pendingTasks, selectedDate]
+    const pendingItemsForDay = useMemo<PlanningItemRow[]>(
+        () => pendingItems.filter((row) => toIsoDay(row.item.statusDate) === selectedDate),
+        [pendingItems, selectedDate]
     );
 
-    const plannedTasks = useMemo<PendingTaskRow[]>(
+    const plannedItems = useMemo<PlanningItemRow[]>(
         () =>
-            allTasks
-                .filter((row) => row.task.status === 'PLANIFIEE' || row.task.status === 'EN_COURS')
-                .filter((row) => toIsoDay(row.task.statusDate) === selectedDate)
-                .filter((row) => !selectedStatus || row.task.status === selectedStatus)
+            allItems
+                .filter((row) => row.item.status === 'PLANIFIEE' || row.item.status === 'EN_COURS')
+                .filter((row) => (toIsoDay(row.item.statusDate) || toIsoDay(row.item.datePlanification)) === selectedDate)
+                .filter((row) => !selectedStatus || row.item.status === selectedStatus)
                 .filter(matchesTechnicien),
-        [allTasks, selectedDate, selectedStatus, selectedTechnicien]
+        [allItems, selectedDate, selectedStatus, selectedTechnicien]
     );
 
-    const weeklyEvents = useMemo<WeeklyCalendarEvent[]>(
+    const lateItems = useMemo<PlanningItemRow[]>(
+        () => {
+            const now = dayjs();
+            return allItems
+                .filter((row) => row.item.status === 'PLANIFIEE' || row.item.status === 'EN_COURS')
+                .filter((row) => {
+                    const planned = row.item.statusDate ? dayjs(row.item.statusDate) : null;
+                    return planned && planned.isValid() && planned.isBefore(now);
+                })
+                .filter(matchesTechnicien);
+        },
+        [allItems, selectedTechnicien]
+    );
+
+    const enCoursItems = useMemo<PlanningItemRow[]>(
         () =>
-            allTasks
-                .filter((row) => row.task.status === 'PLANIFIEE' || row.task.status === 'EN_COURS')
+            allItems
+                .filter((row) => row.item.status === 'EN_COURS')
+                .filter(matchesTechnicien),
+        [allItems, selectedTechnicien]
+    );
+
+    const termineeItems = useMemo<PlanningItemRow[]>(
+        () =>
+            allItems
+                .filter((row) => row.item.status === 'TERMINEE')
+                .filter(matchesTechnicien),
+        [allItems, selectedTechnicien]
+    );
+
+    const weeklyEvents = useMemo<CalendarEvent[]>(
+        () =>
+            allItems
+                .filter((row) => row.item.status === 'PLANIFIEE' || row.item.status === 'EN_COURS')
                 .filter(matchesTechnicien)
                 .map((row) => {
-                    const { vente, task } = row;
-                    const startSource = task.dateDebut || task.statusDate || vente.date;
+                    const { vente, item } = row;
+                    const startSource = item.dateDebut || item.statusDate || vente.date;
                     if (!startSource) {
                         return null;
                     }
@@ -323,94 +417,126 @@ export default function Planning() {
                         return null;
                     }
 
-                    const endSource = task.dateFin;
-                    const estimatedDurationMinutes = Math.max(
-                        1,
-                        Math.round(((task.dureeEstimee || 0) > 0 ? (task.dureeEstimee || 0) * 60 : 60))
-                    );
-                    const endDate = endSource && dayjs(endSource).isValid()
-                        ? dayjs(endSource)
-                        : startDate.add(estimatedDurationMinutes, 'minute');
+                    const typeLabel = item.type === 'forfait' ? 'Forfait' : 'Service';
 
                     return {
                         eventId: row.key,
                         startTime: startDate.toDate(),
-                        endTime: endDate.toDate(),
-                        title: `#${vente.id} ${task.nom || 'Tache sans nom'} (${getClientLabel(vente.client)})`,
-                        backgroundColor: getTechnicienColor(task.technicien),
-                        textColor: '#ffffff'
-                    } as WeeklyCalendarEvent;
+                        title: `#${vente.id} [${typeLabel}] ${item.nom || 'Sans nom'} (${getClientLabel(vente.client)})`,
+                        backgroundColor: getTechnicienColor(item.technicien),
+                        textColor: '#ffffff',
+                        dureeEstimee: item.dureeEstimee,
+                    } as CalendarEvent;
                 })
-                .filter(Boolean) as WeeklyCalendarEvent[],
-        [allTasks, selectedTechnicien]
+                .filter(Boolean) as CalendarEvent[],
+        [allItems, selectedTechnicien]
     );
 
     const handleSavePlanning = async () => {
-        if (!currentTaskRow?.vente?.id) {
+        if (!currentRow?.vente?.id) {
             return;
         }
         try {
             const values = await form.validateFields();
             setSaving(true);
-            const venteId = currentTaskRow.vente.id;
+            const venteId = currentRow.vente.id;
             const latestVenteResponse = await axios.get(`/ventes/${venteId}`);
-            const latestVente = (latestVenteResponse.data || currentTaskRow.vente) as VenteEntity;
-            const latestTasks = [...(latestVente.taches || [])];
+            const latestVente = (latestVenteResponse.data || currentRow.vente) as VenteEntity;
 
-            let taskToUpdateIndex = -1;
-            if (currentTaskRow.task.id !== undefined && currentTaskRow.task.id !== null) {
-                taskToUpdateIndex = latestTasks.findIndex((task) => task.id === currentTaskRow.task.id);
+            const listKey = currentRow.itemType === 'forfait' ? 'venteForfaits' : 'venteServices';
+            const latestList = [...(latestVente[listKey] || [])];
+
+            let itemToUpdateIndex = -1;
+            if (currentRow.item.id !== undefined && currentRow.item.id !== null) {
+                itemToUpdateIndex = latestList.findIndex((entry: VenteForfaitEntry | VenteServiceEntry) => entry.id === currentRow.item.id);
             }
-            if (taskToUpdateIndex < 0) {
-                taskToUpdateIndex = Math.min(currentTaskRow.taskIndex, latestTasks.length - 1);
+            if (itemToUpdateIndex < 0) {
+                itemToUpdateIndex = Math.min(currentRow.itemIndex, latestList.length - 1);
             }
-            if (taskToUpdateIndex < 0 || !latestTasks[taskToUpdateIndex]) {
-                message.error("Impossible de trouver la tâche à mettre à jour.");
+            if (itemToUpdateIndex < 0 || !latestList[itemToUpdateIndex]) {
+                message.error("Impossible de trouver l'element a mettre a jour.");
                 return;
             }
 
-            latestTasks[taskToUpdateIndex] = {
-                ...latestTasks[taskToUpdateIndex],
+            latestList[itemToUpdateIndex] = {
+                ...latestList[itemToUpdateIndex],
                 status: values.status,
                 statusDate: values.date,
-                dateDebut: values.dateDebut || latestTasks[taskToUpdateIndex].dateDebut,
-                dateFin: values.dateFin || latestTasks[taskToUpdateIndex].dateFin,
+                dateDebut: values.dateDebut || latestList[itemToUpdateIndex].dateDebut,
+                dateFin: values.dateFin || latestList[itemToUpdateIndex].dateFin,
+                dureeReelle: values.dureeReelle,
                 technicien: techniciens.find((technicien) => technicien.id === values.technicienId),
-                incidentDate: values.status === 'INCIDENT' ? values.incidentDate : latestTasks[taskToUpdateIndex].incidentDate,
-                incidentDetails: values.status === 'INCIDENT' ? values.incidentDetails : latestTasks[taskToUpdateIndex].incidentDetails
             };
 
             const updatedVente: VenteEntity = {
                 ...latestVente,
-                taches: latestTasks
+                [listKey]: latestList
             };
 
             const res = await axios.put(`/ventes/${venteId}`, updatedVente);
-            message.success('Planning de la tâche mis a jour.');
+            message.success('Planning mis a jour.');
             const savedVente = res.data as VenteEntity;
-            const savedTask = (savedVente.taches || [])[taskToUpdateIndex] || latestTasks[taskToUpdateIndex];
-            setCurrentTaskRow({ ...currentTaskRow, vente: savedVente, task: savedTask });
+            const savedList = savedVente[listKey] || [];
+            const savedEntry = savedList[itemToUpdateIndex] || latestList[itemToUpdateIndex];
+
+            const clientNom = savedVente.client ? `${savedVente.client.prenom || ''} ${savedVente.client.nom}`.trim() : '';
+            const bateauNom = savedVente.bateau?.name;
+            const savedItem: PlanningItem = currentRow.itemType === 'forfait'
+                ? {
+                    id: (savedEntry as VenteForfaitEntry).id,
+                    type: 'forfait',
+                    nom: (savedEntry as VenteForfaitEntry).forfait?.nom || '',
+                    technicien: savedEntry.technicien,
+                    datePlanification: savedEntry.datePlanification,
+                    dateDebut: savedEntry.dateDebut,
+                    dateFin: savedEntry.dateFin,
+                    status: savedEntry.status,
+                    statusDate: savedEntry.statusDate,
+                    dureeEstimee: (savedEntry as VenteForfaitEntry).forfait?.dureeEstimee,
+                    dureeReelle: savedEntry.dureeReelle,
+                    quantite: savedEntry.quantite,
+                    venteId: savedVente.id,
+                    clientNom,
+                    bateauNom,
+                }
+                : {
+                    id: (savedEntry as VenteServiceEntry).id,
+                    type: 'service',
+                    nom: (savedEntry as VenteServiceEntry).service?.nom || '',
+                    technicien: savedEntry.technicien,
+                    datePlanification: savedEntry.datePlanification,
+                    dateDebut: savedEntry.dateDebut,
+                    dateFin: savedEntry.dateFin,
+                    status: savedEntry.status,
+                    statusDate: savedEntry.statusDate,
+                    dureeEstimee: (savedEntry as VenteServiceEntry).service?.dureeEstimee,
+                    dureeReelle: savedEntry.dureeReelle,
+                    quantite: savedEntry.quantite,
+                    venteId: savedVente.id,
+                    clientNom,
+                    bateauNom,
+                };
+
+            setCurrentRow({ ...currentRow, vente: savedVente, item: savedItem });
             form.setFieldsValue({
-                date: toDateTimeLocalValue(savedTask.statusDate) || values.date,
-                dateDebut: savedTask.dateDebut || values.dateDebut,
-                dateFin: savedTask.dateFin || values.dateFin,
-                status: savedTask.status || values.status,
-                technicienId: savedTask.technicien?.id || values.technicienId,
-                incidentDate: savedTask.incidentDate,
-                incidentDetails: savedTask.incidentDetails,
+                date: toDateTimeLocalValue(savedEntry.statusDate) || values.date,
+                dateDebut: savedEntry.dateDebut || values.dateDebut,
+                dateFin: savedEntry.dateFin || values.dateFin,
+                dureeReelle: savedEntry.dureeReelle ?? values.dureeReelle,
+                status: savedEntry.status || values.status,
+                technicienId: savedEntry.technicien?.id || values.technicienId,
             });
             fetchVentes();
         } catch (error) {
             const formError = error as { errorFields?: unknown[] };
             if (Array.isArray(formError.errorFields) && formError.errorFields.length > 0) {
-                // Les erreurs de validation sont affichees par le formulaire.
                 return;
             }
             if (axios.isAxiosError(error)) {
-                message.error(error.response?.data?.message || "Erreur lors de la mise à jour de la tâche.");
+                message.error(error.response?.data?.message || "Erreur lors de la mise a jour.");
                 return;
             }
-            message.error("Erreur lors de la mise à jour de la tâche.");
+            message.error("Erreur lors de la mise a jour.");
         } finally {
             setSaving(false);
         }
@@ -418,63 +544,82 @@ export default function Planning() {
 
     const commonColumns = [
         {
-            title: 'Vente',
-            dataIndex: 'id',
-            render: (_: unknown, record: PendingTaskRow) => `#${record.vente.id}`
+            title: 'Bateau',
+            key: 'bateau',
+            render: (_: unknown, record: PlanningItemRow) => record.item.bateauNom || '-'
         },
         {
             title: 'Client',
             dataIndex: 'client',
-            render: (_: unknown, record: PendingTaskRow) => getClientLabel(record.vente.client)
+            render: (_: unknown, record: PlanningItemRow) => getClientLabel(record.vente.client)
         },
         {
             title: 'Type',
-            dataIndex: 'type',
-            render: (_: unknown, record: PendingTaskRow) => typeOptions.find((item) => item.value === record.vente.type)?.label || record.vente.type || '-'
+            key: 'itemType',
+            render: (_: unknown, record: PlanningItemRow) => (
+                <Tag color={record.item.type === 'forfait' ? 'purple' : 'geekblue'}>
+                    {record.item.type === 'forfait' ? 'Forfait' : 'Service'}
+                </Tag>
+            )
         },
         {
-            title: 'Statut tâche',
-            dataIndex: 'taskStatus',
-            render: (_: unknown, record: PendingTaskRow) => {
-                const status = record.task.status || 'EN_ATTENTE';
-                const label = taskStatusOptions.find((item) => item.value === status)?.label || status;
+            title: 'Statut',
+            dataIndex: 'itemStatus',
+            render: (_: unknown, record: PlanningItemRow) => {
+                const status = record.item.status || 'EN_ATTENTE';
+                const label = statusOptions.find((item) => item.value === status)?.label || status;
                 return <Tag color={statusColor[status] || 'default'}>{label}</Tag>;
             }
         },
         {
-            title: 'Tâche',
-            key: 'taskName',
-            render: (_: unknown, record: PendingTaskRow) => record.task.nom || '(Sans nom)'
+            title: 'Nom',
+            key: 'itemName',
+            render: (_: unknown, record: PlanningItemRow) => record.item.nom || '(Sans nom)'
         },
         {
             title: 'Debut',
             key: 'dateDebut',
-            render: (_: unknown, record: PendingTaskRow) => record.task.dateDebut ? dayjs(record.task.dateDebut).format('DD/MM/YYYY') : '-'
+            render: (_: unknown, record: PlanningItemRow) => record.item.dateDebut ? dayjs(record.item.dateDebut).format('DD/MM/YYYY HH:mm') : '-'
         },
         {
             title: 'Fin',
             key: 'dateFin',
-            render: (_: unknown, record: PendingTaskRow) => record.task.dateFin ? dayjs(record.task.dateFin).format('DD/MM/YYYY') : '-'
+            render: (_: unknown, record: PlanningItemRow) => record.item.dateFin ? dayjs(record.item.dateFin).format('DD/MM/YYYY HH:mm') : '-'
+        },
+        {
+            title: 'Durée',
+            key: 'duree',
+            render: (_: unknown, record: PlanningItemRow) => {
+                const estimee = record.item.dureeEstimee;
+                const reelle = record.item.dureeReelle;
+                const overrun = estimee != null && reelle != null && reelle > estimee;
+                return (
+                    <span style={overrun ? { color: '#fa541c', fontWeight: 600 } : undefined}>
+                        {reelle != null ? `${reelle}h` : '-'} / {estimee != null ? `${estimee}h` : '-'}
+                        {overrun && <WarningOutlined style={{ marginLeft: 6, color: '#fa541c' }} title="Durée réelle supérieure à la durée estimée" />}
+                    </span>
+                );
+            }
         }
     ];
 
-    const pendingTaskColumns = [
+    const pendingColumns = [
         ...commonColumns,
         {
             title: 'Date statut',
             key: 'statusDate',
-            render: (_: unknown, record: PendingTaskRow) => toIsoDay(record.task.statusDate) || '-'
+            render: (_: unknown, record: PlanningItemRow) => toIsoDay(record.item.statusDate) || '-'
         },
         {
             title: 'Actions',
             key: 'actions',
-            render: (_: unknown, record: PendingTaskRow) => (
+            render: (_: unknown, record: PlanningItemRow) => (
                 <Space>
                     <Button type="primary" icon={<CalendarOutlined />} onClick={() => openPlanningModal(record, selectedDate)}>
                         Planifier
                     </Button>
                     {record.vente.id ? (
-                        <Button onClick={() => history.push(`/prestations?venteId=${record.vente.id}`)}>
+                        <Button icon={<EyeOutlined />} onClick={() => openPrestationModal(record.vente.id!)}>
                             Voir prestation
                         </Button>
                     ) : (
@@ -490,15 +635,22 @@ export default function Planning() {
         {
             title: 'Date statut',
             key: 'statusDate',
-            render: (_: unknown, record: PendingTaskRow) => toIsoDay(record.task.statusDate) || '-'
+            render: (_: unknown, record: PlanningItemRow) => toIsoDay(record.item.statusDate) || '-'
         },
         {
             title: 'Actions',
             key: 'actions',
-            render: (_: unknown, record: PendingTaskRow) => (
-                <Button icon={<EditOutlined />} onClick={() => openPlanningModal(record)}>
-                    Replanifier
-                </Button>
+            render: (_: unknown, record: PlanningItemRow) => (
+                <Space>
+                    <Button icon={<EditOutlined />} onClick={() => openPlanningModal(record)}>
+                        Replanifier
+                    </Button>
+                    {record.vente.id && (
+                        <Button icon={<EyeOutlined />} onClick={() => openPrestationModal(record.vente.id!)}>
+                            Voir prestation
+                        </Button>
+                    )}
+                </Space>
             )
         }
     ];
@@ -512,8 +664,8 @@ export default function Planning() {
                             <Input type="date" value={selectedDate} onChange={(event) => setSelectedDate(event.target.value || todayIso())} />
                             <Select
                                 allowClear
-                                options={taskStatusOptions}
-                                placeholder="Tous les statuts de tâche"
+                                options={statusOptions}
+                                placeholder="Tous les statuts"
                                 value={selectedStatus}
                                 onChange={(value) => setSelectedStatus(value)}
                                 style={{ width: '100%' }}
@@ -540,13 +692,13 @@ export default function Planning() {
                                 <Badge status="processing" /> Date: <strong>{selectedDate}</strong>
                             </div>
                             <div>
-                                <Badge status="success" /> Planifiees (jour): <strong>{plannedTasks.length}</strong>
+                                <Badge status="success" /> Planifiees (jour): <strong>{plannedItems.length}</strong>
                             </div>
                             <div>
-                                <Badge status="warning" /> En attente (jour): <strong>{pendingTasksForDay.length}</strong>
+                                <Badge status="warning" /> En attente (jour): <strong>{pendingItemsForDay.length}</strong>
                             </div>
                             <div>
-                                <Badge status="default" /> En attente (total): <strong>{pendingTasks.length}</strong>
+                                <Badge status="default" /> En attente (total): <strong>{pendingItems.length}</strong>
                             </div>
                         </Space>
                     </Card>
@@ -555,77 +707,158 @@ export default function Planning() {
 
             <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
                 <Col span={24}>
-                    <Card size="small" title={<span>Vue semaine <Typography.Text type="secondary" style={{ fontWeight: 'normal', fontSize: 12 }}>(glisser-deposer une tache depuis le tableau ci-dessous)</Typography.Text></span>}>
-                        <style>{`
-                            .planning-calendar .ant-table-tbody > tr:nth-child(-n+9),
-                            .planning-calendar .ant-table-tbody > tr:nth-child(n+24) {
-                                display: none;
-                            }
-                        `}</style>
+                    <Card size="small" title="Vue semaine">
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                            <Button size="small" onClick={() => setCalendarWeekStart(calendarWeekStart.subtract(7, 'day'))}>&lt; Semaine precedente</Button>
+                            <Button size="small" onClick={() => setCalendarWeekStart(dayjs().startOf('week'))}>Aujourd'hui</Button>
+                            <Button size="small" onClick={() => setCalendarWeekStart(calendarWeekStart.add(7, 'day'))}>Semaine suivante &gt;</Button>
+                        </div>
                         <div
                             ref={calendarRef}
-                            className="planning-calendar"
-                            onDragOver={handleCalendarDragOver}
-                            onDragLeave={handleCalendarDragLeave}
-                            onDrop={handleCalendarDrop}
                             style={{
-                                position: 'relative',
+                                display: 'grid',
+                                gridTemplateColumns: 'repeat(7, 1fr)',
+                                gap: 4,
                                 border: dragOverDay ? '2px dashed #1677ff' : '2px dashed transparent',
                                 borderRadius: 8,
                                 transition: 'border-color 0.2s'
                             }}
                         >
-                            {dragOverDay && (
-                                <div style={{
-                                    position: 'absolute',
-                                    top: 0,
-                                    left: 0,
-                                    right: 0,
-                                    zIndex: 10,
-                                    textAlign: 'center',
-                                    background: 'rgba(22, 119, 255, 0.08)',
-                                    padding: '4px 0',
-                                    borderRadius: '8px 8px 0 0',
-                                    fontWeight: 500,
-                                    color: '#1677ff',
-                                    pointerEvents: 'none'
-                                }}>
-                                    Deposer pour planifier le {dayjs(dragOverDay).format('DD/MM/YYYY')}
-                                </div>
-                            )}
-                            <WeeklyCalendar
-                                events={weeklyEvents}
-                                weekends
-                                onSelectDate={(date) => {
-                                    setSelectedDate(dayjs(date).format('YYYY-MM-DD'));
-                                    setCalendarWeekStart(dayjs(date).startOf('week'));
-                                }}
-                                onEventClick={(event: WeeklyCalendarEvent) => {
-                                    const matchedTaskRow = allTasks.find((row) => row.key === event.eventId);
-                                    if (matchedTaskRow) {
-                                        openPlanningModal(matchedTaskRow);
-                                    }
-                                }}
-                            />
+                            {Array.from({ length: 7 }, (_, i) => {
+                                const day = calendarWeekStart.add(i, 'day');
+                                const dayStr = day.format('YYYY-MM-DD');
+                                const isToday = dayStr === todayIso();
+                                const isSelected = dayStr === selectedDate;
+                                const dayEvents = weeklyEvents.filter((ev) => dayjs(ev.startTime).format('YYYY-MM-DD') === dayStr);
+                                return (
+                                    <div
+                                        key={dayStr}
+                                        onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; setDragOverDay(dayStr); }}
+                                        onDragLeave={() => setDragOverDay(null)}
+                                        onDrop={(e) => {
+                                            e.preventDefault();
+                                            setDragOverDay(null);
+                                            const row = draggedRowRef.current;
+                                            draggedRowRef.current = null;
+                                            if (row) openPlanningModal(row, dayStr);
+                                        }}
+                                        onClick={() => setSelectedDate(dayStr)}
+                                        style={{
+                                            minHeight: 320,
+                                            border: dragOverDay === dayStr ? '2px dashed #1677ff' : isSelected ? '2px solid #1677ff' : '1px solid #d9d9d9',
+                                            borderRadius: 6,
+                                            padding: 4,
+                                            cursor: 'pointer',
+                                            background: isToday ? '#e6f4ff' : '#fff',
+                                        }}
+                                    >
+                                        <div style={{ fontWeight: isToday ? 700 : 500, fontSize: 12, marginBottom: 4, textAlign: 'center' }}>
+                                            {day.format('ddd DD/MM')}
+                                        </div>
+                                        {dayEvents.map((ev) => {
+                                            const minH = 24;
+                                            const pxPerHour = 20;
+                                            const height = ev.dureeEstimee ? Math.max(minH, ev.dureeEstimee * pxPerHour) : minH;
+                                            return (
+                                            <div
+                                                key={ev.eventId}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    const matchedRow = allItems.find((row) => row.key === ev.eventId);
+                                                    if (matchedRow) openPlanningModal(matchedRow);
+                                                }}
+                                                style={{
+                                                    background: ev.backgroundColor || '#1677ff',
+                                                    color: ev.textColor || '#fff',
+                                                    borderRadius: 4,
+                                                    padding: '2px 6px',
+                                                    fontSize: 11,
+                                                    marginBottom: 2,
+                                                    cursor: 'pointer',
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis',
+                                                    whiteSpace: 'nowrap',
+                                                    minHeight: height,
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                }}
+                                                title={ev.title}
+                                            >
+                                                {ev.title}
+                                            </div>
+                                            );
+                                        })}
+                                    </div>
+                                );
+                            })}
                         </div>
+                    </Card>
+                </Col>
+            </Row>
+
+            {lateItems.length > 0 && (
+                <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+                    <Col span={24}>
+                        <Card
+                            size="small"
+                            title={
+                                <span style={{ color: '#fa541c' }}>
+                                    <WarningOutlined /> En retard ({lateItems.length})
+                                </span>
+                            }
+                            bodyStyle={{ padding: 12 }}
+                            style={{ borderColor: '#fa541c' }}
+                        >
+                            <Table
+                                rowKey="key"
+                                loading={loading}
+                                dataSource={lateItems}
+                                columns={dayColumns}
+                                pagination={{ pageSize: 6 }}
+                                bordered
+                            />
+                        </Card>
+                    </Col>
+                </Row>
+            )}
+
+            <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+                <Col span={24}>
+                    <Card
+                        size="small"
+                        title={<span style={{ color: '#1677ff' }}>Tâches en cours ({enCoursItems.length})</span>}
+                        bodyStyle={{ padding: enCoursItems.length ? 12 : 24 }}
+                    >
+                        {enCoursItems.length ? (
+                            <Table
+                                rowKey="key"
+                                loading={loading}
+                                dataSource={enCoursItems}
+                                columns={dayColumns}
+                                pagination={{ pageSize: 6 }}
+                                bordered
+                            />
+                        ) : (
+                            <Empty description="Aucune tâche en cours." />
+                        )}
                     </Card>
                 </Col>
             </Row>
 
             <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
                 <Col span={24}>
-                    <Card title={`Planifié le ${selectedDate}`} size="small" bodyStyle={{ padding: plannedTasks.length ? 12 : 24 }}>
-                        {plannedTasks.length ? (
+                    <Card title={`Planifie le ${selectedDate}`} size="small" bodyStyle={{ padding: plannedItems.length ? 12 : 24 }}>
+                        {plannedItems.length ? (
                             <Table
                                 rowKey="key"
                                 loading={loading}
-                                dataSource={plannedTasks}
+                                dataSource={plannedItems}
                                 columns={dayColumns}
                                 pagination={{ pageSize: 8 }}
                                 bordered
                             />
                         ) : (
-                            <Empty description="Aucune tache planifiee pour cette date." />
+                            <Empty description="Aucun element planifie pour cette date." />
                         )}
                     </Card>
                 </Col>
@@ -634,34 +867,76 @@ export default function Planning() {
             <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
                 <Col span={24}>
                     <Card
-                        title="A planifier (taches en attente)"
+                        title="A planifier (en attente)"
                         size="small"
-                        bodyStyle={{ padding: pendingTasks.length ? 12 : 24 }}
+                        bodyStyle={{ padding: pendingItems.length ? 12 : 24 }}
                     >
-                        {pendingTasks.length ? (
+                        {pendingItems.length ? (
                             <Table
                                 rowKey="key"
                                 loading={loading}
-                                dataSource={pendingTasks}
-                                columns={pendingTaskColumns}
+                                dataSource={pendingItems}
+                                columns={pendingColumns}
                                 pagination={{ pageSize: 6 }}
                                 bordered
                                 onRow={(record) => ({
                                     draggable: true,
                                     style: { cursor: 'grab' },
                                     onDragStart: (e) => {
-                                        draggedTaskRef.current = record;
+                                        draggedRowRef.current = record;
                                         e.dataTransfer.effectAllowed = 'move';
                                         e.dataTransfer.setData('text/plain', record.key);
                                     },
                                     onDragEnd: () => {
-                                        draggedTaskRef.current = null;
+                                        draggedRowRef.current = null;
                                         setDragOverDay(null);
                                     }
                                 })}
                             />
                         ) : (
-                            <Empty description="Aucune tache en attente." />
+                            <Empty description="Aucun element en attente." />
+                        )}
+                    </Card>
+                </Col>
+            </Row>
+
+            <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+                <Col span={24}>
+                    <Card
+                        size="small"
+                        title={<span style={{ color: '#52c41a' }}>Terminées ({termineeItems.length})</span>}
+                        bodyStyle={{ padding: termineeItems.length ? 12 : 24 }}
+                    >
+                        {termineeItems.length ? (
+                            <Table
+                                rowKey="key"
+                                loading={loading}
+                                dataSource={termineeItems}
+                                columns={[
+                                    ...commonColumns,
+                                    {
+                                        title: 'Technicien',
+                                        key: 'technicien',
+                                        render: (_: unknown, record: PlanningItemRow) => {
+                                            const t = record.item.technicien;
+                                            return t ? `${t.prenom || ''} ${t.nom || ''}`.trim() || `#${t.id}` : '-';
+                                        }
+                                    },
+                                    {
+                                        title: 'Actions',
+                                        key: 'actions',
+                                        render: (_: unknown, record: PlanningItemRow) => record.vente.id ? (
+                                            <Button onClick={() => openPrestationModal(record.vente.id!)}>
+                                                Voir prestation
+                                            </Button>
+                                        ) : null
+                                    }
+                                ]}
+                                pagination={{ pageSize: 8 }}
+                                bordered
+                            />
+                        ) : (
+                            <Empty description="Aucune tâche terminée." />
                         )}
                     </Card>
                 </Col>
@@ -669,14 +944,15 @@ export default function Planning() {
 
             <Modal
                 open={modalVisible}
-                title={currentTaskRow?.task?.nom ? `Planifier la tâche: ${currentTaskRow.task.nom}` : 'Planifier la tâche'}
+                title={currentRow?.item?.nom ? `Planifier: ${currentRow.item.nom}` : 'Planifier'}
                 onOk={handleSavePlanning}
                 okText="Enregistrer"
                 confirmLoading={saving}
                 cancelText="Annuler"
+                width={720}
                 onCancel={() => {
                     setModalVisible(false);
-                    setCurrentTaskRow(null);
+                    setCurrentRow(null);
                     form.resetFields();
                 }}
                 destroyOnHidden
@@ -684,32 +960,35 @@ export default function Planning() {
                 <Form form={form} layout="vertical">
                     <Form.Item
                         name="date"
-                        label="Date et heure planifiées"
+                        label="Date et heure planifiees"
                         rules={[{ required: true, message: 'La date est requise' }]}
                     >
                         <Input type="datetime-local" />
                     </Form.Item>
-                    <Row gutter={16}>
-                        <Col span={12}>
-                            <Form.Item name="dateDebut" label="Date de debut">
-                                <Input type="date" />
-                            </Form.Item>
-                        </Col>
-                        <Col span={12}>
-                            <Form.Item name="dateFin" label="Date de fin">
-                                <Input type="date" />
-                            </Form.Item>
-                        </Col>
-                    </Row>
                     <Form.Item
                         name="status"
                         label="Statut"
                         rules={[{ required: true, message: 'Le statut est requis' }]}
                     >
-                        <Select options={taskStatusOptions} />
+                        <Select options={statusOptions} />
                     </Form.Item>
-                    <Form.Item name="technicienId" label="Technicien">
-                        <Select allowClear showSearch options={technicienOptions} placeholder="Selectionner un technicien" />
+                    <Row gutter={16}>
+                        <Col span={12}>
+                            <Form.Item name="dateDebut" label="Date de début">
+                                <Input type="datetime-local" disabled />
+                            </Form.Item>
+                        </Col>
+                        <Col span={12}>
+                            <Form.Item name="dateFin" label="Date de fin">
+                                <Input type="datetime-local" disabled />
+                            </Form.Item>
+                        </Col>
+                    </Row>
+                    <Form.Item name="dureeReelle" label="Durée réelle (heures)">
+                        <Input type="number" min={0} step={0.5} disabled />
+                    </Form.Item>
+                    <Form.Item name="technicienId" label="Technicien" rules={[{ required: true, message: 'Le technicien est requis' }]}>
+                        <Select showSearch options={technicienOptions} placeholder="Selectionner un technicien" />
                     </Form.Item>
                     <Form.Item noStyle shouldUpdate={(prev, cur) => prev?.status !== cur?.status}>
                         {({ getFieldValue }) => {
@@ -727,6 +1006,70 @@ export default function Planning() {
                         }}
                     </Form.Item>
                 </Form>
+            </Modal>
+
+            <Modal
+                open={prestationModalVisible}
+                title={prestationVente ? `Prestation #${prestationVente.id}` : 'Prestation'}
+                footer={<Button onClick={() => { setPrestationModalVisible(false); setPrestationVente(null); }}>Fermer</Button>}
+                onCancel={() => { setPrestationModalVisible(false); setPrestationVente(null); }}
+                destroyOnHidden
+                width={800}
+            >
+                {prestationLoading ? (
+                    <div style={{ textAlign: 'center', padding: 40 }}>Chargement...</div>
+                ) : prestationVente ? (
+                    <div>
+                        <Card size="small" style={{ marginBottom: 12 }}>
+                            <Row gutter={16}>
+                                <Col span={8}><strong>Type:</strong> {typeOptions.find((t) => t.value === prestationVente.type)?.label || prestationVente.type || '-'}</Col>
+                                <Col span={8}><strong>Statut:</strong> {prestationVente.status || '-'}</Col>
+                                <Col span={8}><strong>Date:</strong> {prestationVente.date ? dayjs(prestationVente.date).format('DD/MM/YYYY') : '-'}</Col>
+                            </Row>
+                            <Row gutter={16} style={{ marginTop: 8 }}>
+                                <Col span={8}><strong>Client:</strong> {getClientLabel(prestationVente.client)}</Col>
+                                <Col span={8}><strong>Bateau:</strong> {prestationVente.bateau?.name || '-'}</Col>
+                                <Col span={8}><strong>Prix TTC:</strong> {prestationVente.prixVenteTTC != null ? `${prestationVente.prixVenteTTC} €` : '-'}</Col>
+                            </Row>
+                        </Card>
+                        {prestationVente.venteForfaits && prestationVente.venteForfaits.length > 0 && (
+                            <Card size="small" title="Forfaits" style={{ marginBottom: 12 }}>
+                                <Table
+                                    rowKey={(_, i) => `f-${i}`}
+                                    dataSource={prestationVente.venteForfaits}
+                                    pagination={false}
+                                    size="small"
+                                    columns={[
+                                        { title: 'Nom', render: (_: unknown, r: VenteForfaitEntry) => r.forfait?.nom || '-' },
+                                        { title: 'Quantité', dataIndex: 'quantite', render: (v: number) => v ?? '-' },
+                                        { title: 'Statut', dataIndex: 'status', render: (v: string) => v ? <Tag color={statusColor[v as PlanningStatus] || 'default'}>{statusOptions.find((s) => s.value === v)?.label || v}</Tag> : '-' },
+                                        { title: 'Technicien', render: (_: unknown, r: VenteForfaitEntry) => r.technicien ? `${r.technicien.prenom || ''} ${r.technicien.nom || ''}`.trim() : '-' },
+                                        { title: 'Durée est.', render: (_: unknown, r: VenteForfaitEntry) => r.forfait?.dureeEstimee ? `${r.forfait.dureeEstimee}h` : '-' },
+                                        { title: 'Durée réelle', dataIndex: 'dureeReelle', render: (v: number) => v ? `${v}h` : '-' },
+                                    ]}
+                                />
+                            </Card>
+                        )}
+                        {prestationVente.venteServices && prestationVente.venteServices.length > 0 && (
+                            <Card size="small" title="Services" style={{ marginBottom: 12 }}>
+                                <Table
+                                    rowKey={(_, i) => `s-${i}`}
+                                    dataSource={prestationVente.venteServices}
+                                    pagination={false}
+                                    size="small"
+                                    columns={[
+                                        { title: 'Nom', render: (_: unknown, r: VenteServiceEntry) => r.service?.nom || '-' },
+                                        { title: 'Quantité', dataIndex: 'quantite', render: (v: number) => v ?? '-' },
+                                        { title: 'Statut', dataIndex: 'status', render: (v: string) => v ? <Tag color={statusColor[v as PlanningStatus] || 'default'}>{statusOptions.find((s) => s.value === v)?.label || v}</Tag> : '-' },
+                                        { title: 'Technicien', render: (_: unknown, r: VenteServiceEntry) => r.technicien ? `${r.technicien.prenom || ''} ${r.technicien.nom || ''}`.trim() : '-' },
+                                        { title: 'Durée est.', render: (_: unknown, r: VenteServiceEntry) => r.service?.dureeEstimee ? `${r.service.dureeEstimee}h` : '-' },
+                                        { title: 'Durée réelle', dataIndex: 'dureeReelle', render: (v: number) => v ? `${v}h` : '-' },
+                                    ]}
+                                />
+                            </Card>
+                        )}
+                    </div>
+                ) : null}
             </Modal>
         </Card>
     );

@@ -47,28 +47,30 @@ public class VenteEntity extends PanacheEntity {
     @ManyToOne
     public RemorqueClientEntity remorque;
 
-    @ManyToMany
-    public List<ForfaitEntity> forfaits;
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = jakarta.persistence.FetchType.EAGER)
+    @JoinColumn(name = "vente_id")
+    public List<VenteForfaitEntity> venteForfaits = new ArrayList<>();
+
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = jakarta.persistence.FetchType.EAGER)
+    @JoinColumn(name = "vente_id")
+    public List<VenteServiceEntity> venteServices = new ArrayList<>();
 
     @ManyToMany
     public List<ProduitCatalogueEntity> produits;
 
-    @ManyToMany
-    public List<ServiceEntity> services;
-    
     @JsonbTypeAdapter(TimestampJsonbAdapter.class)
     public Timestamp date;
-    
+
     public double montantHT;
-    
+
     public double remise;
-    
+
     public double montantTTC;
-    
+
     public double tva;
-    
+
     public double montantTVA;
-    
+
     public double prixVenteTTC;
 
     public enum ModePaiement {
@@ -91,9 +93,5 @@ public class VenteEntity extends PanacheEntity {
     public boolean rappel1Envoye;
     public boolean rappel2Envoye;
     public boolean rappel3Envoye;
-
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "vente_id")
-    public List<TaskEntity> taches = new ArrayList<TaskEntity>();
 
 }

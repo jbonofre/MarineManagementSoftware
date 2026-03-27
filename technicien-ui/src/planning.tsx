@@ -3,6 +3,7 @@ import {
     Badge,
     Button,
     Card,
+    Checkbox,
     Col,
     Empty,
     Form,
@@ -16,28 +17,38 @@ import {
     Tag,
     message,
 } from 'antd';
-import { CheckCircleOutlined, ClockCircleOutlined, ExclamationCircleOutlined, ReloadOutlined } from '@ant-design/icons';
+import { CheckCircleOutlined, ClockCircleOutlined, EditOutlined, ExclamationCircleOutlined, ReloadOutlined } from '@ant-design/icons';
 import axios from 'axios';
 
 type TaskStatus = 'EN_ATTENTE' | 'PLANIFIEE' | 'EN_COURS' | 'TERMINEE' | 'INCIDENT' | 'ANNULEE';
 
-interface TaskWithVente {
-    taskId: number;
-    venteId: number;
-    taskNom?: string;
-    taskStatus?: TaskStatus;
+interface ChecklistItem {
+    id?: number;
+    nom?: string;
+    description?: string;
+    done?: boolean;
+}
+
+interface PlanningItem {
+    itemId?: number;
+    venteId?: number;
+    itemType?: string;
+    itemNom?: string;
+    itemStatus?: TaskStatus;
+    datePlanification?: string;
     dateDebut?: string;
     dateFin?: string;
     statusDate?: string;
-    description?: string;
     notes?: string;
-    dureeEstimee?: number;
     dureeReelle?: number;
+    dureeEstimee?: number;
     incidentDate?: string;
     incidentDetails?: string;
     clientNom?: string;
     venteType?: string;
     bateauNom?: string;
+    quantite?: number;
+    taches?: ChecklistItem[];
 }
 
 interface PlanningProps {
@@ -85,19 +96,20 @@ const todayIso = () => {
 };
 
 export default function Planning({ technicienId }: PlanningProps) {
-    const [tasks, setTasks] = useState<TaskWithVente[]>([]);
+    const [items, setItems] = useState<PlanningItem[]>([]);
     const [loading, setLoading] = useState(false);
     const [filterStatus, setFilterStatus] = useState<TaskStatus | undefined>(undefined);
     const [modalVisible, setModalVisible] = useState(false);
-    const [currentTask, setCurrentTask] = useState<TaskWithVente | null>(null);
+    const [currentItem, setCurrentItem] = useState<PlanningItem | null>(null);
+    const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
     const [form] = Form.useForm();
     const [saving, setSaving] = useState(false);
 
-    const fetchTasks = async () => {
+    const fetchItems = async () => {
         setLoading(true);
         try {
             const res = await axios.get(`/technicien-portal/techniciens/${technicienId}/taches`);
-            setTasks(res.data || []);
+            setItems(res.data || []);
         } catch {
             message.error('Erreur lors du chargement des taches');
         } finally {
@@ -106,56 +118,145 @@ export default function Planning({ technicienId }: PlanningProps) {
     };
 
     useEffect(() => {
-        fetchTasks();
+        fetchItems();
     }, [technicienId]);
 
-    const filteredTasks = filterStatus
-        ? tasks.filter((t) => t.taskStatus === filterStatus)
-        : tasks;
+    const filteredItems = filterStatus
+        ? items.filter((t) => t.itemStatus === filterStatus)
+        : items;
 
-    const todayTasks = filteredTasks.filter((t) => {
+    const todayItems = filteredItems.filter((t) => {
         if (!t.statusDate) return false;
         return t.statusDate.startsWith(todayIso());
     });
 
-    const pendingTasks = filteredTasks.filter((t) => t.taskStatus === 'EN_ATTENTE' || t.taskStatus === 'PLANIFIEE' || t.taskStatus === 'EN_COURS');
-    const incidentTasks = filteredTasks.filter((t) => t.taskStatus === 'INCIDENT');
+    const pendingItems = filteredItems.filter((t) => t.itemStatus === 'EN_ATTENTE' || t.itemStatus === 'PLANIFIEE' || t.itemStatus === 'EN_COURS');
+    const incidentItems = filteredItems.filter((t) => t.itemStatus === 'INCIDENT');
 
-    const openUpdateModal = (task: TaskWithVente) => {
-        setCurrentTask(task);
+    const openUpdateModal = (item: PlanningItem) => {
+        setCurrentItem(item);
+        setChecklist((item.taches || []).map((t) => ({ ...t })));
         form.setFieldsValue({
-            status: task.taskStatus || 'EN_COURS',
-            dureeReelle: task.dureeReelle || 0,
-            notes: task.notes || '',
-            incidentDate: task.incidentDate || todayIso(),
-            incidentDetails: task.incidentDetails || '',
+            status: item.itemStatus || 'EN_COURS',
+            dureeReelle: item.dureeReelle || 0,
+            notes: item.notes || '',
+            incidentDate: item.incidentDate || todayIso(),
+            incidentDetails: item.incidentDetails || '',
         });
         setModalVisible(true);
     };
 
+    const nowIso = () => {
+        const now = new Date();
+        const offset = now.getTimezoneOffset() * 60000;
+        return new Date(now.getTime() - offset).toISOString().slice(0, 19);
+    };
+
+    const handleStart = async (item: PlanningItem) => {
+        try {
+            const endpoint = item.itemType === 'forfait'
+                ? `/technicien-portal/forfaits/${item.itemId}`
+                : `/technicien-portal/services/${item.itemId}`;
+            const res = await axios.put(endpoint, {
+                status: 'EN_COURS',
+                dateDebut: nowIso(),
+                dureeReelle: item.dureeReelle || 0,
+                notes: item.notes || '',
+            });
+            message.success('Intervention demarrée');
+            const updated = res.data;
+            setCurrentItem({ ...item, ...updated, itemStatus: updated.itemStatus || 'EN_COURS' });
+            setChecklist((updated.taches || item.taches || []).map((t: ChecklistItem) => ({ ...t })));
+            form.setFieldsValue({
+                status: 'EN_COURS',
+                dureeReelle: updated.dureeReelle ?? item.dureeReelle ?? 0,
+                notes: updated.notes ?? item.notes ?? '',
+                incidentDate: todayIso(),
+                incidentDetails: '',
+            });
+            setModalVisible(true);
+            fetchItems();
+        } catch {
+            message.error('Erreur lors du demarrage');
+        }
+    };
+
+    const handleChecklistChange = (index: number, done: boolean) => {
+        setChecklist((prev) => {
+            const updated = prev.map((c, i) => i === index ? { ...c, done } : c);
+            // If all checked, auto-set status to TERMINEE and dateFin, compute dureeReelle
+            if (updated.length > 0 && updated.every((c) => c.done)) {
+                const finIso = nowIso();
+                let dureeReelle = 0;
+                if (currentItem?.dateDebut) {
+                    const debut = new Date(currentItem.dateDebut).getTime();
+                    const fin = new Date(finIso).getTime();
+                    if (!isNaN(debut) && !isNaN(fin) && fin > debut) {
+                        dureeReelle = Math.round(((fin - debut) / 3600000) * 100) / 100;
+                    }
+                }
+                form.setFieldsValue({ status: 'TERMINEE', dureeReelle });
+                // Auto-save with dateFin
+                const saveComplete = async () => {
+                    if (!currentItem) return;
+                    try {
+                        setSaving(true);
+                        const values = form.getFieldsValue();
+                        const endpoint = currentItem.itemType === 'forfait'
+                            ? `/technicien-portal/forfaits/${currentItem.itemId}`
+                            : `/technicien-portal/services/${currentItem.itemId}`;
+                        await axios.put(endpoint, {
+                            status: 'TERMINEE',
+                            dateFin: finIso,
+                            dureeReelle,
+                            notes: values.notes || '',
+                            taches: updated.map((c) => ({ taskId: c.id, done: c.done })),
+                        });
+                        message.success('Intervention terminée');
+                        fetchItems();
+                    } catch {
+                        message.error('Erreur lors de la cloture');
+                    } finally {
+                        setSaving(false);
+                    }
+                };
+                saveComplete();
+            }
+            return updated;
+        });
+    };
+
     const handleSave = async () => {
-        if (!currentTask) return;
+        if (!currentItem) return;
         try {
             const values = await form.validateFields();
             setSaving(true);
-            const res = await axios.put(`/technicien-portal/taches/${currentTask.taskId}`, {
+            const endpoint = currentItem.itemType === 'forfait'
+                ? `/technicien-portal/forfaits/${currentItem.itemId}`
+                : `/technicien-portal/services/${currentItem.itemId}`;
+            const res = await axios.put(endpoint, {
                 status: values.status,
                 dureeReelle: values.dureeReelle || 0,
+                dateFin: values.status === 'TERMINEE' ? nowIso() : undefined,
                 notes: values.notes || '',
                 incidentDate: values.status === 'INCIDENT' ? values.incidentDate : null,
                 incidentDetails: values.status === 'INCIDENT' ? values.incidentDetails : null,
+                taches: checklist.map((c) => ({ taskId: c.id, done: c.done })),
             });
             message.success('Tache mise a jour');
             const updated = res.data;
-            setCurrentTask({ ...currentTask, ...updated, taskStatus: updated.taskStatus || values.status });
+            setCurrentItem({ ...currentItem, ...updated, itemStatus: updated.itemStatus || values.status });
+            if (updated.taches) {
+                setChecklist(updated.taches.map((t: ChecklistItem) => ({ ...t })));
+            }
             form.setFieldsValue({
-                status: updated.taskStatus || values.status,
+                status: updated.itemStatus || values.status,
                 dureeReelle: updated.dureeReelle ?? values.dureeReelle,
                 notes: updated.notes ?? values.notes,
                 incidentDate: updated.incidentDate || values.incidentDate,
                 incidentDetails: updated.incidentDetails || values.incidentDetails,
             });
-            fetchTasks();
+            fetchItems();
         } catch {
             message.error('Erreur lors de la mise a jour');
         } finally {
@@ -166,9 +267,15 @@ export default function Planning({ technicienId }: PlanningProps) {
     const columns = [
         {
             title: 'Tache',
-            dataIndex: 'taskNom',
-            key: 'taskNom',
+            dataIndex: 'itemNom',
+            key: 'itemNom',
             render: (val: string) => val || '-',
+        },
+        {
+            title: 'Type',
+            dataIndex: 'itemType',
+            key: 'itemType',
+            render: (val: string) => val ? <Tag>{val}</Tag> : '-',
         },
         {
             title: 'Client',
@@ -183,9 +290,9 @@ export default function Planning({ technicienId }: PlanningProps) {
             render: (val: string) => val || '-',
         },
         {
-            title: 'Statut',
-            dataIndex: 'taskStatus',
-            key: 'taskStatus',
+            title: 'Status',
+            dataIndex: 'itemStatus',
+            key: 'itemStatus',
             render: (val: string) => <Tag color={statusColor[val]}>{statusLabel[val] || val}</Tag>,
         },
         {
@@ -221,72 +328,79 @@ export default function Planning({ technicienId }: PlanningProps) {
         {
             title: 'Actions',
             key: 'actions',
-            render: (_: unknown, record: TaskWithVente) => (
-                <Space>
-                    {(record.taskStatus === 'EN_ATTENTE' || record.taskStatus === 'PLANIFIEE') && (
+            render: (_: unknown, record: PlanningItem) => {
+                if (record.itemStatus === 'TERMINEE') return null;
+                return (
+                    <Space>
                         <Button
                             size="small"
-                            icon={<ClockCircleOutlined />}
-                            onClick={() => {
-                                setCurrentTask(record);
-                                form.setFieldsValue({
-                                    status: 'EN_COURS',
-                                    dureeReelle: record.dureeReelle || 0,
-                                    notes: record.notes || '',
-                                    incidentDate: todayIso(),
-                                    incidentDetails: '',
-                                });
-                                setModalVisible(true);
-                            }}
+                            icon={<EditOutlined />}
+                            onClick={() => openUpdateModal(record)}
                         >
-                            Demarrer
+                            Editer
                         </Button>
-                    )}
-                    {(record.taskStatus === 'PLANIFIEE' || record.taskStatus === 'EN_COURS') && (
-                        <Button
-                            size="small"
-                            type="primary"
-                            icon={<CheckCircleOutlined />}
-                            onClick={() => {
-                                setCurrentTask(record);
-                                form.setFieldsValue({
-                                    status: 'TERMINEE',
-                                    dureeReelle: record.dureeReelle || 0,
-                                    notes: record.notes || '',
-                                    incidentDate: todayIso(),
-                                    incidentDetails: '',
-                                });
-                                setModalVisible(true);
-                            }}
-                        >
-                            Terminer
-                        </Button>
-                    )}
-                    {(record.taskStatus !== 'ANNULEE') && (
-                        <Button
-                            size="small"
-                            danger
-                            icon={<ExclamationCircleOutlined />}
-                            onClick={() => {
-                                setCurrentTask(record);
-                                form.setFieldsValue({
-                                    status: 'INCIDENT',
-                                    dureeReelle: record.dureeReelle || 0,
-                                    notes: record.notes || '',
-                                    incidentDate: record.incidentDate || todayIso(),
-                                    incidentDetails: record.incidentDetails || '',
-                                });
-                                setModalVisible(true);
-                            }}
-                        >
-                            Incident
-                        </Button>
-                    )}
-                    <Button size="small" onClick={() => openUpdateModal(record)}>
-                        Modifier
-                    </Button>
-                </Space>
-            ),
+                        {(record.itemStatus === 'EN_ATTENTE' || record.itemStatus === 'PLANIFIEE') && (
+                            <Button
+                                size="small"
+                                icon={<ClockCircleOutlined />}
+                                onClick={() => handleStart(record)}
+                            >
+                                Demarrer
+                            </Button>
+                        )}
+                        {record.itemStatus !== 'ANNULEE' && (
+                            <Button
+                                size="small"
+                                danger
+                                icon={<ExclamationCircleOutlined />}
+                                onClick={() => {
+                                    setCurrentItem(record);
+                                    setChecklist((record.taches || []).map((t) => ({ ...t })));
+                                    form.setFieldsValue({
+                                        status: 'INCIDENT',
+                                        dureeReelle: record.dureeReelle || 0,
+                                        notes: record.notes || '',
+                                        incidentDate: record.incidentDate || todayIso(),
+                                        incidentDetails: record.incidentDetails || '',
+                                    });
+                                    setModalVisible(true);
+                                }}
+                            >
+                                Incident
+                            </Button>
+                        )}
+                        {(record.itemStatus === 'PLANIFIEE' || record.itemStatus === 'EN_COURS') && (
+                            <Button
+                                size="small"
+                                type="primary"
+                                icon={<CheckCircleOutlined />}
+                                onClick={() => {
+                                    let dureeReelle = record.dureeReelle || 0;
+                                    if (record.dateDebut) {
+                                        const debut = new Date(record.dateDebut).getTime();
+                                        const fin = Date.now();
+                                        if (!isNaN(debut) && fin > debut) {
+                                            dureeReelle = Math.round(((fin - debut) / 3600000) * 100) / 100;
+                                        }
+                                    }
+                                    setCurrentItem(record);
+                                    setChecklist((record.taches || []).map((t) => ({ ...t })));
+                                    form.setFieldsValue({
+                                        status: 'TERMINEE',
+                                        dureeReelle,
+                                        notes: record.notes || '',
+                                        incidentDate: todayIso(),
+                                        incidentDetails: '',
+                                    });
+                                    setModalVisible(true);
+                                }}
+                            >
+                                Terminer
+                            </Button>
+                        )}
+                    </Space>
+                );
+            },
         },
     ];
 
@@ -295,17 +409,17 @@ export default function Planning({ technicienId }: PlanningProps) {
             <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
                 <Col xs={24} sm={8} lg={6}>
                     <Card>
-                        <Badge status="processing" /> Aujourd'hui: <strong>{todayTasks.length}</strong> tache(s)
+                        <Badge status="processing" /> Aujourd'hui: <strong>{todayItems.length}</strong> tache(s)
                     </Card>
                 </Col>
                 <Col xs={24} sm={8} lg={6}>
                     <Card>
-                        <Badge status="warning" /> A faire: <strong>{pendingTasks.length}</strong>
+                        <Badge status="warning" /> A faire: <strong>{pendingItems.length}</strong>
                     </Card>
                 </Col>
                 <Col xs={24} sm={8} lg={6}>
                     <Card>
-                        <Badge status="error" /> Incidents: <strong>{incidentTasks.length}</strong>
+                        <Badge status="error" /> Incidents: <strong>{incidentItems.length}</strong>
                     </Card>
                 </Col>
                 <Col xs={24} sm={8} lg={6}>
@@ -319,17 +433,17 @@ export default function Planning({ technicienId }: PlanningProps) {
                                 onChange={(val) => setFilterStatus(val)}
                                 style={{ width: 180 }}
                             />
-                            <Button icon={<ReloadOutlined />} onClick={fetchTasks} />
+                            <Button icon={<ReloadOutlined />} onClick={fetchItems} />
                         </Space>
                     </Card>
                 </Col>
             </Row>
 
             <Card title={`Taches du jour (${todayIso()})`} style={{ marginBottom: 16 }}>
-                {todayTasks.length > 0 ? (
+                {todayItems.length > 0 ? (
                     <Table
-                        rowKey="taskId"
-                        dataSource={todayTasks}
+                        rowKey="itemId"
+                        dataSource={todayItems}
                         columns={columns}
                         loading={loading}
                         pagination={false}
@@ -342,8 +456,8 @@ export default function Planning({ technicienId }: PlanningProps) {
 
             <Card title="Toutes mes taches">
                 <Table
-                    rowKey="taskId"
-                    dataSource={filteredTasks}
+                    rowKey="itemId"
+                    dataSource={filteredItems}
                     columns={columns}
                     loading={loading}
                     pagination={{ pageSize: 10 }}
@@ -353,25 +467,47 @@ export default function Planning({ technicienId }: PlanningProps) {
 
             <Modal
                 open={modalVisible}
-                title={currentTask ? `Mise a jour: ${currentTask.taskNom || 'Tache'}` : 'Mise a jour'}
+                title={currentItem ? `Mise a jour: ${currentItem.itemNom || 'Tache'}` : 'Mise a jour'}
                 onOk={handleSave}
                 okText="Enregistrer"
                 cancelText="Annuler"
                 confirmLoading={saving}
                 onCancel={() => {
                     setModalVisible(false);
-                    setCurrentTask(null);
+                    setCurrentItem(null);
+                    setChecklist([]);
                     form.resetFields();
                 }}
                 destroyOnHidden
                 width={600}
+                footer={
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                            {currentItem && currentItem.itemStatus !== 'INCIDENT' && currentItem.itemStatus !== 'TERMINEE' && currentItem.itemStatus !== 'ANNULEE' && (
+                                <Button danger icon={<ExclamationCircleOutlined />} onClick={() => form.setFieldsValue({ status: 'INCIDENT' })}>
+                                    Incident
+                                </Button>
+                            )}
+                        </div>
+                        <Space>
+                            <Button onClick={() => { setModalVisible(false); setCurrentItem(null); setChecklist([]); form.resetFields(); }}>
+                                Annuler
+                            </Button>
+                            <Button type="primary" loading={saving} onClick={handleSave}>
+                                Enregistrer
+                            </Button>
+                        </Space>
+                    </div>
+                }
             >
-                {currentTask && (
+                {currentItem && (
                     <Card size="small" style={{ marginBottom: 16, background: '#fafafa' }}>
-                        <p><strong>Client:</strong> {currentTask.clientNom || '-'}</p>
-                        <p><strong>Bateau:</strong> {currentTask.bateauNom || '-'}</p>
-                        <p><strong>Description:</strong> {currentTask.description || '-'}</p>
-                        <p><strong>Duree estimee:</strong> {currentTask.dureeEstimee ? `${currentTask.dureeEstimee}h` : '-'}</p>
+                        <p><strong>Nom:</strong> {currentItem.itemNom || '-'}</p>
+                        <p><strong>Client:</strong> {currentItem.clientNom || '-'}</p>
+                        <p><strong>Bateau:</strong> {currentItem.bateauNom || '-'}</p>
+                        {currentItem.dureeEstimee != null && currentItem.dureeEstimee > 0 && (
+                            <p><strong>Duree estimee:</strong> {currentItem.dureeEstimee}h</p>
+                        )}
                     </Card>
                 )}
                 <Form form={form} layout="vertical">
@@ -379,21 +515,38 @@ export default function Planning({ technicienId }: PlanningProps) {
                         <Col span={12}>
                             <Form.Item
                                 name="status"
-                                label="Statut"
+                                label="Status"
                                 rules={[{ required: true, message: 'Le statut est requis' }]}
                             >
-                                <Select options={taskStatusOptions} />
+                                <Select options={taskStatusOptions} disabled />
                             </Form.Item>
                         </Col>
                         <Col span={12}>
                             <Form.Item name="dureeReelle" label="Temps passe (heures)">
-                                <InputNumber min={0} step={0.25} precision={2} style={{ width: '100%' }} addonAfter="h" />
+                                <InputNumber min={0} step={0.25} precision={2} style={{ width: '100%' }} addonAfter="h" disabled />
                             </Form.Item>
                         </Col>
                     </Row>
                     <Form.Item name="notes" label="Notes">
                         <Input.TextArea rows={3} />
                     </Form.Item>
+                    {checklist.length > 0 && (
+                        <Card size="small" title="Checklist" style={{ marginBottom: 12 }}>
+                            {checklist.map((item, index) => (
+                                <div key={item.id || index} style={{ marginBottom: 4 }}>
+                                    <Checkbox
+                                        checked={item.done}
+                                        onChange={(e) => handleChecklistChange(index, e.target.checked)}
+                                    >
+                                        <span style={{ fontWeight: 500 }}>{item.nom || `Tache ${index + 1}`}</span>
+                                    </Checkbox>
+                                    {item.description && (
+                                        <p style={{ margin: '0 0 0 24px', fontSize: 12, color: '#999' }}>{item.description}</p>
+                                    )}
+                                </div>
+                            ))}
+                        </Card>
+                    )}
                     <Form.Item noStyle shouldUpdate={(prev, cur) => prev?.status !== cur?.status}>
                         {({ getFieldValue }) => {
                             if (getFieldValue('status') !== 'INCIDENT') return null;

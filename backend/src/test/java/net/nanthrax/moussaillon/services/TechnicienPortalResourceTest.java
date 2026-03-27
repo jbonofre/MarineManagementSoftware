@@ -124,22 +124,32 @@ public class TechnicienPortalResourceTest {
     }
 
     @Test
-    void testModifierTache() {
+    void testModifierForfait() {
         given()
             .contentType("application/json")
             .body("{\"status\":\"EN_COURS\",\"dureeReelle\":1.5,\"notes\":\"En cours de traitement\"}")
-            .when().put("/technicien-portal/taches/100")
+            .when().put("/technicien-portal/forfaits/100")
             .then()
             .statusCode(200)
-            .body("taskStatus", is("EN_COURS"));
+            .body("itemStatus", is("EN_COURS"));
     }
 
     @Test
-    void testModifierTacheNonTrouvee() {
+    void testModifierForfaitNonTrouve() {
         given()
             .contentType("application/json")
             .body("{\"status\":\"EN_COURS\",\"dureeReelle\":1.0}")
-            .when().put("/technicien-portal/taches/9999")
+            .when().put("/technicien-portal/forfaits/9999")
+            .then()
+            .statusCode(404);
+    }
+
+    @Test
+    void testModifierServiceNonTrouve() {
+        given()
+            .contentType("application/json")
+            .body("{\"status\":\"EN_COURS\",\"dureeReelle\":1.0}")
+            .when().put("/technicien-portal/services/9999")
             .then()
             .statusCode(404);
     }

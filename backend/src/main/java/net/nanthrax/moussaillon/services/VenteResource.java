@@ -25,6 +25,8 @@ import net.nanthrax.moussaillon.persistence.ProduitCatalogueEntity;
 import net.nanthrax.moussaillon.persistence.SocieteEntity;
 import net.nanthrax.moussaillon.persistence.TaskEntity;
 import net.nanthrax.moussaillon.persistence.VenteEntity;
+import net.nanthrax.moussaillon.persistence.VenteForfaitEntity;
+import net.nanthrax.moussaillon.persistence.VenteServiceEntity;
 
 @Path("/ventes")
 @ApplicationScoped
@@ -99,6 +101,24 @@ public class VenteResource {
     @Transactional
     public Response create(VenteEntity vente) {
         vente.id = null;
+        // Copy template taches from catalogue forfait if none provided
+        if (vente.venteForfaits != null) {
+            for (VenteForfaitEntity vf : vente.venteForfaits) {
+                if ((vf.taches == null || vf.taches.isEmpty()) && vf.forfait != null && vf.forfait.id != null) {
+                    ForfaitEntity catalogueForfait = ForfaitEntity.findById(vf.forfait.id);
+                    if (catalogueForfait != null && catalogueForfait.taches != null) {
+                        if (vf.taches == null) vf.taches = new java.util.ArrayList<>();
+                        for (TaskEntity t : catalogueForfait.taches) {
+                            TaskEntity ct = new TaskEntity();
+                            ct.nom = t.nom;
+                            ct.description = t.description;
+                            ct.done = false;
+                            vf.taches.add(ct);
+                        }
+                    }
+                }
+            }
+        }
         vente.persist();
         return Response.status(Response.Status.CREATED).entity(vente).build();
     }
@@ -142,17 +162,79 @@ public class VenteResource {
         entity.moteur = vente.moteur;
         entity.remorque = vente.remorque;
 
-        if (entity.forfaits != null) {
-            entity.forfaits.clear();
-        }
-        if (vente.forfaits != null) {
-            if (entity.forfaits == null) {
-                entity.forfaits = vente.forfaits;
-            } else {
-                entity.forfaits.addAll(vente.forfaits);
+        // Update venteForfaits
+        entity.venteForfaits.clear();
+        if (vente.venteForfaits != null) {
+            for (VenteForfaitEntity incoming : vente.venteForfaits) {
+                VenteForfaitEntity cloned = new VenteForfaitEntity();
+                cloned.forfait = incoming.forfait;
+                cloned.quantite = incoming.quantite;
+                cloned.technicien = incoming.technicien;
+                cloned.datePlanification = incoming.datePlanification;
+                cloned.dateDebut = incoming.dateDebut;
+                cloned.dateFin = incoming.dateFin;
+                cloned.status = incoming.status;
+                cloned.statusDate = incoming.statusDate;
+                cloned.dureeReelle = incoming.dureeReelle;
+                cloned.incidentDate = incoming.incidentDate;
+                cloned.incidentDetails = incoming.incidentDetails;
+                cloned.notes = incoming.notes;
+                if (incoming.taches != null && !incoming.taches.isEmpty()) {
+                    for (TaskEntity t : incoming.taches) {
+                        TaskEntity ct = new TaskEntity();
+                        ct.nom = t.nom;
+                        ct.description = t.description;
+                        ct.done = t.done;
+                        cloned.taches.add(ct);
+                    }
+                } else if (cloned.forfait != null && cloned.forfait.id != null) {
+                    // Copy template taches from catalogue forfait if none provided
+                    ForfaitEntity catalogueForfait = ForfaitEntity.findById(cloned.forfait.id);
+                    if (catalogueForfait != null && catalogueForfait.taches != null) {
+                        for (TaskEntity t : catalogueForfait.taches) {
+                            TaskEntity ct = new TaskEntity();
+                            ct.nom = t.nom;
+                            ct.description = t.description;
+                            ct.done = false;
+                            cloned.taches.add(ct);
+                        }
+                    }
+                }
+                entity.venteForfaits.add(cloned);
             }
         }
 
+        // Update venteServices
+        entity.venteServices.clear();
+        if (vente.venteServices != null) {
+            for (VenteServiceEntity incoming : vente.venteServices) {
+                VenteServiceEntity cloned = new VenteServiceEntity();
+                cloned.service = incoming.service;
+                cloned.quantite = incoming.quantite;
+                cloned.technicien = incoming.technicien;
+                cloned.datePlanification = incoming.datePlanification;
+                cloned.dateDebut = incoming.dateDebut;
+                cloned.dateFin = incoming.dateFin;
+                cloned.status = incoming.status;
+                cloned.statusDate = incoming.statusDate;
+                cloned.dureeReelle = incoming.dureeReelle;
+                cloned.incidentDate = incoming.incidentDate;
+                cloned.incidentDetails = incoming.incidentDetails;
+                cloned.notes = incoming.notes;
+                if (incoming.taches != null) {
+                    for (TaskEntity t : incoming.taches) {
+                        TaskEntity ct = new TaskEntity();
+                        ct.nom = t.nom;
+                        ct.description = t.description;
+                        ct.done = t.done;
+                        cloned.taches.add(ct);
+                    }
+                }
+                entity.venteServices.add(cloned);
+            }
+        }
+
+        // Update produits
         if (entity.produits != null) {
             entity.produits.clear();
         }
@@ -164,55 +246,28 @@ public class VenteResource {
             }
         }
 
-        if (entity.services != null) {
-            entity.services.clear();
-        }
-        if (vente.services != null) {
-            if (entity.services == null) {
-                entity.services = vente.services;
-            } else {
-                entity.services.addAll(vente.services);
-            }
-        }
-
-        if (entity.taches != null) {
-            entity.taches.clear();
-        }
-        if (vente.taches != null) {
-            if (entity.taches == null) {
-                throw new IllegalStateException("La collection de taches n'est pas initialisee");
-            }
-            for (TaskEntity incomingTask : vente.taches) {
-                TaskEntity clonedTask = new TaskEntity();
-                clonedTask.nom = incomingTask.nom;
-                clonedTask.status = incomingTask.status;
-                clonedTask.dateDebut = incomingTask.dateDebut;
-                clonedTask.dateFin = incomingTask.dateFin;
-                clonedTask.statusDate = incomingTask.statusDate;
-                clonedTask.description = incomingTask.description;
-                clonedTask.notes = incomingTask.notes;
-                clonedTask.technicien = incomingTask.technicien;
-                clonedTask.dureeEstimee = incomingTask.dureeEstimee;
-                clonedTask.dureeReelle = incomingTask.dureeReelle;
-                clonedTask.incidentDate = incomingTask.incidentDate;
-                clonedTask.incidentDetails = incomingTask.incidentDetails;
-                entity.taches.add(clonedTask);
-            }
-        }
-
-        // Send incident notification email to client for any INCIDENT tasks
+        // Send incident notification email for any INCIDENT items
         if (entity.client != null && entity.client.email != null && !entity.client.email.isBlank()) {
-            for (TaskEntity t : entity.taches) {
-                if (t.status == TaskEntity.Status.INCIDENT) {
-                    sendIncidentNotification(entity, t);
+            for (VenteForfaitEntity vf : entity.venteForfaits) {
+                if (vf.status == VenteForfaitEntity.Status.INCIDENT) {
+                    String nom = vf.forfait != null ? vf.forfait.nom : "Forfait";
+                    sendIncidentNotification(entity, nom, vf.incidentDetails, vf.incidentDate);
+                }
+            }
+            for (VenteServiceEntity vs : entity.venteServices) {
+                if (vs.status == VenteServiceEntity.Status.INCIDENT) {
+                    String nom = vs.service != null ? vs.service.nom : "Service";
+                    sendIncidentNotification(entity, nom, vs.incidentDetails, vs.incidentDate);
                 }
             }
         }
 
-        // Decrement stock when a task transitions to EN_COURS (once per vente)
+        // Decrement stock when an item transitions to EN_COURS (once per vente)
         if (!entity.stockDecremented) {
-            boolean hasEnCours = entity.taches.stream()
-                    .anyMatch(t -> t.status == TaskEntity.Status.EN_COURS);
+            boolean hasEnCours = entity.venteForfaits.stream()
+                    .anyMatch(vf -> vf.status == VenteForfaitEntity.Status.EN_COURS)
+                    || entity.venteServices.stream()
+                    .anyMatch(vs -> vs.status == VenteServiceEntity.Status.EN_COURS);
             if (hasEnCours) {
                 decrementStock(entity);
                 entity.stockDecremented = true;
@@ -244,19 +299,19 @@ public class VenteResource {
         return entity;
     }
 
-    private void sendIncidentNotification(VenteEntity vente, TaskEntity task) {
+    private void sendIncidentNotification(VenteEntity vente, String itemNom, String incidentDetails, java.sql.Date incidentDate) {
         SocieteEntity societe = SocieteEntity.findById(1L);
         String societeNom = societe != null ? societe.nom : "moussAIllon";
         String clientName = vente.client.prenom != null ? vente.client.prenom : vente.client.nom;
 
         String subject = "Incident sur votre intervention - " + societeNom;
         String body = "Bonjour " + clientName + ",\n\n"
-                + "Nous vous informons qu'un incident a ete signale sur l'intervention \"" + task.nom + "\".\n\n";
-        if (task.incidentDetails != null && !task.incidentDetails.isBlank()) {
-            body += "Details : " + task.incidentDetails + "\n\n";
+                + "Nous vous informons qu'un incident a ete signale sur l'intervention \"" + itemNom + "\".\n\n";
+        if (incidentDetails != null && !incidentDetails.isBlank()) {
+            body += "Details : " + incidentDetails + "\n\n";
         }
-        if (task.incidentDate != null) {
-            body += "Date de l'incident : " + task.incidentDate + "\n\n";
+        if (incidentDate != null) {
+            body += "Date de l'incident : " + incidentDate + "\n\n";
         }
         body += "Notre equipe met tout en oeuvre pour resoudre la situation dans les meilleurs delais.\n\n"
                 + "Cordialement,\n" + societeNom;
@@ -273,15 +328,15 @@ public class VenteResource {
                 }
             }
         }
-        if (vente.forfaits != null) {
-            for (ForfaitEntity forfait : vente.forfaits) {
-                ForfaitEntity f = ForfaitEntity.findById(forfait.id);
+        for (VenteForfaitEntity vf : vente.venteForfaits) {
+            if (vf.forfait != null) {
+                ForfaitEntity f = ForfaitEntity.findById(vf.forfait.id);
                 if (f != null && f.produits != null) {
                     for (ForfaitProduitEntity fp : f.produits) {
                         if (fp.produit != null) {
                             ProduitCatalogueEntity p = ProduitCatalogueEntity.findById(fp.produit.id);
                             if (p != null) {
-                                p.stock = Math.max(0, p.stock - fp.quantite);
+                                p.stock = Math.max(0, p.stock - fp.quantite * vf.quantite);
                             }
                         }
                     }

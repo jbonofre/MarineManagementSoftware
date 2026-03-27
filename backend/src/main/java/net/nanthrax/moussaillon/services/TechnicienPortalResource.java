@@ -26,6 +26,8 @@ import net.nanthrax.moussaillon.persistence.SocieteEntity;
 import net.nanthrax.moussaillon.persistence.TaskEntity;
 import net.nanthrax.moussaillon.persistence.TechnicienEntity;
 import net.nanthrax.moussaillon.persistence.VenteEntity;
+import net.nanthrax.moussaillon.persistence.VenteForfaitEntity;
+import net.nanthrax.moussaillon.persistence.VenteServiceEntity;
 
 @Path("/technicien-portal")
 @ApplicationScoped
@@ -47,55 +49,124 @@ public class TechnicienPortalResource {
         public String newPassword;
     }
 
-    public static class TaskUpdateRequest {
+    public static class PlanningItemUpdateRequest {
         public String status;
         public double dureeReelle;
+        public String dateDebut;
+        public String dateFin;
         public String incidentDate;
         public String incidentDetails;
         public String notes;
+        public List<ChecklistUpdate> taches;
     }
 
-    public static class TaskWithVente {
+    public static class ChecklistUpdate {
         public Long taskId;
+        public boolean done;
+    }
+
+    public static class ChecklistItem {
+        public Long id;
+        public String nom;
+        public String description;
+        public boolean done;
+    }
+
+    public static class PlanningItemWithVente {
+        public Long itemId;
         public Long venteId;
-        public String taskNom;
-        public String taskStatus;
+        public String itemType; // "forfait" or "service"
+        public String itemNom;
+        public String itemStatus;
+        public String datePlanification;
         public String dateDebut;
         public String dateFin;
         public String statusDate;
-        public String description;
         public String notes;
-        public double dureeEstimee;
         public double dureeReelle;
+        public double dureeEstimee;
         public String incidentDate;
         public String incidentDetails;
         public String clientNom;
         public String venteType;
         public String bateauNom;
+        public int quantite;
+        public List<ChecklistItem> taches;
 
-        public static TaskWithVente from(TaskEntity task, VenteEntity vente) {
-            TaskWithVente tw = new TaskWithVente();
-            tw.taskId = task.id;
-            tw.venteId = vente.id;
-            tw.taskNom = task.nom;
-            tw.taskStatus = task.status != null ? task.status.name() : null;
-            tw.dateDebut = task.dateDebut != null ? task.dateDebut.toString() : null;
-            tw.dateFin = task.dateFin != null ? task.dateFin.toString() : null;
-            tw.statusDate = task.statusDate != null ? task.statusDate.toString() : null;
-            tw.description = task.description;
-            tw.notes = task.notes;
-            tw.dureeEstimee = task.dureeEstimee;
-            tw.dureeReelle = task.dureeReelle;
-            tw.incidentDate = task.incidentDate != null ? task.incidentDate.toString() : null;
-            tw.incidentDetails = task.incidentDetails;
+        public static PlanningItemWithVente fromForfait(VenteForfaitEntity vf, VenteEntity vente) {
+            PlanningItemWithVente item = new PlanningItemWithVente();
+            item.itemId = vf.id;
+            item.venteId = vente.id;
+            item.itemType = "forfait";
+            item.itemNom = vf.forfait != null ? vf.forfait.nom : "";
+            item.itemStatus = vf.status != null ? vf.status.name() : null;
+            item.datePlanification = vf.datePlanification != null ? vf.datePlanification.toString() : null;
+            item.dateDebut = vf.dateDebut != null ? vf.dateDebut.toString() : null;
+            item.dateFin = vf.dateFin != null ? vf.dateFin.toString() : null;
+            item.statusDate = vf.statusDate != null ? vf.statusDate.toString() : null;
+            item.notes = vf.notes;
+            item.dureeReelle = vf.dureeReelle;
+            item.dureeEstimee = vf.forfait != null ? vf.forfait.dureeEstimee : 0;
+            item.incidentDate = vf.incidentDate != null ? vf.incidentDate.toString() : null;
+            item.incidentDetails = vf.incidentDetails;
+            item.quantite = vf.quantite;
             if (vente.client != null) {
-                tw.clientNom = (vente.client.prenom != null ? vente.client.prenom + " " : "") + vente.client.nom;
+                item.clientNom = (vente.client.prenom != null ? vente.client.prenom + " " : "") + vente.client.nom;
             }
-            tw.venteType = vente.type != null ? vente.type.name() : null;
+            item.venteType = vente.type != null ? vente.type.name() : null;
             if (vente.bateau != null) {
-                tw.bateauNom = vente.bateau.name;
+                item.bateauNom = vente.bateau.name;
             }
-            return tw;
+            item.taches = new ArrayList<>();
+            if (vf.taches != null) {
+                for (TaskEntity t : vf.taches) {
+                    ChecklistItem ci = new ChecklistItem();
+                    ci.id = t.id;
+                    ci.nom = t.nom;
+                    ci.description = t.description;
+                    ci.done = t.done;
+                    item.taches.add(ci);
+                }
+            }
+            return item;
+        }
+
+        public static PlanningItemWithVente fromService(VenteServiceEntity vs, VenteEntity vente) {
+            PlanningItemWithVente item = new PlanningItemWithVente();
+            item.itemId = vs.id;
+            item.venteId = vente.id;
+            item.itemType = "service";
+            item.itemNom = vs.service != null ? vs.service.nom : "";
+            item.itemStatus = vs.status != null ? vs.status.name() : null;
+            item.datePlanification = vs.datePlanification != null ? vs.datePlanification.toString() : null;
+            item.dateDebut = vs.dateDebut != null ? vs.dateDebut.toString() : null;
+            item.dateFin = vs.dateFin != null ? vs.dateFin.toString() : null;
+            item.statusDate = vs.statusDate != null ? vs.statusDate.toString() : null;
+            item.notes = vs.notes;
+            item.dureeReelle = vs.dureeReelle;
+            item.dureeEstimee = vs.service != null ? vs.service.dureeEstimee : 0;
+            item.incidentDate = vs.incidentDate != null ? vs.incidentDate.toString() : null;
+            item.incidentDetails = vs.incidentDetails;
+            item.quantite = vs.quantite;
+            if (vente.client != null) {
+                item.clientNom = (vente.client.prenom != null ? vente.client.prenom + " " : "") + vente.client.nom;
+            }
+            item.venteType = vente.type != null ? vente.type.name() : null;
+            if (vente.bateau != null) {
+                item.bateauNom = vente.bateau.name;
+            }
+            item.taches = new ArrayList<>();
+            if (vs.taches != null) {
+                for (TaskEntity t : vs.taches) {
+                    ChecklistItem ci = new ChecklistItem();
+                    ci.id = t.id;
+                    ci.nom = t.nom;
+                    ci.description = t.description;
+                    ci.done = t.done;
+                    item.taches.add(ci);
+                }
+            }
+            return item;
         }
     }
 
@@ -144,19 +215,27 @@ public class TechnicienPortalResource {
 
     @GET
     @Path("/techniciens/{id}/taches")
-    public List<TaskWithVente> getTechnicienTasks(@PathParam("id") long technicienId) {
+    public List<PlanningItemWithVente> getTechnicienTasks(@PathParam("id") long technicienId) {
         TechnicienEntity technicien = TechnicienEntity.findById(technicienId);
         if (technicien == null) {
             throw new WebApplicationException("Technicien non trouve", Response.Status.NOT_FOUND);
         }
 
         List<VenteEntity> ventes = VenteEntity.listAll();
-        List<TaskWithVente> result = new ArrayList<>();
+        List<PlanningItemWithVente> result = new ArrayList<>();
         for (VenteEntity vente : ventes) {
-            if (vente.taches == null) continue;
-            for (TaskEntity task : vente.taches) {
-                if (task.technicien != null && task.technicien.id.equals(technicienId)) {
-                    result.add(TaskWithVente.from(task, vente));
+            if (vente.venteForfaits != null) {
+                for (VenteForfaitEntity vf : vente.venteForfaits) {
+                    if (vf.technicien != null && vf.technicien.id.equals(technicienId)) {
+                        result.add(PlanningItemWithVente.fromForfait(vf, vente));
+                    }
+                }
+            }
+            if (vente.venteServices != null) {
+                for (VenteServiceEntity vs : vente.venteServices) {
+                    if (vs.technicien != null && vs.technicien.id.equals(technicienId)) {
+                        result.add(PlanningItemWithVente.fromService(vs, vente));
+                    }
                 }
             }
         }
@@ -164,72 +243,146 @@ public class TechnicienPortalResource {
     }
 
     @PUT
-    @Path("/taches/{taskId}")
+    @Path("/forfaits/{itemId}")
     @Transactional
-    public TaskWithVente updateTask(@PathParam("taskId") long taskId, TaskUpdateRequest request) {
-        TaskEntity task = TaskEntity.findById(taskId);
-        if (task == null) {
-            throw new WebApplicationException("Tache non trouvee", Response.Status.NOT_FOUND);
+    public PlanningItemWithVente updateForfaitItem(@PathParam("itemId") long itemId, PlanningItemUpdateRequest request) {
+        VenteForfaitEntity vf = VenteForfaitEntity.findById(itemId);
+        if (vf == null) {
+            throw new WebApplicationException("Element non trouve", Response.Status.NOT_FOUND);
         }
 
         if (request.status != null && !request.status.isBlank()) {
-            task.status = TaskEntity.Status.valueOf(request.status);
+            vf.status = VenteForfaitEntity.Status.valueOf(request.status);
         }
-        task.dureeReelle = request.dureeReelle;
+        vf.dureeReelle = request.dureeReelle;
+        if (request.dateDebut != null && !request.dateDebut.isBlank()) {
+            vf.dateDebut = java.sql.Timestamp.valueOf(java.time.LocalDateTime.parse(request.dateDebut));
+        }
+        if (request.dateFin != null && !request.dateFin.isBlank()) {
+            vf.dateFin = java.sql.Timestamp.valueOf(java.time.LocalDateTime.parse(request.dateFin));
+        }
         if (request.notes != null) {
-            task.notes = request.notes;
+            vf.notes = request.notes;
         }
-
         if ("INCIDENT".equals(request.status)) {
             if (request.incidentDate != null && !request.incidentDate.isBlank()) {
-                task.incidentDate = Date.valueOf(request.incidentDate);
+                vf.incidentDate = Date.valueOf(request.incidentDate);
             }
-            task.incidentDetails = request.incidentDetails;
+            vf.incidentDetails = request.incidentDetails;
         }
 
-        // Find the parent vente for the response
-        List<VenteEntity> ventes = VenteEntity.list("SELECT v FROM VenteEntity v JOIN v.taches t WHERE t.id = ?1", taskId);
+        // Update checklist items
+        if (request.taches != null) {
+            for (ChecklistUpdate cu : request.taches) {
+                if (cu.taskId != null) {
+                    TaskEntity task = TaskEntity.findById(cu.taskId);
+                    if (task != null) {
+                        task.done = cu.done;
+                    }
+                }
+            }
+        }
+
+        // Find parent vente
+        List<VenteEntity> ventes = VenteEntity.list("SELECT v FROM VenteEntity v JOIN v.venteForfaits vf WHERE vf.id = ?1", itemId);
         VenteEntity parentVente = ventes.isEmpty() ? null : ventes.get(0);
 
-        // Send incident notification email to client
-        if (task.status == TaskEntity.Status.INCIDENT && parentVente != null
+        // Send incident notification
+        if (vf.status == VenteForfaitEntity.Status.INCIDENT && parentVente != null
                 && parentVente.client != null && parentVente.client.email != null && !parentVente.client.email.isBlank()) {
-            sendIncidentNotification(parentVente, task);
+            String nom = vf.forfait != null ? vf.forfait.nom : "Forfait";
+            sendIncidentNotification(parentVente, nom, vf.incidentDetails, vf.incidentDate);
         }
 
-        // Decrement stock when a task transitions to EN_COURS (once per vente)
-        if (task.status == TaskEntity.Status.EN_COURS && parentVente != null && !parentVente.stockDecremented) {
+        // Decrement stock
+        if (vf.status == VenteForfaitEntity.Status.EN_COURS && parentVente != null && !parentVente.stockDecremented) {
             decrementStock(parentVente);
             parentVente.stockDecremented = true;
         }
+
         if (parentVente == null) {
-            // fallback: return a minimal response
-            TaskWithVente tw = new TaskWithVente();
-            tw.taskId = task.id;
-            tw.taskNom = task.nom;
-            tw.taskStatus = task.status != null ? task.status.name() : null;
-            tw.dureeReelle = task.dureeReelle;
-            tw.incidentDate = task.incidentDate != null ? task.incidentDate.toString() : null;
-            tw.incidentDetails = task.incidentDetails;
-            tw.notes = task.notes;
-            return tw;
+            return PlanningItemWithVente.fromForfait(vf, new VenteEntity());
         }
-        return TaskWithVente.from(task, parentVente);
+        return PlanningItemWithVente.fromForfait(vf, parentVente);
     }
 
-    private void sendIncidentNotification(VenteEntity vente, TaskEntity task) {
+    @PUT
+    @Path("/services/{itemId}")
+    @Transactional
+    public PlanningItemWithVente updateServiceItem(@PathParam("itemId") long itemId, PlanningItemUpdateRequest request) {
+        VenteServiceEntity vs = VenteServiceEntity.findById(itemId);
+        if (vs == null) {
+            throw new WebApplicationException("Element non trouve", Response.Status.NOT_FOUND);
+        }
+
+        if (request.status != null && !request.status.isBlank()) {
+            vs.status = VenteServiceEntity.Status.valueOf(request.status);
+        }
+        vs.dureeReelle = request.dureeReelle;
+        if (request.dateDebut != null && !request.dateDebut.isBlank()) {
+            vs.dateDebut = java.sql.Timestamp.valueOf(java.time.LocalDateTime.parse(request.dateDebut));
+        }
+        if (request.dateFin != null && !request.dateFin.isBlank()) {
+            vs.dateFin = java.sql.Timestamp.valueOf(java.time.LocalDateTime.parse(request.dateFin));
+        }
+        if (request.notes != null) {
+            vs.notes = request.notes;
+        }
+        if ("INCIDENT".equals(request.status)) {
+            if (request.incidentDate != null && !request.incidentDate.isBlank()) {
+                vs.incidentDate = Date.valueOf(request.incidentDate);
+            }
+            vs.incidentDetails = request.incidentDetails;
+        }
+
+        // Update checklist items
+        if (request.taches != null) {
+            for (ChecklistUpdate cu : request.taches) {
+                if (cu.taskId != null) {
+                    TaskEntity task = TaskEntity.findById(cu.taskId);
+                    if (task != null) {
+                        task.done = cu.done;
+                    }
+                }
+            }
+        }
+
+        // Find parent vente
+        List<VenteEntity> ventes = VenteEntity.list("SELECT v FROM VenteEntity v JOIN v.venteServices vs WHERE vs.id = ?1", itemId);
+        VenteEntity parentVente = ventes.isEmpty() ? null : ventes.get(0);
+
+        // Send incident notification
+        if (vs.status == VenteServiceEntity.Status.INCIDENT && parentVente != null
+                && parentVente.client != null && parentVente.client.email != null && !parentVente.client.email.isBlank()) {
+            String nom = vs.service != null ? vs.service.nom : "Service";
+            sendIncidentNotification(parentVente, nom, vs.incidentDetails, vs.incidentDate);
+        }
+
+        // Decrement stock
+        if (vs.status == VenteServiceEntity.Status.EN_COURS && parentVente != null && !parentVente.stockDecremented) {
+            decrementStock(parentVente);
+            parentVente.stockDecremented = true;
+        }
+
+        if (parentVente == null) {
+            return PlanningItemWithVente.fromService(vs, new VenteEntity());
+        }
+        return PlanningItemWithVente.fromService(vs, parentVente);
+    }
+
+    private void sendIncidentNotification(VenteEntity vente, String itemNom, String incidentDetails, java.sql.Date incidentDate) {
         SocieteEntity societe = SocieteEntity.findById(1L);
         String societeNom = societe != null ? societe.nom : "moussAIllon";
         String clientName = vente.client.prenom != null ? vente.client.prenom : vente.client.nom;
 
         String subject = "Incident sur votre intervention - " + societeNom;
         String body = "Bonjour " + clientName + ",\n\n"
-                + "Nous vous informons qu'un incident a ete signale sur l'intervention \"" + task.nom + "\".\n\n";
-        if (task.incidentDetails != null && !task.incidentDetails.isBlank()) {
-            body += "Details : " + task.incidentDetails + "\n\n";
+                + "Nous vous informons qu'un incident a ete signale sur l'intervention \"" + itemNom + "\".\n\n";
+        if (incidentDetails != null && !incidentDetails.isBlank()) {
+            body += "Details : " + incidentDetails + "\n\n";
         }
-        if (task.incidentDate != null) {
-            body += "Date de l'incident : " + task.incidentDate + "\n\n";
+        if (incidentDate != null) {
+            body += "Date de l'incident : " + incidentDate + "\n\n";
         }
         body += "Notre equipe met tout en oeuvre pour resoudre la situation dans les meilleurs delais.\n\n"
                 + "Cordialement,\n" + societeNom;
@@ -238,7 +391,6 @@ public class TechnicienPortalResource {
     }
 
     private void decrementStock(VenteEntity vente) {
-        // Decrement stock for direct products on the vente
         if (vente.produits != null) {
             for (ProduitCatalogueEntity produit : vente.produits) {
                 ProduitCatalogueEntity p = ProduitCatalogueEntity.findById(produit.id);
@@ -247,16 +399,15 @@ public class TechnicienPortalResource {
                 }
             }
         }
-        // Decrement stock for products in forfaits
-        if (vente.forfaits != null) {
-            for (ForfaitEntity forfait : vente.forfaits) {
-                ForfaitEntity f = ForfaitEntity.findById(forfait.id);
+        for (VenteForfaitEntity vf : vente.venteForfaits) {
+            if (vf.forfait != null) {
+                ForfaitEntity f = ForfaitEntity.findById(vf.forfait.id);
                 if (f != null && f.produits != null) {
                     for (ForfaitProduitEntity fp : f.produits) {
                         if (fp.produit != null) {
                             ProduitCatalogueEntity p = ProduitCatalogueEntity.findById(fp.produit.id);
                             if (p != null) {
-                                p.stock = Math.max(0, p.stock - fp.quantite);
+                                p.stock = Math.max(0, p.stock - fp.quantite * vf.quantite);
                             }
                         }
                     }

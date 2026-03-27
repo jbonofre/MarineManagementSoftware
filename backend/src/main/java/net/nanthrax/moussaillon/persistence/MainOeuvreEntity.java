@@ -4,12 +4,18 @@ import io.quarkus.hibernate.orm.panache.PanacheEntity;
 import jakarta.persistence.Entity;
 
 @Entity
-public class TaskEntity extends PanacheEntity {
+public class MainOeuvreEntity extends PanacheEntity {
 
     public String nom;
 
     public String description;
 
-    public boolean done;
+    public double prixHT;
+
+    public double tva;
+
+    public double montantTVA;
+
+    public double prixTTC;
 
 }

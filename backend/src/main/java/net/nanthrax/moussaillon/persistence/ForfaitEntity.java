@@ -26,8 +26,10 @@ public class ForfaitEntity extends PanacheEntity {
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "forfait_id")
-    public List<ForfaitServiceEntity> services = new ArrayList<>();
+    public List<ForfaitMainOeuvreEntity> mainOeuvres = new ArrayList<>();
     
+    public double dureeEstimee;
+
     public long heuresFonctionnement;
     public long joursFrequence;
 

@@ -19,8 +19,9 @@ import {
     Dropdown,
     message
 } from 'antd';
-import { CreditCardOutlined, DeleteOutlined, EditOutlined, MailOutlined, PlusCircleOutlined, PlusOutlined, PrinterOutlined, SendOutlined } from '@ant-design/icons';
+import { CalendarOutlined, CreditCardOutlined, DeleteOutlined, EditOutlined, MailOutlined, PlusCircleOutlined, PlusOutlined, PrinterOutlined, SendOutlined } from '@ant-design/icons';
 import axios from 'axios';
+import { useHistory } from 'react-router-dom';
 import ImageUpload from './ImageUpload.tsx';
 
 interface ClientEntity {
@@ -52,22 +53,47 @@ interface TechnicienEntity {
     nom?: string;
 }
 
-type TaskStatus = 'EN_ATTENTE' | 'EN_COURS' | 'TERMINEE' | 'INCIDENT' | 'ANNULEE';
+type PlanningStatus = 'EN_ATTENTE' | 'PLANIFIEE' | 'EN_COURS' | 'TERMINEE' | 'INCIDENT' | 'ANNULEE';
 
 interface TaskEntity {
     id?: number;
     nom?: string;
-    status?: TaskStatus;
+    description?: string;
+    done?: boolean;
+}
+
+interface VenteForfaitEntity {
+    id?: number;
+    forfait?: ForfaitEntity;
+    quantite?: number;
+    technicien?: TechnicienEntity;
+    datePlanification?: string;
     dateDebut?: string;
     dateFin?: string;
+    status?: PlanningStatus;
     statusDate?: string;
-    description?: string;
-    notes?: string;
-    technicien?: TechnicienEntity;
-    dureeEstimee?: number;
     dureeReelle?: number;
     incidentDate?: string;
     incidentDetails?: string;
+    notes?: string;
+    taches?: TaskEntity[];
+}
+
+interface VenteServiceEntity {
+    id?: number;
+    service?: ServiceEntity;
+    quantite?: number;
+    technicien?: TechnicienEntity;
+    datePlanification?: string;
+    dateDebut?: string;
+    dateFin?: string;
+    status?: PlanningStatus;
+    statusDate?: string;
+    dureeReelle?: number;
+    incidentDate?: string;
+    incidentDetails?: string;
+    notes?: string;
+    taches?: TaskEntity[];
 }
 
 interface ForfaitEntity {
@@ -139,7 +165,7 @@ const defaultNewProduit = {
     prixVenteTTC: 0,
 };
 
-interface ServiceEntity {
+interface MainOeuvreEntity {
     id: number;
     nom: string;
     description?: string;
@@ -149,8 +175,37 @@ interface ServiceEntity {
     prixTTC?: number;
 }
 
+interface ServiceMainOeuvreEntity {
+    id?: number;
+    mainOeuvre?: MainOeuvreEntity;
+    quantite: number;
+}
+
+interface ServiceProduitEntity {
+    id?: number;
+    produit?: ProduitCatalogueEntity;
+    quantite: number;
+}
+
+interface ServiceEntity {
+    id: number;
+    nom: string;
+    description?: string;
+    dureeEstimee?: number;
+    mainOeuvres?: ServiceMainOeuvreEntity[];
+    produits?: ServiceProduitEntity[];
+    prixHT?: number;
+    tva?: number;
+    montantTVA?: number;
+    prixTTC?: number;
+}
+
 const defaultNewService = {
-    nom: '', description: '', prixHT: 0, tva: 20, montantTVA: 0, prixTTC: 0,
+    nom: '', description: '',
+    dureeEstimee: 0,
+    mainOeuvres: [{}] as Array<{ mainOeuvreId?: number; quantite?: number }>,
+    produits: [{}] as Array<{ produitId?: number; quantite?: number }>,
+    prixHT: 0, tva: 20, montantTVA: 0, prixTTC: 0,
 };
 
 type VenteStatus = 'EN_ATTENTE' | 'EN_COURS' | 'PAYEE' | 'ANNULEE';
@@ -165,10 +220,9 @@ interface VenteEntity {
     bateau?: BateauClientEntity;
     moteur?: MoteurClientEntity;
     remorque?: RemorqueClientEntity;
-    forfaits?: ForfaitEntity[];
+    venteForfaits?: VenteForfaitEntity[];
+    venteServices?: VenteServiceEntity[];
     produits?: ProduitCatalogueEntity[];
-    services?: ServiceEntity[];
-    taches?: TaskEntity[];
     date?: string;
     montantHT?: number;
     remise?: number;
@@ -198,24 +252,35 @@ interface VenteFormValues {
     bateauId?: number;
     moteurId?: number;
     remorqueId?: number;
-    forfaits: Array<{ forfaitId?: number; quantite?: number }>;
-    produits: Array<{ produitId?: number; quantite?: number }>;
-    services: Array<{ serviceId?: number; quantite?: number }>;
-    taches: Array<{
-        id?: number;
-        nom?: string;
-        status?: TaskStatus;
+    venteForfaits: Array<{
+        forfaitId?: number;
+        quantite?: number;
+        technicienId?: number;
+        status?: PlanningStatus;
+        datePlanification?: string;
         dateDebut?: string;
         dateFin?: string;
-        statusDate?: string;
-        description?: string;
-        notes?: string;
-        technicienId?: number;
-        dureeEstimee?: number;
         dureeReelle?: number;
+        notes?: string;
         incidentDate?: string;
         incidentDetails?: string;
+        taches?: Array<{ nom?: string; description?: string; done?: boolean }>;
     }>;
+    venteServices: Array<{
+        serviceId?: number;
+        quantite?: number;
+        technicienId?: number;
+        status?: PlanningStatus;
+        datePlanification?: string;
+        dateDebut?: string;
+        dateFin?: string;
+        dureeReelle?: number;
+        notes?: string;
+        incidentDate?: string;
+        incidentDetails?: string;
+        taches?: Array<{ nom?: string; description?: string; done?: boolean }>;
+    }>;
+    produits: Array<{ produitId?: number; quantite?: number }>;
     date?: string;
     montantHT: number;
     remise: number;
@@ -258,8 +323,9 @@ const modePaiementOptions: Array<{ value: ModePaiement; label: string }> = [
     { value: 'ESPÈCES', label: 'Especes' }
 ];
 
-const taskStatusOptions: Array<{ value: TaskStatus; label: string }> = [
+const planningStatusOptions: Array<{ value: PlanningStatus; label: string }> = [
     { value: 'EN_ATTENTE', label: 'En attente' },
+    { value: 'PLANIFIEE', label: 'Planifiee' },
     { value: 'EN_COURS', label: 'En cours' },
     { value: 'TERMINEE', label: 'Terminee' },
     { value: 'INCIDENT', label: 'Incident' },
@@ -286,6 +352,10 @@ const toDateInputValue = (value?: string) => {
     if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
         return value;
     }
+    // Handle ISO datetime like "2025-06-15T10:00:00"
+    if (/^\d{4}-\d{2}-\d{2}T/.test(value)) {
+        return value.slice(0, 10);
+    }
     const parsedDate = new Date(value);
     if (Number.isNaN(parsedDate.getTime())) {
         return undefined;
@@ -293,6 +363,7 @@ const toDateInputValue = (value?: string) => {
     const timezoneOffsetMs = parsedDate.getTimezoneOffset() * 60000;
     return new Date(parsedDate.getTime() - timezoneOffsetMs).toISOString().split('T')[0];
 };
+
 
 const toBackendDateValue = (value?: string) => {
     if (!value) {
@@ -311,10 +382,9 @@ const toBackendDateValue = (value?: string) => {
 const defaultVente: VenteFormValues = {
     status: 'EN_ATTENTE',
     type: 'DEVIS',
-    forfaits: [{}],
-    produits: [{}],
-    services: [{}],
-    taches: [{}],
+    venteForfaits: [{ status: 'EN_ATTENTE', quantite: 1 }],
+    venteServices: [{ status: 'EN_ATTENTE', quantite: 1 }],
+    produits: [{ quantite: 1 }],
     montantHT: 0,
     remise: 0,
     remisePourcentage: 0,
@@ -343,6 +413,7 @@ const getClientLabel = (client?: ClientEntity) => {
 };
 
 export default function Vente() {
+    const history = useHistory();
     const [ventes, setVentes] = useState<VenteEntity[]>([]);
     const [clients, setClients] = useState<ClientEntity[]>([]);
     const [bateaux, setBateaux] = useState<BateauClientEntity[]>([]);
@@ -351,7 +422,11 @@ export default function Vente() {
     const [forfaits, setForfaits] = useState<ForfaitEntity[]>([]);
     const [produits, setProduits] = useState<ProduitCatalogueEntity[]>([]);
     const [services, setServices] = useState<ServiceEntity[]>([]);
+    const [mainOeuvres, setMainOeuvres] = useState<MainOeuvreEntity[]>([]);
     const [techniciens, setTechniciens] = useState<TechnicienEntity[]>([]);
+    const [catalogueBateaux, setCatalogueBateaux] = useState<Array<{ id: number; marque?: string; modele?: string }>>([]);
+    const [catalogueMoteurs, setCatalogueMoteurs] = useState<Array<{ id: number; marque?: string; modele?: string }>>([]);
+    const [catalogueRemorques, setCatalogueRemorques] = useState<Array<{ id: number; marque?: string; modele?: string }>>([]);
     const [loading, setLoading] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
     const [isEdit, setIsEdit] = useState(false);
@@ -365,10 +440,19 @@ export default function Vente() {
     const [newProduitForm] = Form.useForm();
     const [newServiceModalVisible, setNewServiceModalVisible] = useState(false);
     const [newServiceTargetLine, setNewServiceTargetLine] = useState<number | null>(null);
+    const [editServiceId, setEditServiceId] = useState<number | null>(null);
     const [newServiceForm] = Form.useForm();
     const [newForfaitModalVisible, setNewForfaitModalVisible] = useState(false);
     const [newForfaitTargetLine, setNewForfaitTargetLine] = useState<number | null>(null);
     const [newForfaitForm] = Form.useForm();
+    const [newClientModalVisible, setNewClientModalVisible] = useState(false);
+    const [newClientForm] = Form.useForm();
+    const [newBateauModalVisible, setNewBateauModalVisible] = useState(false);
+    const [newBateauForm] = Form.useForm();
+    const [newMoteurModalVisible, setNewMoteurModalVisible] = useState(false);
+    const [newMoteurForm] = Form.useForm();
+    const [newRemorqueModalVisible, setNewRemorqueModalVisible] = useState(false);
+    const [newRemorqueForm] = Form.useForm();
 
     const marqueOptions = useMemo(() => {
         const unique = Array.from(new Set(produits.map((p) => p.marque).filter(Boolean))) as string[];
@@ -415,6 +499,16 @@ export default function Vente() {
         [services]
     );
 
+    const mainOeuvreOptions = useMemo(
+        () => mainOeuvres.map((mo) => ({ value: mo.id, label: mo.nom })),
+        [mainOeuvres]
+    );
+
+    const produitOptionsForService = useMemo(
+        () => produits.map((p) => ({ value: p.id, label: `${p.nom}${p.marque ? ` (${p.marque})` : ''}` })),
+        [produits]
+    );
+
     const technicienOptions = useMemo(
         () =>
             techniciens.map((technicien) => ({
@@ -457,7 +551,11 @@ export default function Vente() {
                 forfaitsRes,
                 produitsRes,
                 servicesRes,
-                techniciensRes
+                mainOeuvresRes,
+                techniciensRes,
+                catBateauxRes,
+                catMoteursRes,
+                catRemorquesRes
             ] = await Promise.all([
                 axios.get('/clients'),
                 axios.get('/bateaux'),
@@ -466,7 +564,11 @@ export default function Vente() {
                 axios.get('/forfaits'),
                 axios.get('/catalogue/produits'),
                 axios.get('/services'),
-                axios.get('/techniciens')
+                axios.get('/main-oeuvres'),
+                axios.get('/techniciens'),
+                axios.get('/catalogue/bateaux'),
+                axios.get('/catalogue/moteurs'),
+                axios.get('/catalogue/remorques')
             ]);
             setClients(clientsRes.data || []);
             setBateaux(bateauxRes.data || []);
@@ -475,7 +577,11 @@ export default function Vente() {
             setForfaits(forfaitsRes.data || []);
             setProduits(produitsRes.data || []);
             setServices(servicesRes.data || []);
+            setMainOeuvres(mainOeuvresRes.data || []);
             setTechniciens(techniciensRes.data || []);
+            setCatalogueBateaux(catBateauxRes.data || []);
+            setCatalogueMoteurs(catMoteursRes.data || []);
+            setCatalogueRemorques(catRemorquesRes.data || []);
         } catch {
             message.error('Erreur lors du chargement des listes de reference.');
         }
@@ -535,24 +641,80 @@ export default function Vente() {
 
     const openNewServiceModal = (lineIndex: number) => {
         setNewServiceTargetLine(lineIndex);
+        setEditServiceId(null);
         newServiceForm.resetFields();
         newServiceForm.setFieldsValue(defaultNewService);
+        setNewServiceModalVisible(true);
+    };
+
+    const openEditServiceModal = (serviceId: number) => {
+        setNewServiceTargetLine(null);
+        setEditServiceId(serviceId);
+        const service = services.find((s) => s.id === serviceId);
+        if (!service) return;
+        newServiceForm.resetFields();
+        newServiceForm.setFieldsValue({
+            nom: service.nom || '',
+            description: service.description || '',
+            dureeEstimee: service.dureeEstimee || 0,
+            mainOeuvres: (service.mainOeuvres || [])
+                .filter((item) => item.mainOeuvre?.id)
+                .map((item) => ({ mainOeuvreId: item.mainOeuvre!.id, quantite: item.quantite || 1 }))
+                .concat([{}]),
+            produits: (service.produits || [])
+                .filter((item) => item.produit?.id)
+                .map((item) => ({ produitId: item.produit!.id, quantite: item.quantite || 1 }))
+                .concat([{}]),
+            prixHT: service.prixHT || 0,
+            tva: service.tva || 0,
+            montantTVA: service.montantTVA || 0,
+            prixTTC: service.prixTTC || 0,
+        });
         setNewServiceModalVisible(true);
     };
 
     const handleNewServiceSave = async () => {
         try {
             const values = await newServiceForm.validateFields();
-            const res = await axios.post('/services', values);
-            const created = res.data as ServiceEntity;
-            message.success('Service ajouté avec succès');
-            setServices((prev) => [...prev, created]);
-            if (newServiceTargetLine !== null && created.id) {
-                const currentLines = form.getFieldValue('services') || [];
-                const updated = [...currentLines];
-                updated[newServiceTargetLine] = { ...updated[newServiceTargetLine], serviceId: created.id };
-                form.setFieldValue('services', updated);
+            const payload = {
+                nom: values.nom,
+                description: values.description,
+                dureeEstimee: values.dureeEstimee || 0,
+                mainOeuvres: (values.mainOeuvres || [])
+                    .filter((item: { mainOeuvreId?: number }) => item.mainOeuvreId)
+                    .map((item: { mainOeuvreId?: number; quantite?: number }) => ({
+                        mainOeuvre: mainOeuvres.find((mo) => mo.id === item.mainOeuvreId),
+                        quantite: item.quantite || 1
+                    })),
+                produits: (values.produits || [])
+                    .filter((item: { produitId?: number }) => item.produitId)
+                    .map((item: { produitId?: number; quantite?: number }) => ({
+                        produit: produits.find((p) => p.id === item.produitId),
+                        quantite: item.quantite || 1
+                    })),
+                prixHT: values.prixHT || 0,
+                tva: values.tva || 0,
+                montantTVA: values.montantTVA || 0,
+                prixTTC: values.prixTTC || 0
+            };
+            if (editServiceId) {
+                const res = await axios.put(`/services/${editServiceId}`, { id: editServiceId, ...payload });
+                const updated = res.data as ServiceEntity;
+                message.success('Service modifié avec succès');
+                setServices((prev) => prev.map((s) => s.id === editServiceId ? updated : s));
                 recalculateFromLines('auto');
+            } else {
+                const res = await axios.post('/services', payload);
+                const created = res.data as ServiceEntity;
+                message.success('Service ajouté avec succès');
+                setServices((prev) => [...prev, created]);
+                if (newServiceTargetLine !== null && created.id) {
+                    const currentLines = form.getFieldValue('venteServices') || [];
+                    const updatedLines = [...currentLines];
+                    updatedLines[newServiceTargetLine] = { ...updatedLines[newServiceTargetLine], serviceId: created.id };
+                    form.setFieldValue('venteServices', updatedLines);
+                    recalculateFromLines('auto');
+                }
             }
             setNewServiceModalVisible(false);
         } catch {
@@ -561,6 +723,52 @@ export default function Vente() {
     };
 
     const onNewServiceValuesChange = (changedValues: Record<string, unknown>) => {
+        // Auto-add new line when last line is complete
+        if (changedValues.mainOeuvres !== undefined) {
+            const currentLines = newServiceForm.getFieldValue('mainOeuvres') || [];
+            if (currentLines.length === 0) {
+                newServiceForm.setFieldValue('mainOeuvres', [{}]);
+                return;
+            }
+            const lastLine = currentLines[currentLines.length - 1];
+            if (!!lastLine?.mainOeuvreId && (lastLine?.quantite || 0) > 0) {
+                newServiceForm.setFieldValue('mainOeuvres', [...currentLines, {}]);
+            }
+        }
+        if (changedValues.produits !== undefined) {
+            const currentLines = newServiceForm.getFieldValue('produits') || [];
+            if (currentLines.length === 0) {
+                newServiceForm.setFieldValue('produits', [{}]);
+                return;
+            }
+            const lastLine = currentLines[currentLines.length - 1];
+            if (!!lastLine?.produitId && (lastLine?.quantite || 0) > 0) {
+                newServiceForm.setFieldValue('produits', [...currentLines, {}]);
+            }
+        }
+
+        // Recalculate totals from lines
+        if (changedValues.mainOeuvres !== undefined || changedValues.produits !== undefined) {
+            const round2 = (v: number) => Math.round((v + Number.EPSILON) * 100) / 100;
+            const moValues = newServiceForm.getFieldValue('mainOeuvres') || [];
+            const prodValues = newServiceForm.getFieldValue('produits') || [];
+            const totalMoTTC = moValues.reduce((total: number, item: { mainOeuvreId?: number; quantite?: number }) => {
+                const prix = mainOeuvres.find((mo) => mo.id === item.mainOeuvreId)?.prixTTC || 0;
+                return total + (prix * (item.quantite || 0));
+            }, 0);
+            const totalProdTTC = prodValues.reduce((total: number, item: { produitId?: number; quantite?: number }) => {
+                const prix = produits.find((p) => p.id === item.produitId)?.prixVenteTTC || 0;
+                return total + (prix * (item.quantite || 0));
+            }, 0);
+            const prixTTC = round2(totalMoTTC + totalProdTTC);
+            const tva = newServiceForm.getFieldValue('tva') || 0;
+            const montantTVA = round2((prixTTC / (100 + tva)) * tva);
+            const prixHT = round2(prixTTC - montantTVA);
+            newServiceForm.setFieldValue('prixTTC', prixTTC);
+            newServiceForm.setFieldValue('montantTVA', montantTVA);
+            newServiceForm.setFieldValue('prixHT', prixHT);
+        }
+
         if (changedValues.prixHT !== undefined || changedValues.tva !== undefined) {
             const prixHT = newServiceForm.getFieldValue('prixHT') || 0;
             const tva = newServiceForm.getFieldValue('tva') || 0;
@@ -592,10 +800,10 @@ export default function Vente() {
             message.success('Forfait ajouté avec succès');
             setForfaits((prev) => [...prev, created]);
             if (newForfaitTargetLine !== null && created.id) {
-                const currentLines = form.getFieldValue('forfaits') || [];
+                const currentLines = form.getFieldValue('venteForfaits') || [];
                 const updated = [...currentLines];
                 updated[newForfaitTargetLine] = { ...updated[newForfaitTargetLine], forfaitId: created.id };
-                form.setFieldValue('forfaits', updated);
+                form.setFieldValue('venteForfaits', updated);
                 recalculateFromLines('auto');
             }
             setNewForfaitModalVisible(false);
@@ -621,116 +829,167 @@ export default function Vente() {
         }
     };
 
-    const openModal = (vente?: VenteEntity) => {
+    const openNewClientModal = () => {
+        newClientForm.resetFields();
+        newClientForm.setFieldsValue({ nom: '', prenom: '', type: 'PARTICULIER', email: '', telephone: '', adresse: '', siren: '', siret: '', tva: '', naf: '', remise: 0, evaluation: 0, notes: '' });
+        setNewClientModalVisible(true);
+    };
+
+    const handleNewClientSave = async () => {
+        try {
+            const values = await newClientForm.validateFields();
+            const res = await axios.post('/clients', values);
+            const created = res.data as ClientEntity;
+            message.success('Client ajouté avec succès');
+            setClients((prev) => [...prev, created]);
+            form.setFieldValue('clientId', created.id);
+            setNewClientModalVisible(false);
+        } catch {
+            // validation errors shown in form
+        }
+    };
+
+    const openNewBateauModal = () => {
+        newBateauForm.resetFields();
+        newBateauForm.setFieldsValue({ name: '', immatriculation: '', numeroSerie: '', numeroClef: '', dateMeS: '', dateAchat: '', dateFinDeGuarantie: '', localisation: '' });
+        setNewBateauModalVisible(true);
+    };
+    const handleNewBateauSave = async () => {
+        try {
+            const values = await newBateauForm.validateFields();
+            const res = await axios.post('/bateaux', values);
+            const created = res.data;
+            message.success('Bateau ajouté avec succès');
+            setBateaux((prev) => [...prev, created]);
+            form.setFieldValue('bateauId', created.id);
+            setNewBateauModalVisible(false);
+        } catch { }
+    };
+
+    const openNewMoteurModal = () => {
+        newMoteurForm.resetFields();
+        newMoteurForm.setFieldsValue({ numeroSerie: '', numeroClef: '', dateMeS: '', dateAchat: '', dateFinDeGuarantie: '' });
+        setNewMoteurModalVisible(true);
+    };
+    const handleNewMoteurSave = async () => {
+        try {
+            const values = await newMoteurForm.validateFields();
+            const res = await axios.post('/moteurs', values);
+            const created = res.data;
+            message.success('Moteur ajouté avec succès');
+            setMoteurs((prev) => [...prev, created]);
+            form.setFieldValue('moteurId', created.id);
+            setNewMoteurModalVisible(false);
+        } catch { }
+    };
+
+    const openNewRemorqueModal = () => {
+        newRemorqueForm.resetFields();
+        newRemorqueForm.setFieldsValue({ immatriculation: '', dateMeS: '', dateAchat: '', dateFinDeGuarantie: '' });
+        setNewRemorqueModalVisible(true);
+    };
+    const handleNewRemorqueSave = async () => {
+        try {
+            const values = await newRemorqueForm.validateFields();
+            const res = await axios.post('/remorques', values);
+            const created = res.data;
+            message.success('Remorque ajoutée avec succès');
+            setRemorques((prev) => [...prev, created]);
+            form.setFieldValue('remorqueId', created.id);
+            setNewRemorqueModalVisible(false);
+        } catch { }
+    };
+
+    const populateForm = (vente: VenteEntity) => {
+        const venteForfaitLines = (vente.venteForfaits || []).map(vf => ({
+            forfaitId: vf.forfait?.id,
+            quantite: vf.quantite || 1,
+            technicienId: vf.technicien?.id,
+            status: vf.status || 'EN_ATTENTE',
+            datePlanification: vf.datePlanification,
+            dateDebut: vf.dateDebut,
+            dateFin: vf.dateFin,
+            dureeReelle: vf.dureeReelle || 0,
+            notes: vf.notes || '',
+            incidentDate: toDateInputValue(vf.incidentDate),
+            incidentDetails: vf.incidentDetails || '',
+            taches: (vf.taches || []).map(t => ({ nom: t.nom || '', description: t.description || '', done: t.done || false })),
+        }));
+        const venteServiceLines = (vente.venteServices || []).map(vs => ({
+            serviceId: vs.service?.id,
+            quantite: vs.quantite || 1,
+            technicienId: vs.technicien?.id,
+            status: vs.status || 'EN_ATTENTE',
+            datePlanification: vs.datePlanification,
+            dateDebut: vs.dateDebut,
+            dateFin: vs.dateFin,
+            dureeReelle: vs.dureeReelle || 0,
+            notes: vs.notes || '',
+            incidentDate: toDateInputValue(vs.incidentDate),
+            incidentDetails: vs.incidentDetails || '',
+            taches: (vs.taches || []).map(t => ({ nom: t.nom || '', description: t.description || '', done: t.done || false })),
+        }));
+        const produitLinesMap = (vente.produits || []).reduce((acc, item) => {
+            if (!item?.id) {
+                return acc;
+            }
+            acc.set(item.id, (acc.get(item.id) || 0) + 1);
+            return acc;
+        }, new Map<number, number>());
+        const produitLines = Array.from(produitLinesMap.entries()).map(([produitId, quantite]) => ({ produitId, quantite }));
+        form.resetFields();
+        form.setFieldsValue({
+            status: vente.status || 'EN_ATTENTE',
+            type: vente.type || 'DEVIS',
+            clientId: vente.client?.id,
+            bateauId: vente.bateau?.id,
+            moteurId: vente.moteur?.id,
+            remorqueId: vente.remorque?.id,
+            venteForfaits: [...venteForfaitLines, { status: 'EN_ATTENTE', quantite: 1 }],
+            venteServices: [...venteServiceLines, { status: 'EN_ATTENTE', quantite: 1 }],
+            produits: [...produitLines, { quantite: 1 }],
+            date: toDateInputValue(vente.date) || getTodayIsoDate(),
+            montantHT: vente.montantHT || 0,
+            remise: vente.remise || 0,
+            remisePourcentage: vente.montantTTC ? Math.round((((vente.remise || 0) / vente.montantTTC) * 100 + Number.EPSILON) * 100) / 100 : 0,
+            tva: vente.tva || 0,
+            montantTVA: vente.montantTVA || 0,
+            montantTTC: vente.montantTTC || 0,
+            prixVenteTTC: vente.prixVenteTTC || 0,
+            modePaiement: vente.modePaiement,
+            rappel1Jours: vente.rappel1Jours,
+            rappel2Jours: vente.rappel2Jours,
+            rappel3Jours: vente.rappel3Jours
+        });
+    };
+
+    const openModal = async (vente?: VenteEntity) => {
         if (vente) {
             setIsEdit(true);
             setCurrentVente(vente);
+            setModalVisible(true);
             if (vente.id) {
                 axios.get<RappelHistoriqueEntity[]>(`/rappels/vente/${vente.id}`).then(res => setRappelHistorique(res.data)).catch(() => setRappelHistorique([]));
+                // Fetch the full vente to ensure all nested data is loaded
+                try {
+                    const res = await axios.get<VenteEntity>(`/ventes/${vente.id}`);
+                    const fullVente = res.data;
+                    setCurrentVente(fullVente);
+                    populateForm(fullVente);
+                } catch {
+                    populateForm(vente);
+                }
+            } else {
+                populateForm(vente);
             }
-            const forfaitLinesMap = (vente.forfaits || []).reduce((acc, item) => {
-                if (!item?.id) {
-                    return acc;
-                }
-                acc.set(item.id, (acc.get(item.id) || 0) + 1);
-                return acc;
-            }, new Map<number, number>());
-            const produitLinesMap = (vente.produits || []).reduce((acc, item) => {
-                if (!item?.id) {
-                    return acc;
-                }
-                acc.set(item.id, (acc.get(item.id) || 0) + 1);
-                return acc;
-            }, new Map<number, number>());
-            const serviceLinesMap = (vente.services || []).reduce((acc, item) => {
-                if (!item?.id) {
-                    return acc;
-                }
-                acc.set(item.id, (acc.get(item.id) || 0) + 1);
-                return acc;
-            }, new Map<number, number>());
-            const forfaitLines = Array.from(forfaitLinesMap.entries()).map(([forfaitId, quantite]) => ({ forfaitId, quantite }));
-            const produitLines = Array.from(produitLinesMap.entries()).map(([produitId, quantite]) => ({ produitId, quantite }));
-            const serviceLines = Array.from(serviceLinesMap.entries()).map(([serviceId, quantite]) => ({ serviceId, quantite }));
-            const taskLines = (vente.taches || [])
-                .map<VenteFormValues['taches'][number]>((tache) => ({
-                    id: tache.id,
-                    nom: tache.nom || '',
-                    status: tache.status || 'EN_ATTENTE',
-                    dateDebut: toDateInputValue(tache.dateDebut),
-                    dateFin: toDateInputValue(tache.dateFin),
-                    statusDate: toDateInputValue(tache.statusDate),
-                    description: tache.description || '',
-                    notes: tache.notes || '',
-                    technicienId: tache.technicien?.id,
-                    dureeEstimee: tache.dureeEstimee || 0,
-                    dureeReelle: tache.dureeReelle || 0
-                }));
-            form.setFieldsValue({
-                status: vente.status || 'EN_ATTENTE',
-                type: vente.type || 'DEVIS',
-                clientId: vente.client?.id,
-                bateauId: vente.bateau?.id,
-                moteurId: vente.moteur?.id,
-                remorqueId: vente.remorque?.id,
-                forfaits: [...forfaitLines, {}],
-                produits: [...produitLines, {}],
-                services: [...serviceLines, {}],
-                taches: [...taskLines, {}],
-                date: toDateInputValue(vente.date),
-                montantHT: vente.montantHT || 0,
-                remise: vente.remise || 0,
-                remisePourcentage: vente.montantTTC ? Math.round((((vente.remise || 0) / vente.montantTTC) * 100 + Number.EPSILON) * 100) / 100 : 0,
-                tva: vente.tva || 0,
-                montantTVA: vente.montantTVA || 0,
-                montantTTC: vente.montantTTC || 0,
-                prixVenteTTC: vente.prixVenteTTC || 0,
-                modePaiement: vente.modePaiement,
-                rappel1Jours: vente.rappel1Jours,
-                rappel2Jours: vente.rappel2Jours,
-                rappel3Jours: vente.rappel3Jours
-            });
         } else {
             setIsEdit(false);
             setCurrentVente(null);
             setRappelHistorique([]);
             form.resetFields();
             form.setFieldsValue({ ...defaultVente, date: getTodayIsoDate() });
+            setModalVisible(true);
         }
-        setModalVisible(true);
-    };
-
-    const expandByQuantity = <T,>(items: T[], quantite: number): T[] => {
-        const safeQuantity = Math.max(1, Math.floor(quantite || 1));
-        return Array.from({ length: safeQuantity }, () => items).flat();
-    };
-
-    const buildTasksFromForfaitLines = (forfaitLines: VenteFormValues['forfaits']): VenteFormValues['taches'] => {
-        const copiedTasks = (forfaitLines || [])
-            .filter((line) => line.forfaitId && (line.quantite || 0) > 0)
-            .flatMap((line) => {
-                const selectedForfait = forfaits.find((forfait) => forfait.id === line.forfaitId);
-                if (!selectedForfait?.taches?.length) {
-                    return [];
-                }
-                const tasksForOneForfait = selectedForfait.taches.map<VenteFormValues['taches'][number]>((tache) => ({
-                    // We copy values from forfait tasks into vente tasks.
-                    // IDs are omitted so the sale owns its own task rows.
-                    nom: tache.nom || '',
-                    status: tache.status || 'EN_ATTENTE',
-                    dateDebut: toDateInputValue(tache.dateDebut),
-                    dateFin: toDateInputValue(tache.dateFin),
-                    statusDate: toDateInputValue(tache.statusDate),
-                    description: tache.description || '',
-                    notes: tache.notes || '',
-                    technicienId: tache.technicien?.id,
-                    dureeEstimee: tache.dureeEstimee || 0,
-                    dureeReelle: tache.dureeReelle || 0
-                }));
-                return expandByQuantity(tasksForOneForfait, line.quantite || 1);
-            });
-
-        return [...copiedTasks, {}];
     };
 
     const toPayload = (values: VenteFormValues): VenteEntity => ({
@@ -740,56 +999,63 @@ export default function Vente() {
         bateau: bateaux.find((bateau) => bateau.id === values.bateauId),
         moteur: moteurs.find((moteur) => moteur.id === values.moteurId),
         remorque: remorques.find((remorque) => remorque.id === values.remorqueId),
-        forfaits: (values.forfaits || [])
+        venteForfaits: (values.venteForfaits || [])
             .filter((line) => line.forfaitId)
-            .flatMap((line) => {
-                const item = forfaits.find((forfait) => forfait.id === line.forfaitId);
-                return item ? expandByQuantity([item], line.quantite || 1) : [];
-            }) as ForfaitEntity[],
+            .map((line) => {
+                const selectedForfait = forfaits.find((f) => f.id === line.forfaitId);
+                // Use existing taches if available, otherwise copy from catalogue forfait template
+                const existingTaches = (line.taches || []).filter((t: { nom?: string }) => t.nom?.trim());
+                const taches = existingTaches.length > 0
+                    ? existingTaches.map((t: { nom?: string; description?: string; done?: boolean }) => ({ nom: t.nom, description: t.description, done: t.done || false }))
+                    : (selectedForfait?.taches || []).filter((t) => t.nom?.trim()).map((t) => ({ nom: t.nom, description: t.description || '', done: false }));
+                // Preserve existing vente data (dates, etc.) from currentVente if available
+                const existingVf = (currentVente?.venteForfaits || []).find((vf) => vf.forfait?.id === line.forfaitId);
+                return {
+                    forfait: selectedForfait,
+                    quantite: line.quantite || 1,
+                    technicien: techniciens.find((t) => t.id === line.technicienId),
+                    datePlanification: line.datePlanification || existingVf?.datePlanification,
+                    dateDebut: line.dateDebut || existingVf?.dateDebut,
+                    dateFin: line.dateFin || existingVf?.dateFin,
+                    status: line.status || 'EN_ATTENTE',
+                    dureeReelle: line.dureeReelle || existingVf?.dureeReelle || 0,
+                    notes: line.notes || '',
+                    incidentDate: line.incidentDate,
+                    incidentDetails: line.incidentDetails || '',
+                    taches,
+                };
+            }),
+        venteServices: (values.venteServices || [])
+            .filter((line) => line.serviceId)
+            .map((line) => {
+                // Preserve existing taches from currentVente
+                const existingVs = (currentVente?.venteServices || []).find((vs) => vs.service?.id === line.serviceId);
+                const existingTaches = (line.taches || []).filter((t: { nom?: string }) => t.nom?.trim());
+                const taches = existingTaches.length > 0
+                    ? existingTaches.map((t: { nom?: string; description?: string; done?: boolean }) => ({ nom: t.nom, description: t.description, done: t.done || false }))
+                    : (existingVs?.taches || []).map((t) => ({ nom: t.nom, description: t.description || '', done: t.done || false }));
+                return {
+                    service: services.find((s) => s.id === line.serviceId),
+                    quantite: line.quantite || 1,
+                    technicien: techniciens.find((t) => t.id === line.technicienId),
+                    datePlanification: line.datePlanification || existingVs?.datePlanification,
+                    dateDebut: line.dateDebut || existingVs?.dateDebut,
+                    dateFin: line.dateFin || existingVs?.dateFin,
+                    status: line.status || 'EN_ATTENTE',
+                    dureeReelle: line.dureeReelle || existingVs?.dureeReelle || 0,
+                    notes: line.notes || '',
+                    incidentDate: line.incidentDate,
+                    incidentDetails: line.incidentDetails || '',
+                    taches,
+                };
+            }),
         produits: (values.produits || [])
             .filter((line) => line.produitId)
             .flatMap((line) => {
                 const item = produits.find((produit) => produit.id === line.produitId);
-                return item ? expandByQuantity([item], line.quantite || 1) : [];
+                const safeQuantity = Math.max(1, Math.floor(line.quantite || 1));
+                return item ? Array.from({ length: safeQuantity }, () => item) : [];
             }) as ProduitCatalogueEntity[],
-        services: (values.services || [])
-            .filter((line) => line.serviceId)
-            .flatMap((line) => {
-                const item = services.find((service) => service.id === line.serviceId);
-                return item ? expandByQuantity([item], line.quantite || 1) : [];
-            }) as ServiceEntity[],
-        taches: (values.taches || [])
-            .filter((tache) =>
-                Boolean(
-                    tache.nom
-                    || tache.description
-                    || tache.notes
-                    || tache.status
-                    || tache.technicienId
-                    || tache.dateDebut
-                    || tache.dateFin
-                    || tache.statusDate
-                    || (tache.dureeEstimee || 0) > 0
-                    || (tache.dureeReelle || 0) > 0
-                    || tache.incidentDate
-                    || tache.incidentDetails
-                )
-            )
-            .map<TaskEntity>((tache) => ({
-                id: tache.id,
-                nom: tache.nom || '',
-                status: tache.status || 'EN_ATTENTE',
-                dateDebut: tache.dateDebut,
-                dateFin: tache.dateFin,
-                statusDate: tache.statusDate,
-                description: tache.description || '',
-                notes: tache.notes || '',
-                technicien: techniciens.find((technicien) => technicien.id === tache.technicienId),
-                dureeEstimee: tache.dureeEstimee || 0,
-                dureeReelle: tache.dureeReelle || 0,
-                incidentDate: tache.incidentDate,
-                incidentDetails: tache.incidentDetails
-            })),
         date: toBackendDateValue(values.date),
         montantHT: values.montantHT || 0,
         remise: values.remise || 0,
@@ -873,18 +1139,12 @@ export default function Vente() {
 
     const handlePrint = (vente: VenteEntity) => {
         const title = `Vente #${vente.id || '-'}`;
-        const forfaitLines = Array.from(
-            (vente.forfaits || []).reduce((acc, item) => {
-                const label = item.reference ? `${item.reference} - ${item.nom}` : item.nom;
-                const key = item.id ? `id-${item.id}` : `label-${label}`;
-                const current = acc.get(key) || { type: 'Forfait', label, quantite: 0, totalPrixTTC: 0 };
-                current.quantite += 1;
-                current.totalPrixTTC += item.prixTTC || 0;
-                acc.set(key, current);
-                return acc;
-            }, new Map<string, { type: string; label: string; quantite: number; totalPrixTTC: number }>())
-                .values()
-        );
+        const forfaitLines = (vente.venteForfaits || []).map(vf => ({
+            type: 'Forfait',
+            label: vf.forfait?.nom || '',
+            quantite: vf.quantite || 1,
+            totalPrixTTC: (vf.forfait?.prixTTC || 0) * (vf.quantite || 1)
+        }));
         const produitLines = Array.from(
             (vente.produits || []).reduce((acc, item) => {
                 const label = `${item.nom}${item.marque ? ` (${item.marque})` : ''}`;
@@ -897,18 +1157,12 @@ export default function Vente() {
             }, new Map<string, { type: string; label: string; quantite: number; totalPrixTTC: number }>())
                 .values()
         );
-        const serviceLines = Array.from(
-            (vente.services || []).reduce((acc, item) => {
-                const label = item.nom;
-                const key = item.id ? `id-${item.id}` : `label-${label}`;
-                const current = acc.get(key) || { type: 'Service', label, quantite: 0, totalPrixTTC: 0 };
-                current.quantite += 1;
-                current.totalPrixTTC += item.prixTTC || 0;
-                acc.set(key, current);
-                return acc;
-            }, new Map<string, { type: string; label: string; quantite: number; totalPrixTTC: number }>())
-                .values()
-        );
+        const serviceLines = (vente.venteServices || []).map(vs => ({
+            type: 'Service',
+            label: vs.service?.nom || '',
+            quantite: vs.quantite || 1,
+            totalPrixTTC: (vs.service?.prixTTC || 0) * (vs.quantite || 1)
+        }));
         const invoiceLines = [...forfaitLines, ...produitLines, ...serviceLines];
         const invoiceRowsHtml = invoiceLines.length > 0
             ? `
@@ -984,18 +1238,12 @@ export default function Vente() {
             return;
         }
 
-        const forfaitLines = Array.from(
-            (vente.forfaits || []).reduce((acc, item) => {
-                const label = item.reference ? `${item.reference} - ${item.nom}` : item.nom;
-                const key = item.id ? `id-${item.id}` : `label-${label}`;
-                const current = acc.get(key) || { type: 'Forfait', label, quantite: 0, totalPrixTTC: 0 };
-                current.quantite += 1;
-                current.totalPrixTTC += item.prixTTC || 0;
-                acc.set(key, current);
-                return acc;
-            }, new Map<string, { type: string; label: string; quantite: number; totalPrixTTC: number }>())
-                .values()
-        );
+        const forfaitLines = (vente.venteForfaits || []).map(vf => ({
+            type: 'Forfait',
+            label: vf.forfait?.nom || '',
+            quantite: vf.quantite || 1,
+            totalPrixTTC: (vf.forfait?.prixTTC || 0) * (vf.quantite || 1)
+        }));
         const produitLines = Array.from(
             (vente.produits || []).reduce((acc, item) => {
                 const label = `${item.nom}${item.marque ? ` (${item.marque})` : ''}`;
@@ -1008,18 +1256,12 @@ export default function Vente() {
             }, new Map<string, { type: string; label: string; quantite: number; totalPrixTTC: number }>())
                 .values()
         );
-        const serviceLines = Array.from(
-            (vente.services || []).reduce((acc, item) => {
-                const label = item.nom;
-                const key = item.id ? `id-${item.id}` : `label-${label}`;
-                const current = acc.get(key) || { type: 'Service', label, quantite: 0, totalPrixTTC: 0 };
-                current.quantite += 1;
-                current.totalPrixTTC += item.prixTTC || 0;
-                acc.set(key, current);
-                return acc;
-            }, new Map<string, { type: string; label: string; quantite: number; totalPrixTTC: number }>())
-                .values()
-        );
+        const serviceLines = (vente.venteServices || []).map(vs => ({
+            type: 'Service',
+            label: vs.service?.nom || '',
+            quantite: vs.quantite || 1,
+            totalPrixTTC: (vs.service?.prixTTC || 0) * (vs.quantite || 1)
+        }));
         const invoiceLines = [...forfaitLines, ...produitLines, ...serviceLines];
         const formatColumn = (value: string, width: number, align: 'left' | 'right' = 'left') => {
             const truncated = value.length > width ? `${value.slice(0, width - 1)}.` : value;
@@ -1082,14 +1324,14 @@ export default function Vente() {
     ]);
 
     const recalculateFromLines = (remiseSource: 'amount' | 'percentage' | 'auto' = 'auto') => {
-        const forfaitLines = form.getFieldValue('forfaits') || [];
+        const venteForfaitLines = form.getFieldValue('venteForfaits') || [];
         const produitLines = form.getFieldValue('produits') || [];
-        const serviceLines = form.getFieldValue('services') || [];
+        const venteServiceLines = form.getFieldValue('venteServices') || [];
         let remise = form.getFieldValue('remise') || 0;
         let remisePourcentage = form.getFieldValue('remisePourcentage') || 0;
         const tva = form.getFieldValue('tva') || 0;
 
-        const forfaitsTTC = forfaitLines.reduce((sum: number, line: { forfaitId?: number; quantite?: number }) => {
+        const forfaitsTTC = venteForfaitLines.reduce((sum: number, line: { forfaitId?: number; quantite?: number }) => {
             const prixUnitaire = forfaits.find((item) => item.id === line.forfaitId)?.prixTTC || 0;
             const quantite = Math.max(1, Math.floor(line.quantite || 1));
             return sum + (prixUnitaire * quantite);
@@ -1099,7 +1341,7 @@ export default function Vente() {
             const quantite = Math.max(1, Math.floor(line.quantite || 1));
             return sum + (prixUnitaire * quantite);
         }, 0);
-        const servicesTTC = serviceLines.reduce((sum: number, line: { serviceId?: number; quantite?: number }) => {
+        const servicesTTC = venteServiceLines.reduce((sum: number, line: { serviceId?: number; quantite?: number }) => {
             const prixUnitaire = services.find((item) => item.id === line.serviceId)?.prixTTC || 0;
             const quantite = Math.max(1, Math.floor(line.quantite || 1));
             return sum + (prixUnitaire * quantite);
@@ -1128,71 +1370,42 @@ export default function Vente() {
     };
 
     const onValuesChange = (changedValues: Partial<VenteFormValues>, allValues: VenteFormValues) => {
-        if (changedValues.forfaits !== undefined) {
-            const currentForfaitLines = allValues.forfaits || [];
-            form.setFieldValue('taches', buildTasksFromForfaitLines(currentForfaitLines));
+        if (changedValues.venteForfaits !== undefined) {
+            const currentForfaitLines = allValues.venteForfaits || [];
             if (currentForfaitLines.length === 0) {
-                form.setFieldValue('forfaits', [{}]);
-                return;
-            }
-            const lastForfaitLine = currentForfaitLines[currentForfaitLines.length - 1];
-            const isLastLineComplete = !!lastForfaitLine?.forfaitId && (lastForfaitLine?.quantite || 0) > 0;
-            if (isLastLineComplete) {
-                form.setFieldValue('forfaits', [...currentForfaitLines, {}]);
-                return;
+                form.setFieldValue('venteForfaits', [{ status: 'EN_ATTENTE', quantite: 1 }]);
+            } else {
+                const lastForfaitLine = currentForfaitLines[currentForfaitLines.length - 1];
+                const isLastLineComplete = !!lastForfaitLine?.forfaitId && (lastForfaitLine?.quantite || 0) > 0;
+                if (isLastLineComplete) {
+                    form.setFieldValue('venteForfaits', [...currentForfaitLines, { status: 'EN_ATTENTE', quantite: 1 }]);
+                }
             }
         }
 
         if (changedValues.produits !== undefined) {
             const currentProduitLines = allValues.produits || [];
             if (currentProduitLines.length === 0) {
-                form.setFieldValue('produits', [{}]);
-                return;
-            }
-            const lastProduitLine = currentProduitLines[currentProduitLines.length - 1];
-            const isLastLineComplete = !!lastProduitLine?.produitId && (lastProduitLine?.quantite || 0) > 0;
-            if (isLastLineComplete) {
-                form.setFieldValue('produits', [...currentProduitLines, {}]);
-                return;
+                form.setFieldValue('produits', [{ quantite: 1 }]);
+            } else {
+                const lastProduitLine = currentProduitLines[currentProduitLines.length - 1];
+                const isLastLineComplete = !!lastProduitLine?.produitId && (lastProduitLine?.quantite || 0) > 0;
+                if (isLastLineComplete) {
+                    form.setFieldValue('produits', [...currentProduitLines, { quantite: 1 }]);
+                }
             }
         }
 
-        if (changedValues.services !== undefined) {
-            const currentServiceLines = allValues.services || [];
+        if (changedValues.venteServices !== undefined) {
+            const currentServiceLines = allValues.venteServices || [];
             if (currentServiceLines.length === 0) {
-                form.setFieldValue('services', [{}]);
-                return;
-            }
-            const lastServiceLine = currentServiceLines[currentServiceLines.length - 1];
-            const isLastLineComplete = !!lastServiceLine?.serviceId && (lastServiceLine?.quantite || 0) > 0;
-            if (isLastLineComplete) {
-                form.setFieldValue('services', [...currentServiceLines, {}]);
-                return;
-            }
-        }
-
-        if (changedValues.taches !== undefined) {
-            const currentTaskLines = allValues.taches || [];
-            if (currentTaskLines.length === 0) {
-                form.setFieldValue('taches', [{}]);
-                return;
-            }
-            const lastTaskLine = currentTaskLines[currentTaskLines.length - 1];
-            const isLastLineComplete = Boolean(
-                lastTaskLine?.nom?.trim()
-                || lastTaskLine?.description?.trim()
-                || lastTaskLine?.notes?.trim()
-                || lastTaskLine?.status
-                || lastTaskLine?.technicienId
-                || lastTaskLine?.dateDebut
-                || lastTaskLine?.dateFin
-                || lastTaskLine?.statusDate
-                || (lastTaskLine?.dureeEstimee || 0) > 0
-                || (lastTaskLine?.dureeReelle || 0) > 0
-            );
-            if (isLastLineComplete) {
-                form.setFieldValue('taches', [...currentTaskLines, {}]);
-                return;
+                form.setFieldValue('venteServices', [{ status: 'EN_ATTENTE', quantite: 1 }]);
+            } else {
+                const lastServiceLine = currentServiceLines[currentServiceLines.length - 1];
+                const isLastLineComplete = !!lastServiceLine?.serviceId && (lastServiceLine?.quantite || 0) > 0;
+                if (isLastLineComplete) {
+                    form.setFieldValue('venteServices', [...currentServiceLines, { status: 'EN_ATTENTE', quantite: 1 }]);
+                }
             }
         }
 
@@ -1253,9 +1466,9 @@ export default function Vente() {
         }
 
         if (
-            changedValues.forfaits !== undefined ||
+            changedValues.venteForfaits !== undefined ||
             changedValues.produits !== undefined ||
-            changedValues.services !== undefined ||
+            changedValues.venteServices !== undefined ||
             changedValues.tva !== undefined ||
             changedValues.remisePourcentage !== undefined ||
             changedValues.remise !== undefined
@@ -1298,18 +1511,18 @@ export default function Vente() {
         },
         {
             title: 'Forfaits',
-            dataIndex: 'forfaits',
-            render: (values: ForfaitEntity[]) => values?.length || 0
+            dataIndex: 'venteForfaits',
+            render: (values: VenteForfaitEntity[]) => values?.length || 0
+        },
+        {
+            title: 'Services',
+            dataIndex: 'venteServices',
+            render: (values: VenteServiceEntity[]) => values?.length || 0
         },
         {
             title: 'Produits',
             dataIndex: 'produits',
             render: (values: ProduitCatalogueEntity[]) => values?.length || 0
-        },
-        {
-            title: 'Services',
-            dataIndex: 'services',
-            render: (values: ServiceEntity[]) => values?.length || 0
         },
         {
             title: 'Mode paiement',
@@ -1449,7 +1662,7 @@ export default function Vente() {
                 ]}
                 maskClosable={false}
                 destroyOnHidden
-                width={1100}
+                width={1400}
             >
                 <Form form={form} layout="vertical" initialValues={defaultVente} onValuesChange={onValuesChange}>
                     <Row gutter={16}>
@@ -1485,26 +1698,46 @@ export default function Vente() {
 
                     <Row gutter={16}>
                         <Col span={12}>
-                            <Form.Item name="clientId" label="Client">
-                                <Select allowClear showSearch options={clientOptions} />
+                            <Form.Item label="Client">
+                                <Space.Compact style={{ width: '100%' }}>
+                                    <Form.Item name="clientId" noStyle>
+                                        <Select allowClear showSearch options={clientOptions} style={{ width: '100%' }} />
+                                    </Form.Item>
+                                    <Button icon={<PlusOutlined />} title="Créer un client" onClick={openNewClientModal} />
+                                </Space.Compact>
                             </Form.Item>
                         </Col>
                         <Col span={12}>
-                            <Form.Item name="bateauId" label="Bateau">
-                                <Select allowClear showSearch options={bateauOptions} />
+                            <Form.Item label="Bateau">
+                                <Space.Compact style={{ width: '100%' }}>
+                                    <Form.Item name="bateauId" noStyle>
+                                        <Select allowClear showSearch options={bateauOptions} style={{ width: '100%' }} />
+                                    </Form.Item>
+                                    <Button icon={<PlusOutlined />} title="Créer un bateau" onClick={openNewBateauModal} />
+                                </Space.Compact>
                             </Form.Item>
                         </Col>
                     </Row>
 
                     <Row gutter={16}>
                         <Col span={12}>
-                            <Form.Item name="moteurId" label="Moteur">
-                                <Select allowClear showSearch options={moteurOptions} />
+                            <Form.Item label="Moteur">
+                                <Space.Compact style={{ width: '100%' }}>
+                                    <Form.Item name="moteurId" noStyle>
+                                        <Select allowClear showSearch options={moteurOptions} style={{ width: '100%' }} />
+                                    </Form.Item>
+                                    <Button icon={<PlusOutlined />} title="Créer un moteur" onClick={openNewMoteurModal} />
+                                </Space.Compact>
                             </Form.Item>
                         </Col>
                         <Col span={12}>
-                            <Form.Item name="remorqueId" label="Remorque">
-                                <Select allowClear showSearch options={remorqueOptions} />
+                            <Form.Item label="Remorque">
+                                <Space.Compact style={{ width: '100%' }}>
+                                    <Form.Item name="remorqueId" noStyle>
+                                        <Select allowClear showSearch options={remorqueOptions} style={{ width: '100%' }} />
+                                    </Form.Item>
+                                    <Button icon={<PlusOutlined />} title="Créer une remorque" onClick={openNewRemorqueModal} />
+                                </Space.Compact>
                             </Form.Item>
                         </Col>
                     </Row>
@@ -1518,29 +1751,23 @@ export default function Vente() {
                                 children: (
                                     <>
                                         <Form.Item label="Forfaits">
-                                            <Form.List name="forfaits">
+                                            <Form.List name="venteForfaits">
                                                 {(fields, { remove }) => (
                                                     <>
                                                         {fields.map((field) => {
-                                                            const forfaitId = form.getFieldValue(['forfaits', field.name, 'forfaitId']);
+                                                            const forfaitId = form.getFieldValue(['venteForfaits', field.name, 'forfaitId']);
                                                             const isEmptyLine = !forfaitId;
                                                             return (
-                                                            <Space key={field.key} align="baseline" style={{ display: 'flex', marginBottom: 8 }}>
+                                                            <Space key={field.key} align="baseline" style={{ display: 'flex', marginBottom: 8, flexWrap: 'nowrap' }}>
                                                                 <Form.Item
                                                                     {...field}
                                                                     name={[field.name, 'forfaitId']}
                                                                     rules={[
                                                                         {
-                                                                            validator: async (_, value) => {
-                                                                                const line = form.getFieldValue(['forfaits', field.name]);
-                                                                                const quantite = Number(line?.quantite || 0);
-                                                                                if (!value && quantite > 0) {
-                                                                                    throw new Error('Forfait requis');
-                                                                                }
-                                                                            }
+                                                                            validator: async () => {}
                                                                         }
                                                                     ]}
-                                                                    style={{ width: 520 }}
+                                                                    style={{ width: 280 }}
                                                                 >
                                                                     <Select
                                                                         allowClear
@@ -1552,24 +1779,13 @@ export default function Vente() {
                                                                         }
                                                                     />
                                                                 </Form.Item>
-                                                                <Form.Item noStyle shouldUpdate>
-                                                                    {({ getFieldValue }) => {
-                                                                        const fid = getFieldValue(['forfaits', field.name, 'forfaitId']);
-                                                                        const pu = forfaits.find((item) => item.id === fid)?.prixTTC;
-                                                                        return (
-                                                                            <Form.Item style={{ width: 150 }}>
-                                                                                <InputNumber addonAfter="EUR" value={pu ?? undefined} style={{ width: '100%' }} disabled placeholder="P.U." />
-                                                                            </Form.Item>
-                                                                        );
-                                                                    }}
-                                                                </Form.Item>
                                                                 <Form.Item
                                                                     {...field}
                                                                     name={[field.name, 'quantite']}
                                                                     rules={[
                                                                         {
                                                                             validator: async (_, value) => {
-                                                                                const line = form.getFieldValue(['forfaits', field.name]);
+                                                                                const line = form.getFieldValue(['venteForfaits', field.name]);
                                                                                 if (!line?.forfaitId && (value === undefined || value === null)) {
                                                                                     return;
                                                                                 }
@@ -1579,26 +1795,148 @@ export default function Vente() {
                                                                             }
                                                                         }
                                                                     ]}
-                                                                    style={{ width: 120 }}
+                                                                    style={{ width: 80 }}
                                                                 >
                                                                     <InputNumber min={1} step={1} style={{ width: '100%' }} placeholder="Qte" />
                                                                 </Form.Item>
                                                                 <Form.Item noStyle shouldUpdate>
                                                                     {({ getFieldValue }) => {
-                                                                        const fid = getFieldValue(['forfaits', field.name, 'forfaitId']);
-                                                                        const quantite = getFieldValue(['forfaits', field.name, 'quantite']) || 0;
-                                                                        const prixUnitaireTTC = forfaits.find((item) => item.id === fid)?.prixTTC || 0;
-                                                                        const prixTTC = Math.round(((prixUnitaireTTC * quantite) + Number.EPSILON) * 100) / 100;
-
+                                                                        const fId = getFieldValue(['venteForfaits', field.name, 'forfaitId']);
+                                                                        const pu = forfaits.find((f) => f.id === fId)?.prixTTC;
                                                                         return (
-                                                                            <Form.Item style={{ width: 150 }}>
-                                                                                <InputNumber addonAfter="EUR" value={prixTTC} style={{ width: '100%' }} disabled />
+                                                                            <Form.Item style={{ width: 120 }}>
+                                                                                <InputNumber addonAfter="EUR" value={pu ?? undefined} style={{ width: '100%' }} disabled placeholder="P.U." />
                                                                             </Form.Item>
                                                                         );
                                                                     }}
                                                                 </Form.Item>
-                                                                {isEmptyLine && (
+                                                                <Form.Item noStyle shouldUpdate>
+                                                                    {({ getFieldValue }) => {
+                                                                        const fId = getFieldValue(['venteForfaits', field.name, 'forfaitId']);
+                                                                        const quantite = getFieldValue(['venteForfaits', field.name, 'quantite']) || 0;
+                                                                        const pu = forfaits.find((f) => f.id === fId)?.prixTTC || 0;
+                                                                        const total = Math.round(((pu * quantite) + Number.EPSILON) * 100) / 100;
+                                                                        return (
+                                                                            <Form.Item style={{ width: 120 }}>
+                                                                                <InputNumber addonAfter="EUR" value={total} style={{ width: '100%' }} disabled />
+                                                                            </Form.Item>
+                                                                        );
+                                                                    }}
+                                                                </Form.Item>
+                                                                <Form.Item
+                                                                    {...field}
+                                                                    name={[field.name, 'status']}
+                                                                    style={{ width: 130 }}
+                                                                >
+                                                                    <Select allowClear options={planningStatusOptions} placeholder="Status" />
+                                                                </Form.Item>
+                                                                <Form.Item
+                                                                    {...field}
+                                                                    name={[field.name, 'technicienId']}
+                                                                    style={{ width: 180 }}
+                                                                >
+                                                                    <Select allowClear showSearch options={technicienOptions} placeholder="Technicien" />
+                                                                </Form.Item>
+                                                                {isEmptyLine ? (
                                                                     <Button icon={<PlusOutlined />} title="Créer un forfait" onClick={() => openNewForfaitModal(field.name)} />
+                                                                ) : (
+                                                                    <Button icon={<CalendarOutlined />} title="Planifier" onClick={() => { setModalVisible(false); history.push('/planning'); }} />
+                                                                )}
+                                                                <Button danger icon={<DeleteOutlined />} onClick={() => remove(field.name)} />
+                                                            </Space>
+                                                            );
+                                                        })}
+                                                    </>
+                                                )}
+                                            </Form.List>
+                                        </Form.Item>
+
+                                        <Form.Item label="Services">
+                                            <Form.List name="venteServices">
+                                                {(fields, { remove }) => (
+                                                    <>
+                                                        {fields.map((field) => {
+                                                            const serviceId = form.getFieldValue(['venteServices', field.name, 'serviceId']);
+                                                            const isEmptyLine = !serviceId;
+                                                            return (
+                                                            <Space key={field.key} align="baseline" style={{ display: 'flex', marginBottom: 8, flexWrap: 'nowrap' }}>
+                                                                <Form.Item
+                                                                    {...field}
+                                                                    name={[field.name, 'serviceId']}
+                                                                    hidden
+                                                                >
+                                                                    <InputNumber />
+                                                                </Form.Item>
+                                                                <Form.Item
+                                                                    style={{ width: 280 }}
+                                                                >
+                                                                    <Input disabled value={services.find((s) => s.id === serviceId)?.nom || ''} placeholder="Service" />
+                                                                </Form.Item>
+                                                                <Form.Item
+                                                                    {...field}
+                                                                    name={[field.name, 'quantite']}
+                                                                    rules={[
+                                                                        {
+                                                                            validator: async (_, value) => {
+                                                                                const line = form.getFieldValue(['venteServices', field.name]);
+                                                                                if (!line?.serviceId && (value === undefined || value === null)) {
+                                                                                    return;
+                                                                                }
+                                                                                if (!value || value <= 0) {
+                                                                                    throw new Error('Quantite requise');
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    ]}
+                                                                    style={{ width: 80 }}
+                                                                >
+                                                                    <InputNumber min={1} step={1} style={{ width: '100%' }} placeholder="Qte" />
+                                                                </Form.Item>
+                                                                <Form.Item noStyle shouldUpdate>
+                                                                    {({ getFieldValue }) => {
+                                                                        const sId = getFieldValue(['venteServices', field.name, 'serviceId']);
+                                                                        const pu = services.find((s) => s.id === sId)?.prixTTC;
+                                                                        return (
+                                                                            <Form.Item style={{ width: 120 }}>
+                                                                                <InputNumber addonAfter="EUR" value={pu ?? undefined} style={{ width: '100%' }} disabled placeholder="P.U." />
+                                                                            </Form.Item>
+                                                                        );
+                                                                    }}
+                                                                </Form.Item>
+                                                                <Form.Item noStyle shouldUpdate>
+                                                                    {({ getFieldValue }) => {
+                                                                        const sId = getFieldValue(['venteServices', field.name, 'serviceId']);
+                                                                        const quantite = getFieldValue(['venteServices', field.name, 'quantite']) || 0;
+                                                                        const pu = services.find((s) => s.id === sId)?.prixTTC || 0;
+                                                                        const total = Math.round(((pu * quantite) + Number.EPSILON) * 100) / 100;
+                                                                        return (
+                                                                            <Form.Item style={{ width: 120 }}>
+                                                                                <InputNumber addonAfter="EUR" value={total} style={{ width: '100%' }} disabled />
+                                                                            </Form.Item>
+                                                                        );
+                                                                    }}
+                                                                </Form.Item>
+                                                                <Form.Item
+                                                                    {...field}
+                                                                    name={[field.name, 'status']}
+                                                                    style={{ width: 130 }}
+                                                                >
+                                                                    <Select allowClear options={planningStatusOptions} placeholder="Status" />
+                                                                </Form.Item>
+                                                                <Form.Item
+                                                                    {...field}
+                                                                    name={[field.name, 'technicienId']}
+                                                                    style={{ width: 180 }}
+                                                                >
+                                                                    <Select allowClear showSearch options={technicienOptions} placeholder="Technicien" />
+                                                                </Form.Item>
+                                                                {isEmptyLine ? (
+                                                                    <Button icon={<PlusOutlined />} title="Créer un service" onClick={() => openNewServiceModal(field.name)} />
+                                                                ) : (
+                                                                    <>
+                                                                        <Button icon={<EditOutlined />} title="Modifier le service" onClick={() => openEditServiceModal(serviceId)} />
+                                                                        <Button icon={<CalendarOutlined />} title="Planifier" onClick={() => { setModalVisible(false); history.push('/planning'); }} />
+                                                                    </>
                                                                 )}
                                                                 <Button danger icon={<DeleteOutlined />} onClick={() => remove(field.name)} />
                                                             </Space>
@@ -1623,29 +1961,12 @@ export default function Vente() {
                                                                     name={[field.name, 'produitId']}
                                                                     rules={[
                                                                         {
-                                                                            validator: async (_, value) => {
-                                                                                const line = form.getFieldValue(['produits', field.name]);
-                                                                                const quantite = Number(line?.quantite || 0);
-                                                                                if (!value && quantite > 0) {
-                                                                                    throw new Error('Produit requis');
-                                                                                }
-                                                                            }
+                                                                            validator: async () => {}
                                                                         }
                                                                     ]}
                                                                     style={{ width: 520 }}
                                                                 >
                                                                     <Select allowClear showSearch options={produitOptions} placeholder="Produit" />
-                                                                </Form.Item>
-                                                                <Form.Item noStyle shouldUpdate>
-                                                                    {({ getFieldValue }) => {
-                                                                        const pid = getFieldValue(['produits', field.name, 'produitId']);
-                                                                        const pu = produits.find((item) => item.id === pid)?.prixVenteTTC;
-                                                                        return (
-                                                                            <Form.Item style={{ width: 150 }}>
-                                                                                <InputNumber addonAfter="EUR" value={pu ?? undefined} style={{ width: '100%' }} disabled placeholder="P.U." />
-                                                                            </Form.Item>
-                                                                        );
-                                                                    }}
                                                                 </Form.Item>
                                                                 <Form.Item
                                                                     {...field}
@@ -1670,6 +1991,17 @@ export default function Vente() {
                                                                 <Form.Item noStyle shouldUpdate>
                                                                     {({ getFieldValue }) => {
                                                                         const pid = getFieldValue(['produits', field.name, 'produitId']);
+                                                                        const pu = produits.find((item) => item.id === pid)?.prixVenteTTC;
+                                                                        return (
+                                                                            <Form.Item style={{ width: 150 }}>
+                                                                                <InputNumber addonAfter="EUR" value={pu ?? undefined} style={{ width: '100%' }} disabled placeholder="P.U." />
+                                                                            </Form.Item>
+                                                                        );
+                                                                    }}
+                                                                </Form.Item>
+                                                                <Form.Item noStyle shouldUpdate>
+                                                                    {({ getFieldValue }) => {
+                                                                        const pid = getFieldValue(['produits', field.name, 'produitId']);
                                                                         const quantite = getFieldValue(['produits', field.name, 'quantite']) || 0;
                                                                         const prixUnitaireTTC = produits.find((item) => item.id === pid)?.prixVenteTTC || 0;
                                                                         const prixTTC = Math.round(((prixUnitaireTTC * quantite) + Number.EPSILON) * 100) / 100;
@@ -1683,90 +2015,6 @@ export default function Vente() {
                                                                 </Form.Item>
                                                                 {isEmptyLine && (
                                                                     <Button icon={<PlusOutlined />} title="Créer un produit" onClick={() => openNewProduitModal(field.name)} />
-                                                                )}
-                                                                <Button danger icon={<DeleteOutlined />} onClick={() => remove(field.name)} />
-                                                            </Space>
-                                                            );
-                                                        })}
-                                                    </>
-                                                )}
-                                            </Form.List>
-                                        </Form.Item>
-
-                                        <Form.Item label="Services">
-                                            <Form.List name="services">
-                                                {(fields, { remove }) => (
-                                                    <>
-                                                        {fields.map((field) => {
-                                                            const serviceId = form.getFieldValue(['services', field.name, 'serviceId']);
-                                                            const isEmptyLine = !serviceId;
-                                                            return (
-                                                            <Space key={field.key} align="baseline" style={{ display: 'flex', marginBottom: 8 }}>
-                                                                <Form.Item
-                                                                    {...field}
-                                                                    name={[field.name, 'serviceId']}
-                                                                    rules={[
-                                                                        {
-                                                                            validator: async (_, value) => {
-                                                                                const line = form.getFieldValue(['services', field.name]);
-                                                                                const quantite = Number(line?.quantite || 0);
-                                                                                if (!value && quantite > 0) {
-                                                                                    throw new Error('Service requis');
-                                                                                }
-                                                                            }
-                                                                        }
-                                                                    ]}
-                                                                    style={{ width: 520 }}
-                                                                >
-                                                                    <Select allowClear showSearch options={serviceOptions} placeholder="Service" />
-                                                                </Form.Item>
-                                                                <Form.Item noStyle shouldUpdate>
-                                                                    {({ getFieldValue }) => {
-                                                                        const sid = getFieldValue(['services', field.name, 'serviceId']);
-                                                                        const pu = services.find((item) => item.id === sid)?.prixTTC;
-                                                                        return (
-                                                                            <Form.Item style={{ width: 150 }}>
-                                                                                <InputNumber addonAfter="EUR" value={pu ?? undefined} style={{ width: '100%' }} disabled placeholder="P.U." />
-                                                                            </Form.Item>
-                                                                        );
-                                                                    }}
-                                                                </Form.Item>
-                                                                <Form.Item
-                                                                    {...field}
-                                                                    name={[field.name, 'quantite']}
-                                                                    rules={[
-                                                                        {
-                                                                            validator: async (_, value) => {
-                                                                                const line = form.getFieldValue(['services', field.name]);
-                                                                                if (!line?.serviceId && (value === undefined || value === null)) {
-                                                                                    return;
-                                                                                }
-                                                                                if (!value || value <= 0) {
-                                                                                    throw new Error('Quantite requise');
-                                                                                }
-                                                                            }
-                                                                        }
-                                                                    ]}
-                                                                    style={{ width: 120 }}
-                                                                >
-                                                                    <InputNumber min={1} step={1} style={{ width: '100%' }} placeholder="Qte" />
-                                                                </Form.Item>
-                                                                <Form.Item noStyle shouldUpdate>
-                                                                    {({ getFieldValue }) => {
-                                                                        const sid = getFieldValue(['services', field.name, 'serviceId']);
-                                                                        const quantite = getFieldValue(['services', field.name, 'quantite']) || 0;
-                                                                        const prixUnitaireTTC = services.find((item) => item.id === sid)?.prixTTC || 0;
-                                                                        const prixTTC = Math.round(((prixUnitaireTTC * quantite) + Number.EPSILON) * 100) / 100;
-
-                                                                        return (
-                                                                            <Form.Item style={{ width: 150 }}>
-                                                                                <InputNumber addonAfter="EUR" value={prixTTC} style={{ width: '100%' }} disabled />
-                                                                            </Form.Item>
-                                                                        );
-                                                                    }}
-                                                                </Form.Item>
-                                                                {isEmptyLine && (
-                                                                    <Button icon={<PlusOutlined />} title="Créer un service" onClick={() => openNewServiceModal(field.name)} />
                                                                 )}
                                                                 <Button danger icon={<DeleteOutlined />} onClick={() => remove(field.name)} />
                                                             </Space>
@@ -1863,113 +2111,6 @@ export default function Vente() {
                                     </>
                                 )
                             },
-                            {
-                                key: 'taches',
-                                label: 'Tâches Associées',
-                                children: (
-                                    <Form.List name="taches">
-                                        {(fields, { remove }) => (
-                                            <Space direction="vertical" style={{ width: '100%' }} size={12}>
-                                                {fields.map((field) => (
-                                                    <Card
-                                                        key={field.key}
-                                                        size="small"
-                                                        title={`Tâche ${field.name + 1}`}
-                                                        extra={<Button danger icon={<DeleteOutlined />} onClick={() => remove(field.name)} />}
-                                                    >
-                                                        <Row gutter={12}>
-                                                            <Col span={8}>
-                                                                <Form.Item {...field} name={[field.name, 'nom']} label="Nom">
-                                                                    <Input allowClear />
-                                                                </Form.Item>
-                                                            </Col>
-                                                            <Col span={8}>
-                                                                <Form.Item {...field} name={[field.name, 'status']} label="Statut">
-                                                                    <Select allowClear options={taskStatusOptions} placeholder="Statut" />
-                                                                </Form.Item>
-                                                            </Col>
-                                                            <Col span={8}>
-                                                                <Form.Item {...field} name={[field.name, 'technicienId']} label="Technicien">
-                                                                    <Select allowClear showSearch options={technicienOptions} placeholder="Technicien" />
-                                                                </Form.Item>
-                                                            </Col>
-                                                        </Row>
-                                                        <Row gutter={12}>
-                                                            <Col span={8}>
-                                                                <Form.Item {...field} name={[field.name, 'dateDebut']} label="Date debut">
-                                                                    <Input type="date" />
-                                                                </Form.Item>
-                                                            </Col>
-                                                            <Col span={8}>
-                                                                <Form.Item {...field} name={[field.name, 'dateFin']} label="Date fin">
-                                                                    <Input type="date" />
-                                                                </Form.Item>
-                                                            </Col>
-                                                            <Col span={8}>
-                                                                <Form.Item {...field} name={[field.name, 'statusDate']} label="Date statut">
-                                                                    <Input type="date" />
-                                                                </Form.Item>
-                                                            </Col>
-                                                        </Row>
-                                                        <Row gutter={12}>
-                                                            <Col span={12}>
-                                                                <Form.Item {...field} name={[field.name, 'dureeEstimee']} label="Durée estimée">
-                                                                    <InputNumber
-                                                                        min={0}
-                                                                        step={0.25}
-                                                                        precision={2}
-                                                                        style={{ width: '100%' }}
-                                                                        addonAfter="h"
-                                                                    />
-                                                                </Form.Item>
-                                                            </Col>
-                                                            <Col span={12}>
-                                                                <Form.Item {...field} name={[field.name, 'dureeReelle']} label="Durée réelle">
-                                                                    <InputNumber
-                                                                        min={0}
-                                                                        step={0.25}
-                                                                        precision={2}
-                                                                        style={{ width: '100%' }}
-                                                                        addonAfter="h"
-                                                                    />
-                                                                </Form.Item>
-                                                            </Col>
-                                                        </Row>
-                                                        <Form.Item {...field} name={[field.name, 'description']} label="Description">
-                                                            <Input.TextArea rows={2} />
-                                                        </Form.Item>
-                                                        <Form.Item {...field} name={[field.name, 'notes']} label="Notes">
-                                                            <Input.TextArea rows={2} />
-                                                        </Form.Item>
-                                                        <Form.Item noStyle shouldUpdate={(prev, cur) => prev?.taches?.[field.name]?.status !== cur?.taches?.[field.name]?.status}>
-                                                            {({ getFieldValue }) => {
-                                                                const status = getFieldValue(['taches', field.name, 'status']);
-                                                                if (status !== 'INCIDENT') return null;
-                                                                return (
-                                                                    <Card size="small" title="Incident" style={{ marginBottom: 12, borderColor: '#ff4d4f' }}>
-                                                                        <Row gutter={12}>
-                                                                            <Col span={8}>
-                                                                                <Form.Item {...field} name={[field.name, 'incidentDate']} label="Date de l'incident">
-                                                                                    <Input type="date" />
-                                                                                </Form.Item>
-                                                                            </Col>
-                                                                            <Col span={16}>
-                                                                                <Form.Item {...field} name={[field.name, 'incidentDetails']} label="Details de l'incident">
-                                                                                    <Input.TextArea rows={2} />
-                                                                                </Form.Item>
-                                                                            </Col>
-                                                                        </Row>
-                                                                    </Card>
-                                                                );
-                                                            }}
-                                                        </Form.Item>
-                                                    </Card>
-                                                ))}
-                                            </Space>
-                                        )}
-                                    </Form.List>
-                                )
-                            }
                         ]}
                     />
 
@@ -2155,12 +2296,12 @@ export default function Vente() {
                 </Modal>
 
                 <Modal
-                    title="Créer un service"
+                    title={editServiceId ? "Modifier un service" : "Créer un service"}
                     open={newServiceModalVisible}
                     onOk={handleNewServiceSave}
                     onCancel={() => setNewServiceModalVisible(false)}
                     maskClosable={false}
-                    width={900}
+                    width={1000}
                     okText="Enregistrer"
                     cancelText="Annuler"
                     destroyOnHidden
@@ -2170,15 +2311,119 @@ export default function Vente() {
                             <Input allowClear />
                         </Form.Item>
                         <Form.Item name="description" label="Description">
-                            <Input.TextArea rows={3} allowClear />
+                            <Input.TextArea rows={2} allowClear />
                         </Form.Item>
-                        <Row gutter={16}>
-                            <Col span={12}><Form.Item name="prixHT" label="Prix HT"><InputNumber addonAfter="€" min={0} step={0.01} style={{ width: '100%' }} /></Form.Item></Col>
-                            <Col span={12}><Form.Item name="tva" label="TVA (%)"><InputNumber addonAfter="%" min={0} max={100} step={0.01} style={{ width: '100%' }} /></Form.Item></Col>
-                        </Row>
-                        <Row gutter={16}>
-                            <Col span={12}><Form.Item name="montantTVA" label="Montant TVA"><InputNumber addonAfter="€" min={0} step={0.01} style={{ width: '100%' }} /></Form.Item></Col>
-                            <Col span={12}><Form.Item name="prixTTC" label="Prix TTC"><InputNumber addonAfter="€" min={0} step={0.01} style={{ width: '100%' }} /></Form.Item></Col>
+                        <Form.Item name="dureeEstimee" label="Durée estimée">
+                            <InputNumber min={0} step={0.25} precision={2} style={{ width: '100%' }} addonAfter="h" />
+                        </Form.Item>
+                        <Tabs
+                            defaultActiveKey="mainOeuvres"
+                            items={[
+                                {
+                                    key: 'mainOeuvres',
+                                    label: "Main d'Oeuvres",
+                                    children: (
+                                        <Form.List name="mainOeuvres">
+                                            {(fields, { remove }) => (
+                                                <>
+                                                    {fields.map((field, index) => (
+                                                        <Row gutter={8} key={field.key} align="middle">
+                                                            <Col span={16}>
+                                                                <Form.Item
+                                                                    {...field}
+                                                                    name={[field.name, 'mainOeuvreId']}
+                                                                    label={index === 0 ? "Main d'Oeuvre" : undefined}
+                                                                >
+                                                                    <Select
+                                                                        showSearch
+                                                                        allowClear
+                                                                        placeholder="Sélectionner une main d'oeuvre"
+                                                                        options={mainOeuvreOptions}
+                                                                        filterOption={(input, option) =>
+                                                                            (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                                                                        }
+                                                                    />
+                                                                </Form.Item>
+                                                            </Col>
+                                                            <Col span={5}>
+                                                                <Form.Item
+                                                                    {...field}
+                                                                    name={[field.name, 'quantite']}
+                                                                    label={index === 0 ? 'Quantité' : undefined}
+                                                                >
+                                                                    <InputNumber min={0.25} step={0.25} style={{ width: '100%' }} />
+                                                                </Form.Item>
+                                                            </Col>
+                                                            <Col span={3}>
+                                                                <Form.Item label={index === 0 ? ' ' : undefined}>
+                                                                    {fields.length > 1 && (
+                                                                        <Button danger icon={<DeleteOutlined />} onClick={() => remove(field.name)} />
+                                                                    )}
+                                                                </Form.Item>
+                                                            </Col>
+                                                        </Row>
+                                                    ))}
+                                                </>
+                                            )}
+                                        </Form.List>
+                                    )
+                                },
+                                {
+                                    key: 'produits',
+                                    label: 'Produits',
+                                    children: (
+                                        <Form.List name="produits">
+                                            {(fields, { remove }) => (
+                                                <>
+                                                    {fields.map((field, index) => (
+                                                        <Row gutter={8} key={field.key} align="middle">
+                                                            <Col span={16}>
+                                                                <Form.Item
+                                                                    {...field}
+                                                                    name={[field.name, 'produitId']}
+                                                                    label={index === 0 ? 'Produit' : undefined}
+                                                                >
+                                                                    <Select
+                                                                        showSearch
+                                                                        allowClear
+                                                                        placeholder="Sélectionner un produit"
+                                                                        options={produitOptionsForService}
+                                                                        filterOption={(input, option) =>
+                                                                            (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                                                                        }
+                                                                    />
+                                                                </Form.Item>
+                                                            </Col>
+                                                            <Col span={5}>
+                                                                <Form.Item
+                                                                    {...field}
+                                                                    name={[field.name, 'quantite']}
+                                                                    label={index === 0 ? 'Quantité' : undefined}
+                                                                >
+                                                                    <InputNumber min={1} style={{ width: '100%' }} />
+                                                                </Form.Item>
+                                                            </Col>
+                                                            <Col span={3}>
+                                                                <Form.Item label={index === 0 ? ' ' : undefined}>
+                                                                    {fields.length > 1 && (
+                                                                        <Button danger icon={<DeleteOutlined />} onClick={() => remove(field.name)} />
+                                                                    )}
+                                                                </Form.Item>
+                                                            </Col>
+                                                        </Row>
+                                                    ))}
+                                                </>
+                                            )}
+                                        </Form.List>
+                                    )
+                                }
+                            ]}
+                        />
+                        <Row gutter={16} style={{ marginTop: 16 }}>
+                            <Col span={6}><Form.Item name="prixHT" label="Prix HT"><InputNumber addonAfter="€" min={0} step={0.01} style={{ width: '100%' }} /></Form.Item></Col>
+                            <Col span={6}><Form.Item name="tva" label="TVA (%)"><InputNumber addonAfter="%" min={0} max={100} step={0.01} style={{ width: '100%' }} /></Form.Item></Col>
+                            <Col span={6}><Form.Item name="montantTVA" label="Montant TVA"><InputNumber addonAfter="€" min={0} step={0.01} style={{ width: '100%' }} /></Form.Item></Col>
+                            <Col span={6}><Form.Item name="prixTTC" label="Prix TTC"><InputNumber addonAfter="€" min={0} step={0.01} style={{ width: '100%' }} /></Form.Item></Col>
                         </Row>
                     </Form>
                 </Modal>
@@ -2209,6 +2454,372 @@ export default function Vente() {
                         </Row>
                     </Form>
                 </Modal>
+            </Modal>
+
+            <Modal
+                title="Créer un client"
+                open={newClientModalVisible}
+                onOk={handleNewClientSave}
+                onCancel={() => setNewClientModalVisible(false)}
+                maskClosable={false}
+                width={800}
+                okText="Enregistrer"
+                cancelText="Annuler"
+                destroyOnHidden
+            >
+                <Form form={newClientForm} layout="vertical">
+                    <Row gutter={16}>
+                        <Col span={12}>
+                            <Form.Item name="type" label="Type" rules={[{ required: true, message: 'Le type est requis' }]}>
+                                <Select options={[
+                                    { value: 'PARTICULIER', label: 'Particulier' },
+                                    { value: 'PROFESSIONNEL', label: 'Professionnel' },
+                                    { value: 'PROFESSIONNEL_MER', label: 'Professionnel de la Mer' },
+                                ]} />
+                            </Form.Item>
+                        </Col>
+                    </Row>
+                    <Row gutter={16}>
+                        <Form.Item noStyle shouldUpdate={(prev, cur) => prev.type !== cur.type}>
+                            {({ getFieldValue }) =>
+                                getFieldValue('type') === 'PARTICULIER' && (
+                                    <Col span={12}>
+                                        <Form.Item name="prenom" label="Prénom">
+                                            <Input allowClear />
+                                        </Form.Item>
+                                    </Col>
+                                )
+                            }
+                        </Form.Item>
+                        <Col span={12}>
+                            <Form.Item name="nom" label="Nom" rules={[{ required: true, message: 'Le nom est requis' }]}>
+                                <Input allowClear />
+                            </Form.Item>
+                        </Col>
+                    </Row>
+                    <Row gutter={16}>
+                        <Col span={12}>
+                            <Form.Item name="email" label="Email">
+                                <Input type="email" allowClear />
+                            </Form.Item>
+                        </Col>
+                        <Col span={12}>
+                            <Form.Item name="telephone" label="Téléphone">
+                                <Input allowClear />
+                            </Form.Item>
+                        </Col>
+                    </Row>
+                    <Form.Item name="adresse" label="Adresse">
+                        <Input.TextArea autoSize={{ minRows: 2, maxRows: 4 }} allowClear />
+                    </Form.Item>
+                    <Form.Item noStyle shouldUpdate={(prev, cur) => prev.type !== cur.type}>
+                        {({ getFieldValue }) =>
+                            getFieldValue('type') !== 'PARTICULIER' && (
+                                <>
+                                    <Row gutter={16}>
+                                        <Col span={12}>
+                                            <Form.Item name="siren" label="SIREN">
+                                                <Input allowClear />
+                                            </Form.Item>
+                                        </Col>
+                                        <Col span={12}>
+                                            <Form.Item name="siret" label="SIRET">
+                                                <Input allowClear />
+                                            </Form.Item>
+                                        </Col>
+                                    </Row>
+                                    <Row gutter={16}>
+                                        <Col span={12}>
+                                            <Form.Item name="tva" label="TVA">
+                                                <Input allowClear />
+                                            </Form.Item>
+                                        </Col>
+                                        <Col span={12}>
+                                            <Form.Item name="naf" label="NAF">
+                                                <Input allowClear />
+                                            </Form.Item>
+                                        </Col>
+                                    </Row>
+                                </>
+                            )
+                        }
+                    </Form.Item>
+                    <Row gutter={16}>
+                        <Col span={12}>
+                            <Form.Item name="remise" label="Remise (%)">
+                                <InputNumber min={0} max={100} step={0.01} style={{ width: '100%' }} addonAfter="%" />
+                            </Form.Item>
+                        </Col>
+                        <Col span={12}>
+                            <Form.Item name="evaluation" label="Évaluation">
+                                <Rate allowClear />
+                            </Form.Item>
+                        </Col>
+                    </Row>
+                    <Form.Item name="notes" label="Notes">
+                        <Input.TextArea rows={3} allowClear />
+                    </Form.Item>
+                </Form>
+            </Modal>
+
+            <Modal
+                title="Créer un bateau"
+                open={newBateauModalVisible}
+                onOk={handleNewBateauSave}
+                onCancel={() => setNewBateauModalVisible(false)}
+                maskClosable={false}
+                width={800}
+                okText="Enregistrer"
+                cancelText="Annuler"
+                destroyOnHidden
+            >
+                <Form form={newBateauForm} layout="vertical">
+                    <Row gutter={16}>
+                        <Col span={12}>
+                            <Form.Item name="name" label="Nom" rules={[{ required: true, message: 'Le nom est requis' }]}>
+                                <Input allowClear />
+                            </Form.Item>
+                        </Col>
+                        <Col span={12}>
+                            <Form.Item name="immatriculation" label="Immatriculation">
+                                <Input allowClear />
+                            </Form.Item>
+                        </Col>
+                    </Row>
+                    <Row gutter={16}>
+                        <Col span={12}>
+                            <Form.Item name="numeroSerie" label="Numéro de série">
+                                <Input allowClear />
+                            </Form.Item>
+                        </Col>
+                        <Col span={12}>
+                            <Form.Item name="numeroClef" label="Numéro clef">
+                                <Input allowClear />
+                            </Form.Item>
+                        </Col>
+                    </Row>
+                    <Row gutter={16}>
+                        <Col span={8}>
+                            <Form.Item name="dateMeS" label="Date MeS">
+                                <Input type="date" />
+                            </Form.Item>
+                        </Col>
+                        <Col span={8}>
+                            <Form.Item name="dateAchat" label="Date achat">
+                                <Input type="date" />
+                            </Form.Item>
+                        </Col>
+                        <Col span={8}>
+                            <Form.Item name="dateFinDeGuarantie" label="Date fin garantie">
+                                <Input type="date" />
+                            </Form.Item>
+                        </Col>
+                    </Row>
+                    <Row gutter={16}>
+                        <Col span={12}>
+                            <Form.Item name="localisation" label="Localisation">
+                                <Input allowClear />
+                            </Form.Item>
+                        </Col>
+                        <Col span={12}>
+                            <Form.Item name="localisationGps" label="Localisation GPS">
+                                <Input allowClear placeholder="lat, lng" />
+                            </Form.Item>
+                        </Col>
+                    </Row>
+                    <Form.Item label="Modèle catalogue">
+                        <Space.Compact style={{ width: '100%' }}>
+                            <Select
+                                showSearch
+                                allowClear
+                                placeholder="Associer à un modèle du catalogue"
+                                filterOption={(input, option) => (option?.label ?? '').toLowerCase().includes(input.toLowerCase())}
+                                options={catalogueBateaux.map((b) => ({ value: b.id, label: `${b.marque || ''} ${b.modele || ''}`.trim() }))}
+                                onChange={(value) => newBateauForm.setFieldValue('modele', value ? { id: value } : undefined)}
+                                style={{ width: '100%' }}
+                            />
+                            <Button icon={<PlusOutlined />} title="Créer un modèle" onClick={() => history.push('/catalogue/bateaux')} />
+                        </Space.Compact>
+                    </Form.Item>
+                    <Form.Item label="Propriétaires">
+                        <Space.Compact style={{ width: '100%' }}>
+                            <Select
+                                mode="multiple"
+                                showSearch
+                                allowClear
+                                placeholder="Sélectionner les propriétaires"
+                                filterOption={(input, option) => (option?.label ?? '').toLowerCase().includes(input.toLowerCase())}
+                                options={clientOptions}
+                                onChange={(values) => newBateauForm.setFieldValue('proprietaires', (values || []).map((id: number) => ({ id })))}
+                                style={{ width: '100%' }}
+                            />
+                            <Button icon={<PlusOutlined />} title="Créer un client" onClick={openNewClientModal} />
+                        </Space.Compact>
+                    </Form.Item>
+                    <Form.Item label="Moteurs">
+                        <Space.Compact style={{ width: '100%' }}>
+                            <Select
+                                mode="multiple"
+                                showSearch
+                                allowClear
+                                placeholder="Sélectionner les moteurs à associer"
+                                filterOption={(input, option) => (option?.label ?? '').toLowerCase().includes(input.toLowerCase())}
+                                options={catalogueMoteurs.map((m) => ({ value: m.id, label: `${m.marque || ''} ${m.modele || ''}`.trim() }))}
+                                onChange={(values) => newBateauForm.setFieldValue('moteurs', (values || []).map((id: number) => ({ id })))}
+                                style={{ width: '100%' }}
+                            />
+                            <Button icon={<PlusOutlined />} title="Créer un moteur" onClick={() => history.push('/catalogue/moteurs')} />
+                        </Space.Compact>
+                    </Form.Item>
+                    <Form.Item name="images" label="Images">
+                        <ImageUpload />
+                    </Form.Item>
+                </Form>
+            </Modal>
+
+            <Modal
+                title="Créer un moteur"
+                open={newMoteurModalVisible}
+                onOk={handleNewMoteurSave}
+                onCancel={() => setNewMoteurModalVisible(false)}
+                maskClosable={false}
+                width={800}
+                okText="Enregistrer"
+                cancelText="Annuler"
+                destroyOnHidden
+            >
+                <Form form={newMoteurForm} layout="vertical">
+                    <Row gutter={16}>
+                        <Col span={12}>
+                            <Form.Item name="numeroSerie" label="Numéro de série" rules={[{ required: true, message: 'Le numéro de série est requis' }]}>
+                                <Input allowClear />
+                            </Form.Item>
+                        </Col>
+                        <Col span={12}>
+                            <Form.Item name="numeroClef" label="Numéro de clef">
+                                <Input allowClear />
+                            </Form.Item>
+                        </Col>
+                    </Row>
+                    <Row gutter={16}>
+                        <Col span={8}>
+                            <Form.Item name="dateMeS" label="Date MeS">
+                                <Input type="date" />
+                            </Form.Item>
+                        </Col>
+                        <Col span={8}>
+                            <Form.Item name="dateAchat" label="Date achat">
+                                <Input type="date" />
+                            </Form.Item>
+                        </Col>
+                        <Col span={8}>
+                            <Form.Item name="dateFinDeGuarantie" label="Date fin garantie">
+                                <Input type="date" />
+                            </Form.Item>
+                        </Col>
+                    </Row>
+                    <Form.Item label="Modèle catalogue">
+                        <Space.Compact style={{ width: '100%' }}>
+                            <Select
+                                showSearch
+                                allowClear
+                                placeholder="Associer à un modèle du catalogue"
+                                filterOption={(input, option) => (option?.label ?? '').toLowerCase().includes(input.toLowerCase())}
+                                options={catalogueMoteurs.map((m) => ({ value: m.id, label: `${m.marque || ''} ${m.modele || ''}`.trim() }))}
+                                onChange={(value) => newMoteurForm.setFieldValue('modele', value ? { id: value } : undefined)}
+                                style={{ width: '100%' }}
+                            />
+                            <Button icon={<PlusOutlined />} title="Créer un modèle" onClick={() => history.push('/catalogue/moteurs')} />
+                        </Space.Compact>
+                    </Form.Item>
+                    <Form.Item label="Propriétaire">
+                        <Space.Compact style={{ width: '100%' }}>
+                            <Select
+                                showSearch
+                                allowClear
+                                placeholder="Sélectionner le propriétaire"
+                                filterOption={(input, option) => (option?.label ?? '').toLowerCase().includes(input.toLowerCase())}
+                                options={clientOptions}
+                                onChange={(value) => newMoteurForm.setFieldValue('proprietaire', value ? { id: value } : undefined)}
+                                style={{ width: '100%' }}
+                            />
+                            <Button icon={<PlusOutlined />} title="Créer un client" onClick={openNewClientModal} />
+                        </Space.Compact>
+                    </Form.Item>
+                    <Form.Item name="images" label="Images">
+                        <ImageUpload />
+                    </Form.Item>
+                </Form>
+            </Modal>
+
+            <Modal
+                title="Créer une remorque"
+                open={newRemorqueModalVisible}
+                onOk={handleNewRemorqueSave}
+                onCancel={() => setNewRemorqueModalVisible(false)}
+                maskClosable={false}
+                width={800}
+                okText="Enregistrer"
+                cancelText="Annuler"
+                destroyOnHidden
+            >
+                <Form form={newRemorqueForm} layout="vertical">
+                    <Row gutter={16}>
+                        <Col span={12}>
+                            <Form.Item name="immatriculation" label="Immatriculation" rules={[{ required: true, message: "L'immatriculation est requise" }]}>
+                                <Input allowClear />
+                            </Form.Item>
+                        </Col>
+                    </Row>
+                    <Row gutter={16}>
+                        <Col span={8}>
+                            <Form.Item name="dateMeS" label="Date MeS">
+                                <Input type="date" />
+                            </Form.Item>
+                        </Col>
+                        <Col span={8}>
+                            <Form.Item name="dateAchat" label="Date achat">
+                                <Input type="date" />
+                            </Form.Item>
+                        </Col>
+                        <Col span={8}>
+                            <Form.Item name="dateFinDeGuarantie" label="Date fin garantie">
+                                <Input type="date" />
+                            </Form.Item>
+                        </Col>
+                    </Row>
+                    <Form.Item label="Modèle catalogue">
+                        <Space.Compact style={{ width: '100%' }}>
+                            <Select
+                                showSearch
+                                allowClear
+                                placeholder="Associer à un modèle du catalogue"
+                                filterOption={(input, option) => (option?.label ?? '').toLowerCase().includes(input.toLowerCase())}
+                                options={catalogueRemorques.map((r) => ({ value: r.id, label: `${r.marque || ''} ${r.modele || ''}`.trim() }))}
+                                onChange={(value) => newRemorqueForm.setFieldValue('modele', value ? { id: value } : undefined)}
+                                style={{ width: '100%' }}
+                            />
+                            <Button icon={<PlusOutlined />} title="Créer un modèle" onClick={() => history.push('/catalogue/remorques')} />
+                        </Space.Compact>
+                    </Form.Item>
+                    <Form.Item label="Propriétaire">
+                        <Space.Compact style={{ width: '100%' }}>
+                            <Select
+                                showSearch
+                                allowClear
+                                placeholder="Sélectionner le propriétaire"
+                                filterOption={(input, option) => (option?.label ?? '').toLowerCase().includes(input.toLowerCase())}
+                                options={clientOptions}
+                                onChange={(value) => newRemorqueForm.setFieldValue('proprietaire', value ? { id: value } : undefined)}
+                                style={{ width: '100%' }}
+                            />
+                            <Button icon={<PlusOutlined />} title="Créer un client" onClick={openNewClientModal} />
+                        </Space.Compact>
+                    </Form.Item>
+                    <Form.Item name="images" label="Images">
+                        <ImageUpload />
+                    </Form.Item>
+                </Form>
             </Modal>
         </Card>
     );

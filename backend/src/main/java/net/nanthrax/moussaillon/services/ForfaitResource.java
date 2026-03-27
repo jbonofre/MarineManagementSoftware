@@ -86,10 +86,11 @@ public class ForfaitResource {
         if (forfait.produits != null) {
             entity.produits.addAll(forfait.produits);
         }
-        entity.services.clear();
-        if (forfait.services != null) {
-            entity.services.addAll(forfait.services);
+        entity.mainOeuvres.clear();
+        if (forfait.mainOeuvres != null) {
+            entity.mainOeuvres.addAll(forfait.mainOeuvres);
         }
+        entity.dureeEstimee = forfait.dureeEstimee;
         entity.heuresFonctionnement = forfait.heuresFonctionnement;
         entity.joursFrequence = forfait.joursFrequence;
         entity.prixHT = forfait.prixHT;

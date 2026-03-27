@@ -56,7 +56,7 @@ interface ProduitCatalogueEntity {
     prixVenteTTC?: number;
 }
 
-interface ServiceEntity {
+interface MainOeuvreEntity {
     id: number;
     nom: string;
     description?: string;
@@ -82,7 +82,7 @@ const defaultNewProduit = {
     prixVenteHT: 0, tva: 20, montantTVA: 0, prixVenteTTC: 0,
 };
 
-const defaultNewService = {
+const defaultNewMainOeuvre = {
     nom: '', description: '', prixHT: 0, tva: 20, montantTVA: 0, prixTTC: 0,
 };
 
@@ -92,42 +92,28 @@ interface ForfaitProduitEntity {
     quantite: number;
 }
 
-interface ForfaitServiceEntity {
+interface ForfaitMainOeuvreEntity {
     id?: number;
-    service?: ServiceEntity;
+    mainOeuvre?: MainOeuvreEntity;
     quantite: number;
 }
 
 interface TaskEntity {
     id?: number;
     nom?: string;
-    status?: TaskStatus;
-    dateDebut?: string;
-    dateFin?: string;
-    statusDate?: string;
     description?: string;
-    notes?: string;
-    technicien?: TechnicienEntity;
-    dureeEstimee?: number;
-    dureeReelle?: number;
-}
-
-type TaskStatus = 'EN_ATTENTE' | 'EN_COURS' | 'TERMINEE' | 'INCIDENT' | 'ANNULEE';
-
-interface TechnicienEntity {
-    id: number;
-    prenom?: string;
-    nom?: string;
+    done?: boolean;
 }
 
 interface ForfaitEntity {
     id?: number;
     reference?: string;
     nom: string;
+    dureeEstimee: number;
     moteursAssocies: MoteurCatalogueEntity[];
     bateauxAssocies: BateauCatalogueEntity[];
     produits: ForfaitProduitEntity[];
-    services: ForfaitServiceEntity[];
+    mainOeuvres: ForfaitMainOeuvreEntity[];
     heuresFonctionnement: number;
     joursFrequence: number;
     prixHT: number;
@@ -140,22 +126,15 @@ interface ForfaitEntity {
 interface ForfaitFormValues {
     reference: string;
     nom: string;
+    dureeEstimee: number;
     moteurIds: number[];
     bateauIds: number[];
     produits: Array<{ produitId?: number; quantite?: number }>;
-    services: Array<{ serviceId?: number; quantite?: number }>;
+    mainOeuvres: Array<{ mainOeuvreId?: number; quantite?: number }>;
     taches: Array<{
         id?: number;
         nom?: string;
-        status?: TaskStatus;
-        dateDebut?: string;
-        dateFin?: string;
-        statusDate?: string;
         description?: string;
-        notes?: string;
-        technicienId?: number;
-        dureeEstimee?: number;
-        dureeReelle?: number;
     }>;
     heuresFonctionnement: number;
     joursFrequence: number;
@@ -170,10 +149,11 @@ interface ForfaitFormValues {
 const defaultForfait: ForfaitFormValues = {
     reference: '',
     nom: '',
+    dureeEstimee: 0,
     moteurIds: [],
     bateauIds: [],
     produits: [{}],
-    services: [{}],
+    mainOeuvres: [{}],
     taches: [{}],
     heuresFonctionnement: 0,
     joursFrequence: 0,
@@ -186,36 +166,13 @@ const defaultForfait: ForfaitFormValues = {
 };
 
 const formatEuro = (value?: number) => `${(value || 0).toFixed(2)} €`;
-const toDateInputValue = (value?: string) => {
-    if (!value) {
-        return undefined;
-    }
-    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-        return value;
-    }
-    const parsedDate = new Date(value);
-    if (Number.isNaN(parsedDate.getTime())) {
-        return undefined;
-    }
-    const timezoneOffsetMs = parsedDate.getTimezoneOffset() * 60000;
-    return new Date(parsedDate.getTime() - timezoneOffsetMs).toISOString().split('T')[0];
-};
-
-const taskStatusOptions: Array<{ value: TaskStatus; label: string }> = [
-    { value: 'EN_ATTENTE', label: 'En attente' },
-    { value: 'EN_COURS', label: 'En cours' },
-    { value: 'TERMINEE', label: 'Terminee' },
-    { value: 'INCIDENT', label: 'Incident' },
-    { value: 'ANNULEE', label: 'Annulee' }
-];
 
 export default function Forfaits() {
     const [forfaits, setForfaits] = useState<ForfaitEntity[]>([]);
     const [moteurs, setMoteurs] = useState<MoteurCatalogueEntity[]>([]);
     const [bateaux, setBateaux] = useState<BateauCatalogueEntity[]>([]);
     const [produits, setProduits] = useState<ProduitCatalogueEntity[]>([]);
-    const [services, setServices] = useState<ServiceEntity[]>([]);
-    const [techniciens, setTechniciens] = useState<TechnicienEntity[]>([]);
+    const [mainOeuvresList, setMainOeuvresList] = useState<MainOeuvreEntity[]>([]);
     const [loading, setLoading] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
     const [isEdit, setIsEdit] = useState(false);
@@ -225,9 +182,9 @@ export default function Forfaits() {
     const [newProduitModalVisible, setNewProduitModalVisible] = useState(false);
     const [newProduitTargetLine, setNewProduitTargetLine] = useState<number | null>(null);
     const [newProduitForm] = Form.useForm();
-    const [newServiceModalVisible, setNewServiceModalVisible] = useState(false);
-    const [newServiceTargetLine, setNewServiceTargetLine] = useState<number | null>(null);
-    const [newServiceForm] = Form.useForm();
+    const [newMainOeuvreModalVisible, setNewMainOeuvreModalVisible] = useState(false);
+    const [newMainOeuvreTargetLine, setNewMainOeuvreTargetLine] = useState<number | null>(null);
+    const [newMainOeuvreForm] = Form.useForm();
 
     const marqueOptions = useMemo(() => {
         const unique = Array.from(new Set(produits.map((p) => p.marque).filter(Boolean))) as string[];
@@ -249,20 +206,11 @@ export default function Forfaits() {
         [produits]
     );
 
-    const serviceOptions = useMemo(
-        () => services.map((service) => ({ value: service.id, label: service.nom })),
-        [services]
+    const mainOeuvreOptions = useMemo(
+        () => mainOeuvresList.map((mo) => ({ value: mo.id, label: mo.nom })),
+        [mainOeuvresList]
     );
 
-
-    const technicienOptions = useMemo(
-        () =>
-            techniciens.map((technicien) => ({
-                value: technicien.id,
-                label: `${technicien.prenom || ''} ${technicien.nom || ''}`.trim() || `Technicien #${technicien.id}`
-            })),
-        [techniciens]
-    );
 
     const fetchForfaits = async (query?: string) => {
         setLoading(true);
@@ -279,18 +227,16 @@ export default function Forfaits() {
 
     const fetchOptions = async () => {
         try {
-            const [moteursRes, bateauxRes, produitsRes, servicesRes, techniciensRes] = await Promise.all([
+            const [moteursRes, bateauxRes, produitsRes, mainOeuvresRes] = await Promise.all([
                 axios.get('/catalogue/moteurs'),
                 axios.get('/catalogue/bateaux'),
                 axios.get('/catalogue/produits'),
-                axios.get('/services'),
-                axios.get('/techniciens')
+                axios.get('/main-oeuvres'),
             ]);
             setMoteurs(moteursRes.data || []);
             setBateaux(bateauxRes.data || []);
             setProduits(produitsRes.data || []);
-            setServices(servicesRes.data || []);
-            setTechniciens(techniciensRes.data || []);
+            setMainOeuvresList(mainOeuvresRes.data || []);
         } catch {
             message.error('Erreur lors du chargement des listes de référence.');
         }
@@ -345,46 +291,46 @@ export default function Forfaits() {
         }
     };
 
-    const openNewServiceModal = (lineIndex: number) => {
-        setNewServiceTargetLine(lineIndex);
-        newServiceForm.resetFields();
-        newServiceForm.setFieldsValue(defaultNewService);
-        setNewServiceModalVisible(true);
+    const openNewMainOeuvreModal = (lineIndex: number) => {
+        setNewMainOeuvreTargetLine(lineIndex);
+        newMainOeuvreForm.resetFields();
+        newMainOeuvreForm.setFieldsValue(defaultNewMainOeuvre);
+        setNewMainOeuvreModalVisible(true);
     };
 
-    const handleNewServiceSave = async () => {
+    const handleNewMainOeuvreSave = async () => {
         try {
-            const values = await newServiceForm.validateFields();
-            const res = await axios.post('/services', values);
-            const created = res.data as ServiceEntity;
-            message.success('Service ajouté avec succès');
-            setServices((prev) => [...prev, created]);
-            if (newServiceTargetLine !== null && created.id) {
-                const currentLines = form.getFieldValue('services') || [];
+            const values = await newMainOeuvreForm.validateFields();
+            const res = await axios.post('/main-oeuvres', values);
+            const created = res.data as MainOeuvreEntity;
+            message.success("Main d'oeuvre ajoutée avec succès");
+            setMainOeuvresList((prev) => [...prev, created]);
+            if (newMainOeuvreTargetLine !== null && created.id) {
+                const currentLines = form.getFieldValue('mainOeuvres') || [];
                 const updated = [...currentLines];
-                updated[newServiceTargetLine] = { ...updated[newServiceTargetLine], serviceId: created.id };
-                form.setFieldValue('services', updated);
+                updated[newMainOeuvreTargetLine] = { ...updated[newMainOeuvreTargetLine], mainOeuvreId: created.id };
+                form.setFieldValue('mainOeuvres', updated);
             }
-            setNewServiceModalVisible(false);
+            setNewMainOeuvreModalVisible(false);
         } catch {
             // validation errors shown in form
         }
     };
 
-    const onNewServiceValuesChange = (changedValues: Record<string, unknown>) => {
+    const onNewMainOeuvreValuesChange = (changedValues: Record<string, unknown>) => {
         if (changedValues.prixHT !== undefined || changedValues.tva !== undefined) {
-            const prixHT = newServiceForm.getFieldValue('prixHT') || 0;
-            const tva = newServiceForm.getFieldValue('tva') || 0;
+            const prixHT = newMainOeuvreForm.getFieldValue('prixHT') || 0;
+            const tva = newMainOeuvreForm.getFieldValue('tva') || 0;
             const montantTVA = Math.round(((prixHT * (tva / 100)) + Number.EPSILON) * 100) / 100;
-            newServiceForm.setFieldValue('montantTVA', montantTVA);
-            newServiceForm.setFieldValue('prixTTC', Math.round(((prixHT + montantTVA) + Number.EPSILON) * 100) / 100);
+            newMainOeuvreForm.setFieldValue('montantTVA', montantTVA);
+            newMainOeuvreForm.setFieldValue('prixTTC', Math.round(((prixHT + montantTVA) + Number.EPSILON) * 100) / 100);
         }
         if (changedValues.prixTTC !== undefined) {
-            const prixTTC = newServiceForm.getFieldValue('prixTTC') || 0;
-            const tva = newServiceForm.getFieldValue('tva') || 0;
+            const prixTTC = newMainOeuvreForm.getFieldValue('prixTTC') || 0;
+            const tva = newMainOeuvreForm.getFieldValue('tva') || 0;
             const montantTVA = Math.round((((prixTTC / (100 + tva)) * tva) + Number.EPSILON) * 100) / 100;
-            newServiceForm.setFieldValue('montantTVA', montantTVA);
-            newServiceForm.setFieldValue('prixHT', Math.round(((prixTTC - montantTVA) + Number.EPSILON) * 100) / 100);
+            newMainOeuvreForm.setFieldValue('montantTVA', montantTVA);
+            newMainOeuvreForm.setFieldValue('prixHT', Math.round(((prixTTC - montantTVA) + Number.EPSILON) * 100) / 100);
         }
     };
 
@@ -395,29 +341,22 @@ export default function Forfaits() {
             form.setFieldsValue({
                 reference: forfait.reference || '',
                 nom: forfait.nom || '',
+                dureeEstimee: forfait.dureeEstimee || 0,
                 moteurIds: (forfait.moteursAssocies || []).map((m) => m.id),
                 bateauIds: (forfait.bateauxAssocies || []).map((b) => b.id),
                 produits: (forfait.produits || [])
                     .filter((item) => item.produit?.id)
                     .map<ForfaitFormValues['produits'][number]>((item) => ({ produitId: item.produit!.id, quantite: item.quantite || 1 }))
                     .concat({}),
-                services: (forfait.services || [])
-                    .filter((item) => item.service?.id)
-                    .map<ForfaitFormValues['services'][number]>((item) => ({ serviceId: item.service!.id, quantite: item.quantite || 1 }))
+                mainOeuvres: (forfait.mainOeuvres || [])
+                    .filter((item) => item.mainOeuvre?.id)
+                    .map<ForfaitFormValues['mainOeuvres'][number]>((item) => ({ mainOeuvreId: item.mainOeuvre!.id, quantite: item.quantite || 1 }))
                     .concat({}),
                 taches: (forfait.taches || [])
                     .map<ForfaitFormValues['taches'][number]>((tache) => ({
                         id: tache.id,
                         nom: tache.nom || '',
-                        status: tache.status || 'EN_ATTENTE',
-                        dateDebut: toDateInputValue(tache.dateDebut),
-                        dateFin: toDateInputValue(tache.dateFin),
-                        statusDate: toDateInputValue(tache.statusDate),
                         description: tache.description || '',
-                        notes: tache.notes || '',
-                        technicienId: tache.technicien?.id,
-                        dureeEstimee: tache.dureeEstimee || 0,
-                        dureeReelle: tache.dureeReelle || 0
                     }))
                     .concat({}),
                 heuresFonctionnement: forfait.heuresFonctionnement || 0,
@@ -441,6 +380,7 @@ export default function Forfaits() {
     const toPayload = (values: ForfaitFormValues): Partial<ForfaitEntity> => ({
         reference: values.reference,
         nom: values.nom,
+        dureeEstimee: values.dureeEstimee || 0,
         moteursAssocies: (values.moteurIds || [])
             .map((id) => moteurs.find((moteur) => moteur.id === id))
             .filter(Boolean) as MoteurCatalogueEntity[],
@@ -453,39 +393,18 @@ export default function Forfaits() {
                 produit: produits.find((produit) => produit.id === item.produitId),
                 quantite: item.quantite || 1
             })),
-        services: (values.services || [])
-            .filter((item) => item.serviceId)
+        mainOeuvres: (values.mainOeuvres || [])
+            .filter((item) => item.mainOeuvreId)
             .map((item) => ({
-                service: services.find((service) => service.id === item.serviceId),
+                mainOeuvre: mainOeuvresList.find((mo) => mo.id === item.mainOeuvreId),
                 quantite: item.quantite || 1
             })),
         taches: (values.taches || [])
-            .filter((tache) =>
-                Boolean(
-                    tache.nom
-                    || tache.description
-                    || tache.notes
-                    || tache.status
-                    || tache.technicienId
-                    || tache.dateDebut
-                    || tache.dateFin
-                    || tache.statusDate
-                    || (tache.dureeEstimee || 0) > 0
-                    || (tache.dureeReelle || 0) > 0
-                )
-            )
+            .filter((tache) => Boolean(tache.nom || tache.description))
             .map((tache) => ({
                 id: tache.id,
                 nom: tache.nom || '',
-                status: tache.status || 'EN_ATTENTE',
-                dateDebut: tache.dateDebut,
-                dateFin: tache.dateFin,
-                statusDate: tache.statusDate,
                 description: tache.description || '',
-                notes: tache.notes || '',
-                technicien: techniciens.find((technicien) => technicien.id === tache.technicienId),
-                dureeEstimee: tache.dureeEstimee || 0,
-                dureeReelle: tache.dureeReelle || 0
             })),
         heuresFonctionnement: values.heuresFonctionnement || 0,
         joursFrequence: values.joursFrequence || 0,
@@ -535,27 +454,25 @@ export default function Forfaits() {
             const currentProduitLines = allValues.produits || [];
             if (currentProduitLines.length === 0) {
                 form.setFieldValue('produits', [{}]);
-                return;
-            }
-            const lastProduitLine = currentProduitLines[currentProduitLines.length - 1];
-            const isLastLineComplete = !!lastProduitLine?.produitId && (lastProduitLine?.quantite || 0) > 0;
-            if (isLastLineComplete) {
-                form.setFieldValue('produits', [...currentProduitLines, {}]);
-                return;
+            } else {
+                const lastProduitLine = currentProduitLines[currentProduitLines.length - 1];
+                const isLastLineComplete = !!lastProduitLine?.produitId && (lastProduitLine?.quantite || 0) > 0;
+                if (isLastLineComplete) {
+                    form.setFieldValue('produits', [...currentProduitLines, {}]);
+                }
             }
         }
 
-        if (changedValues.services !== undefined) {
-            const currentServiceLines = allValues.services || [];
-            if (currentServiceLines.length === 0) {
-                form.setFieldValue('services', [{}]);
-                return;
-            }
-            const lastServiceLine = currentServiceLines[currentServiceLines.length - 1];
-            const isLastLineComplete = !!lastServiceLine?.serviceId && (lastServiceLine?.quantite || 0) > 0;
-            if (isLastLineComplete) {
-                form.setFieldValue('services', [...currentServiceLines, {}]);
-                return;
+        if (changedValues.mainOeuvres !== undefined) {
+            const currentMoLines = allValues.mainOeuvres || [];
+            if (currentMoLines.length === 0) {
+                form.setFieldValue('mainOeuvres', [{}]);
+            } else {
+                const lastMoLine = currentMoLines[currentMoLines.length - 1];
+                const isLastLineComplete = !!lastMoLine?.mainOeuvreId && (lastMoLine?.quantite || 0) > 0;
+                if (isLastLineComplete) {
+                    form.setFieldValue('mainOeuvres', [...currentMoLines, {}]);
+                }
             }
         }
 
@@ -563,20 +480,19 @@ export default function Forfaits() {
             const currentTaskLines = allValues.taches || [];
             if (currentTaskLines.length === 0) {
                 form.setFieldValue('taches', [{}]);
-                return;
-            }
-            const lastTaskLine = currentTaskLines[currentTaskLines.length - 1];
-            const isLastLineComplete = !!lastTaskLine?.nom?.trim();
-            if (isLastLineComplete) {
-                form.setFieldValue('taches', [...currentTaskLines, {}]);
-                return;
+            } else {
+                const lastTaskLine = currentTaskLines[currentTaskLines.length - 1];
+                const isLastLineComplete = !!lastTaskLine?.nom?.trim();
+                if (isLastLineComplete) {
+                    form.setFieldValue('taches', [...currentTaskLines, {}]);
+                }
             }
         }
 
-        if (changedValues.produits !== undefined || changedValues.services !== undefined) {
+        if (changedValues.produits !== undefined || changedValues.mainOeuvres !== undefined) {
             const round2 = (value: number) => Math.round((value + Number.EPSILON) * 100) / 100;
             const produitsValues = form.getFieldValue('produits') || [];
-            const servicesValues = form.getFieldValue('services') || [];
+            const moValues = form.getFieldValue('mainOeuvres') || [];
 
             const totalProduitsTTC = produitsValues.reduce((total: number, item: { produitId?: number; quantite?: number }) => {
                 const prixUnitaireTTC = produits.find((produit) => produit.id === item.produitId)?.prixVenteTTC || 0;
@@ -584,13 +500,13 @@ export default function Forfaits() {
                 return total + (prixUnitaireTTC * quantite);
             }, 0);
 
-            const totalServicesTTC = servicesValues.reduce((total: number, item: { serviceId?: number; quantite?: number }) => {
-                const prixUnitaireTTC = services.find((service) => service.id === item.serviceId)?.prixTTC || 0;
+            const totalMoTTC = moValues.reduce((total: number, item: { mainOeuvreId?: number; quantite?: number }) => {
+                const prixUnitaireTTC = mainOeuvresList.find((mo) => mo.id === item.mainOeuvreId)?.prixTTC || 0;
                 const quantite = item.quantite || 0;
                 return total + (prixUnitaireTTC * quantite);
             }, 0);
 
-            const prixTTC = round2(totalProduitsTTC + totalServicesTTC);
+            const prixTTC = round2(totalProduitsTTC + totalMoTTC);
             const tva = form.getFieldValue('tva') || 0;
             const remise = form.getFieldValue('remise') || 0;
             const remiseEuros = form.getFieldValue('remiseEuros') || 0;
@@ -680,9 +596,9 @@ export default function Forfaits() {
             render: (values: ForfaitProduitEntity[]) => values?.length || 0
         },
         {
-            title: 'Services',
-            dataIndex: 'services',
-            render: (values: ForfaitServiceEntity[]) => values?.length || 0
+            title: "Main d'Oeuvres",
+            dataIndex: 'mainOeuvres',
+            render: (values: ForfaitMainOeuvreEntity[]) => values?.length || 0
         },
         {
             title: 'Fréquence',
@@ -794,6 +710,10 @@ export default function Forfaits() {
                         </Col>
                     </Row>
 
+                    <Form.Item name="dureeEstimee" label="Durée estimée">
+                        <InputNumber min={0} step={0.25} precision={2} style={{ width: '100%' }} addonAfter="h" />
+                    </Form.Item>
+
                     <Row gutter={16}>
                         <Col span={12}>
                             <Form.Item name="heuresFonctionnement" label="Heures de fonctionnement">
@@ -812,7 +732,7 @@ export default function Forfaits() {
                         items={[
                             {
                                 key: 'contenu',
-                                label: 'Produits & Services',
+                                label: "Produits & Main d'Oeuvres",
                                 children: (
                                     <>
                                         <Form.Item label="Produits inclus">
@@ -893,32 +813,32 @@ export default function Forfaits() {
                                             </Form.List>
                                         </Form.Item>
 
-                                        <Form.Item label="Services inclus">
-                                            <Form.List name="services">
+                                        <Form.Item label="Main d'Oeuvres incluses">
+                                            <Form.List name="mainOeuvres">
                                                 {(fields, { remove }) => (
                                                     <>
                                                         {fields.map((field) => {
-                                                            const serviceId = form.getFieldValue(['services', field.name, 'serviceId']);
-                                                            const isEmptyLine = !serviceId;
+                                                            const mainOeuvreId = form.getFieldValue(['mainOeuvres', field.name, 'mainOeuvreId']);
+                                                            const isEmptyLine = !mainOeuvreId;
                                                             return (
                                                             <Space key={field.key} align="baseline" style={{ display: 'flex', marginBottom: 8 }}>
                                                                 <Form.Item
                                                                     {...field}
-                                                                    name={[field.name, 'serviceId']}
+                                                                    name={[field.name, 'mainOeuvreId']}
                                                                     rules={[
                                                                         {
                                                                             validator: async (_, value) => {
-                                                                                const line = form.getFieldValue(['services', field.name]);
+                                                                                const line = form.getFieldValue(['mainOeuvres', field.name]);
                                                                                 const quantite = Number(line?.quantite || 0);
                                                                                 if (!value && quantite > 0) {
-                                                                                    throw new Error('Service requis');
+                                                                                    throw new Error("Main d'oeuvre requise");
                                                                                 }
                                                                             }
                                                                         }
                                                                     ]}
                                                                     style={{ width: 520 }}
                                                                 >
-                                                                    <Select allowClear showSearch options={serviceOptions} placeholder="Service" />
+                                                                    <Select allowClear showSearch options={mainOeuvreOptions} placeholder="Main d'Oeuvre" />
                                                                 </Form.Item>
                                                                 <Form.Item
                                                                     {...field}
@@ -926,8 +846,8 @@ export default function Forfaits() {
                                                                     rules={[
                                                                         {
                                                                             validator: async (_, value) => {
-                                                                                const line = form.getFieldValue(['services', field.name]);
-                                                                                if (!line?.serviceId && (value === undefined || value === null)) {
+                                                                                const line = form.getFieldValue(['mainOeuvres', field.name]);
+                                                                                if (!line?.mainOeuvreId && (value === undefined || value === null)) {
                                                                                     return;
                                                                                 }
                                                                                 if (!value || value <= 0) {
@@ -938,13 +858,13 @@ export default function Forfaits() {
                                                                     ]}
                                                                     style={{ width: 180 }}
                                                                 >
-                                                                    <InputNumber min={1} step={1} style={{ width: '100%' }} placeholder="Qte" />
+                                                                    <InputNumber min={0.25} step={0.25} style={{ width: '100%' }} placeholder="Qte" />
                                                                 </Form.Item>
                                                                 <Form.Item noStyle shouldUpdate>
                                                                     {({ getFieldValue }) => {
-                                                                        const sid = getFieldValue(['services', field.name, 'serviceId']);
-                                                                        const quantite = getFieldValue(['services', field.name, 'quantite']) || 0;
-                                                                        const prixUnitaireTTC = services.find((service) => service.id === sid)?.prixTTC || 0;
+                                                                        const moId = getFieldValue(['mainOeuvres', field.name, 'mainOeuvreId']);
+                                                                        const quantite = getFieldValue(['mainOeuvres', field.name, 'quantite']) || 0;
+                                                                        const prixUnitaireTTC = mainOeuvresList.find((mo) => mo.id === moId)?.prixTTC || 0;
                                                                         const prixTTC = Math.round(((prixUnitaireTTC * quantite) + Number.EPSILON) * 100) / 100;
 
                                                                         return (
@@ -960,7 +880,7 @@ export default function Forfaits() {
                                                                     }}
                                                                 </Form.Item>
                                                                 {isEmptyLine && (
-                                                                    <Button icon={<PlusOutlined />} title="Créer un service" onClick={() => openNewServiceModal(field.name)} />
+                                                                    <Button icon={<PlusOutlined />} title="Créer une main d'oeuvre" onClick={() => openNewMainOeuvreModal(field.name)} />
                                                                 )}
                                                                 <Button danger icon={<DeleteOutlined />} onClick={() => remove(field.name)} />
                                                             </Space>
@@ -987,24 +907,9 @@ export default function Forfaits() {
                                                         title={`Tâche ${field.name + 1}`}
                                                         extra={<Button danger icon={<DeleteOutlined />} onClick={() => remove(field.name)} />}
                                                     >
-                                                        <Row gutter={12}>
-                                                            <Col span={12}>
-                                                                <Form.Item {...field} name={[field.name, 'nom']} label="Nom">
-                                                                    <Input allowClear />
-                                                                </Form.Item>
-                                                            </Col>
-                                                            <Col span={12}>
-                                                                <Form.Item {...field} name={[field.name, 'dureeEstimee']} label="Durée estimée">
-                                                                    <InputNumber
-                                                                        min={0}
-                                                                        step={0.25}
-                                                                        precision={2}
-                                                                        style={{ width: '100%' }}
-                                                                        addonAfter="h"
-                                                                    />
-                                                                </Form.Item>
-                                                            </Col>
-                                                        </Row>
+                                                        <Form.Item {...field} name={[field.name, 'nom']} label="Nom">
+                                                            <Input allowClear />
+                                                        </Form.Item>
                                                         <Form.Item {...field} name={[field.name, 'description']} label="Description">
                                                             <Input.TextArea rows={2} />
                                                         </Form.Item>
@@ -1143,17 +1048,17 @@ export default function Forfaits() {
                 </Modal>
 
                 <Modal
-                    title="Créer un service"
-                    open={newServiceModalVisible}
-                    onOk={handleNewServiceSave}
-                    onCancel={() => setNewServiceModalVisible(false)}
+                    title="Créer une Main d'Oeuvre"
+                    open={newMainOeuvreModalVisible}
+                    onOk={handleNewMainOeuvreSave}
+                    onCancel={() => setNewMainOeuvreModalVisible(false)}
                     maskClosable={false}
                     width={900}
                     okText="Enregistrer"
                     cancelText="Annuler"
                     destroyOnHidden
                 >
-                    <Form form={newServiceForm} layout="vertical" initialValues={defaultNewService} onValuesChange={onNewServiceValuesChange}>
+                    <Form form={newMainOeuvreForm} layout="vertical" initialValues={defaultNewMainOeuvre} onValuesChange={onNewMainOeuvreValuesChange}>
                         <Form.Item name="nom" label="Nom" rules={[{ required: true, message: 'Le nom est requis' }]}>
                             <Input allowClear />
                         </Form.Item>

@@ -5,10 +5,10 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.ManyToOne;
 
 @Entity
-public class ForfaitServiceEntity extends PanacheEntity {
+public class ServiceProduitEntity extends PanacheEntity {
 
     @ManyToOne
-    public ServiceEntity service;
+    public ProduitCatalogueEntity produit;
 
     public int quantite;
 }
