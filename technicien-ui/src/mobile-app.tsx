@@ -306,6 +306,25 @@ export default function MobileApp({ user, onLogout, onChangePassword }: MobileAp
                 destroyOnHidden
                 width="95vw"
                 style={{ top: 20 }}
+                footer={
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                            {currentItem && currentItem.itemStatus !== 'INCIDENT' && currentItem.itemStatus !== 'TERMINEE' && currentItem.itemStatus !== 'ANNULEE' && (
+                                <Button danger icon={<ExclamationCircleOutlined />} onClick={() => form.setFieldsValue({ status: 'INCIDENT' })}>
+                                    Incident
+                                </Button>
+                            )}
+                        </div>
+                        <Space>
+                            <Button onClick={() => { setModalVisible(false); setCurrentItem(null); setChecklist([]); form.resetFields(); }}>
+                                Annuler
+                            </Button>
+                            <Button type="primary" loading={saving} onClick={handleSave}>
+                                Enregistrer
+                            </Button>
+                        </Space>
+                    </div>
+                }
             >
                 {currentItem && (
                     <Card size="small" style={{ marginBottom: 12, background: '#fafafa' }}>
@@ -321,7 +340,7 @@ export default function MobileApp({ user, onLogout, onChangePassword }: MobileAp
                     </Card>
                 )}
                 <Form form={form} layout="vertical">
-                    <Form.Item name="status" label="Statut" rules={[{ required: true }]}>
+                    <Form.Item name="status" label="Status" rules={[{ required: true }]}>
                         <Select options={taskStatusOptions} />
                     </Form.Item>
                     <Form.Item name="dureeReelle" label="Temps passe (heures)">

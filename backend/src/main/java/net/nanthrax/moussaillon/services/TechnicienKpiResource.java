@@ -12,6 +12,8 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
+import net.nanthrax.moussaillon.persistence.ForfaitMainOeuvreEntity;
+import net.nanthrax.moussaillon.persistence.ServiceMainOeuvreEntity;
 import net.nanthrax.moussaillon.persistence.TechnicienEntity;
 import net.nanthrax.moussaillon.persistence.VenteForfaitEntity;
 import net.nanthrax.moussaillon.persistence.VenteServiceEntity;
@@ -36,12 +38,14 @@ public class TechnicienKpiResource {
         for (VenteForfaitEntity vf : allForfaits) {
             allItems.add(new PlanningItem(
                     vf.status != null ? vf.status.name() : null,
-                    vf.dateDebut, vf.dureeReelle));
+                    vf.dateDebut, vf.statusDate, vf.dureeReelle,
+                    vf.forfait != null ? vf.forfait.dureeEstimee : 0));
         }
         for (VenteServiceEntity vs : allServices) {
             allItems.add(new PlanningItem(
                     vs.status != null ? vs.status.name() : null,
-                    vs.dateDebut, vs.dureeReelle));
+                    vs.dateDebut, vs.statusDate, vs.dureeReelle,
+                    vs.service != null ? vs.service.dureeEstimee : 0));
         }
 
         LocalDate now = LocalDate.now();
@@ -76,10 +80,66 @@ public class TechnicienKpiResource {
                 .filter(i -> "EN_COURS".equals(i.status) && i.dateDebut != null && i.dateDebut.before(twoDaysAgo))
                 .count();
 
+        // Chiffre d'affaire main d'oeuvre (global)
+        double caMainOeuvre = 0;
+        for (VenteForfaitEntity vf : allForfaits) {
+            if (vf.forfait != null && vf.forfait.mainOeuvres != null) {
+                for (ForfaitMainOeuvreEntity fmo : vf.forfait.mainOeuvres) {
+                    if (fmo.mainOeuvre != null) {
+                        caMainOeuvre += fmo.mainOeuvre.prixTTC * fmo.quantite * vf.quantite;
+                    }
+                }
+            }
+        }
+        for (VenteServiceEntity vs : allServices) {
+            if (vs.service != null && vs.service.mainOeuvres != null) {
+                for (ServiceMainOeuvreEntity smo : vs.service.mainOeuvres) {
+                    if (smo.mainOeuvre != null) {
+                        caMainOeuvre += smo.mainOeuvre.prixTTC * smo.quantite * vs.quantite;
+                    }
+                }
+            }
+        }
+        kpi.chiffreAffaireMainOeuvre = caMainOeuvre;
+
+        // Chiffre d'affaire main d'oeuvre (mois en cours)
+        double caMainOeuvreMois = 0;
+        for (VenteForfaitEntity vf : allForfaits) {
+            if (vf.dateDebut != null && !vf.dateDebut.before(monthStart) && vf.forfait != null && vf.forfait.mainOeuvres != null) {
+                for (ForfaitMainOeuvreEntity fmo : vf.forfait.mainOeuvres) {
+                    if (fmo.mainOeuvre != null) {
+                        caMainOeuvreMois += fmo.mainOeuvre.prixTTC * fmo.quantite * vf.quantite;
+                    }
+                }
+            }
+        }
+        for (VenteServiceEntity vs : allServices) {
+            if (vs.dateDebut != null && !vs.dateDebut.before(monthStart) && vs.service != null && vs.service.mainOeuvres != null) {
+                for (ServiceMainOeuvreEntity smo : vs.service.mainOeuvres) {
+                    if (smo.mainOeuvre != null) {
+                        caMainOeuvreMois += smo.mainOeuvre.prixTTC * smo.quantite * vs.quantite;
+                    }
+                }
+            }
+        }
+        kpi.chiffreAffaireMainOeuvreMois = caMainOeuvreMois;
+
+        // Tâches en retard (date de planification dépassée)
+        Timestamp nowTs = Timestamp.valueOf(now.atStartOfDay());
+        kpi.tachesEnRetard = (int) allItems.stream()
+                .filter(i -> ("PLANIFIEE".equals(i.status) || "EN_COURS".equals(i.status))
+                        && i.statusDate != null && i.statusDate.before(nowTs))
+                .count();
+
+        // Tâches avec dépassement de durée (durée réelle > durée estimée)
+        kpi.tachesDepassement = (int) allItems.stream()
+                .filter(i -> i.dureeEstimee > 0 && i.dureeReelle > i.dureeEstimee)
+                .count();
+
         return kpi;
     }
 
-    private record PlanningItem(String status, Timestamp dateDebut, double dureeReelle) {}
+    private record PlanningItem(String status, Timestamp dateDebut, Timestamp statusDate, double dureeReelle, double dureeEstimee) {}
 
     public static class TechnicienKpi {
         public int totalTaches;
@@ -95,6 +155,10 @@ public class TechnicienKpiResource {
         public int tachesTermineesMois;
         public double heuresReellesMois;
         public int retards48h;
+        public int tachesEnRetard;
+        public int tachesDepassement;
+        public double chiffreAffaireMainOeuvre;
+        public double chiffreAffaireMainOeuvreMois;
     }
 
 }

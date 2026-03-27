@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Space, Table, Button, Input, Form, Modal, Card, Row, Col, Popconfirm, message, Drawer, Statistic, Progress, Divider, Spin } from 'antd';
-import { PlusCircleOutlined, EditOutlined, DeleteOutlined, UserOutlined, BarChartOutlined, CheckCircleOutlined, ClockCircleOutlined, ExclamationCircleOutlined, WarningOutlined } from '@ant-design/icons';
+import { PlusCircleOutlined, EditOutlined, DeleteOutlined, UserOutlined, BarChartOutlined, CheckCircleOutlined, ClockCircleOutlined, ExclamationCircleOutlined, WarningOutlined, EuroCircleOutlined } from '@ant-design/icons';
 import axios from 'axios';
 
 // --- Types ---
@@ -29,6 +29,10 @@ interface TechnicienKpi {
     tachesTermineesMois: number;
     heuresReellesMois: number;
     retards48h: number;
+    tachesEnRetard: number;
+    tachesDepassement: number;
+    chiffreAffaireMainOeuvre: number;
+    chiffreAffaireMainOeuvreMois: number;
 }
 
 interface TechnicienFormValues {
@@ -356,6 +360,16 @@ const Techniciens: React.FC = () => {
                     <div style={{ textAlign: 'center', padding: 40 }}><Spin size="large" /></div>
                 ) : kpiData ? (
                     <>
+                        <Divider orientation="left">Chiffre d'affaire Main d'œuvre</Divider>
+                        <Row gutter={[16, 16]}>
+                            <Col span={12}>
+                                <Statistic title="Cumulé" value={kpiData.chiffreAffaireMainOeuvre} precision={2} suffix="€" valueStyle={{ color: '#3f8600' }} prefix={<EuroCircleOutlined />} />
+                            </Col>
+                            <Col span={12}>
+                                <Statistic title="Ce mois" value={kpiData.chiffreAffaireMainOeuvreMois} precision={2} suffix="€" valueStyle={{ color: '#3f8600' }} prefix={<EuroCircleOutlined />} />
+                            </Col>
+                        </Row>
+
                         <Divider orientation="left">Vue globale</Divider>
                         <Row gutter={[16, 16]}>
                             <Col span={8}>
@@ -403,6 +417,16 @@ const Techniciens: React.FC = () => {
                             </Col>
                             <Col span={8}>
                                 <Statistic title="Retards > 48h" value={kpiData.retards48h} valueStyle={kpiData.retards48h > 0 ? { color: '#ff4d4f' } : {}} prefix={kpiData.retards48h > 0 ? <WarningOutlined /> : undefined} />
+                            </Col>
+                        </Row>
+
+                        <Divider orientation="left">Alertes</Divider>
+                        <Row gutter={[16, 16]}>
+                            <Col span={12}>
+                                <Statistic title="Tâches en retard" value={kpiData.tachesEnRetard} valueStyle={kpiData.tachesEnRetard > 0 ? { color: '#fa541c' } : {}} prefix={kpiData.tachesEnRetard > 0 ? <WarningOutlined /> : undefined} />
+                            </Col>
+                            <Col span={12}>
+                                <Statistic title="Dépassement durée" value={kpiData.tachesDepassement} valueStyle={kpiData.tachesDepassement > 0 ? { color: '#d48806' } : {}} prefix={kpiData.tachesDepassement > 0 ? <WarningOutlined /> : undefined} />
                             </Col>
                         </Row>
 

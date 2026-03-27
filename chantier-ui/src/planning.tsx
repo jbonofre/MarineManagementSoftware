@@ -1,9 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Badge, Button, Card, Col, Empty, Form, Input, Modal, Row, Select, Space, Table, Tag, Typography, message } from 'antd';
-import { CalendarOutlined, EditOutlined } from '@ant-design/icons';
+import { CalendarOutlined, EditOutlined, EyeOutlined, WarningOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import dayjs from 'dayjs';
-import { useHistory } from 'react-router-dom';
 
 type VenteType = 'DEVIS' | 'FACTURE' | 'COMPTOIR';
 type PlanningStatus = 'EN_ATTENTE' | 'PLANIFIEE' | 'EN_COURS' | 'TERMINEE' | 'INCIDENT' | 'ANNULEE';
@@ -78,6 +77,7 @@ interface PlanningItem {
     status?: PlanningStatus;
     statusDate?: string;
     dureeEstimee?: number;
+    dureeReelle?: number;
     quantite?: number;
     venteId?: number;
     clientNom?: string;
@@ -88,6 +88,7 @@ interface PlanningFormValues {
     date: string;
     dateDebut?: string;
     dateFin?: string;
+    dureeReelle?: number;
     status: PlanningStatus;
     technicienId?: number;
     incidentDate?: string;
@@ -208,6 +209,7 @@ const buildPlanningItems = (ventes: VenteEntity[]): PlanningItemRow[] => {
                 status: vf.status,
                 statusDate: vf.statusDate,
                 dureeEstimee: vf.forfait?.dureeEstimee,
+                dureeReelle: vf.dureeReelle,
                 quantite: vf.quantite,
                 venteId: vente.id,
                 clientNom,
@@ -235,6 +237,7 @@ const buildPlanningItems = (ventes: VenteEntity[]): PlanningItemRow[] => {
                 status: vs.status,
                 statusDate: vs.statusDate,
                 dureeEstimee: vs.service?.dureeEstimee,
+                dureeReelle: vs.dureeReelle,
                 quantite: vs.quantite,
                 venteId: vente.id,
                 clientNom,
@@ -253,7 +256,6 @@ const buildPlanningItems = (ventes: VenteEntity[]): PlanningItemRow[] => {
 };
 
 export default function Planning() {
-    const history = useHistory();
     const [ventes, setVentes] = useState<VenteEntity[]>([]);
     const [techniciens, setTechniciens] = useState<TechnicienEntity[]>([]);
     const [loading, setLoading] = useState(false);
@@ -267,6 +269,22 @@ export default function Planning() {
     const calendarRef = useRef<HTMLDivElement>(null);
     const draggedRowRef = useRef<PlanningItemRow | null>(null);
     const [dragOverDay, setDragOverDay] = useState<string | null>(null);
+    const [prestationModalVisible, setPrestationModalVisible] = useState(false);
+    const [prestationVente, setPrestationVente] = useState<VenteEntity | null>(null);
+    const [prestationLoading, setPrestationLoading] = useState(false);
+
+    const openPrestationModal = async (venteId: number) => {
+        setPrestationModalVisible(true);
+        setPrestationLoading(true);
+        try {
+            const res = await axios.get(`/ventes/${venteId}`);
+            setPrestationVente(res.data);
+        } catch {
+            message.error('Erreur lors du chargement de la prestation.');
+        } finally {
+            setPrestationLoading(false);
+        }
+    };
     const [calendarWeekStart, setCalendarWeekStart] = useState<dayjs.Dayjs>(dayjs().startOf('week'));
 
     const fetchVentes = async () => {
@@ -311,8 +329,9 @@ export default function Planning() {
                 toDateTimeLocalValue(row.item.statusDate)
                 || (forcedDate ? `${forcedDate}T08:00` : undefined)
                 || `${selectedDate || todayIso()}T08:00`,
-            dateDebut: row.item.dateDebut || undefined,
-            dateFin: row.item.dateFin || undefined,
+            dateDebut: toDateTimeLocalValue(row.item.dateDebut) || undefined,
+            dateFin: toDateTimeLocalValue(row.item.dateFin) || undefined,
+            dureeReelle: row.item.dureeReelle,
             status: row.item.status === 'EN_ATTENTE' ? 'PLANIFIEE' : (row.item.status || 'PLANIFIEE'),
             technicienId: row.item.technicien?.id,
         });
@@ -346,10 +365,40 @@ export default function Planning() {
         () =>
             allItems
                 .filter((row) => row.item.status === 'PLANIFIEE' || row.item.status === 'EN_COURS')
-                .filter((row) => toIsoDay(row.item.statusDate) === selectedDate)
+                .filter((row) => (toIsoDay(row.item.statusDate) || toIsoDay(row.item.datePlanification)) === selectedDate)
                 .filter((row) => !selectedStatus || row.item.status === selectedStatus)
                 .filter(matchesTechnicien),
         [allItems, selectedDate, selectedStatus, selectedTechnicien]
+    );
+
+    const lateItems = useMemo<PlanningItemRow[]>(
+        () => {
+            const now = dayjs();
+            return allItems
+                .filter((row) => row.item.status === 'PLANIFIEE' || row.item.status === 'EN_COURS')
+                .filter((row) => {
+                    const planned = row.item.statusDate ? dayjs(row.item.statusDate) : null;
+                    return planned && planned.isValid() && planned.isBefore(now);
+                })
+                .filter(matchesTechnicien);
+        },
+        [allItems, selectedTechnicien]
+    );
+
+    const enCoursItems = useMemo<PlanningItemRow[]>(
+        () =>
+            allItems
+                .filter((row) => row.item.status === 'EN_COURS')
+                .filter(matchesTechnicien),
+        [allItems, selectedTechnicien]
+    );
+
+    const termineeItems = useMemo<PlanningItemRow[]>(
+        () =>
+            allItems
+                .filter((row) => row.item.status === 'TERMINEE')
+                .filter(matchesTechnicien),
+        [allItems, selectedTechnicien]
     );
 
     const weeklyEvents = useMemo<CalendarEvent[]>(
@@ -415,6 +464,7 @@ export default function Planning() {
                 statusDate: values.date,
                 dateDebut: values.dateDebut || latestList[itemToUpdateIndex].dateDebut,
                 dateFin: values.dateFin || latestList[itemToUpdateIndex].dateFin,
+                dureeReelle: values.dureeReelle,
                 technicien: techniciens.find((technicien) => technicien.id === values.technicienId),
             };
 
@@ -443,6 +493,7 @@ export default function Planning() {
                     status: savedEntry.status,
                     statusDate: savedEntry.statusDate,
                     dureeEstimee: (savedEntry as VenteForfaitEntry).forfait?.dureeEstimee,
+                    dureeReelle: savedEntry.dureeReelle,
                     quantite: savedEntry.quantite,
                     venteId: savedVente.id,
                     clientNom,
@@ -459,6 +510,7 @@ export default function Planning() {
                     status: savedEntry.status,
                     statusDate: savedEntry.statusDate,
                     dureeEstimee: (savedEntry as VenteServiceEntry).service?.dureeEstimee,
+                    dureeReelle: savedEntry.dureeReelle,
                     quantite: savedEntry.quantite,
                     venteId: savedVente.id,
                     clientNom,
@@ -470,6 +522,7 @@ export default function Planning() {
                 date: toDateTimeLocalValue(savedEntry.statusDate) || values.date,
                 dateDebut: savedEntry.dateDebut || values.dateDebut,
                 dateFin: savedEntry.dateFin || values.dateFin,
+                dureeReelle: savedEntry.dureeReelle ?? values.dureeReelle,
                 status: savedEntry.status || values.status,
                 technicienId: savedEntry.technicien?.id || values.technicienId,
             });
@@ -491,19 +544,14 @@ export default function Planning() {
 
     const commonColumns = [
         {
-            title: 'Vente',
-            dataIndex: 'id',
-            render: (_: unknown, record: PlanningItemRow) => `#${record.vente.id}`
+            title: 'Bateau',
+            key: 'bateau',
+            render: (_: unknown, record: PlanningItemRow) => record.item.bateauNom || '-'
         },
         {
             title: 'Client',
             dataIndex: 'client',
             render: (_: unknown, record: PlanningItemRow) => getClientLabel(record.vente.client)
-        },
-        {
-            title: 'Type vente',
-            dataIndex: 'type',
-            render: (_: unknown, record: PlanningItemRow) => typeOptions.find((item) => item.value === record.vente.type)?.label || record.vente.type || '-'
         },
         {
             title: 'Type',
@@ -531,12 +579,27 @@ export default function Planning() {
         {
             title: 'Debut',
             key: 'dateDebut',
-            render: (_: unknown, record: PlanningItemRow) => record.item.dateDebut ? dayjs(record.item.dateDebut).format('DD/MM/YYYY') : '-'
+            render: (_: unknown, record: PlanningItemRow) => record.item.dateDebut ? dayjs(record.item.dateDebut).format('DD/MM/YYYY HH:mm') : '-'
         },
         {
             title: 'Fin',
             key: 'dateFin',
-            render: (_: unknown, record: PlanningItemRow) => record.item.dateFin ? dayjs(record.item.dateFin).format('DD/MM/YYYY') : '-'
+            render: (_: unknown, record: PlanningItemRow) => record.item.dateFin ? dayjs(record.item.dateFin).format('DD/MM/YYYY HH:mm') : '-'
+        },
+        {
+            title: 'Durée',
+            key: 'duree',
+            render: (_: unknown, record: PlanningItemRow) => {
+                const estimee = record.item.dureeEstimee;
+                const reelle = record.item.dureeReelle;
+                const overrun = estimee != null && reelle != null && reelle > estimee;
+                return (
+                    <span style={overrun ? { color: '#fa541c', fontWeight: 600 } : undefined}>
+                        {reelle != null ? `${reelle}h` : '-'} / {estimee != null ? `${estimee}h` : '-'}
+                        {overrun && <WarningOutlined style={{ marginLeft: 6, color: '#fa541c' }} title="Durée réelle supérieure à la durée estimée" />}
+                    </span>
+                );
+            }
         }
     ];
 
@@ -556,7 +619,7 @@ export default function Planning() {
                         Planifier
                     </Button>
                     {record.vente.id ? (
-                        <Button onClick={() => history.push(`/prestations?venteId=${record.vente.id}`)}>
+                        <Button icon={<EyeOutlined />} onClick={() => openPrestationModal(record.vente.id!)}>
                             Voir prestation
                         </Button>
                     ) : (
@@ -583,7 +646,7 @@ export default function Planning() {
                         Replanifier
                     </Button>
                     {record.vente.id && (
-                        <Button onClick={() => history.push(`/prestations?venteId=${record.vente.id}`)}>
+                        <Button icon={<EyeOutlined />} onClick={() => openPrestationModal(record.vente.id!)}>
                             Voir prestation
                         </Button>
                     )}
@@ -733,6 +796,55 @@ export default function Planning() {
                 </Col>
             </Row>
 
+            {lateItems.length > 0 && (
+                <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+                    <Col span={24}>
+                        <Card
+                            size="small"
+                            title={
+                                <span style={{ color: '#fa541c' }}>
+                                    <WarningOutlined /> En retard ({lateItems.length})
+                                </span>
+                            }
+                            bodyStyle={{ padding: 12 }}
+                            style={{ borderColor: '#fa541c' }}
+                        >
+                            <Table
+                                rowKey="key"
+                                loading={loading}
+                                dataSource={lateItems}
+                                columns={dayColumns}
+                                pagination={{ pageSize: 6 }}
+                                bordered
+                            />
+                        </Card>
+                    </Col>
+                </Row>
+            )}
+
+            <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+                <Col span={24}>
+                    <Card
+                        size="small"
+                        title={<span style={{ color: '#1677ff' }}>Tâches en cours ({enCoursItems.length})</span>}
+                        bodyStyle={{ padding: enCoursItems.length ? 12 : 24 }}
+                    >
+                        {enCoursItems.length ? (
+                            <Table
+                                rowKey="key"
+                                loading={loading}
+                                dataSource={enCoursItems}
+                                columns={dayColumns}
+                                pagination={{ pageSize: 6 }}
+                                bordered
+                            />
+                        ) : (
+                            <Empty description="Aucune tâche en cours." />
+                        )}
+                    </Card>
+                </Col>
+            </Row>
+
             <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
                 <Col span={24}>
                     <Card title={`Planifie le ${selectedDate}`} size="small" bodyStyle={{ padding: plannedItems.length ? 12 : 24 }}>
@@ -788,6 +900,48 @@ export default function Planning() {
                 </Col>
             </Row>
 
+            <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+                <Col span={24}>
+                    <Card
+                        size="small"
+                        title={<span style={{ color: '#52c41a' }}>Terminées ({termineeItems.length})</span>}
+                        bodyStyle={{ padding: termineeItems.length ? 12 : 24 }}
+                    >
+                        {termineeItems.length ? (
+                            <Table
+                                rowKey="key"
+                                loading={loading}
+                                dataSource={termineeItems}
+                                columns={[
+                                    ...commonColumns,
+                                    {
+                                        title: 'Technicien',
+                                        key: 'technicien',
+                                        render: (_: unknown, record: PlanningItemRow) => {
+                                            const t = record.item.technicien;
+                                            return t ? `${t.prenom || ''} ${t.nom || ''}`.trim() || `#${t.id}` : '-';
+                                        }
+                                    },
+                                    {
+                                        title: 'Actions',
+                                        key: 'actions',
+                                        render: (_: unknown, record: PlanningItemRow) => record.vente.id ? (
+                                            <Button onClick={() => openPrestationModal(record.vente.id!)}>
+                                                Voir prestation
+                                            </Button>
+                                        ) : null
+                                    }
+                                ]}
+                                pagination={{ pageSize: 8 }}
+                                bordered
+                            />
+                        ) : (
+                            <Empty description="Aucune tâche terminée." />
+                        )}
+                    </Card>
+                </Col>
+            </Row>
+
             <Modal
                 open={modalVisible}
                 title={currentRow?.item?.nom ? `Planifier: ${currentRow.item.nom}` : 'Planifier'}
@@ -795,6 +949,7 @@ export default function Planning() {
                 okText="Enregistrer"
                 confirmLoading={saving}
                 cancelText="Annuler"
+                width={720}
                 onCancel={() => {
                     setModalVisible(false);
                     setCurrentRow(null);
@@ -817,6 +972,21 @@ export default function Planning() {
                     >
                         <Select options={statusOptions} />
                     </Form.Item>
+                    <Row gutter={16}>
+                        <Col span={12}>
+                            <Form.Item name="dateDebut" label="Date de début">
+                                <Input type="datetime-local" disabled />
+                            </Form.Item>
+                        </Col>
+                        <Col span={12}>
+                            <Form.Item name="dateFin" label="Date de fin">
+                                <Input type="datetime-local" disabled />
+                            </Form.Item>
+                        </Col>
+                    </Row>
+                    <Form.Item name="dureeReelle" label="Durée réelle (heures)">
+                        <Input type="number" min={0} step={0.5} disabled />
+                    </Form.Item>
                     <Form.Item name="technicienId" label="Technicien" rules={[{ required: true, message: 'Le technicien est requis' }]}>
                         <Select showSearch options={technicienOptions} placeholder="Selectionner un technicien" />
                     </Form.Item>
@@ -836,6 +1006,70 @@ export default function Planning() {
                         }}
                     </Form.Item>
                 </Form>
+            </Modal>
+
+            <Modal
+                open={prestationModalVisible}
+                title={prestationVente ? `Prestation #${prestationVente.id}` : 'Prestation'}
+                footer={<Button onClick={() => { setPrestationModalVisible(false); setPrestationVente(null); }}>Fermer</Button>}
+                onCancel={() => { setPrestationModalVisible(false); setPrestationVente(null); }}
+                destroyOnHidden
+                width={800}
+            >
+                {prestationLoading ? (
+                    <div style={{ textAlign: 'center', padding: 40 }}>Chargement...</div>
+                ) : prestationVente ? (
+                    <div>
+                        <Card size="small" style={{ marginBottom: 12 }}>
+                            <Row gutter={16}>
+                                <Col span={8}><strong>Type:</strong> {typeOptions.find((t) => t.value === prestationVente.type)?.label || prestationVente.type || '-'}</Col>
+                                <Col span={8}><strong>Statut:</strong> {prestationVente.status || '-'}</Col>
+                                <Col span={8}><strong>Date:</strong> {prestationVente.date ? dayjs(prestationVente.date).format('DD/MM/YYYY') : '-'}</Col>
+                            </Row>
+                            <Row gutter={16} style={{ marginTop: 8 }}>
+                                <Col span={8}><strong>Client:</strong> {getClientLabel(prestationVente.client)}</Col>
+                                <Col span={8}><strong>Bateau:</strong> {prestationVente.bateau?.name || '-'}</Col>
+                                <Col span={8}><strong>Prix TTC:</strong> {prestationVente.prixVenteTTC != null ? `${prestationVente.prixVenteTTC} €` : '-'}</Col>
+                            </Row>
+                        </Card>
+                        {prestationVente.venteForfaits && prestationVente.venteForfaits.length > 0 && (
+                            <Card size="small" title="Forfaits" style={{ marginBottom: 12 }}>
+                                <Table
+                                    rowKey={(_, i) => `f-${i}`}
+                                    dataSource={prestationVente.venteForfaits}
+                                    pagination={false}
+                                    size="small"
+                                    columns={[
+                                        { title: 'Nom', render: (_: unknown, r: VenteForfaitEntry) => r.forfait?.nom || '-' },
+                                        { title: 'Quantité', dataIndex: 'quantite', render: (v: number) => v ?? '-' },
+                                        { title: 'Statut', dataIndex: 'status', render: (v: string) => v ? <Tag color={statusColor[v as PlanningStatus] || 'default'}>{statusOptions.find((s) => s.value === v)?.label || v}</Tag> : '-' },
+                                        { title: 'Technicien', render: (_: unknown, r: VenteForfaitEntry) => r.technicien ? `${r.technicien.prenom || ''} ${r.technicien.nom || ''}`.trim() : '-' },
+                                        { title: 'Durée est.', render: (_: unknown, r: VenteForfaitEntry) => r.forfait?.dureeEstimee ? `${r.forfait.dureeEstimee}h` : '-' },
+                                        { title: 'Durée réelle', dataIndex: 'dureeReelle', render: (v: number) => v ? `${v}h` : '-' },
+                                    ]}
+                                />
+                            </Card>
+                        )}
+                        {prestationVente.venteServices && prestationVente.venteServices.length > 0 && (
+                            <Card size="small" title="Services" style={{ marginBottom: 12 }}>
+                                <Table
+                                    rowKey={(_, i) => `s-${i}`}
+                                    dataSource={prestationVente.venteServices}
+                                    pagination={false}
+                                    size="small"
+                                    columns={[
+                                        { title: 'Nom', render: (_: unknown, r: VenteServiceEntry) => r.service?.nom || '-' },
+                                        { title: 'Quantité', dataIndex: 'quantite', render: (v: number) => v ?? '-' },
+                                        { title: 'Statut', dataIndex: 'status', render: (v: string) => v ? <Tag color={statusColor[v as PlanningStatus] || 'default'}>{statusOptions.find((s) => s.value === v)?.label || v}</Tag> : '-' },
+                                        { title: 'Technicien', render: (_: unknown, r: VenteServiceEntry) => r.technicien ? `${r.technicien.prenom || ''} ${r.technicien.nom || ''}`.trim() : '-' },
+                                        { title: 'Durée est.', render: (_: unknown, r: VenteServiceEntry) => r.service?.dureeEstimee ? `${r.service.dureeEstimee}h` : '-' },
+                                        { title: 'Durée réelle', dataIndex: 'dureeReelle', render: (v: number) => v ? `${v}h` : '-' },
+                                    ]}
+                                />
+                            </Card>
+                        )}
+                    </div>
+                ) : null}
             </Modal>
         </Card>
     );

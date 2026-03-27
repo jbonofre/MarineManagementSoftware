@@ -17,7 +17,7 @@ import {
     Tag,
     message,
 } from 'antd';
-import { CheckCircleOutlined, ClockCircleOutlined, ExclamationCircleOutlined, ReloadOutlined } from '@ant-design/icons';
+import { CheckCircleOutlined, ClockCircleOutlined, EditOutlined, ExclamationCircleOutlined, ReloadOutlined } from '@ant-design/icons';
 import axios from 'axios';
 
 type TaskStatus = 'EN_ATTENTE' | 'PLANIFIEE' | 'EN_COURS' | 'TERMINEE' | 'INCIDENT' | 'ANNULEE';
@@ -290,7 +290,7 @@ export default function Planning({ technicienId }: PlanningProps) {
             render: (val: string) => val || '-',
         },
         {
-            title: 'Statut',
+            title: 'Status',
             dataIndex: 'itemStatus',
             key: 'itemStatus',
             render: (val: string) => <Tag color={statusColor[val]}>{statusLabel[val] || val}</Tag>,
@@ -328,69 +328,79 @@ export default function Planning({ technicienId }: PlanningProps) {
         {
             title: 'Actions',
             key: 'actions',
-            render: (_: unknown, record: PlanningItem) => (
-                <Space>
-                    {(record.itemStatus === 'EN_ATTENTE' || record.itemStatus === 'PLANIFIEE') && (
+            render: (_: unknown, record: PlanningItem) => {
+                if (record.itemStatus === 'TERMINEE') return null;
+                return (
+                    <Space>
                         <Button
                             size="small"
-                            icon={<ClockCircleOutlined />}
-                            onClick={() => handleStart(record)}
+                            icon={<EditOutlined />}
+                            onClick={() => openUpdateModal(record)}
                         >
-                            Demarrer
+                            Editer
                         </Button>
-                    )}
-                    {(record.itemStatus !== 'ANNULEE') && (
-                        <Button
-                            size="small"
-                            danger
-                            icon={<ExclamationCircleOutlined />}
-                            onClick={() => {
-                                setCurrentItem(record);
-                                setChecklist((record.taches || []).map((t) => ({ ...t })));
-                                form.setFieldsValue({
-                                    status: 'INCIDENT',
-                                    dureeReelle: record.dureeReelle || 0,
-                                    notes: record.notes || '',
-                                    incidentDate: record.incidentDate || todayIso(),
-                                    incidentDetails: record.incidentDetails || '',
-                                });
-                                setModalVisible(true);
-                            }}
-                        >
-                            Incident
-                        </Button>
-                    )}
-                    {(record.itemStatus === 'PLANIFIEE' || record.itemStatus === 'EN_COURS') && (
-                        <Button
-                            size="small"
-                            type="primary"
-                            icon={<CheckCircleOutlined />}
-                            onClick={() => {
-                                let dureeReelle = record.dureeReelle || 0;
-                                if (record.dateDebut) {
-                                    const debut = new Date(record.dateDebut).getTime();
-                                    const fin = Date.now();
-                                    if (!isNaN(debut) && fin > debut) {
-                                        dureeReelle = Math.round(((fin - debut) / 3600000) * 100) / 100;
+                        {(record.itemStatus === 'EN_ATTENTE' || record.itemStatus === 'PLANIFIEE') && (
+                            <Button
+                                size="small"
+                                icon={<ClockCircleOutlined />}
+                                onClick={() => handleStart(record)}
+                            >
+                                Demarrer
+                            </Button>
+                        )}
+                        {record.itemStatus !== 'ANNULEE' && (
+                            <Button
+                                size="small"
+                                danger
+                                icon={<ExclamationCircleOutlined />}
+                                onClick={() => {
+                                    setCurrentItem(record);
+                                    setChecklist((record.taches || []).map((t) => ({ ...t })));
+                                    form.setFieldsValue({
+                                        status: 'INCIDENT',
+                                        dureeReelle: record.dureeReelle || 0,
+                                        notes: record.notes || '',
+                                        incidentDate: record.incidentDate || todayIso(),
+                                        incidentDetails: record.incidentDetails || '',
+                                    });
+                                    setModalVisible(true);
+                                }}
+                            >
+                                Incident
+                            </Button>
+                        )}
+                        {(record.itemStatus === 'PLANIFIEE' || record.itemStatus === 'EN_COURS') && (
+                            <Button
+                                size="small"
+                                type="primary"
+                                icon={<CheckCircleOutlined />}
+                                onClick={() => {
+                                    let dureeReelle = record.dureeReelle || 0;
+                                    if (record.dateDebut) {
+                                        const debut = new Date(record.dateDebut).getTime();
+                                        const fin = Date.now();
+                                        if (!isNaN(debut) && fin > debut) {
+                                            dureeReelle = Math.round(((fin - debut) / 3600000) * 100) / 100;
+                                        }
                                     }
-                                }
-                                setCurrentItem(record);
-                                setChecklist((record.taches || []).map((t) => ({ ...t })));
-                                form.setFieldsValue({
-                                    status: 'TERMINEE',
-                                    dureeReelle,
-                                    notes: record.notes || '',
-                                    incidentDate: todayIso(),
-                                    incidentDetails: '',
-                                });
-                                setModalVisible(true);
-                            }}
-                        >
-                            Terminer
-                        </Button>
-                    )}
-                </Space>
-            ),
+                                    setCurrentItem(record);
+                                    setChecklist((record.taches || []).map((t) => ({ ...t })));
+                                    form.setFieldsValue({
+                                        status: 'TERMINEE',
+                                        dureeReelle,
+                                        notes: record.notes || '',
+                                        incidentDate: todayIso(),
+                                        incidentDetails: '',
+                                    });
+                                    setModalVisible(true);
+                                }}
+                            >
+                                Terminer
+                            </Button>
+                        )}
+                    </Space>
+                );
+            },
         },
     ];
 
@@ -470,15 +480,31 @@ export default function Planning({ technicienId }: PlanningProps) {
                 }}
                 destroyOnHidden
                 width={600}
+                footer={
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                            {currentItem && currentItem.itemStatus !== 'INCIDENT' && currentItem.itemStatus !== 'TERMINEE' && currentItem.itemStatus !== 'ANNULEE' && (
+                                <Button danger icon={<ExclamationCircleOutlined />} onClick={() => form.setFieldsValue({ status: 'INCIDENT' })}>
+                                    Incident
+                                </Button>
+                            )}
+                        </div>
+                        <Space>
+                            <Button onClick={() => { setModalVisible(false); setCurrentItem(null); setChecklist([]); form.resetFields(); }}>
+                                Annuler
+                            </Button>
+                            <Button type="primary" loading={saving} onClick={handleSave}>
+                                Enregistrer
+                            </Button>
+                        </Space>
+                    </div>
+                }
             >
                 {currentItem && (
                     <Card size="small" style={{ marginBottom: 16, background: '#fafafa' }}>
+                        <p><strong>Nom:</strong> {currentItem.itemNom || '-'}</p>
                         <p><strong>Client:</strong> {currentItem.clientNom || '-'}</p>
                         <p><strong>Bateau:</strong> {currentItem.bateauNom || '-'}</p>
-                        <p><strong>Type:</strong> {currentItem.itemType || '-'}</p>
-                        {currentItem.quantite != null && currentItem.quantite > 0 && (
-                            <p><strong>Quantite:</strong> {currentItem.quantite}</p>
-                        )}
                         {currentItem.dureeEstimee != null && currentItem.dureeEstimee > 0 && (
                             <p><strong>Duree estimee:</strong> {currentItem.dureeEstimee}h</p>
                         )}
@@ -489,10 +515,10 @@ export default function Planning({ technicienId }: PlanningProps) {
                         <Col span={12}>
                             <Form.Item
                                 name="status"
-                                label="Statut"
+                                label="Status"
                                 rules={[{ required: true, message: 'Le statut est requis' }]}
                             >
-                                <Select options={taskStatusOptions} />
+                                <Select options={taskStatusOptions} disabled />
                             </Form.Item>
                         </Col>
                         <Col span={12}>
