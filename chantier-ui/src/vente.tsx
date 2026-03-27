@@ -66,7 +66,7 @@ interface VenteForfaitEntity {
     id?: number;
     forfait?: ForfaitEntity;
     quantite?: number;
-    technicien?: TechnicienEntity;
+    techniciens?: TechnicienEntity[];
     datePlanification?: string;
     dateDebut?: string;
     dateFin?: string;
@@ -83,7 +83,7 @@ interface VenteServiceEntity {
     id?: number;
     service?: ServiceEntity;
     quantite?: number;
-    technicien?: TechnicienEntity;
+    techniciens?: TechnicienEntity[];
     datePlanification?: string;
     dateDebut?: string;
     dateFin?: string;
@@ -255,7 +255,7 @@ interface VenteFormValues {
     venteForfaits: Array<{
         forfaitId?: number;
         quantite?: number;
-        technicienId?: number;
+        technicienIds?: number[];
         status?: PlanningStatus;
         datePlanification?: string;
         dateDebut?: string;
@@ -269,7 +269,7 @@ interface VenteFormValues {
     venteServices: Array<{
         serviceId?: number;
         quantite?: number;
-        technicienId?: number;
+        technicienIds?: number[];
         status?: PlanningStatus;
         datePlanification?: string;
         dateDebut?: string;
@@ -904,7 +904,7 @@ export default function Vente() {
         const venteForfaitLines = (vente.venteForfaits || []).map(vf => ({
             forfaitId: vf.forfait?.id,
             quantite: vf.quantite || 1,
-            technicienId: vf.technicien?.id,
+            technicienIds: (vf.techniciens || []).map(t => t.id),
             status: vf.status || 'EN_ATTENTE',
             datePlanification: vf.datePlanification,
             dateDebut: vf.dateDebut,
@@ -918,7 +918,7 @@ export default function Vente() {
         const venteServiceLines = (vente.venteServices || []).map(vs => ({
             serviceId: vs.service?.id,
             quantite: vs.quantite || 1,
-            technicienId: vs.technicien?.id,
+            technicienIds: (vs.techniciens || []).map(t => t.id),
             status: vs.status || 'EN_ATTENTE',
             datePlanification: vs.datePlanification,
             dateDebut: vs.dateDebut,
@@ -1013,7 +1013,7 @@ export default function Vente() {
                 return {
                     forfait: selectedForfait,
                     quantite: line.quantite || 1,
-                    technicien: techniciens.find((t) => t.id === line.technicienId),
+                    techniciens: (line.technicienIds || []).map((id: number) => techniciens.find((t) => t.id === id)).filter(Boolean),
                     datePlanification: line.datePlanification || existingVf?.datePlanification,
                     dateDebut: line.dateDebut || existingVf?.dateDebut,
                     dateFin: line.dateFin || existingVf?.dateFin,
@@ -1037,7 +1037,7 @@ export default function Vente() {
                 return {
                     service: services.find((s) => s.id === line.serviceId),
                     quantite: line.quantite || 1,
-                    technicien: techniciens.find((t) => t.id === line.technicienId),
+                    techniciens: (line.technicienIds || []).map((id: number) => techniciens.find((t) => t.id === id)).filter(Boolean),
                     datePlanification: line.datePlanification || existingVs?.datePlanification,
                     dateDebut: line.dateDebut || existingVs?.dateDebut,
                     dateFin: line.dateFin || existingVs?.dateFin,
@@ -1832,10 +1832,10 @@ export default function Vente() {
                                                                 </Form.Item>
                                                                 <Form.Item
                                                                     {...field}
-                                                                    name={[field.name, 'technicienId']}
-                                                                    style={{ width: 180 }}
+                                                                    name={[field.name, 'technicienIds']}
+                                                                    style={{ width: 220 }}
                                                                 >
-                                                                    <Select allowClear showSearch options={technicienOptions} placeholder="Technicien" />
+                                                                    <Select mode="multiple" allowClear showSearch options={technicienOptions} placeholder="Techniciens" />
                                                                 </Form.Item>
                                                                 {isEmptyLine ? (
                                                                     <Button icon={<PlusOutlined />} title="Créer un forfait" onClick={() => openNewForfaitModal(field.name)} />
@@ -1925,10 +1925,10 @@ export default function Vente() {
                                                                 </Form.Item>
                                                                 <Form.Item
                                                                     {...field}
-                                                                    name={[field.name, 'technicienId']}
-                                                                    style={{ width: 180 }}
+                                                                    name={[field.name, 'technicienIds']}
+                                                                    style={{ width: 220 }}
                                                                 >
-                                                                    <Select allowClear showSearch options={technicienOptions} placeholder="Technicien" />
+                                                                    <Select mode="multiple" allowClear showSearch options={technicienOptions} placeholder="Techniciens" />
                                                                 </Form.Item>
                                                                 {isEmptyLine ? (
                                                                     <Button icon={<PlusOutlined />} title="Créer un service" onClick={() => openNewServiceModal(field.name)} />

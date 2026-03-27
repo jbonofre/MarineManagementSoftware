@@ -28,7 +28,7 @@ interface VenteForfaitEntry {
     id?: number;
     forfait?: { id: number; nom: string; dureeEstimee?: number };
     quantite?: number;
-    technicien?: TechnicienEntity;
+    techniciens?: TechnicienEntity[];
     datePlanification?: string;
     dateDebut?: string;
     dateFin?: string;
@@ -42,7 +42,7 @@ interface VenteServiceEntry {
     id?: number;
     service?: { id: number; nom: string; dureeEstimee?: number };
     quantite?: number;
-    technicien?: TechnicienEntity;
+    techniciens?: TechnicienEntity[];
     datePlanification?: string;
     dateDebut?: string;
     dateFin?: string;
@@ -70,7 +70,7 @@ interface PlanningItem {
     id?: number;
     type: 'forfait' | 'service';
     nom: string;
-    technicien?: TechnicienEntity;
+    techniciens?: TechnicienEntity[];
     datePlanification?: string;
     dateDebut?: string;
     dateFin?: string;
@@ -90,7 +90,7 @@ interface PlanningFormValues {
     dateFin?: string;
     dureeReelle?: number;
     status: PlanningStatus;
-    technicienId?: number;
+    technicienIds?: number[];
     incidentDate?: string;
     incidentDetails?: string;
 }
@@ -179,7 +179,8 @@ const toDateTimeLocalValue = (value?: string) => {
     return parsed.format('YYYY-MM-DDTHH:mm');
 };
 
-const getTechnicienColor = (technicien?: TechnicienEntity) => {
+const getTechnicienColor = (techniciens?: TechnicienEntity[]) => {
+    const technicien = techniciens?.[0];
     if (!technicien?.id) {
         return '#8c8c8c';
     }
@@ -202,7 +203,7 @@ const buildPlanningItems = (ventes: VenteEntity[]): PlanningItemRow[] => {
                 id: vf.id,
                 type: 'forfait',
                 nom: vf.forfait?.nom || '',
-                technicien: vf.technicien,
+                techniciens: vf.techniciens,
                 datePlanification: vf.datePlanification,
                 dateDebut: vf.dateDebut,
                 dateFin: vf.dateFin,
@@ -230,7 +231,7 @@ const buildPlanningItems = (ventes: VenteEntity[]): PlanningItemRow[] => {
                 id: vs.id,
                 type: 'service',
                 nom: vs.service?.nom || '',
-                technicien: vs.technicien,
+                techniciens: vs.techniciens,
                 datePlanification: vs.datePlanification,
                 dateDebut: vs.dateDebut,
                 dateFin: vs.dateFin,
@@ -333,7 +334,7 @@ export default function Planning() {
             dateFin: toDateTimeLocalValue(row.item.dateFin) || undefined,
             dureeReelle: row.item.dureeReelle,
             status: row.item.status === 'EN_ATTENTE' ? 'PLANIFIEE' : (row.item.status || 'PLANIFIEE'),
-            technicienId: row.item.technicien?.id,
+            technicienIds: (row.item.techniciens || []).map(t => t.id),
         });
         setModalVisible(true);
     };
@@ -345,7 +346,7 @@ export default function Planning() {
     );
 
     const matchesTechnicien = (row: PlanningItemRow) =>
-        !selectedTechnicien || row.item.technicien?.id === selectedTechnicien;
+        !selectedTechnicien || (row.item.techniciens || []).some(t => t.id === selectedTechnicien);
 
     const pendingItems = useMemo<PlanningItemRow[]>(
         () =>
@@ -423,7 +424,7 @@ export default function Planning() {
                         eventId: row.key,
                         startTime: startDate.toDate(),
                         title: `#${vente.id} [${typeLabel}] ${item.nom || 'Sans nom'} (${getClientLabel(vente.client)})`,
-                        backgroundColor: getTechnicienColor(item.technicien),
+                        backgroundColor: getTechnicienColor(item.techniciens),
                         textColor: '#ffffff',
                         dureeEstimee: item.dureeEstimee,
                     } as CalendarEvent;
@@ -465,7 +466,7 @@ export default function Planning() {
                 dateDebut: values.dateDebut || latestList[itemToUpdateIndex].dateDebut,
                 dateFin: values.dateFin || latestList[itemToUpdateIndex].dateFin,
                 dureeReelle: values.dureeReelle,
-                technicien: techniciens.find((technicien) => technicien.id === values.technicienId),
+                techniciens: (values.technicienIds || []).map((id: number) => techniciens.find((t) => t.id === id)).filter(Boolean) as TechnicienEntity[],
             };
 
             const updatedVente: VenteEntity = {
@@ -486,7 +487,7 @@ export default function Planning() {
                     id: (savedEntry as VenteForfaitEntry).id,
                     type: 'forfait',
                     nom: (savedEntry as VenteForfaitEntry).forfait?.nom || '',
-                    technicien: savedEntry.technicien,
+                    techniciens: savedEntry.techniciens,
                     datePlanification: savedEntry.datePlanification,
                     dateDebut: savedEntry.dateDebut,
                     dateFin: savedEntry.dateFin,
@@ -503,7 +504,7 @@ export default function Planning() {
                     id: (savedEntry as VenteServiceEntry).id,
                     type: 'service',
                     nom: (savedEntry as VenteServiceEntry).service?.nom || '',
-                    technicien: savedEntry.technicien,
+                    techniciens: savedEntry.techniciens,
                     datePlanification: savedEntry.datePlanification,
                     dateDebut: savedEntry.dateDebut,
                     dateFin: savedEntry.dateFin,
@@ -524,7 +525,7 @@ export default function Planning() {
                 dateFin: savedEntry.dateFin || values.dateFin,
                 dureeReelle: savedEntry.dureeReelle ?? values.dureeReelle,
                 status: savedEntry.status || values.status,
-                technicienId: savedEntry.technicien?.id || values.technicienId,
+                technicienIds: (savedEntry.techniciens || []).map((t: TechnicienEntity) => t.id),
             });
             fetchVentes();
         } catch (error) {
@@ -915,11 +916,13 @@ export default function Planning() {
                                 columns={[
                                     ...commonColumns,
                                     {
-                                        title: 'Technicien',
-                                        key: 'technicien',
+                                        title: 'Techniciens',
+                                        key: 'techniciens',
                                         render: (_: unknown, record: PlanningItemRow) => {
-                                            const t = record.item.technicien;
-                                            return t ? `${t.prenom || ''} ${t.nom || ''}`.trim() || `#${t.id}` : '-';
+                                            const ts = record.item.techniciens || [];
+                                            return ts.length > 0
+                                                ? ts.map(t => `${t.prenom || ''} ${t.nom || ''}`.trim() || `#${t.id}`).join(', ')
+                                                : '-';
                                         }
                                     },
                                     {
@@ -987,8 +990,8 @@ export default function Planning() {
                     <Form.Item name="dureeReelle" label="Durée réelle (heures)">
                         <Input type="number" min={0} step={0.5} disabled />
                     </Form.Item>
-                    <Form.Item name="technicienId" label="Technicien" rules={[{ required: true, message: 'Le technicien est requis' }]}>
-                        <Select showSearch options={technicienOptions} placeholder="Selectionner un technicien" />
+                    <Form.Item name="technicienIds" label="Techniciens" rules={[{ required: true, message: 'Au moins un technicien est requis' }]}>
+                        <Select mode="multiple" showSearch options={technicienOptions} placeholder="Selectionner des techniciens" />
                     </Form.Item>
                     <Form.Item noStyle shouldUpdate={(prev, cur) => prev?.status !== cur?.status}>
                         {({ getFieldValue }) => {
@@ -1043,7 +1046,7 @@ export default function Planning() {
                                         { title: 'Nom', render: (_: unknown, r: VenteForfaitEntry) => r.forfait?.nom || '-' },
                                         { title: 'Quantité', dataIndex: 'quantite', render: (v: number) => v ?? '-' },
                                         { title: 'Statut', dataIndex: 'status', render: (v: string) => v ? <Tag color={statusColor[v as PlanningStatus] || 'default'}>{statusOptions.find((s) => s.value === v)?.label || v}</Tag> : '-' },
-                                        { title: 'Technicien', render: (_: unknown, r: VenteForfaitEntry) => r.technicien ? `${r.technicien.prenom || ''} ${r.technicien.nom || ''}`.trim() : '-' },
+                                        { title: 'Techniciens', render: (_: unknown, r: VenteForfaitEntry) => (r.techniciens || []).length > 0 ? r.techniciens!.map(t => `${t.prenom || ''} ${t.nom || ''}`.trim()).join(', ') : '-' },
                                         { title: 'Durée est.', render: (_: unknown, r: VenteForfaitEntry) => r.forfait?.dureeEstimee ? `${r.forfait.dureeEstimee}h` : '-' },
                                         { title: 'Durée réelle', dataIndex: 'dureeReelle', render: (v: number) => v ? `${v}h` : '-' },
                                     ]}
@@ -1061,7 +1064,7 @@ export default function Planning() {
                                         { title: 'Nom', render: (_: unknown, r: VenteServiceEntry) => r.service?.nom || '-' },
                                         { title: 'Quantité', dataIndex: 'quantite', render: (v: number) => v ?? '-' },
                                         { title: 'Statut', dataIndex: 'status', render: (v: string) => v ? <Tag color={statusColor[v as PlanningStatus] || 'default'}>{statusOptions.find((s) => s.value === v)?.label || v}</Tag> : '-' },
-                                        { title: 'Technicien', render: (_: unknown, r: VenteServiceEntry) => r.technicien ? `${r.technicien.prenom || ''} ${r.technicien.nom || ''}`.trim() : '-' },
+                                        { title: 'Techniciens', render: (_: unknown, r: VenteServiceEntry) => (r.techniciens || []).length > 0 ? r.techniciens!.map(t => `${t.prenom || ''} ${t.nom || ''}`.trim()).join(', ') : '-' },
                                         { title: 'Durée est.', render: (_: unknown, r: VenteServiceEntry) => r.service?.dureeEstimee ? `${r.service.dureeEstimee}h` : '-' },
                                         { title: 'Durée réelle', dataIndex: 'dureeReelle', render: (v: number) => v ? `${v}h` : '-' },
                                     ]}
