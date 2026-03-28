@@ -84,6 +84,8 @@ public class VenteEntity extends PanacheEntity {
 
     public List<String> images = new ArrayList<>();
 
+    public List<String> documents = new ArrayList<>();
+
     public boolean stockDecremented;
 
     // Configuration des rappels (en jours avant la date de la vente)

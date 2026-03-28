@@ -15,6 +15,8 @@ public class BateauClientEntity extends PanacheEntity {
 
     public List<String> images = new ArrayList<>();
 
+    public List<String> documents = new ArrayList<>();
+
     public String immatriculation;
 
     public String numeroSerie;

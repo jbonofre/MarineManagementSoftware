@@ -4,6 +4,7 @@ import { EditOutlined, DeleteOutlined, PlusCircleOutlined } from '@ant-design/ic
 import axios from 'axios';
 import FournisseurMoteurs from './fournisseur-moteurs.tsx';
 import ImageUpload from './ImageUpload.tsx';
+import DocumentUpload from './DocumentUpload.tsx';
 
 const style: React.CSSProperties = { padding: '8px 0' };
 const { Search } = Input;
@@ -65,6 +66,7 @@ const defaultMoteur: Moteur = {
   description: '',
   evaluation: 0,
   images: [],
+  documents: [],
   puissanceCv: 0,
   puissanceKw: 0,
   longueurArbre: '',
@@ -390,6 +392,9 @@ const MoteurCatalogue = () => {
               </Form.Item>
               <Form.Item name="images" label="Images">
                 <ImageUpload />
+              </Form.Item>
+              <Form.Item name="documents" label="Documents">
+                <DocumentUpload />
               </Form.Item>
               <Row gutter={16}>
                 <Col span={12}>

@@ -28,6 +28,7 @@ import {
 } from "@ant-design/icons";
 import axios from "axios";
 import ImageUpload from './ImageUpload.tsx';
+import DocumentUpload from './DocumentUpload.tsx';
 import dayjs from "dayjs";
 import clients from "./clients";
 import LocationPicker from "./LocationPicker.tsx";
@@ -58,6 +59,7 @@ interface BateauClient {
 const defaultBateau: BateauClient = {
   name: "",
   images: [],
+  documents: [],
   immatriculation: "",
   numeroSerie: "",
   numeroClef: "",
@@ -413,6 +415,9 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
           <Form.Item label="Images" name="images">
             <ImageUpload />
           </Form.Item>
+          <Form.Item label="Documents" name="documents">
+            <DocumentUpload />
+          </Form.Item>
           {/* Association avec un bateau du catalogue */}
           <Form.Item label="Modèle catalogue" style={{ marginBottom: 0 }}>
             <Space.Compact style={{ width: "100%" }}>
@@ -579,6 +584,9 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
           </Form.Item>
           <Form.Item name="images" label="Images">
             <ImageUpload />
+          </Form.Item>
+          <Form.Item name="documents" label="Documents">
+            <DocumentUpload />
           </Form.Item>
           <Row gutter={16}>
             <Col span={12}>

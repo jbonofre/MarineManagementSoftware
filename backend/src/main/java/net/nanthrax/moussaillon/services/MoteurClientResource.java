@@ -58,6 +58,7 @@ public class MoteurClientResource {
             throw new NotFoundException();
         }
         moteur.images = updatedMoteur.images;
+        moteur.documents = updatedMoteur.documents;
         moteur.numeroSerie = updatedMoteur.numeroSerie;
         moteur.numeroClef = updatedMoteur.numeroClef;
         moteur.dateMeS = updatedMoteur.dateMeS;

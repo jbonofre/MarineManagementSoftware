@@ -23,6 +23,7 @@ import { CalendarOutlined, CreditCardOutlined, DeleteOutlined, EditOutlined, Mai
 import axios from 'axios';
 import { useHistory } from 'react-router-dom';
 import ImageUpload from './ImageUpload.tsx';
+import DocumentUpload from './DocumentUpload.tsx';
 
 interface ClientEntity {
     id: number;
@@ -176,6 +177,7 @@ const defaultNewProduit = {
     ref: '',
     refs: [],
     images: [],
+    documents: [],
     description: '',
     evaluation: 0,
     stock: 0,
@@ -422,7 +424,8 @@ const defaultVente: VenteFormValues = {
     montantTVA: 0,
     montantTTC: 0,
     prixVenteTTC: 0,
-    images: []
+    images: [],
+    documents: []
 };
 
 const formatEuro = (value?: number) => `${(value || 0).toFixed(2)} EUR`;
@@ -2260,9 +2263,14 @@ export default function Vente() {
                                 key: 'images',
                                 label: 'Images',
                                 children: (
-                                    <Form.Item name="images" label="Images">
-                                        <ImageUpload />
-                                    </Form.Item>
+                                    <>
+                                        <Form.Item name="images" label="Images">
+                                            <ImageUpload />
+                                        </Form.Item>
+                                        <Form.Item name="documents" label="Documents">
+                                            <DocumentUpload />
+                                        </Form.Item>
+                                    </>
                                 )
                             },
                         ]}
@@ -2353,6 +2361,9 @@ export default function Vente() {
                         </Row>
                         <Form.Item name="images" label="Images">
                             <ImageUpload />
+                        </Form.Item>
+                        <Form.Item name="documents" label="Documents">
+                            <DocumentUpload />
                         </Form.Item>
                         <Form.Item name="refs" label="Références complémentaires">
                             <Form.List name="refs">
@@ -3014,6 +3025,9 @@ export default function Vente() {
                     <Form.Item name="images" label="Images">
                         <ImageUpload />
                     </Form.Item>
+                    <Form.Item name="documents" label="Documents">
+                        <DocumentUpload />
+                    </Form.Item>
                 </Form>
             </Modal>
 
@@ -3089,6 +3103,9 @@ export default function Vente() {
                     <Form.Item name="images" label="Images">
                         <ImageUpload />
                     </Form.Item>
+                    <Form.Item name="documents" label="Documents">
+                        <DocumentUpload />
+                    </Form.Item>
                 </Form>
             </Modal>
 
@@ -3158,6 +3175,9 @@ export default function Vente() {
                     </Form.Item>
                     <Form.Item name="images" label="Images">
                         <ImageUpload />
+                    </Form.Item>
+                    <Form.Item name="documents" label="Documents">
+                        <DocumentUpload />
                     </Form.Item>
                 </Form>
             </Modal>
