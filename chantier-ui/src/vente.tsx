@@ -259,6 +259,7 @@ interface VenteEntity {
     montantTVA?: number;
     prixVenteTTC?: number;
     modePaiement?: ModePaiement;
+    images?: string[];
     rappel1Jours?: number;
     rappel2Jours?: number;
     rappel3Jours?: number;
@@ -318,6 +319,7 @@ interface VenteFormValues {
     montantTTC: number;
     prixVenteTTC: number;
     modePaiement?: ModePaiement;
+    images?: string[];
     rappel1Jours?: number;
     rappel2Jours?: number;
     rappel3Jours?: number;
@@ -419,7 +421,8 @@ const defaultVente: VenteFormValues = {
     tva: 20,
     montantTVA: 0,
     montantTTC: 0,
-    prixVenteTTC: 0
+    prixVenteTTC: 0,
+    images: []
 };
 
 const formatEuro = (value?: number) => `${(value || 0).toFixed(2)} EUR`;
@@ -1097,6 +1100,7 @@ export default function Vente() {
             montantTTC: vente.montantTTC || 0,
             prixVenteTTC: vente.prixVenteTTC || 0,
             modePaiement: vente.modePaiement,
+            images: vente.images || [],
             rappel1Jours: vente.rappel1Jours,
             rappel2Jours: vente.rappel2Jours,
             rappel3Jours: vente.rappel3Jours
@@ -1204,6 +1208,7 @@ export default function Vente() {
         montantTTC: values.montantTTC || 0,
         prixVenteTTC: values.prixVenteTTC || 0,
         modePaiement: values.modePaiement,
+        images: values.images || [],
         rappel1Jours: values.rappel1Jours,
         rappel2Jours: values.rappel2Jours,
         rappel3Jours: values.rappel3Jours
@@ -2249,6 +2254,15 @@ export default function Vente() {
                                             </>
                                         )}
                                     </>
+                                )
+                            },
+                            {
+                                key: 'images',
+                                label: 'Images',
+                                children: (
+                                    <Form.Item name="images" label="Images">
+                                        <ImageUpload />
+                                    </Form.Item>
                                 )
                             },
                         ]}
