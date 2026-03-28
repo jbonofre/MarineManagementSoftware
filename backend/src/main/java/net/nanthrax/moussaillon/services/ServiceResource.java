@@ -18,6 +18,7 @@ import net.nanthrax.moussaillon.persistence.ProduitCatalogueEntity;
 import net.nanthrax.moussaillon.persistence.ServiceEntity;
 import net.nanthrax.moussaillon.persistence.ServiceMainOeuvreEntity;
 import net.nanthrax.moussaillon.persistence.ServiceProduitEntity;
+import net.nanthrax.moussaillon.persistence.TaskEntity;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -113,6 +114,18 @@ public class ServiceResource {
                 }
                 newItem.quantite = item.quantite;
                 entity.produits.add(newItem);
+            }
+        }
+
+        // Update taches
+        entity.taches.clear();
+        if (service.taches != null) {
+            for (TaskEntity tache : service.taches) {
+                TaskEntity newTache = new TaskEntity();
+                newTache.nom = tache.nom;
+                newTache.description = tache.description;
+                newTache.done = tache.done;
+                entity.taches.add(newTache);
             }
         }
 

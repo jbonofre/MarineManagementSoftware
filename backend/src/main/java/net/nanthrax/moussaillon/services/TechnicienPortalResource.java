@@ -226,14 +226,14 @@ public class TechnicienPortalResource {
         for (VenteEntity vente : ventes) {
             if (vente.venteForfaits != null) {
                 for (VenteForfaitEntity vf : vente.venteForfaits) {
-                    if (vf.technicien != null && vf.technicien.id.equals(technicienId)) {
+                    if (vf.techniciens != null && vf.techniciens.stream().anyMatch(t -> t.id.equals(technicienId))) {
                         result.add(PlanningItemWithVente.fromForfait(vf, vente));
                     }
                 }
             }
             if (vente.venteServices != null) {
                 for (VenteServiceEntity vs : vente.venteServices) {
-                    if (vs.technicien != null && vs.technicien.id.equals(technicienId)) {
+                    if (vs.techniciens != null && vs.techniciens.stream().anyMatch(t -> t.id.equals(technicienId))) {
                         result.add(PlanningItemWithVente.fromService(vs, vente));
                     }
                 }

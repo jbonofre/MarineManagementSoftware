@@ -66,7 +66,7 @@ interface VenteForfaitEntity {
     id?: number;
     forfait?: ForfaitEntity;
     quantite?: number;
-    technicien?: TechnicienEntity;
+    techniciens?: TechnicienEntity[];
     datePlanification?: string;
     dateDebut?: string;
     dateFin?: string;
@@ -83,7 +83,7 @@ interface VenteServiceEntity {
     id?: number;
     service?: ServiceEntity;
     quantite?: number;
-    technicien?: TechnicienEntity;
+    techniciens?: TechnicienEntity[];
     datePlanification?: string;
     dateDebut?: string;
     dateFin?: string;
@@ -96,10 +96,27 @@ interface VenteServiceEntity {
     taches?: TaskEntity[];
 }
 
+interface ForfaitProduitEntity {
+    produit?: ProduitCatalogueEntity;
+    quantite?: number;
+}
+
+interface ForfaitMainOeuvreEntity {
+    mainOeuvre?: MainOeuvreEntity;
+    quantite?: number;
+}
+
 interface ForfaitEntity {
     id: number;
     reference?: string;
     nom: string;
+    dureeEstimee?: number;
+    moteursAssocies?: MoteurClientEntity[];
+    bateauxAssocies?: BateauClientEntity[];
+    produits?: ForfaitProduitEntity[];
+    mainOeuvres?: ForfaitMainOeuvreEntity[];
+    heuresFonctionnement?: number;
+    joursFrequence?: number;
     prixHT?: number;
     tva?: number;
     montantTVA?: number;
@@ -108,7 +125,16 @@ interface ForfaitEntity {
 }
 
 const defaultNewForfait = {
-    reference: '', nom: '', prixHT: 0, tva: 20, montantTVA: 0, prixTTC: 0,
+    reference: '', nom: '',
+    dureeEstimee: 0,
+    moteurIds: [] as number[],
+    bateauIds: [] as number[],
+    produits: [{}] as Array<{ produitId?: number; quantite?: number }>,
+    mainOeuvres: [{}] as Array<{ mainOeuvreId?: number; quantite?: number }>,
+    taches: [{}] as Array<{ nom?: string; description?: string; done?: boolean }>,
+    heuresFonctionnement: 0,
+    joursFrequence: 0,
+    prixHT: 0, tva: 20, montantTVA: 0, prixTTC: 0,
 };
 
 interface ProduitCatalogueEntity {
@@ -194,6 +220,7 @@ interface ServiceEntity {
     dureeEstimee?: number;
     mainOeuvres?: ServiceMainOeuvreEntity[];
     produits?: ServiceProduitEntity[];
+    taches?: TaskEntity[];
     prixHT?: number;
     tva?: number;
     montantTVA?: number;
@@ -205,6 +232,7 @@ const defaultNewService = {
     dureeEstimee: 0,
     mainOeuvres: [{}] as Array<{ mainOeuvreId?: number; quantite?: number }>,
     produits: [{}] as Array<{ produitId?: number; quantite?: number }>,
+    taches: [{}] as Array<{ nom?: string; description?: string; done?: boolean }>,
     prixHT: 0, tva: 20, montantTVA: 0, prixTTC: 0,
 };
 
@@ -255,7 +283,7 @@ interface VenteFormValues {
     venteForfaits: Array<{
         forfaitId?: number;
         quantite?: number;
-        technicienId?: number;
+        technicienIds?: number[];
         status?: PlanningStatus;
         datePlanification?: string;
         dateDebut?: string;
@@ -269,7 +297,7 @@ interface VenteFormValues {
     venteServices: Array<{
         serviceId?: number;
         quantite?: number;
-        technicienId?: number;
+        technicienIds?: number[];
         status?: PlanningStatus;
         datePlanification?: string;
         dateDebut?: string;
@@ -665,6 +693,7 @@ export default function Vente() {
                 .filter((item) => item.produit?.id)
                 .map((item) => ({ produitId: item.produit!.id, quantite: item.quantite || 1 }))
                 .concat([{}]),
+            taches: (service.taches || []).map((t) => ({ nom: t.nom || '', description: t.description || '', done: t.done || false })),
             prixHT: service.prixHT || 0,
             tva: service.tva || 0,
             montantTVA: service.montantTVA || 0,
@@ -691,6 +720,13 @@ export default function Vente() {
                     .map((item: { produitId?: number; quantite?: number }) => ({
                         produit: produits.find((p) => p.id === item.produitId),
                         quantite: item.quantite || 1
+                    })),
+                taches: (values.taches || [])
+                    .filter((t: { nom?: string }) => t.nom?.trim())
+                    .map((t: { nom?: string; description?: string; done?: boolean }) => ({
+                        nom: t.nom,
+                        description: t.description || '',
+                        done: t.done || false
                     })),
                 prixHT: values.prixHT || 0,
                 tva: values.tva || 0,
@@ -746,6 +782,17 @@ export default function Vente() {
                 newServiceForm.setFieldValue('produits', [...currentLines, {}]);
             }
         }
+        if (changedValues.taches !== undefined) {
+            const currentLines = newServiceForm.getFieldValue('taches') || [];
+            if (currentLines.length === 0) {
+                newServiceForm.setFieldValue('taches', [{}]);
+            } else {
+                const lastLine = currentLines[currentLines.length - 1];
+                if (!!lastLine?.nom?.trim()) {
+                    newServiceForm.setFieldValue('taches', [...currentLines, {}]);
+                }
+            }
+        }
 
         // Recalculate totals from lines
         if (changedValues.mainOeuvres !== undefined || changedValues.produits !== undefined) {
@@ -795,7 +842,43 @@ export default function Vente() {
     const handleNewForfaitSave = async () => {
         try {
             const values = await newForfaitForm.validateFields();
-            const res = await axios.post('/forfaits', values);
+            const payload = {
+                reference: values.reference,
+                nom: values.nom,
+                dureeEstimee: values.dureeEstimee || 0,
+                moteursAssocies: (values.moteurIds || [])
+                    .map((id: number) => moteurs.find((m) => m.id === id))
+                    .filter(Boolean),
+                bateauxAssocies: (values.bateauIds || [])
+                    .map((id: number) => bateaux.find((b) => b.id === id))
+                    .filter(Boolean),
+                produits: (values.produits || [])
+                    .filter((item: { produitId?: number }) => item.produitId)
+                    .map((item: { produitId?: number; quantite?: number }) => ({
+                        produit: produits.find((p) => p.id === item.produitId),
+                        quantite: item.quantite || 1
+                    })),
+                mainOeuvres: (values.mainOeuvres || [])
+                    .filter((item: { mainOeuvreId?: number }) => item.mainOeuvreId)
+                    .map((item: { mainOeuvreId?: number; quantite?: number }) => ({
+                        mainOeuvre: mainOeuvres.find((mo) => mo.id === item.mainOeuvreId),
+                        quantite: item.quantite || 1
+                    })),
+                taches: (values.taches || [])
+                    .filter((t: { nom?: string }) => t.nom?.trim())
+                    .map((t: { nom?: string; description?: string; done?: boolean }) => ({
+                        nom: t.nom,
+                        description: t.description || '',
+                        done: t.done || false
+                    })),
+                heuresFonctionnement: values.heuresFonctionnement || 0,
+                joursFrequence: values.joursFrequence || 0,
+                prixHT: values.prixHT || 0,
+                tva: values.tva || 0,
+                montantTVA: values.montantTVA || 0,
+                prixTTC: values.prixTTC || 0
+            };
+            const res = await axios.post('/forfaits', payload);
             const created = res.data as ForfaitEntity;
             message.success('Forfait ajouté avec succès');
             setForfaits((prev) => [...prev, created]);
@@ -813,6 +896,63 @@ export default function Vente() {
     };
 
     const onNewForfaitValuesChange = (changedValues: Record<string, unknown>) => {
+        // Auto-add new line when last line is complete
+        if (changedValues.produits !== undefined) {
+            const currentLines = newForfaitForm.getFieldValue('produits') || [];
+            if (currentLines.length === 0) {
+                newForfaitForm.setFieldValue('produits', [{}]);
+            } else {
+                const lastLine = currentLines[currentLines.length - 1];
+                if (!!lastLine?.produitId && (lastLine?.quantite || 0) > 0) {
+                    newForfaitForm.setFieldValue('produits', [...currentLines, {}]);
+                }
+            }
+        }
+        if (changedValues.mainOeuvres !== undefined) {
+            const currentLines = newForfaitForm.getFieldValue('mainOeuvres') || [];
+            if (currentLines.length === 0) {
+                newForfaitForm.setFieldValue('mainOeuvres', [{}]);
+            } else {
+                const lastLine = currentLines[currentLines.length - 1];
+                if (!!lastLine?.mainOeuvreId && (lastLine?.quantite || 0) > 0) {
+                    newForfaitForm.setFieldValue('mainOeuvres', [...currentLines, {}]);
+                }
+            }
+        }
+        if (changedValues.taches !== undefined) {
+            const currentLines = newForfaitForm.getFieldValue('taches') || [];
+            if (currentLines.length === 0) {
+                newForfaitForm.setFieldValue('taches', [{}]);
+            } else {
+                const lastLine = currentLines[currentLines.length - 1];
+                if (!!lastLine?.nom?.trim()) {
+                    newForfaitForm.setFieldValue('taches', [...currentLines, {}]);
+                }
+            }
+        }
+
+        // Recalculate totals from product/MO lines
+        if (changedValues.produits !== undefined || changedValues.mainOeuvres !== undefined) {
+            const round2 = (v: number) => Math.round((v + Number.EPSILON) * 100) / 100;
+            const prodValues = newForfaitForm.getFieldValue('produits') || [];
+            const moValues = newForfaitForm.getFieldValue('mainOeuvres') || [];
+            const totalProdTTC = prodValues.reduce((total: number, item: { produitId?: number; quantite?: number }) => {
+                const prix = produits.find((p) => p.id === item.produitId)?.prixVenteTTC || 0;
+                return total + (prix * (item.quantite || 0));
+            }, 0);
+            const totalMoTTC = moValues.reduce((total: number, item: { mainOeuvreId?: number; quantite?: number }) => {
+                const prix = mainOeuvres.find((mo) => mo.id === item.mainOeuvreId)?.prixTTC || 0;
+                return total + (prix * (item.quantite || 0));
+            }, 0);
+            const prixTTC = round2(totalProdTTC + totalMoTTC);
+            const tva = newForfaitForm.getFieldValue('tva') || 0;
+            const montantTVA = round2((prixTTC / (100 + tva)) * tva);
+            const prixHT = round2(prixTTC - montantTVA);
+            newForfaitForm.setFieldValue('prixTTC', prixTTC);
+            newForfaitForm.setFieldValue('montantTVA', montantTVA);
+            newForfaitForm.setFieldValue('prixHT', prixHT);
+        }
+
         if (changedValues.prixHT !== undefined || changedValues.tva !== undefined) {
             const prixHT = newForfaitForm.getFieldValue('prixHT') || 0;
             const tva = newForfaitForm.getFieldValue('tva') || 0;
@@ -904,7 +1044,7 @@ export default function Vente() {
         const venteForfaitLines = (vente.venteForfaits || []).map(vf => ({
             forfaitId: vf.forfait?.id,
             quantite: vf.quantite || 1,
-            technicienId: vf.technicien?.id,
+            technicienIds: (vf.techniciens || []).map(t => t.id),
             status: vf.status || 'EN_ATTENTE',
             datePlanification: vf.datePlanification,
             dateDebut: vf.dateDebut,
@@ -918,7 +1058,7 @@ export default function Vente() {
         const venteServiceLines = (vente.venteServices || []).map(vs => ({
             serviceId: vs.service?.id,
             quantite: vs.quantite || 1,
-            technicienId: vs.technicien?.id,
+            technicienIds: (vs.techniciens || []).map(t => t.id),
             status: vs.status || 'EN_ATTENTE',
             datePlanification: vs.datePlanification,
             dateDebut: vs.dateDebut,
@@ -1013,7 +1153,7 @@ export default function Vente() {
                 return {
                     forfait: selectedForfait,
                     quantite: line.quantite || 1,
-                    technicien: techniciens.find((t) => t.id === line.technicienId),
+                    techniciens: (line.technicienIds || []).map((id: number) => techniciens.find((t) => t.id === id)).filter(Boolean),
                     datePlanification: line.datePlanification || existingVf?.datePlanification,
                     dateDebut: line.dateDebut || existingVf?.dateDebut,
                     dateFin: line.dateFin || existingVf?.dateFin,
@@ -1037,7 +1177,7 @@ export default function Vente() {
                 return {
                     service: services.find((s) => s.id === line.serviceId),
                     quantite: line.quantite || 1,
-                    technicien: techniciens.find((t) => t.id === line.technicienId),
+                    techniciens: (line.technicienIds || []).map((id: number) => techniciens.find((t) => t.id === id)).filter(Boolean),
                     datePlanification: line.datePlanification || existingVs?.datePlanification,
                     dateDebut: line.dateDebut || existingVs?.dateDebut,
                     dateFin: line.dateFin || existingVs?.dateFin,
@@ -1698,9 +1838,9 @@ export default function Vente() {
 
                     <Row gutter={16}>
                         <Col span={12}>
-                            <Form.Item label="Client">
+                            <Form.Item label="Client" required>
                                 <Space.Compact style={{ width: '100%' }}>
-                                    <Form.Item name="clientId" noStyle>
+                                    <Form.Item name="clientId" noStyle rules={[{ required: true, message: 'Le client est obligatoire' }]}>
                                         <Select allowClear showSearch options={clientOptions} style={{ width: '100%' }} />
                                     </Form.Item>
                                     <Button icon={<PlusOutlined />} title="Créer un client" onClick={openNewClientModal} />
@@ -1828,14 +1968,14 @@ export default function Vente() {
                                                                     name={[field.name, 'status']}
                                                                     style={{ width: 130 }}
                                                                 >
-                                                                    <Select allowClear options={planningStatusOptions} placeholder="Status" />
+                                                                    <Select allowClear options={planningStatusOptions} placeholder="Statut" />
                                                                 </Form.Item>
                                                                 <Form.Item
                                                                     {...field}
-                                                                    name={[field.name, 'technicienId']}
-                                                                    style={{ width: 180 }}
+                                                                    name={[field.name, 'technicienIds']}
+                                                                    style={{ width: 220 }}
                                                                 >
-                                                                    <Select allowClear showSearch options={technicienOptions} placeholder="Technicien" />
+                                                                    <Select mode="multiple" allowClear showSearch options={technicienOptions} placeholder="Techniciens" />
                                                                 </Form.Item>
                                                                 {isEmptyLine ? (
                                                                     <Button icon={<PlusOutlined />} title="Créer un forfait" onClick={() => openNewForfaitModal(field.name)} />
@@ -1921,14 +2061,14 @@ export default function Vente() {
                                                                     name={[field.name, 'status']}
                                                                     style={{ width: 130 }}
                                                                 >
-                                                                    <Select allowClear options={planningStatusOptions} placeholder="Status" />
+                                                                    <Select allowClear options={planningStatusOptions} placeholder="Statut" />
                                                                 </Form.Item>
                                                                 <Form.Item
                                                                     {...field}
-                                                                    name={[field.name, 'technicienId']}
-                                                                    style={{ width: 180 }}
+                                                                    name={[field.name, 'technicienIds']}
+                                                                    style={{ width: 220 }}
                                                                 >
-                                                                    <Select allowClear showSearch options={technicienOptions} placeholder="Technicien" />
+                                                                    <Select mode="multiple" allowClear showSearch options={technicienOptions} placeholder="Techniciens" />
                                                                 </Form.Item>
                                                                 {isEmptyLine ? (
                                                                     <Button icon={<PlusOutlined />} title="Créer un service" onClick={() => openNewServiceModal(field.name)} />
@@ -2416,6 +2556,33 @@ export default function Vente() {
                                             )}
                                         </Form.List>
                                     )
+                                },
+                                {
+                                    key: 'taches',
+                                    label: 'Tâches Associées',
+                                    children: (
+                                        <Form.List name="taches">
+                                            {(fields, { remove }) => (
+                                                <Space direction="vertical" style={{ width: '100%' }} size={12}>
+                                                    {fields.map((field) => (
+                                                        <Card
+                                                            key={field.key}
+                                                            size="small"
+                                                            title={`Tâche ${field.name + 1}`}
+                                                            extra={<Button danger icon={<DeleteOutlined />} onClick={() => remove(field.name)} />}
+                                                        >
+                                                            <Form.Item {...field} name={[field.name, 'nom']} label="Nom">
+                                                                <Input allowClear />
+                                                            </Form.Item>
+                                                            <Form.Item {...field} name={[field.name, 'description']} label="Description">
+                                                                <Input.TextArea rows={2} />
+                                                            </Form.Item>
+                                                        </Card>
+                                                    ))}
+                                                </Space>
+                                            )}
+                                        </Form.List>
+                                    )
                                 }
                             ]}
                         />
@@ -2434,7 +2601,7 @@ export default function Vente() {
                     onOk={handleNewForfaitSave}
                     onCancel={() => setNewForfaitModalVisible(false)}
                     maskClosable={false}
-                    width={900}
+                    width={1024}
                     okText="Enregistrer"
                     cancelText="Annuler"
                     destroyOnHidden
@@ -2446,6 +2613,165 @@ export default function Vente() {
                         <Form.Item name="nom" label="Nom" rules={[{ required: true, message: 'Le nom est requis' }]}>
                             <Input allowClear />
                         </Form.Item>
+
+                        <Row gutter={16}>
+                            <Col span={12}>
+                                <Form.Item name="moteurIds" label="Moteurs associés">
+                                    <Select mode="multiple" allowClear options={moteurOptions} placeholder="Sélectionner les moteurs" />
+                                </Form.Item>
+                            </Col>
+                            <Col span={12}>
+                                <Form.Item name="bateauIds" label="Bateaux associés">
+                                    <Select mode="multiple" allowClear options={bateauOptions} placeholder="Sélectionner les bateaux" />
+                                </Form.Item>
+                            </Col>
+                        </Row>
+
+                        <Form.Item name="dureeEstimee" label="Durée estimée">
+                            <InputNumber min={0} step={0.25} precision={2} style={{ width: '100%' }} addonAfter="h" />
+                        </Form.Item>
+
+                        <Row gutter={16}>
+                            <Col span={12}>
+                                <Form.Item name="heuresFonctionnement" label="Heures de fonctionnement">
+                                    <InputNumber min={0} step={1} style={{ width: '100%' }} />
+                                </Form.Item>
+                            </Col>
+                            <Col span={12}>
+                                <Form.Item name="joursFrequence" label="Fréquence (jours)">
+                                    <InputNumber min={0} step={1} style={{ width: '100%' }} />
+                                </Form.Item>
+                            </Col>
+                        </Row>
+
+                        <Tabs
+                            defaultActiveKey="contenu"
+                            items={[
+                                {
+                                    key: 'contenu',
+                                    label: "Produits & Main d'Oeuvres",
+                                    children: (
+                                        <>
+                                            <Form.Item label="Produits inclus">
+                                                <Form.List name="produits">
+                                                    {(fields, { remove }) => (
+                                                        <>
+                                                            {fields.map((field) => {
+                                                                const produitId = newForfaitForm.getFieldValue(['produits', field.name, 'produitId']);
+                                                                return (
+                                                                <Space key={field.key} align="baseline" style={{ display: 'flex', marginBottom: 8 }}>
+                                                                    <Form.Item
+                                                                        {...field}
+                                                                        name={[field.name, 'produitId']}
+                                                                        style={{ width: 520 }}
+                                                                    >
+                                                                        <Select allowClear showSearch options={produitOptions} placeholder="Produit" />
+                                                                    </Form.Item>
+                                                                    <Form.Item
+                                                                        {...field}
+                                                                        name={[field.name, 'quantite']}
+                                                                        style={{ width: 180 }}
+                                                                    >
+                                                                        <InputNumber min={1} step={1} style={{ width: '100%' }} placeholder="Qte" />
+                                                                    </Form.Item>
+                                                                    <Form.Item noStyle shouldUpdate>
+                                                                        {({ getFieldValue }) => {
+                                                                            const pid = getFieldValue(['produits', field.name, 'produitId']);
+                                                                            const quantite = getFieldValue(['produits', field.name, 'quantite']) || 0;
+                                                                            const prixUnitaireTTC = produits.find((p) => p.id === pid)?.prixVenteTTC || 0;
+                                                                            const prixTTC = Math.round(((prixUnitaireTTC * quantite) + Number.EPSILON) * 100) / 100;
+                                                                            return (
+                                                                                <Form.Item style={{ width: 180 }}>
+                                                                                    <InputNumber addonAfter="EUR" value={prixTTC} style={{ width: '100%' }} disabled />
+                                                                                </Form.Item>
+                                                                            );
+                                                                        }}
+                                                                    </Form.Item>
+                                                                    <Button danger icon={<DeleteOutlined />} onClick={() => remove(field.name)} />
+                                                                </Space>
+                                                                );
+                                                            })}
+                                                        </>
+                                                    )}
+                                                </Form.List>
+                                            </Form.Item>
+
+                                            <Form.Item label="Main d'Oeuvres incluses">
+                                                <Form.List name="mainOeuvres">
+                                                    {(fields, { remove }) => (
+                                                        <>
+                                                            {fields.map((field) => {
+                                                                const moId = newForfaitForm.getFieldValue(['mainOeuvres', field.name, 'mainOeuvreId']);
+                                                                return (
+                                                                <Space key={field.key} align="baseline" style={{ display: 'flex', marginBottom: 8 }}>
+                                                                    <Form.Item
+                                                                        {...field}
+                                                                        name={[field.name, 'mainOeuvreId']}
+                                                                        style={{ width: 520 }}
+                                                                    >
+                                                                        <Select allowClear showSearch options={mainOeuvreOptions} placeholder="Main d'Oeuvre" />
+                                                                    </Form.Item>
+                                                                    <Form.Item
+                                                                        {...field}
+                                                                        name={[field.name, 'quantite']}
+                                                                        style={{ width: 180 }}
+                                                                    >
+                                                                        <InputNumber min={0.25} step={0.25} style={{ width: '100%' }} placeholder="Qte" />
+                                                                    </Form.Item>
+                                                                    <Form.Item noStyle shouldUpdate>
+                                                                        {({ getFieldValue }) => {
+                                                                            const mid = getFieldValue(['mainOeuvres', field.name, 'mainOeuvreId']);
+                                                                            const quantite = getFieldValue(['mainOeuvres', field.name, 'quantite']) || 0;
+                                                                            const prixUnitaireTTC = mainOeuvres.find((mo) => mo.id === mid)?.prixTTC || 0;
+                                                                            const prixTTC = Math.round(((prixUnitaireTTC * quantite) + Number.EPSILON) * 100) / 100;
+                                                                            return (
+                                                                                <Form.Item style={{ width: 180 }}>
+                                                                                    <InputNumber addonAfter="EUR" value={prixTTC} style={{ width: '100%' }} disabled />
+                                                                                </Form.Item>
+                                                                            );
+                                                                        }}
+                                                                    </Form.Item>
+                                                                    <Button danger icon={<DeleteOutlined />} onClick={() => remove(field.name)} />
+                                                                </Space>
+                                                                );
+                                                            })}
+                                                        </>
+                                                    )}
+                                                </Form.List>
+                                            </Form.Item>
+                                        </>
+                                    )
+                                },
+                                {
+                                    key: 'taches',
+                                    label: 'Tâches Associées',
+                                    children: (
+                                        <Form.List name="taches">
+                                            {(fields, { remove }) => (
+                                                <Space direction="vertical" style={{ width: '100%' }} size={12}>
+                                                    {fields.map((field) => (
+                                                        <Card
+                                                            key={field.key}
+                                                            size="small"
+                                                            title={`Tâche ${field.name + 1}`}
+                                                            extra={<Button danger icon={<DeleteOutlined />} onClick={() => remove(field.name)} />}
+                                                        >
+                                                            <Form.Item {...field} name={[field.name, 'nom']} label="Nom">
+                                                                <Input allowClear />
+                                                            </Form.Item>
+                                                            <Form.Item {...field} name={[field.name, 'description']} label="Description">
+                                                                <Input.TextArea rows={2} />
+                                                            </Form.Item>
+                                                        </Card>
+                                                    ))}
+                                                </Space>
+                                            )}
+                                        </Form.List>
+                                    )
+                                }
+                            ]}
+                        />
+
                         <Row gutter={16}>
                             <Col span={6}><Form.Item name="prixHT" label="Prix HT"><InputNumber addonAfter="€" min={0} step={0.01} style={{ width: '100%' }} /></Form.Item></Col>
                             <Col span={6}><Form.Item name="tva" label="TVA (%)"><InputNumber addonAfter="%" min={0} max={100} step={0.01} style={{ width: '100%' }} /></Form.Item></Col>

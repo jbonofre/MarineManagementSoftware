@@ -9,7 +9,9 @@ import io.quarkus.hibernate.orm.panache.PanacheEntity;
 import jakarta.json.bind.annotation.JsonbTypeAdapter;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 
@@ -21,8 +23,8 @@ public class VenteForfaitEntity extends PanacheEntity {
 
     public int quantite;
 
-    @ManyToOne
-    public TechnicienEntity technicien;
+    @ManyToMany(fetch = FetchType.EAGER)
+    public List<TechnicienEntity> techniciens = new ArrayList<>();
 
     @JsonbTypeAdapter(TimestampJsonbAdapter.class)
     public Timestamp datePlanification;

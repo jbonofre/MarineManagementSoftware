@@ -30,8 +30,8 @@ public class TechnicienKpiResource {
             throw new WebApplicationException("Le technicien (" + id + ") n'est pas trouvé", 404);
         }
 
-        List<VenteForfaitEntity> allForfaits = VenteForfaitEntity.list("technicien.id = ?1", id);
-        List<VenteServiceEntity> allServices = VenteServiceEntity.list("technicien.id = ?1", id);
+        List<VenteForfaitEntity> allForfaits = VenteForfaitEntity.list("SELECT vf FROM VenteForfaitEntity vf JOIN vf.techniciens t WHERE t.id = ?1", id);
+        List<VenteServiceEntity> allServices = VenteServiceEntity.list("SELECT vs FROM VenteServiceEntity vs JOIN vs.techniciens t WHERE t.id = ?1", id);
 
         // Combine into a unified list of status/dates/dureeReelle
         List<PlanningItem> allItems = new ArrayList<>();

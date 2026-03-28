@@ -52,15 +52,23 @@ public class DashboardResource {
         List<ProduitCatalogueEntity> produitsEnAlerte = ProduitCatalogueEntity.list("stock <= stockMini");
         data.alertesStock = produitsEnAlerte.size();
 
-        // Interventions du jour
+        // Interventions du jour (started today OR planned/scheduled for today)
         Timestamp todayStart = Timestamp.valueOf(now.atStartOfDay());
         Timestamp tomorrowStart = Timestamp.valueOf(now.plusDays(1).atStartOfDay());
         data.interventions = new ArrayList<>();
         List<VenteEntity> ventesAvecForfaits = VenteEntity.list(
-                "select distinct v from VenteEntity v join v.venteForfaits vf where vf.dateDebut >= ?1 and vf.dateDebut < ?2", todayStart, tomorrowStart);
+                "select distinct v from VenteEntity v join v.venteForfaits vf where "
+                + "(vf.dateDebut >= ?1 and vf.dateDebut < ?2) or "
+                + "(vf.statusDate >= ?1 and vf.statusDate < ?2) or "
+                + "(vf.datePlanification >= ?1 and vf.datePlanification < ?2)",
+                todayStart, tomorrowStart);
+        java.util.Set<Long> addedForfaitIds = new java.util.HashSet<>();
         for (VenteEntity vente : ventesAvecForfaits) {
             for (VenteForfaitEntity vf : vente.venteForfaits) {
-                if (vf.dateDebut != null && !vf.dateDebut.before(todayStart) && vf.dateDebut.before(tomorrowStart)) {
+                boolean matchesToday = (vf.dateDebut != null && !vf.dateDebut.before(todayStart) && vf.dateDebut.before(tomorrowStart))
+                        || (vf.statusDate != null && !vf.statusDate.before(todayStart) && vf.statusDate.before(tomorrowStart))
+                        || (vf.datePlanification != null && !vf.datePlanification.before(todayStart) && vf.datePlanification.before(tomorrowStart));
+                if (matchesToday && addedForfaitIds.add(vf.id)) {
                     InterventionRow row = new InterventionRow();
                     row.key = "f-" + vf.id;
                     row.client = vente.client != null
@@ -68,8 +76,8 @@ public class DashboardResource {
                             : "";
                     row.unite = vente.bateau != null ? vente.bateau.name : (vente.moteur != null ? "Moteur" : "");
                     row.type = vf.forfait != null ? vf.forfait.nom : "";
-                    row.technicien = vf.technicien != null
-                            ? (vf.technicien.prenom != null ? vf.technicien.prenom.substring(0, 1) + ". " : "") + vf.technicien.nom
+                    row.technicien = vf.techniciens != null && !vf.techniciens.isEmpty()
+                            ? vf.techniciens.stream().map(t -> (t.prenom != null ? t.prenom.substring(0, 1) + ". " : "") + t.nom).collect(java.util.stream.Collectors.joining(", "))
                             : "";
                     row.statut = mapStatut(vf.status != null ? vf.status.name() : null);
                     data.interventions.add(row);
@@ -77,10 +85,18 @@ public class DashboardResource {
             }
         }
         List<VenteEntity> ventesAvecServices = VenteEntity.list(
-                "select distinct v from VenteEntity v join v.venteServices vs where vs.dateDebut >= ?1 and vs.dateDebut < ?2", todayStart, tomorrowStart);
+                "select distinct v from VenteEntity v join v.venteServices vs where "
+                + "(vs.dateDebut >= ?1 and vs.dateDebut < ?2) or "
+                + "(vs.statusDate >= ?1 and vs.statusDate < ?2) or "
+                + "(vs.datePlanification >= ?1 and vs.datePlanification < ?2)",
+                todayStart, tomorrowStart);
+        java.util.Set<Long> addedServiceIds = new java.util.HashSet<>();
         for (VenteEntity vente : ventesAvecServices) {
             for (VenteServiceEntity vs : vente.venteServices) {
-                if (vs.dateDebut != null && !vs.dateDebut.before(todayStart) && vs.dateDebut.before(tomorrowStart)) {
+                boolean matchesToday = (vs.dateDebut != null && !vs.dateDebut.before(todayStart) && vs.dateDebut.before(tomorrowStart))
+                        || (vs.statusDate != null && !vs.statusDate.before(todayStart) && vs.statusDate.before(tomorrowStart))
+                        || (vs.datePlanification != null && !vs.datePlanification.before(todayStart) && vs.datePlanification.before(tomorrowStart));
+                if (matchesToday && addedServiceIds.add(vs.id)) {
                     InterventionRow row = new InterventionRow();
                     row.key = "s-" + vs.id;
                     row.client = vente.client != null
@@ -88,8 +104,8 @@ public class DashboardResource {
                             : "";
                     row.unite = vente.bateau != null ? vente.bateau.name : (vente.moteur != null ? "Moteur" : "");
                     row.type = vs.service != null ? vs.service.nom : "";
-                    row.technicien = vs.technicien != null
-                            ? (vs.technicien.prenom != null ? vs.technicien.prenom.substring(0, 1) + ". " : "") + vs.technicien.nom
+                    row.technicien = vs.techniciens != null && !vs.techniciens.isEmpty()
+                            ? vs.techniciens.stream().map(t -> (t.prenom != null ? t.prenom.substring(0, 1) + ". " : "") + t.nom).collect(java.util.stream.Collectors.joining(", "))
                             : "";
                     row.statut = mapStatut(vs.status != null ? vs.status.name() : null);
                     data.interventions.add(row);

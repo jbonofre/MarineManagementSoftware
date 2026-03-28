@@ -169,7 +169,9 @@ public class VenteResource {
                 VenteForfaitEntity cloned = new VenteForfaitEntity();
                 cloned.forfait = incoming.forfait;
                 cloned.quantite = incoming.quantite;
-                cloned.technicien = incoming.technicien;
+                if (incoming.techniciens != null) {
+                    cloned.techniciens.addAll(incoming.techniciens);
+                }
                 cloned.datePlanification = incoming.datePlanification;
                 cloned.dateDebut = incoming.dateDebut;
                 cloned.dateFin = incoming.dateFin;
@@ -211,7 +213,9 @@ public class VenteResource {
                 VenteServiceEntity cloned = new VenteServiceEntity();
                 cloned.service = incoming.service;
                 cloned.quantite = incoming.quantite;
-                cloned.technicien = incoming.technicien;
+                if (incoming.techniciens != null) {
+                    cloned.techniciens.addAll(incoming.techniciens);
+                }
                 cloned.datePlanification = incoming.datePlanification;
                 cloned.dateDebut = incoming.dateDebut;
                 cloned.dateFin = incoming.dateFin;

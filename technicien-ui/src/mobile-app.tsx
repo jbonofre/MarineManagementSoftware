@@ -340,7 +340,7 @@ export default function MobileApp({ user, onLogout, onChangePassword }: MobileAp
                     </Card>
                 )}
                 <Form form={form} layout="vertical">
-                    <Form.Item name="status" label="Status" rules={[{ required: true }]}>
+                    <Form.Item name="status" label="Statut" rules={[{ required: true }]}>
                         <Select options={taskStatusOptions} />
                     </Form.Item>
                     <Form.Item name="dureeReelle" label="Temps passe (heures)">
