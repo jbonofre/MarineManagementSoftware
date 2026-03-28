@@ -4,6 +4,9 @@ import io.quarkus.hibernate.orm.panache.PanacheEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 
+import java.util.ArrayList;
+import java.util.List;
+
 
 @Entity
 public class ClientEntity extends PanacheEntity {
@@ -41,5 +44,7 @@ public class ClientEntity extends PanacheEntity {
     public String tva;
 
     public String naf;
+
+    public List<String> documents = new ArrayList<>();
 
 }
