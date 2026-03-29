@@ -269,9 +269,11 @@ export default function Comptoir() {
     const [filters, setFilters] = useState<SearchFilters>({});
     const [searchForm] = Form.useForm<SearchFilters>();
     const [form] = Form.useForm<VenteFormValues>();
+    const [formDirty, setFormDirty] = useState(false);
     const [newProduitModalVisible, setNewProduitModalVisible] = useState(false);
     const [newProduitTargetLine, setNewProduitTargetLine] = useState<number | null>(null);
     const [newProduitForm] = Form.useForm();
+    const [newProduitFormDirty, setNewProduitFormDirty] = useState(false);
 
     const marqueOptions = useMemo(() => {
         const unique = Array.from(new Set(produits.map((p) => p.marque).filter(Boolean))) as string[];
@@ -371,6 +373,7 @@ export default function Comptoir() {
         setNewProduitTargetLine(lineIndex);
         newProduitForm.resetFields();
         newProduitForm.setFieldsValue(defaultNewProduit);
+        setNewProduitFormDirty(false);
         setNewProduitModalVisible(true);
     };
 
@@ -389,6 +392,7 @@ export default function Comptoir() {
                 form.setFieldValue('produits', updated);
                 recalculateFromLines('auto');
             }
+            setNewProduitFormDirty(false);
             setNewProduitModalVisible(false);
         } catch {
             // validation errors shown in form
@@ -450,7 +454,42 @@ export default function Comptoir() {
             form.resetFields();
             form.setFieldsValue({ ...defaultVente, date: getTodayIsoDate() });
         }
+        setFormDirty(false);
         setModalVisible(true);
+    };
+
+    const handleModalCancel = () => {
+        if (formDirty) {
+            Modal.confirm({
+                title: "Modifications non enregistrées",
+                content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
+                okText: "Fermer",
+                cancelText: "Annuler",
+                onOk: () => {
+                    setFormDirty(false);
+                    setModalVisible(false);
+                },
+            });
+        } else {
+            setModalVisible(false);
+        }
+    };
+
+    const handleNewProduitCancel = () => {
+        if (newProduitFormDirty) {
+            Modal.confirm({
+                title: "Modifications non enregistrées",
+                content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
+                okText: "Fermer",
+                cancelText: "Annuler",
+                onOk: () => {
+                    setNewProduitFormDirty(false);
+                    setNewProduitModalVisible(false);
+                },
+            });
+        } else {
+            setNewProduitModalVisible(false);
+        }
     };
 
     const expandByQuantity = <T,>(items: T[], quantite: number): T[] =>
@@ -507,6 +546,7 @@ export default function Comptoir() {
                 setCurrentVente(res.data);
                 form.setFieldsValue(values);
             }
+            setFormDirty(false);
             fetchVentes(filters);
         } catch (error) {
             const formError = error as { errorFields?: unknown[] };
@@ -922,7 +962,7 @@ export default function Comptoir() {
             <Modal
                 title={isEdit ? 'Modifier une vente comptoir' : 'Ajouter une vente comptoir'}
                 open={modalVisible}
-                onCancel={() => setModalVisible(false)}
+                onCancel={handleModalCancel}
                 footer={[
                     <Button
                         key="print-invoice"
@@ -950,7 +990,7 @@ export default function Comptoir() {
                             Lien de paiement
                         </Button>
                     </Dropdown>,
-                    <Button key="cancel" onClick={() => setModalVisible(false)}>
+                    <Button key="cancel" onClick={handleModalCancel}>
                         Annuler
                     </Button>,
                     <Button key="save" type="primary" onClick={handleSave}>
@@ -961,7 +1001,7 @@ export default function Comptoir() {
                 destroyOnHidden
                 width={1100}
             >
-                <Form form={form} layout="vertical" initialValues={defaultVente} onValuesChange={onValuesChange}>
+                <Form form={form} layout="vertical" initialValues={defaultVente} onValuesChange={(...args) => { setFormDirty(true); onValuesChange(...args); }}>
                     <Row gutter={16}>
                         <Col span={8}>
                             <Form.Item name="date" label="Date">
@@ -1113,7 +1153,7 @@ export default function Comptoir() {
                     title="Créer un produit"
                     open={newProduitModalVisible}
                     onOk={handleNewProduitSave}
-                    onCancel={() => setNewProduitModalVisible(false)}
+                    onCancel={handleNewProduitCancel}
                     maskClosable={false}
                     width={1024}
                     okText="Enregistrer"
@@ -1124,7 +1164,7 @@ export default function Comptoir() {
                         form={newProduitForm}
                         layout="vertical"
                         initialValues={defaultNewProduit}
-                        onValuesChange={onNewProduitValuesChange}
+                        onValuesChange={(...args) => { setNewProduitFormDirty(true); onNewProduitValuesChange(...args); }}
                     >
                         <Row gutter={16}>
                             <Col span={12}>

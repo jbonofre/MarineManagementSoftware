@@ -169,8 +169,10 @@ const CommandesFournisseur = ({ fournisseurId }: { fournisseurId?: number }) => 
   const [lignes, setLignes] = useState<CommandeFournisseurLigne[]>([]);
   const [selectedFournisseurId, setSelectedFournisseurId] = useState<number | undefined>(fournisseurId);
   const [form] = Form.useForm();
+  const [formDirty, setFormDirty] = useState(false);
   const [fournisseurModalVisible, setFournisseurModalVisible] = useState(false);
   const [fournisseurForm] = Form.useForm();
+  const [fournisseurFormDirty, setFournisseurFormDirty] = useState(false);
 
   const fetchCommandes = async () => {
     setLoading(true);
@@ -249,6 +251,7 @@ const CommandesFournisseur = ({ fournisseurId }: { fournisseurId?: number }) => 
       const values = await fournisseurForm.validateFields();
       const res = await axios.post("/catalogue/fournisseurs", values);
       message.success("Fournisseur créé");
+      setFournisseurFormDirty(false);
       setFournisseurModalVisible(false);
       fournisseurForm.resetFields();
       await fetchFournisseurs();
@@ -321,6 +324,7 @@ const CommandesFournisseur = ({ fournisseurId }: { fournisseurId?: number }) => 
       montantTTC: 0,
       tva: 20,
     });
+    setFormDirty(false);
     setModalVisible(true);
   };
 
@@ -345,7 +349,42 @@ const CommandesFournisseur = ({ fournisseurId }: { fournisseurId?: number }) => 
       date: record.date ? dayjs(record.date) : undefined,
       dateReception: record.dateReception ? dayjs(record.dateReception) : undefined,
     });
+    setFormDirty(false);
     setModalVisible(true);
+  };
+
+  const handleModalCancel = () => {
+    if (formDirty) {
+      Modal.confirm({
+        title: "Modifications non enregistrées",
+        content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
+        okText: "Fermer",
+        cancelText: "Annuler",
+        onOk: () => {
+          setFormDirty(false);
+          setModalVisible(false);
+        },
+      });
+    } else {
+      setModalVisible(false);
+    }
+  };
+
+  const handleFournisseurModalCancel = () => {
+    if (fournisseurFormDirty) {
+      Modal.confirm({
+        title: "Modifications non enregistrées",
+        content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
+        okText: "Fermer",
+        cancelText: "Annuler",
+        onOk: () => {
+          setFournisseurFormDirty(false);
+          setFournisseurModalVisible(false);
+        },
+      });
+    } else {
+      setFournisseurModalVisible(false);
+    }
   };
 
   const handleDelete = async (id?: number) => {
@@ -447,6 +486,7 @@ const CommandesFournisseur = ({ fournisseurId }: { fournisseurId?: number }) => 
         await axios.post("/commandes-fournisseur", body);
         message.success("Commande créée");
       }
+      setFormDirty(false);
       setModalVisible(false);
       fetchCommandes();
     } catch (e: any) {
@@ -541,7 +581,7 @@ const CommandesFournisseur = ({ fournisseurId }: { fournisseurId?: number }) => 
 
       <Modal
         open={modalVisible}
-        onCancel={() => setModalVisible(false)}
+        onCancel={handleModalCancel}
         onOk={handleModalOk}
         destroyOnHidden
         width={1024}
@@ -551,7 +591,7 @@ const CommandesFournisseur = ({ fournisseurId }: { fournisseurId?: number }) => 
         maskClosable={false}
         confirmLoading={loading}
       >
-        <Form form={form} layout="vertical">
+        <Form form={form} layout="vertical" onValuesChange={() => setFormDirty(true)}>
           <Row gutter={16}>
             <Col span={8}>
               <Form.Item
@@ -605,6 +645,7 @@ const CommandesFournisseur = ({ fournisseurId }: { fournisseurId?: number }) => 
                       icon={<PlusCircleOutlined />}
                       onClick={() => {
                         fournisseurForm.resetFields();
+                        setFournisseurFormDirty(false);
                         setFournisseurModalVisible(true);
                       }}
                     />
@@ -734,14 +775,14 @@ const CommandesFournisseur = ({ fournisseurId }: { fournisseurId?: number }) => 
       <Modal
         open={fournisseurModalVisible}
         title="Nouveau Fournisseur"
-        onCancel={() => setFournisseurModalVisible(false)}
+        onCancel={handleFournisseurModalCancel}
         onOk={handleFournisseurAdd}
         okText="Ajouter"
         cancelText="Annuler"
         destroyOnHidden
         width={1024}
       >
-        <Form layout="vertical" form={fournisseurForm} initialValues={{ evaluation: 0 }}>
+        <Form layout="vertical" form={fournisseurForm} initialValues={{ evaluation: 0 }} onValuesChange={() => setFournisseurFormDirty(true)}>
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item label="Nom" name="nom" rules={[{ required: true, message: "Champ requis" }]}>

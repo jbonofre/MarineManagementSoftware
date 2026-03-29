@@ -115,6 +115,7 @@ const FournisseurRemorques = ({
   const [fournisseurs, setFournisseurs] = useState<Fournisseur[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
+  const [formDirty, setFormDirty] = useState(false);
   const [editing, setEditing] = useState<Partial<FournisseurRemorque> | null>(null);
   const [form] = Form.useForm();
   const [fournisseurModalVisible, setFournisseurModalVisible] = useState(false);
@@ -210,12 +211,30 @@ const FournisseurRemorques = ({
     }
   };
 
+  const handleModalCancel = () => {
+    if (formDirty) {
+      Modal.confirm({
+        title: "Modifications non enregistrées",
+        content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
+        okText: "Fermer",
+        cancelText: "Annuler",
+        onOk: () => {
+          setFormDirty(false);
+          setModalVisible(false);
+        },
+      });
+    } else {
+      setModalVisible(false);
+    }
+  };
+
   const handleNew = () => {
     setEditing({
       ...defaultFournisseurRemorque,
       fournisseur: isFournisseurMode ? { id: fournisseurId!, nom: "" } : undefined,
       remorque: isRemorqueMode ? { id: remorqueId!, marque: "", modele: "" } : undefined,
     });
+    setFormDirty(false);
     setModalVisible(true);
     setTimeout(() => form.resetFields());
   };
@@ -226,6 +245,7 @@ const FournisseurRemorques = ({
       remorque: { ...record.remorque },
       fournisseur: { ...record.fournisseur },
     });
+    setFormDirty(false);
     setModalVisible(true);
     setTimeout(() => {
       if (isRemorqueMode) {
@@ -284,6 +304,7 @@ const FournisseurRemorques = ({
         message.success("Ajouté avec succès");
         setEditing(res.data);
       }
+      setFormDirty(false);
       fetchAssocies();
     } catch (e: any) {
       if (e.errorFields) return;
@@ -370,7 +391,7 @@ const FournisseurRemorques = ({
 
       <Modal
         open={modalVisible}
-        onCancel={() => setModalVisible(false)}
+        onCancel={handleModalCancel}
         onOk={handleModalOk}
         destroyOnHidden
         title={
@@ -389,6 +410,7 @@ const FournisseurRemorques = ({
           layout="vertical"
           initialValues={editing || defaultFournisseurRemorque}
           onValuesChange={(changed, all) => {
+            setFormDirty(true);
             if ("prixAchatHT" in changed || "tva" in changed) {
               let prixAchatHT = all.prixAchatHT ?? 0;
               let tva = all.tva ?? 20;

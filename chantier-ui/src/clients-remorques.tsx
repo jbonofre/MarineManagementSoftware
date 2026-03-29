@@ -66,6 +66,7 @@ function RemorquesClients({ clientId }: RemorquesClientsProps) {
   const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
+  const [formDirty, setFormDirty] = useState(false);
   const [editing, setEditing] = useState<RemorqueClient | null>(null);
   const [form] = Form.useForm();
   const [catalogueModalVisible, setCatalogueModalVisible] = useState(false);
@@ -122,9 +123,27 @@ function RemorquesClients({ clientId }: RemorquesClientsProps) {
     // eslint-disable-next-line
   }, [clientId]);
 
+  const handleModalCancel = () => {
+    if (formDirty) {
+      Modal.confirm({
+        title: "Modifications non enregistrées",
+        content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
+        okText: "Fermer",
+        cancelText: "Annuler",
+        onOk: () => {
+          setFormDirty(false);
+          setModalVisible(false);
+        },
+      });
+    } else {
+      setModalVisible(false);
+    }
+  };
+
   const handleAdd = () => {
     setEditing(null);
     form.resetFields();
+    setFormDirty(false);
     if (clientId) {
       form.setFieldsValue({ proprietaireId: clientId });
     }
@@ -133,6 +152,7 @@ function RemorquesClients({ clientId }: RemorquesClientsProps) {
 
   const handleEdit = (record: RemorqueClient) => {
     setEditing(record);
+    setFormDirty(false);
     form.setFieldsValue({
       ...record,
       dateMeS: record.dateMeS ? dayjs(record.dateMeS) : null,
@@ -232,6 +252,7 @@ function RemorquesClients({ clientId }: RemorquesClientsProps) {
           proprietaireId: created.proprietaire?.id || undefined,
         });
       }
+      setFormDirty(false);
       fetchRemorques();
     } catch (e) {
       if (e && e.response) {
@@ -299,14 +320,14 @@ function RemorquesClients({ clientId }: RemorquesClientsProps) {
       <Modal
         open={modalVisible}
         title={editing ? "Modifier la remorque" : "Ajouter une remorque"}
-        onCancel={() => setModalVisible(false)}
+        onCancel={handleModalCancel}
         onOk={handleModalOk}
         okText="Enregistrer"
         cancelText="Annuler"
         destroyOnHidden
         width={1024}
       >
-        <Form layout="vertical" form={form} initialValues={defaultRemorque}>
+        <Form layout="vertical" form={form} initialValues={defaultRemorque} onValuesChange={() => setFormDirty(true)}>
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item label="Immatriculation" name="immatriculation" rules={[{ required: true, message: "Immatriculation requise" }]}>

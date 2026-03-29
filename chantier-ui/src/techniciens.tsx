@@ -61,6 +61,7 @@ const Techniciens: React.FC = () => {
     const [isEdit, setIsEdit] = useState<boolean>(false);
     const [currentTechnicien, setCurrentTechnicien] = useState<TechnicienEntity | null>(null);
     const [form] = Form.useForm();
+    const [formDirty, setFormDirty] = useState(false);
     const [searchQuery, setSearchQuery] = useState<string>('');
     const [kpiDrawerVisible, setKpiDrawerVisible] = useState<boolean>(false);
     const [kpiLoading, setKpiLoading] = useState<boolean>(false);
@@ -98,7 +99,25 @@ const Techniciens: React.FC = () => {
             form.resetFields();
             form.setFieldsValue(defaultTechnicien);
         }
+        setFormDirty(false);
         setModalVisible(true);
+    };
+
+    const handleModalCancel = () => {
+        if (formDirty) {
+            Modal.confirm({
+                title: "Modifications non enregistrées",
+                content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
+                okText: "Fermer",
+                cancelText: "Annuler",
+                onOk: () => {
+                    setFormDirty(false);
+                    setModalVisible(false);
+                },
+            });
+        } else {
+            setModalVisible(false);
+        }
     };
 
     const handleModalOk = async () => {
@@ -112,11 +131,13 @@ const Techniciens: React.FC = () => {
             if (isEdit && currentTechnicien && currentTechnicien.id) {
                 const res = await axios.put(`/techniciens/${currentTechnicien.id}`, { ...currentTechnicien, ...payload });
                 message.success('Technicien modifié avec succès');
+                setFormDirty(false);
                 setCurrentTechnicien(res.data);
                 form.setFieldsValue(res.data);
             } else {
                 const res = await axios.post('/techniciens', payload);
                 message.success('Technicien ajouté avec succès');
+                setFormDirty(false);
                 setIsEdit(true);
                 setCurrentTechnicien(res.data);
                 form.setFieldsValue(res.data);
@@ -271,7 +292,7 @@ const Techniciens: React.FC = () => {
                             title={isEdit ? 'Modifier un technicien' : 'Ajouter un technicien'}
                             open={modalVisible}
                             onOk={handleModalOk}
-                            onCancel={() => setModalVisible(false)}
+                            onCancel={handleModalCancel}
                             maskClosable={false}
                             width={1024}
                             okText="Enregistrer"
@@ -282,6 +303,7 @@ const Techniciens: React.FC = () => {
                                 form={form}
                                 layout="vertical"
                                 initialValues={defaultTechnicien}
+                                onValuesChange={() => setFormDirty(true)}
                             >
                                 <Row gutter={16}>
                                     <Col span={12}>

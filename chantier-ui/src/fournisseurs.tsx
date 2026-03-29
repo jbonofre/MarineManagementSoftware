@@ -72,6 +72,7 @@ const Fournisseurs = () => {
   const [modalVisible, setModalVisible] = useState<boolean>(false);
   const [editing, setEditing] = useState<Fournisseur | null>(null);
   const [form] = Form.useForm();
+  const [formDirty, setFormDirty] = useState(false);
 
   // Fetch list
   const fetchFournisseurs = async () => {
@@ -94,13 +95,32 @@ const Fournisseurs = () => {
   const handleNew = () => {
     setEditing(null);
     form.resetFields();
+    setFormDirty(false);
     setModalVisible(true);
   };
 
   const handleEdit = (record: Fournisseur) => {
     setEditing(record);
     form.setFieldsValue(record);
+    setFormDirty(false);
     setModalVisible(true);
+  };
+
+  const handleModalCancel = () => {
+    if (formDirty) {
+      Modal.confirm({
+        title: "Modifications non enregistrées",
+        content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
+        okText: "Fermer",
+        cancelText: "Annuler",
+        onOk: () => {
+          setFormDirty(false);
+          setModalVisible(false);
+        },
+      });
+    } else {
+      setModalVisible(false);
+    }
   };
 
   const handleDelete = async (id?: number) => {
@@ -132,6 +152,7 @@ const Fournisseurs = () => {
         if (!res.ok) throw new Error();
         const updated = await res.json();
         message.success("Fournisseur modifié");
+        setFormDirty(false);
         setEditing(updated);
         form.setFieldsValue(updated);
       } else {
@@ -144,6 +165,7 @@ const Fournisseurs = () => {
         if (!res.ok) throw new Error();
         const created = await res.json();
         message.success("Fournisseur créé");
+        setFormDirty(false);
         setEditing(created);
         form.setFieldsValue(created);
       }
@@ -230,7 +252,7 @@ const Fournisseurs = () => {
       </Card>
       <Modal
         open={modalVisible}
-        onCancel={() => setModalVisible(false)}
+        onCancel={handleModalCancel}
         onOk={handleModalOk}
         destroyOnHidden
         title={editing ? "Modifier Fournisseur" : "Nouveau Fournisseur"}
@@ -244,6 +266,7 @@ const Fournisseurs = () => {
           form={form}
           layout="vertical"
           initialValues={defaultFournisseur}
+          onValuesChange={() => setFormDirty(true)}
         >
           <Row gutter={16}>
             <Col span={12}>

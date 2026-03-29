@@ -131,6 +131,7 @@ const HeliceCatalogueView: React.FC = () => {
     const [form] = Form.useForm();
     const [moteurs, setMoteurs] = useState<MoteurCatalogueEntity[]>([]);
     const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
+    const [formDirty, setFormDirty] = useState(false);
 
     const loadHelices = async () => {
         setLoading(true);
@@ -213,9 +214,27 @@ const HeliceCatalogueView: React.FC = () => {
         }
     };
 
+    const handleModalCancel = () => {
+        if (formDirty) {
+            Modal.confirm({
+                title: "Modifications non enregistrées",
+                content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
+                okText: "Fermer",
+                cancelText: "Annuler",
+                onOk: () => {
+                    setFormDirty(false);
+                    setModalOpen(false);
+                },
+            });
+        } else {
+            setModalOpen(false);
+        }
+    };
+
     const openEditModal = (record: HeliceCatalogueEntity) => {
         setEditing(record);
         setModalMode('edit');
+        setFormDirty(false);
         setModalOpen(true);
         const moteurIds =
             record.moteursCompatibles?.map((m) => m.id).filter((id): id is number => typeof id === 'number') ||
@@ -229,6 +248,7 @@ const HeliceCatalogueView: React.FC = () => {
     const openCreateModal = () => {
         setEditing(null);
         setModalMode('create');
+        setFormDirty(false);
         setModalOpen(true);
         form.resetFields();
     };
@@ -259,6 +279,7 @@ const HeliceCatalogueView: React.FC = () => {
                 ...result,
                 moteursCompatibles: moteurIds,
             });
+            setFormDirty(false);
             await loadHelices();
             await loadMoteurs();
         } catch (e: any) {
@@ -312,6 +333,7 @@ const HeliceCatalogueView: React.FC = () => {
     ];
 
     const onValuesChange = (changedValues, allValues) => {
+        setFormDirty(true);
         if (changedValues.prixVenteHT || changedValues.tva) {
             const prixVenteHT = form.getFieldValue('prixVenteHT');
             const tva = form.getFieldValue('tva');
@@ -365,7 +387,7 @@ const HeliceCatalogueView: React.FC = () => {
                     <Modal
                         open={modalOpen}
                         title={modalMode === 'edit' ? 'Modifier une Hélice' : 'Nouvelle Hélice'}
-                        onCancel={() => setModalOpen(false)}
+                        onCancel={handleModalCancel}
                         onOk={handleModalOk}
                         okText="Enregistrer"
                         cancelText="Annuler"

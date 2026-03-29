@@ -120,6 +120,7 @@ const MoteurCatalogue = () => {
   const [helices, setHelices] = useState<Helice[]>([]);
   const [form] = Form.useForm();
   const [editingMoteur, setEditingMoteur] = useState<Moteur | null>(null);
+  const [formDirty, setFormDirty] = useState(false);
 
   const fetchMoteurs = async () => {
     setLoading(true);
@@ -153,8 +154,26 @@ const MoteurCatalogue = () => {
     fetchHelices();
   }, []);
 
+  const handleModalCancel = () => {
+    if (formDirty) {
+      Modal.confirm({
+        title: "Modifications non enregistrées",
+        content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
+        okText: "Fermer",
+        cancelText: "Annuler",
+        onOk: () => {
+          setFormDirty(false);
+          setModalVisible(false);
+        },
+      });
+    } else {
+      setModalVisible(false);
+    }
+  };
+
   const openModal = (record = null) => {
     setEditingMoteur(record);
+    setFormDirty(false);
     setModalVisible(true);
     if (record) {
       form.setFieldsValue({
@@ -207,6 +226,7 @@ const MoteurCatalogue = () => {
           helicesCompatibles: (res.data.helicesCompatibles || []).map((h: { id: number }) => h.id),
         });
       }
+      setFormDirty(false);
       await fetchMoteurs();
       await fetchHelices();
     } catch (err) {
@@ -270,6 +290,7 @@ const MoteurCatalogue = () => {
   ];
 
   const onValuesChange = (changedValues, allValues) => {
+    setFormDirty(true);
     if (Object.prototype.hasOwnProperty.call(changedValues, 'puissanceCv')
       && !Object.prototype.hasOwnProperty.call(changedValues, 'puissanceKw')) {
       const puissanceCv = Number(form.getFieldValue('puissanceCv')) || 0;
@@ -342,7 +363,7 @@ const MoteurCatalogue = () => {
             open={modalVisible}
             title={editingMoteur ? 'Modifier un moteur' : 'Ajouter un moteur'}
             onOk={handleModalOk}
-            onCancel={() => setModalVisible(false)}
+            onCancel={handleModalCancel}
             maskClosable={false}
             okText="Enregistrer"
             cancelText="Annuler"

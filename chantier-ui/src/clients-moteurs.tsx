@@ -69,6 +69,7 @@ const ClientsMoteurs: React.FC<ClientsMoteursProps> = ({ clientId }) => {
   const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
+  const [formDirty, setFormDirty] = useState(false);
   const [editing, setEditing] = useState<MoteurClient | null>(null);
   const [form] = Form.useForm();
   const [catalogueModalVisible, setCatalogueModalVisible] = useState(false);
@@ -124,9 +125,27 @@ const ClientsMoteurs: React.FC<ClientsMoteursProps> = ({ clientId }) => {
     // eslint-disable-next-line
   }, [clientId]);
 
+  const handleModalCancel = () => {
+    if (formDirty) {
+      Modal.confirm({
+        title: "Modifications non enregistrées",
+        content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
+        okText: "Fermer",
+        cancelText: "Annuler",
+        onOk: () => {
+          setFormDirty(false);
+          setModalVisible(false);
+        },
+      });
+    } else {
+      setModalVisible(false);
+    }
+  };
+
   const handleAdd = () => {
     setEditing(null);
     form.resetFields();
+    setFormDirty(false);
     if (clientId) {
       form.setFieldsValue({ proprietaireId: clientId });
     }
@@ -135,6 +154,7 @@ const ClientsMoteurs: React.FC<ClientsMoteursProps> = ({ clientId }) => {
 
   const handleEdit = (record: MoteurClient) => {
     setEditing(record);
+    setFormDirty(false);
     form.setFieldsValue({
       ...record,
       dateMeS: record.dateMeS ? dayjs(record.dateMeS) : null,
@@ -236,6 +256,7 @@ const ClientsMoteurs: React.FC<ClientsMoteursProps> = ({ clientId }) => {
           images: created.images ?? [],
         });
       }
+      setFormDirty(false);
       fetchMoteurs();
     } catch (e: any) {
       if (e && e.response) {
@@ -322,14 +343,14 @@ const ClientsMoteurs: React.FC<ClientsMoteursProps> = ({ clientId }) => {
       <Modal
         open={modalVisible}
         title={editing ? "Modifier le moteur" : "Ajouter un moteur"}
-        onCancel={() => setModalVisible(false)}
+        onCancel={handleModalCancel}
         onOk={handleModalOk}
         okText="Enregistrer"
         cancelText="Annuler"
         destroyOnHidden
         width={1024}
       >
-        <Form layout="vertical" form={form} initialValues={defaultMoteur}>
+        <Form layout="vertical" form={form} initialValues={defaultMoteur} onValuesChange={() => setFormDirty(true)}>
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item label="Numéro de série" name="numeroSerie" rules={[{ required: true, message: "Numéro de série requis" }]}>

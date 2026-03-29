@@ -264,6 +264,7 @@ export default function Planning() {
     const [selectedStatus, setSelectedStatus] = useState<PlanningStatus | undefined>(undefined);
     const [selectedTechnicien, setSelectedTechnicien] = useState<number | undefined>(undefined);
     const [modalVisible, setModalVisible] = useState(false);
+    const [formDirty, setFormDirty] = useState(false);
     const [saving, setSaving] = useState(false);
     const [currentRow, setCurrentRow] = useState<PlanningItemRow | null>(null);
     const [form] = Form.useForm<PlanningFormValues>();
@@ -336,7 +337,29 @@ export default function Planning() {
             status: row.item.status === 'EN_ATTENTE' ? 'PLANIFIEE' : (row.item.status || 'PLANIFIEE'),
             technicienIds: (row.item.techniciens || []).map(t => t.id),
         });
+        setFormDirty(false);
         setModalVisible(true);
+    };
+
+    const handleModalCancel = () => {
+        if (formDirty) {
+            Modal.confirm({
+                title: "Modifications non enregistrées",
+                content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
+                okText: "Fermer",
+                cancelText: "Annuler",
+                onOk: () => {
+                    setFormDirty(false);
+                    setModalVisible(false);
+                    setCurrentRow(null);
+                    form.resetFields();
+                },
+            });
+        } else {
+            setModalVisible(false);
+            setCurrentRow(null);
+            form.resetFields();
+        }
     };
 
 
@@ -476,6 +499,7 @@ export default function Planning() {
 
             const res = await axios.put(`/ventes/${venteId}`, updatedVente);
             message.success('Planning mis a jour.');
+            setFormDirty(false);
             const savedVente = res.data as VenteEntity;
             const savedList = savedVente[listKey] || [];
             const savedEntry = savedList[itemToUpdateIndex] || latestList[itemToUpdateIndex];
@@ -953,14 +977,10 @@ export default function Planning() {
                 confirmLoading={saving}
                 cancelText="Annuler"
                 width={720}
-                onCancel={() => {
-                    setModalVisible(false);
-                    setCurrentRow(null);
-                    form.resetFields();
-                }}
+                onCancel={handleModalCancel}
                 destroyOnHidden
             >
-                <Form form={form} layout="vertical">
+                <Form form={form} layout="vertical" onValuesChange={() => setFormDirty(true)}>
                     <Form.Item
                         name="date"
                         label="Date et heure planifiees"

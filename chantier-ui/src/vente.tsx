@@ -463,6 +463,9 @@ export default function Vente() {
     const [catalogueRemorques, setCatalogueRemorques] = useState<Array<{ id: number; marque?: string; modele?: string }>>([]);
     const [loading, setLoading] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
+    const [formDirty, setFormDirty] = useState(false);
+    const suppressDirtyRef = React.useRef(false);
+    const savedLinesRef = React.useRef<{ forfaitIds: number[]; serviceIds: number[]; produitIds: number[] }>({ forfaitIds: [], serviceIds: [], produitIds: [] });
     const [isEdit, setIsEdit] = useState(false);
     const [currentVente, setCurrentVente] = useState<VenteEntity | null>(null);
     const [rappelHistorique, setRappelHistorique] = useState<RappelHistoriqueEntity[]>([]);
@@ -1046,6 +1049,14 @@ export default function Vente() {
         } catch { }
     };
 
+    const snapshotSavedLines = (vente?: VenteEntity | null) => {
+        savedLinesRef.current = {
+            forfaitIds: (vente?.venteForfaits || []).map(vf => vf.forfait?.id).filter(Boolean).sort() as number[],
+            serviceIds: (vente?.venteServices || []).map(vs => vs.service?.id).filter(Boolean).sort() as number[],
+            produitIds: (vente?.produits || []).map(p => p?.id).filter(Boolean).sort() as number[],
+        };
+    };
+
     const populateForm = (vente: VenteEntity) => {
         const venteForfaitLines = (vente.venteForfaits || []).map(vf => ({
             forfaitId: vf.forfait?.id,
@@ -1110,10 +1121,47 @@ export default function Vente() {
         });
     };
 
+    const handleModalCancel = () => {
+        const venteForfaits = form.getFieldValue('venteForfaits') || [];
+        const venteServices = form.getFieldValue('venteServices') || [];
+        const venteProduits = form.getFieldValue('produits') || [];
+        const currentForfaitIds = venteForfaits.map((l: { forfaitId?: number }) => l.forfaitId).filter(Boolean).sort() as number[];
+        const currentServiceIds = venteServices.map((l: { serviceId?: number }) => l.serviceId).filter(Boolean).sort() as number[];
+        const currentProduitIds = venteProduits.map((l: { produitId?: number }) => l.produitId).filter(Boolean).sort() as number[];
+        const saved = savedLinesRef.current;
+        const linesChanged =
+            JSON.stringify(currentForfaitIds) !== JSON.stringify(saved.forfaitIds) ||
+            JSON.stringify(currentServiceIds) !== JSON.stringify(saved.serviceIds) ||
+            JSON.stringify(currentProduitIds) !== JSON.stringify(saved.produitIds);
+
+        if (linesChanged) {
+            Modal.warning({
+                title: "Impossible de fermer",
+                content: "Des forfaits, services ou produits n'ont pas été enregistrés. Veuillez enregistrer avant de fermer.",
+            });
+        } else if (formDirty) {
+            Modal.confirm({
+                title: "Modifications non enregistrées",
+                content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
+                okText: "Fermer",
+                cancelText: "Annuler",
+                onOk: () => {
+                    setFormDirty(false);
+                    setModalVisible(false);
+                },
+            });
+        } else {
+            setModalVisible(false);
+        }
+    };
+
     const openModal = async (vente?: VenteEntity) => {
+        suppressDirtyRef.current = true;
         if (vente) {
             setIsEdit(true);
             setCurrentVente(vente);
+            snapshotSavedLines(vente);
+            setFormDirty(false);
             setModalVisible(true);
             if (vente.id) {
                 axios.get<RappelHistoriqueEntity[]>(`/rappels/vente/${vente.id}`).then(res => setRappelHistorique(res.data)).catch(() => setRappelHistorique([]));
@@ -1122,6 +1170,7 @@ export default function Vente() {
                     const res = await axios.get<VenteEntity>(`/ventes/${vente.id}`);
                     const fullVente = res.data;
                     setCurrentVente(fullVente);
+                    snapshotSavedLines(fullVente);
                     populateForm(fullVente);
                 } catch {
                     populateForm(vente);
@@ -1133,10 +1182,13 @@ export default function Vente() {
             setIsEdit(false);
             setCurrentVente(null);
             setRappelHistorique([]);
+            snapshotSavedLines(null);
             form.resetFields();
             form.setFieldsValue({ ...defaultVente, date: getTodayIsoDate() });
+            setFormDirty(false);
             setModalVisible(true);
         }
+        setTimeout(() => { suppressDirtyRef.current = false; }, 0);
     };
 
     const toPayload = (values: VenteFormValues): VenteEntity => ({
@@ -1221,18 +1273,23 @@ export default function Vente() {
         try {
             const values = await form.validateFields();
             const payload = toPayload(values);
+            suppressDirtyRef.current = true;
             if (isEdit && currentVente?.id) {
                 const res = await axios.put(`/ventes/${currentVente.id}`, { ...currentVente, ...payload });
                 message.success('Vente modifiee avec succes');
                 setCurrentVente(res.data);
-                form.setFieldsValue(values);
+                snapshotSavedLines(res.data);
+                populateForm(res.data);
             } else {
                 const res = await axios.post('/ventes', payload);
                 message.success('Vente ajoutee avec succes');
                 setIsEdit(true);
                 setCurrentVente(res.data);
-                form.setFieldsValue(values);
+                snapshotSavedLines(res.data);
+                populateForm(res.data);
             }
+            setFormDirty(false);
+            setTimeout(() => { suppressDirtyRef.current = false; }, 0);
             fetchVentes(filters);
         } catch {
             // Les erreurs de validation sont affichees par le formulaire.
@@ -1518,6 +1575,9 @@ export default function Vente() {
     };
 
     const onValuesChange = (changedValues: Partial<VenteFormValues>, allValues: VenteFormValues) => {
+        if (!suppressDirtyRef.current) {
+            setFormDirty(true);
+        }
         if (changedValues.venteForfaits !== undefined) {
             const currentForfaitLines = allValues.venteForfaits || [];
             if (currentForfaitLines.length === 0) {
@@ -1773,7 +1833,7 @@ export default function Vente() {
             <Modal
                 title={isEdit ? 'Modifier une vente' : 'Ajouter une vente'}
                 open={modalVisible}
-                onCancel={() => setModalVisible(false)}
+                onCancel={handleModalCancel}
                 footer={[
                     <Button
                         key="print"
@@ -1801,7 +1861,7 @@ export default function Vente() {
                             Lien de paiement
                         </Button>
                     </Dropdown>,
-                    <Button key="cancel" onClick={() => setModalVisible(false)}>
+                    <Button key="cancel" onClick={handleModalCancel}>
                         Annuler
                     </Button>,
                     <Button key="save" type="primary" onClick={handleSave}>
