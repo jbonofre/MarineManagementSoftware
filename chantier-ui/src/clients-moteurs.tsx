@@ -28,6 +28,7 @@ import {
 } from "@ant-design/icons";
 import axios from "axios";
 import ImageUpload from './ImageUpload.tsx';
+import DocumentUpload from './DocumentUpload.tsx';
 import dayjs from "dayjs";
 
 const { Option } = Select;
@@ -48,6 +49,7 @@ interface MoteurClient {
 
 const defaultMoteur: MoteurClient = {
   images: [],
+  documents: [],
   numeroSerie: "",
   numeroClef: "",
   dateMeS: dayjs(),
@@ -416,6 +418,9 @@ const ClientsMoteurs: React.FC<ClientsMoteursProps> = ({ clientId }) => {
           <Form.Item label="Images" name="images">
             <ImageUpload />
           </Form.Item>
+          <Form.Item label="Documents" name="documents">
+            <DocumentUpload />
+          </Form.Item>
         </Form>
       </Modal>
       <Modal
@@ -501,6 +506,9 @@ const ClientsMoteurs: React.FC<ClientsMoteursProps> = ({ clientId }) => {
           </Form.Item>
           <Form.Item name="images" label="Images">
             <ImageUpload />
+          </Form.Item>
+          <Form.Item name="documents" label="Documents">
+            <DocumentUpload />
           </Form.Item>
           <Row gutter={16}>
             <Col span={12}>

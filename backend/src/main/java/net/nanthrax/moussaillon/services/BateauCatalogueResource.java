@@ -60,6 +60,7 @@ public class BateauCatalogueResource {
         entity.modele = updatedBateauCatalogue.modele;
         entity.marque = updatedBateauCatalogue.marque;
         entity.images = updatedBateauCatalogue.images;
+        entity.documents = updatedBateauCatalogue.documents;
         entity.type = updatedBateauCatalogue.type;
         entity.description = updatedBateauCatalogue.description;
         entity.evaluation = updatedBateauCatalogue.evaluation;

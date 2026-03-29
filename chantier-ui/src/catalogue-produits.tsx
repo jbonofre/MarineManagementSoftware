@@ -4,6 +4,7 @@ import { PlusCircleOutlined, EditOutlined, DeleteOutlined } from '@ant-design/ic
 import axios from 'axios';
 import FournisseurProduits from './fournisseur-produits.tsx';
 import ImageUpload from './ImageUpload.tsx';
+import DocumentUpload from './DocumentUpload.tsx';
 
 // --- Types ---
 
@@ -15,6 +16,7 @@ interface ProduitCatalogueEntity {
     ref: string;
     refs?: string[];
     images?: string[];
+    documents?: string[];
     description?: string;
     evaluation?: number;
     stock?: number;
@@ -37,6 +39,7 @@ const defaultProduit: ProduitCatalogueEntity = {
     ref: '',
     refs: [],
     images: [],
+    documents: [],
     description: '',
     evaluation: 0,
     stock: 0,
@@ -117,6 +120,7 @@ const CatalogueProduits: React.FC = () => {
         try {
             const values = await form.validateFields();
             values.images = values.images || [];
+            values.documents = values.documents || [];
             if (isEdit && currentProduit && currentProduit.id) {
                 const res = await axios.put(`/catalogue/produits/${currentProduit.id}`, { ...currentProduit, ...values });
                 message.success('Produit modifié avec succès');
@@ -316,6 +320,9 @@ const CatalogueProduits: React.FC = () => {
                                 </Row>
                                 <Form.Item name="images" label="Images">
                                     <ImageUpload />
+                                </Form.Item>
+                                <Form.Item name="documents" label="Documents">
+                                    <DocumentUpload />
                                 </Form.Item>
                                 <Form.Item name="refs" label="Références complémentaires">
                                     <Form.List name="refs">

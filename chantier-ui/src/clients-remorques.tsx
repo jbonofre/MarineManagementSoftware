@@ -27,6 +27,7 @@ import {
 } from "@ant-design/icons";
 import axios from "axios";
 import ImageUpload from './ImageUpload.tsx';
+import DocumentUpload from './DocumentUpload.tsx';
 import dayjs from "dayjs";
 
 const { Option } = Select;
@@ -46,6 +47,7 @@ interface RemorqueClient {
 
 const defaultRemorque: RemorqueClient = {
   images: [],
+  documents: [],
   immatriculation: "",
   dateMeS: dayjs(),
   dateAchat: dayjs(),
@@ -331,6 +333,9 @@ function RemorquesClients({ clientId }: RemorquesClientsProps) {
           </Row>
           <Form.Item label="Images" name="images">
             <ImageUpload />
+          </Form.Item>
+          <Form.Item label="Documents" name="documents">
+            <DocumentUpload />
           </Form.Item>
           {/* Association avec un modèle du catalogue */}
           <Form.Item label="Modèle catalogue" style={{ marginBottom: 0 }}>

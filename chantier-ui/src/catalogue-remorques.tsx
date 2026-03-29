@@ -18,6 +18,8 @@ import {
 } from "antd";
 import { PlusCircleOutlined, EditOutlined, DeleteOutlined, SearchOutlined } from "@ant-design/icons";
 import axios from "axios";
+import ImageUpload from "./ImageUpload.tsx";
+import DocumentUpload from "./DocumentUpload.tsx";
 import FournisseurRemorques from "./fournisseur-remorques.tsx";
 
 const style: React.CSSProperties = { padding: '8px 0' };
@@ -28,6 +30,8 @@ const defaultRemorque = {
   modele: "",
   marque: "",
   description: "",
+  images: [],
+  documents: [],
   evaluation: 0,
   ptac: 0,
   chargeAVide: 0,
@@ -339,6 +343,12 @@ const RemorqueCatalogue: React.FC = () => {
           </Row>
           <Form.Item name="description" label="Description">
             <Input.TextArea rows={3} />
+          </Form.Item>
+          <Form.Item name="images" label="Images">
+            <ImageUpload />
+          </Form.Item>
+          <Form.Item name="documents" label="Documents">
+            <DocumentUpload />
           </Form.Item>
           <Form.Item name="evaluation" label="Évaluation">
             <Rate allowHalf />

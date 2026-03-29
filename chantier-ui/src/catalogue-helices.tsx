@@ -4,6 +4,7 @@ import axios from 'axios';
 import { PlusCircleOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons';
 import FournisseurHelices from './fournisseur-helices.tsx';
 import ImageUpload from './ImageUpload.tsx';
+import DocumentUpload from './DocumentUpload.tsx';
 
 const style: React.CSSProperties = { padding: '8px 0' };
 const { Search } = Input;
@@ -23,6 +24,7 @@ interface HeliceCatalogueEntity {
     marque: string;
     description?: string;
     images: string[];
+    documents?: string[];
     evaluation?: number;
     diametre?: number;
     pas?: string;
@@ -44,6 +46,7 @@ const defaultHelice: HeliceCatalogueEntity = {
     marque: '',
     description: '',
     images: [],
+    documents: [],
     evaluation: 0,
     diametre: 0,
     pas: '',
@@ -400,6 +403,9 @@ const HeliceCatalogueView: React.FC = () => {
                             </Form.Item>
                             <Form.Item name="images" label="Images">
                                 <ImageUpload />
+                            </Form.Item>
+                            <Form.Item name="documents" label="Documents">
+                                <DocumentUpload />
                             </Form.Item>
                             <Row gutter={16}>
                                 <Col span={12}>

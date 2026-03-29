@@ -23,6 +23,7 @@ import {
   SearchOutlined,
 } from "@ant-design/icons";
 import axios from "axios";
+import DocumentUpload from "./DocumentUpload.tsx";
 import FournisseurBateaux from "./fournisseur-bateaux.tsx";
 import FournisseurHelices from "./fournisseur-helices.tsx";
 import FournisseurMoteurs from "./fournisseur-moteurs.tsx";
@@ -47,6 +48,7 @@ type Fournisseur = {
   tva?: string;
   naf?: string;
   connexion?: string;
+  documents?: string[];
 };
 
 const defaultFournisseur: Fournisseur = {
@@ -61,6 +63,7 @@ const defaultFournisseur: Fournisseur = {
   tva: "",
   naf: "",
   connexion: "",
+  documents: [],
 };
 
 const Fournisseurs = () => {
@@ -309,6 +312,9 @@ const Fournisseurs = () => {
               </Form.Item>
             </Col>
           </Row>
+          <Form.Item label="Documents" name="documents">
+            <DocumentUpload />
+          </Form.Item>
         </Form>
         {editing && <FournisseurBateaux fournisseurId={editing.id!} />}
         {editing && <FournisseurMoteurs fournisseurId={editing.id!} />}

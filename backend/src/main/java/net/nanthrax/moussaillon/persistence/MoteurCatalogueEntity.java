@@ -29,6 +29,8 @@ public class MoteurCatalogueEntity extends PanacheEntity {
 
     public List<String> images = new ArrayList<>();
 
+    public List<String> documents = new ArrayList<>();
+
     public double puissanceCv;
 
     public double puissanceKw;

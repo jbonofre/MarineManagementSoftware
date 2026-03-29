@@ -110,6 +110,7 @@ public class BateauClientResource {
         // Update simple fields
         entity.name = updated.name;
         entity.images = updated.images;
+        entity.documents = updated.documents;
         entity.immatriculation = updated.immatriculation;
         entity.numeroSerie = updated.numeroSerie;
         entity.numeroClef = updated.numeroClef;

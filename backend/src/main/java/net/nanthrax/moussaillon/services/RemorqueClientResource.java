@@ -58,6 +58,7 @@ public class RemorqueClientResource {
             throw new NotFoundException();
         }
         remorque.images = updatedRemorque.images;
+        remorque.documents = updatedRemorque.documents;
         remorque.immatriculation = updatedRemorque.immatriculation;
         remorque.dateMeS = updatedRemorque.dateMeS;
         remorque.dateAchat = updatedRemorque.dateAchat;

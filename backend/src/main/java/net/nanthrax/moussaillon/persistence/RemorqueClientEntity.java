@@ -20,6 +20,8 @@ public class RemorqueClientEntity extends PanacheEntity {
 
     public List<String> images = new ArrayList<>();
 
+    public List<String> documents = new ArrayList<>();
+
     @ManyToOne
     public ClientEntity proprietaire;
 

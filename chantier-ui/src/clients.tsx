@@ -29,6 +29,7 @@ import axios from "axios";
 import BateauxClients from "./clients-bateaux.tsx";
 import ClientsMoteurs from "./clients-moteurs.tsx";
 import RemorquesClients from "./clients-remorques.tsx";
+import DocumentUpload from "./DocumentUpload.tsx";
 
 const { Option } = Select;
 const { Search } = Input;
@@ -50,6 +51,7 @@ interface Client {
   siret?: string;
   tva?: string;
   naf?: string;
+  documents?: string[];
 }
 
 const defaultClient = {
@@ -68,6 +70,7 @@ const defaultClient = {
   siret: "",
   tva: "",
   naf: "",
+  documents: [],
 };
 
 const typeOptions = [
@@ -395,6 +398,9 @@ function Clients() {
           </Row>
           <Form.Item label="Notes" name="notes">
             <Input.TextArea rows={3} />
+          </Form.Item>
+          <Form.Item label="Documents" name="documents">
+            <DocumentUpload />
           </Form.Item>
         </Form>
         {editing && editing.id && (

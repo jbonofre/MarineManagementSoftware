@@ -4,6 +4,9 @@ import io.quarkus.hibernate.orm.panache.PanacheEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 public class FournisseurEntity extends PanacheEntity {
 
@@ -29,5 +32,7 @@ public class FournisseurEntity extends PanacheEntity {
     public String naf;
 
     public String connexion;
+
+    public List<String> documents = new ArrayList<>();
 
 }
