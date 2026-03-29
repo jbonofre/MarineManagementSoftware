@@ -4,6 +4,9 @@ import io.quarkus.hibernate.orm.panache.PanacheEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 public class RemorqueCatalogueEntity extends PanacheEntity {
 
@@ -14,6 +17,10 @@ public class RemorqueCatalogueEntity extends PanacheEntity {
     public String marque;
 
     public String description;
+
+    public List<String> images = new ArrayList<>();
+
+    public List<String> documents = new ArrayList<>();
 
     public int evaluation;
 

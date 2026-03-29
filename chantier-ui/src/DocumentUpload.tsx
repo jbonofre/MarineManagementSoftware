@@ -1,6 +1,6 @@
-import React from 'react';
-import { Upload, message, Button, List } from 'antd';
-import { DeleteOutlined, InboxOutlined, FileOutlined, FilePdfOutlined, FileWordOutlined, FileExcelOutlined, DownloadOutlined } from '@ant-design/icons';
+import React, { useState } from 'react';
+import { Upload, message, Button, List, Input, Space } from 'antd';
+import { DeleteOutlined, InboxOutlined, FileOutlined, FilePdfOutlined, FileWordOutlined, FileExcelOutlined, DownloadOutlined, LinkOutlined } from '@ant-design/icons';
 import type { UploadProps } from 'antd';
 import axios from 'axios';
 
@@ -29,6 +29,8 @@ const getFileIcon = (name: string) => {
 };
 
 const DocumentUpload: React.FC<DocumentUploadProps> = ({ value = [], onChange }) => {
+    const [urlInput, setUrlInput] = useState('');
+
     const triggerChange = (urls: string[]) => {
         onChange?.(urls);
     };
@@ -116,6 +118,28 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ value = [], onChange })
                 <p className="ant-upload-text">Cliquer ou glisser-déposer des documents ici</p>
                 <p className="ant-upload-hint">Formats acceptés : PDF, DOC, DOCX, XLS, XLSX, ODT, ODS, TXT, CSV</p>
             </Dragger>
+            <Space.Compact style={{ width: '100%', marginTop: 8 }}>
+                <Input
+                    prefix={<LinkOutlined />}
+                    placeholder="Ou ajouter une URL de document"
+                    value={urlInput}
+                    onChange={(e) => setUrlInput(e.target.value)}
+                    onPressEnter={() => {
+                        const trimmed = urlInput.trim();
+                        if (trimmed) {
+                            triggerChange([...value, trimmed]);
+                            setUrlInput('');
+                        }
+                    }}
+                />
+                <Button onClick={() => {
+                    const trimmed = urlInput.trim();
+                    if (trimmed) {
+                        triggerChange([...value, trimmed]);
+                        setUrlInput('');
+                    }
+                }}>Ajouter</Button>
+            </Space.Compact>
         </div>
     );
 };

@@ -91,6 +91,7 @@ public class ProduitCatalogueResource {
         entity.ref = produit.ref;
         entity.refs = produit.refs;
         entity.images = produit.images;
+        entity.documents = produit.documents;
         entity.description = produit.description;
         entity.evaluation = produit.evaluation;
         entity.stock = produit.stock;

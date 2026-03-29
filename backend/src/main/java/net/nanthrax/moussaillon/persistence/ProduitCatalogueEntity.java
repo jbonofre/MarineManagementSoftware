@@ -24,6 +24,8 @@ public class ProduitCatalogueEntity extends PanacheEntity {
 
     public List<String> images = new ArrayList<>();
 
+    public List<String> documents = new ArrayList<>();
+
     public String description;
 
     public double evaluation;

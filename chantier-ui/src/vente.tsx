@@ -2261,7 +2261,7 @@ export default function Vente() {
                             },
                             {
                                 key: 'images',
-                                label: 'Images',
+                                label: 'Images & Documents',
                                 children: (
                                     <>
                                         <Form.Item name="images" label="Images">

@@ -23,6 +23,8 @@ public class HeliceCatalogueEntity extends PanacheEntity {
 
     public List<String> images = new ArrayList<>();
 
+    public List<String> documents = new ArrayList<>();
+
     public double evaluation;
 
     public double diametre;

@@ -81,6 +81,7 @@ public class FournisseurResource {
         entity.tva = fournisseur.tva;
         entity.naf = fournisseur.naf;
         entity.connexion = fournisseur.connexion;
+        entity.documents = fournisseur.documents;
 
         return entity;
     }

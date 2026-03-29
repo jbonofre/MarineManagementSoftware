@@ -121,6 +121,7 @@ public class HeliceCatalogueResource {
         entity.montantTVA = helice.montantTVA;
         entity.prixVenteTTC = helice.prixVenteTTC;
         entity.images = helice.images;
+        entity.documents = helice.documents;
 
         return entity;
     }
