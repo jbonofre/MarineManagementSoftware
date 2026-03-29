@@ -5,7 +5,7 @@ import '@testing-library/jest-dom';
 
 const mockGet = jest.fn();
 const mockPost = jest.fn();
-jest.mock('axios', () => ({
+jest.mock('./api.ts', () => ({
     __esModule: true,
     default: {
         get: (...args: any[]) => mockGet(...args),
