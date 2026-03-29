@@ -11,6 +11,7 @@ import io.quarkus.scheduler.Scheduled;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+import net.nanthrax.moussaillon.persistence.EmailTemplateEntity;
 import net.nanthrax.moussaillon.persistence.RappelHistoriqueEntity;
 import net.nanthrax.moussaillon.persistence.SocieteEntity;
 import net.nanthrax.moussaillon.persistence.VenteEntity;
@@ -68,21 +69,30 @@ public class RappelScheduler {
             case COMPTOIR -> "vente comptoir";
         };
 
-        String subject = numeroRappel > 0
-                ? "Rappel " + numeroRappel + " - Votre " + typeLabel + " - " + societeNom
-                : "Rappel - Votre " + typeLabel + " - " + societeNom;
-
         String datePrevue = vente.date != null
                 ? new Timestamp(vente.date.getTime()).toLocalDateTime().toLocalDate().toString()
-                : "non definie";
+                : "non définie";
 
-        String body = "Bonjour " + clientName + ",\n\n"
-                + "Ceci est un rappel concernant votre " + typeLabel
-                + " (reference #" + vente.id + ").\n\n"
-                + "Date prevue : " + datePrevue + "\n"
-                + "Montant TTC : " + String.format("%.2f", vente.prixVenteTTC) + " EUR\n\n"
-                + "N'hesitez pas a nous contacter pour toute question.\n\n"
-                + "Cordialement,\n" + societeNom;
+        String numeroRappelStr = numeroRappel > 0 ? String.valueOf(numeroRappel) : "";
+
+        EmailTemplateEntity template = EmailTemplateEntity.findByType(EmailTemplateEntity.Type.RAPPEL);
+        String subject;
+        String body;
+        if (template != null) {
+            subject = applyVariables(template.sujet, clientName, typeLabel, vente, datePrevue, societeNom, numeroRappelStr);
+            body = applyVariables(template.contenu, clientName, typeLabel, vente, datePrevue, societeNom, numeroRappelStr);
+        } else {
+            subject = numeroRappel > 0
+                    ? "Rappel " + numeroRappel + " - Votre " + typeLabel + " - " + societeNom
+                    : "Rappel - Votre " + typeLabel + " - " + societeNom;
+            body = "Bonjour " + clientName + ",\n\n"
+                    + "Ceci est un rappel concernant votre " + typeLabel
+                    + " (référence #" + vente.id + ").\n\n"
+                    + "Date prévue : " + datePrevue + "\n"
+                    + "Montant TTC : " + String.format("%.2f", vente.prixVenteTTC) + " EUR\n\n"
+                    + "N'hésitez pas à nous contacter pour toute question.\n\n"
+                    + "Cordialement,\n" + societeNom;
+        }
 
         mailer.send(Mail.withText(vente.client.email, subject, body));
 
@@ -94,5 +104,16 @@ public class RappelScheduler {
         historique.contenu = body;
         historique.dateEnvoi = new Timestamp(System.currentTimeMillis());
         historique.persist();
+    }
+
+    private String applyVariables(String text, String clientName, String typeLabel, VenteEntity vente, String datePrevue, String societeNom, String numeroRappel) {
+        return text
+                .replace("{client}", clientName)
+                .replace("{typeVente}", typeLabel)
+                .replace("{reference}", String.valueOf(vente.id))
+                .replace("{datePrevue}", datePrevue)
+                .replace("{montantTTC}", String.format("%.2f", vente.prixVenteTTC))
+                .replace("{societe}", societeNom)
+                .replace("{numeroRappel}", numeroRappel);
     }
 }
