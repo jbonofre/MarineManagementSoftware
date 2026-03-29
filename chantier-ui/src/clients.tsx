@@ -25,7 +25,7 @@ import {
   MailOutlined,
   KeyOutlined,
 } from "@ant-design/icons";
-import axios from "axios";
+import api from "./api.ts";
 import BateauxClients from "./clients-bateaux.tsx";
 import ClientsMoteurs from "./clients-moteurs.tsx";
 import RemorquesClients from "./clients-remorques.tsx";
@@ -96,7 +96,7 @@ function Clients() {
       if (params.nom) searchParams.push(`nom=${encodeURIComponent(params.nom)}`);
       if (params.type) searchParams.push(`type=${encodeURIComponent(params.type)}`);
       if (searchParams.length) url += `/search?${searchParams.join("&")}`;
-      const res = await axios.get(url);
+      const res = await api.get(url);
       setClients(res.data);
     } catch {
       message.error("Erreur lors du chargement des clients");
@@ -133,7 +133,7 @@ function Clients() {
   const handleDelete = async (id) => {
     setLoading(true);
     try {
-      await axios.delete(`/clients/${id}`);
+      await api.delete(`/clients/${id}`);
       message.success("Client supprimé");
       fetchClients();
     } catch {
@@ -148,7 +148,7 @@ function Clients() {
       return;
     }
     try {
-      await axios.post(`/clients/${record.id}/send-password`);
+      await api.post(`/clients/${record.id}/send-password`);
       message.success(`Mot de passe envoye a ${record.email}`);
     } catch {
       message.error("Erreur lors de l'envoi du mot de passe");
@@ -161,14 +161,14 @@ function Clients() {
       setLoading(true);
       if (editing && editing.id) {
         // update
-        const res = await axios.put(`/clients/${editing.id}`, values);
+        const res = await api.put(`/clients/${editing.id}`, values);
         message.success("Client modifié");
         const updated = res.data;
         setEditing(updated);
         form.setFieldsValue(updated);
       } else {
         // create
-        const res = await axios.post("/clients", values);
+        const res = await api.post("/clients", values);
         message.success("Client ajouté");
         const created = res.data;
         setEditing(created);
@@ -247,7 +247,7 @@ function Clients() {
           onSearch={async (value) => {
             setLoading(true);
             try {
-              const response = await axios.get('/clients/search', { params: { q: value } });
+              const response = await api.get('/clients/search', { params: { q: value } });
               setClients(response.data);
             } catch (error) {
               message.error('Erreur lors de la recherche');

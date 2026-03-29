@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Upload, Image, message, Button, Input, Space } from 'antd';
 import { DeleteOutlined, InboxOutlined, LinkOutlined } from '@ant-design/icons';
 import type { UploadProps } from 'antd';
-import axios from 'axios';
+import api from './api.ts';
 
 const { Dragger } = Upload;
 
@@ -23,7 +23,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({ value = [], onChange }) => {
         const formData = new FormData();
         formData.append('files', file as File);
         try {
-            const res = await axios.post('/images', formData, {
+            const res = await api.post('/images', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
             const urls: string[] = res.data;

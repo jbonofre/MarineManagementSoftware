@@ -1,3 +1,4 @@
+import { fetchWithAuth } from './api.ts';
 import React, { useEffect, useState } from 'react';
 import { Layout, Input, Col, Row, Image, Menu, Form, Modal, message, ConfigProvider, theme as antdTheme, Switch as AntSwitch } from 'antd';
 import { Route, Switch } from 'react-router';
@@ -184,7 +185,7 @@ function Header(props) {
                             if (!shouldChangePassword) {
                                 return Promise.resolve();
                             }
-                            return fetch(`/users/${encodeURIComponent(props.user)}/change-password`, {
+                            return fetchWithAuth(`/users/${encodeURIComponent(props.user)}/change-password`, {
                                 method: 'POST',
                                 headers: {
                                     'Content-Type': 'application/json'
@@ -205,7 +206,7 @@ function Header(props) {
                             if (!shouldChangeTheme) {
                                 return Promise.resolve();
                             }
-                            return fetch(`/users/${encodeURIComponent(props.user)}`)
+                            return fetchWithAuth(`/users/${encodeURIComponent(props.user)}`)
                                 .then(async (response) => {
                                     if (!response.ok) {
                                         const errorText = await response.text();
@@ -214,7 +215,7 @@ function Header(props) {
                                     return response.json();
                                 })
                                 .then((userData) => {
-                                    return fetch(`/users/${encodeURIComponent(props.user)}`, {
+                                    return fetchWithAuth(`/users/${encodeURIComponent(props.user)}`, {
                                         method: 'PUT',
                                         headers: {
                                             'Content-Type': 'application/json'
@@ -346,7 +347,7 @@ export default function Workspace(props) {
     const [ theme, setTheme ] = useState<UserTheme>('LIGHT');
 
     useEffect(() => {
-        fetch(`/users/${encodeURIComponent(props.user)}`)
+        fetchWithAuth(`/users/${encodeURIComponent(props.user)}`)
             .then((response) => {
                 if (!response.ok) {
                     return null;

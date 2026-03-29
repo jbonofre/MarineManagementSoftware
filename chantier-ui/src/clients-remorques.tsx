@@ -25,7 +25,7 @@ import {
   SearchOutlined,
   DeleteOutlined as DeleteIcon,
 } from "@ant-design/icons";
-import axios from "axios";
+import api from "./api.ts";
 import ImageUpload from './ImageUpload.tsx';
 import DocumentUpload from './DocumentUpload.tsx';
 import dayjs from "dayjs";
@@ -80,7 +80,7 @@ function RemorquesClients({ clientId }: RemorquesClientsProps) {
       if (q && q.trim() !== "") {
         url = `/remorques/search?q=${encodeURIComponent(q)}`;
       }
-      const res = await axios.get(url);
+      const res = await api.get(url);
       let remorquesData = res.data;
       // Filter by clientId if provided (property: proprietaire.id)
       if (clientId) {
@@ -98,7 +98,7 @@ function RemorquesClients({ clientId }: RemorquesClientsProps) {
 
   const fetchRemorquesCatalogue = async () => {
     try {
-      const res = await axios.get("/catalogue/remorques");
+      const res = await api.get("/catalogue/remorques");
       setRemorquesCatalogue(res.data);
     } catch {
       message.error("Erreur lors du chargement du catalogue de remorques");
@@ -108,7 +108,7 @@ function RemorquesClients({ clientId }: RemorquesClientsProps) {
 
   const fetchClients = async () => {
     try {
-      const res = await axios.get("/clients");
+      const res = await api.get("/clients");
       setClients(res.data);
     } catch {
       setClients([]);
@@ -148,7 +148,7 @@ function RemorquesClients({ clientId }: RemorquesClientsProps) {
     if (!id) return;
     setLoading(true);
     try {
-      await axios.delete(`/remorques/${id}`);
+      await api.delete(`/remorques/${id}`);
       message.success("Remorque supprimée");
       fetchRemorques();
     } catch {
@@ -160,7 +160,7 @@ function RemorquesClients({ clientId }: RemorquesClientsProps) {
   const handleClientAdd = async () => {
     try {
       const values = await clientForm.validateFields();
-      const res = await axios.post("/clients", values);
+      const res = await api.post("/clients", values);
       message.success("Client ajouté");
       setClientModalVisible(false);
       clientForm.resetFields();
@@ -176,7 +176,7 @@ function RemorquesClients({ clientId }: RemorquesClientsProps) {
   const handleCatalogueAdd = async () => {
     try {
       const values = await catalogueForm.validateFields();
-      const res = await axios.post("/catalogue/remorques", values);
+      const res = await api.post("/catalogue/remorques", values);
       message.success("Remorque catalogue ajoutée");
       setCatalogueModalVisible(false);
       catalogueForm.resetFields();
@@ -205,7 +205,7 @@ function RemorquesClients({ clientId }: RemorquesClientsProps) {
       };
       if (editing && editing.id) {
         // update
-        const res = await axios.put(`/remorques/${editing.id}`, payload);
+        const res = await api.put(`/remorques/${editing.id}`, payload);
         message.success("Remorque modifiée");
         const updated = res.data;
         setEditing(updated);
@@ -219,7 +219,7 @@ function RemorquesClients({ clientId }: RemorquesClientsProps) {
         });
       } else {
         // create
-        const res = await axios.post("/remorques", payload);
+        const res = await api.post("/remorques", payload);
         message.success("Remorque ajoutée");
         const created = res.data;
         setEditing(created);

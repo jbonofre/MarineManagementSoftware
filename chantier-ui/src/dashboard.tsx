@@ -1,3 +1,4 @@
+import { fetchWithAuth } from './api.ts';
 import React, { useEffect, useState } from 'react';
 import { ArrowDownOutlined, ArrowUpOutlined, ClockCircleOutlined, WarningOutlined } from '@ant-design/icons';
 import { Badge, Button, Card, Col, Empty, List, Progress, Row, Space, Spin, Statistic, Table, Tag, Typography } from 'antd';
@@ -183,7 +184,7 @@ export default function Dashboard() {
     const [warnings, setWarnings] = useState<PlanningWarning[]>([]);
 
     useEffect(() => {
-        const ventesPromise = fetch('/ventes')
+        const ventesPromise = fetchWithAuth('/ventes')
             .then(res => res.json())
             .then((ventes: Array<Record<string, unknown>>) => {
                 setWarnings(buildWarnings(ventes));
@@ -196,7 +197,7 @@ export default function Dashboard() {
             });
 
         Promise.all([
-            fetch('/dashboard').then(res => res.json()),
+            fetchWithAuth('/dashboard').then(res => res.json()),
             ventesPromise,
         ])
             .then(([d, caDuMois]: [DashboardData, number]) => {

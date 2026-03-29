@@ -3,6 +3,7 @@ package net.nanthrax.moussaillon.services;
 import java.util.List;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
@@ -26,9 +27,30 @@ import net.nanthrax.moussaillon.persistence.VenteEntity;
 @Consumes(MediaType.APPLICATION_JSON)
 public class ClientPortalResource {
 
+    @Inject
+    TokenService tokenService;
+
     public static class LoginRequest {
         public String email;
         public String password;
+    }
+
+    public static class AuthResponse {
+        public String token;
+        public long id;
+        public String prenom;
+        public String nom;
+        public String type;
+        public String email;
+        public String telephone;
+        public String adresse;
+        public boolean consentement;
+        public double evaluation;
+        public double remise;
+        public String siren;
+        public String siret;
+        public String tva;
+        public String naf;
     }
 
     public static class ChangePasswordRequest {
@@ -38,7 +60,8 @@ public class ClientPortalResource {
 
     @POST
     @Path("/login")
-    public ClientEntity login(LoginRequest request) {
+    @Transactional
+    public Response login(LoginRequest request) {
         if (request == null || request.email == null || request.email.isBlank()) {
             throw new WebApplicationException("L'email est requis", Response.Status.BAD_REQUEST);
         }
@@ -50,10 +73,31 @@ public class ClientPortalResource {
         if (request.password == null || request.password.isBlank()) {
             throw new WebApplicationException("Le mot de passe est requis", Response.Status.BAD_REQUEST);
         }
-        if (client.motDePasse == null || !request.password.equals(client.motDePasse)) {
+        if (!PasswordUtil.verify(request.password, client.motDePasse)) {
             throw new WebApplicationException("Mot de passe invalide", Response.Status.UNAUTHORIZED);
         }
-        return client;
+        // Opportunistic rehash of legacy plaintext passwords
+        if (PasswordUtil.needsRehash(client.motDePasse)) {
+            client.motDePasse = PasswordUtil.hash(request.password);
+        }
+
+        AuthResponse auth = new AuthResponse();
+        auth.token = tokenService.generateToken(String.valueOf(client.id), "client", client.email, client.id);
+        auth.id = client.id;
+        auth.prenom = client.prenom;
+        auth.nom = client.nom;
+        auth.type = client.type;
+        auth.email = client.email;
+        auth.telephone = client.telephone;
+        auth.adresse = client.adresse;
+        auth.consentement = client.consentement;
+        auth.evaluation = client.evaluation;
+        auth.remise = client.remise;
+        auth.siren = client.siren;
+        auth.siret = client.siret;
+        auth.tva = client.tva;
+        auth.naf = client.naf;
+        return Response.ok(auth).build();
     }
 
     @POST
@@ -70,10 +114,10 @@ public class ClientPortalResource {
         if (client == null) {
             return Response.status(Response.Status.NOT_FOUND).entity("Client non trouve.").build();
         }
-        if (client.motDePasse == null || !client.motDePasse.equals(request.currentPassword)) {
+        if (!PasswordUtil.verify(request.currentPassword, client.motDePasse)) {
             return Response.status(Response.Status.UNAUTHORIZED).entity("Mot de passe actuel invalide.").build();
         }
-        client.motDePasse = request.newPassword;
+        client.motDePasse = PasswordUtil.hash(request.newPassword);
         return Response.noContent().build();
     }
 
@@ -84,6 +128,7 @@ public class ClientPortalResource {
         if (entity == null) {
             throw new WebApplicationException("Client non trouve", Response.Status.NOT_FOUND);
         }
+        entity.motDePasse = null;
         return entity;
     }
 

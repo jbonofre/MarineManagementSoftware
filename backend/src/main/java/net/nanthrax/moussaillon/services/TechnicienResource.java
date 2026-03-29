@@ -17,23 +17,33 @@ public class TechnicienResource {
 
     @GET
     public List<TechnicienEntity> list() {
-        return TechnicienEntity.listAll();
+        List<TechnicienEntity> techniciens = TechnicienEntity.listAll();
+        techniciens.forEach(t -> t.motDePasse = null);
+        return techniciens;
     }
 
     @GET
     @Path("/search")
     public List<TechnicienEntity> search(@QueryParam("q") String q) {
         if (q == null || q.trim().isEmpty()) {
-            return TechnicienEntity.listAll();
+            return list();
         }
         String likePattern = "%" + q.toLowerCase() + "%";
-        return TechnicienEntity.list("LOWER(nom) LIKE ?1 OR LOWER(prenom) LIKE ?1 OR LOWER(email) LIKE ?1 OR LOWER(telephone) LIKE ?1", likePattern);
+        List<TechnicienEntity> techniciens = TechnicienEntity.list("LOWER(nom) LIKE ?1 OR LOWER(prenom) LIKE ?1 OR LOWER(email) LIKE ?1 OR LOWER(telephone) LIKE ?1", likePattern);
+        techniciens.forEach(t -> t.motDePasse = null);
+        return techniciens;
     }
 
     @POST
     @Transactional
     public TechnicienEntity create(TechnicienEntity technicien) {
+        if (technicien.motDePasse != null && !technicien.motDePasse.isBlank()) {
+            technicien.motDePasse = PasswordUtil.hash(technicien.motDePasse);
+        }
         technicien.persist();
+        technicien.flush();
+        TechnicienEntity.getEntityManager().detach(technicien);
+        technicien.motDePasse = null;
         return technicien;
     }
 
@@ -44,6 +54,7 @@ public class TechnicienResource {
         if (entity == null) {
             throw new WebApplicationException("Le technicien (" + id + ") n'est pas trouvé", 404);
         }
+        entity.motDePasse = null;
         return entity;
     }
 
@@ -70,11 +81,16 @@ public class TechnicienResource {
 
         entity.nom = technicien.nom;
         entity.prenom = technicien.prenom;
-        entity.motDePasse = technicien.motDePasse;
+        if (technicien.motDePasse != null && !technicien.motDePasse.isBlank()) {
+            entity.motDePasse = PasswordUtil.hash(technicien.motDePasse);
+        }
         entity.email = technicien.email;
         entity.telephone = technicien.telephone;
         entity.couleur = technicien.couleur;
 
+        entity.flush();
+        TechnicienEntity.getEntityManager().detach(entity);
+        entity.motDePasse = null;
         return entity;
     }
 

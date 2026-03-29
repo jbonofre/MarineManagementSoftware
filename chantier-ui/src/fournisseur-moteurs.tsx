@@ -26,7 +26,7 @@ import {
   PlusCircleOutlined,
   ShrinkOutlined,
 } from "@ant-design/icons";
-import axios from "axios";
+import api from "./api.ts";
 import ImageUpload from './ImageUpload.tsx';
 
 const { Option } = Select;
@@ -141,7 +141,7 @@ const FournisseurMoteurs = ({
         url = `/fournisseur-moteur/fournisseur/${fournisseurId}`;
       }
       if (url) {
-        const { data } = await axios.get(url);
+        const { data } = await api.get(url);
         setMoteursAssocies(data);
       }
     } catch {
@@ -155,7 +155,7 @@ const FournisseurMoteurs = ({
   const fetchMoteursCatalogue = async () => {
     setLoading(true);
     try {
-      const { data } = await axios.get("/catalogue/moteurs");
+      const { data } = await api.get("/catalogue/moteurs");
       setMoteursCatalogue(data);
     } catch {
       message.error("Erreur lors du chargement du catalogue moteurs");
@@ -168,7 +168,7 @@ const FournisseurMoteurs = ({
   const fetchFournisseurs = async () => {
     setLoading(true);
     try {
-      const { data } = await axios.get("/catalogue/fournisseurs");
+      const { data } = await api.get("/catalogue/fournisseurs");
       setFournisseurs(data);
     } catch {
       message.error("Erreur lors du chargement des fournisseurs");
@@ -192,7 +192,7 @@ const FournisseurMoteurs = ({
   const handleMoteurAdd = async () => {
     try {
       const values = await moteurForm.validateFields();
-      const res = await axios.post("/catalogue/moteurs", values);
+      const res = await api.post("/catalogue/moteurs", values);
       message.success("Moteur créé");
       setMoteurModalVisible(false);
       moteurForm.resetFields();
@@ -207,7 +207,7 @@ const FournisseurMoteurs = ({
   const handleFournisseurAdd = async () => {
     try {
       const values = await fournisseurForm.validateFields();
-      const res = await axios.post("/catalogue/fournisseurs", values);
+      const res = await api.post("/catalogue/fournisseurs", values);
       message.success("Fournisseur créé");
       setFournisseurModalVisible(false);
       fournisseurForm.resetFields();
@@ -248,7 +248,7 @@ const FournisseurMoteurs = ({
     if (!id) return;
     setLoading(true);
     try {
-      await axios.delete(`/fournisseur-moteur/${id}`);
+      await api.delete(`/fournisseur-moteur/${id}`);
       message.success("Supprimé avec succès");
       fetchAssocies();
     } catch {
@@ -284,11 +284,11 @@ const FournisseurMoteurs = ({
 
       setLoading(true);
       if (editing && editing.id) {
-        const res = await axios.put(`/fournisseur-moteur/${editing.id}`, body);
+        const res = await api.put(`/fournisseur-moteur/${editing.id}`, body);
         message.success("Modifié avec succès");
         setEditing(res.data);
       } else {
-        const res = await axios.post("/fournisseur-moteur", body);
+        const res = await api.post("/fournisseur-moteur", body);
         message.success("Ajouté avec succès");
         setEditing(res.data);
       }

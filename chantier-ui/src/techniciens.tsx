@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Space, Table, Button, Input, Form, Modal, Card, Row, Col, Popconfirm, message, Drawer, Statistic, Progress, Divider, Spin } from 'antd';
 import { PlusCircleOutlined, EditOutlined, DeleteOutlined, UserOutlined, BarChartOutlined, CheckCircleOutlined, ClockCircleOutlined, ExclamationCircleOutlined, WarningOutlined, EuroCircleOutlined } from '@ant-design/icons';
-import axios from 'axios';
+import api from './api.ts';
 
 // --- Types ---
 
@@ -72,7 +72,7 @@ const Techniciens: React.FC = () => {
         setLoading(true);
         try {
             const url = query ? `/techniciens/search?q=${encodeURIComponent(query)}` : '/techniciens';
-            const res = await axios.get(url);
+            const res = await api.get(url);
             setTechniciens(res.data);
         } catch {
             message.error('Erreur lors du chargement des techniciens.');
@@ -110,12 +110,12 @@ const Techniciens: React.FC = () => {
             };
 
             if (isEdit && currentTechnicien && currentTechnicien.id) {
-                const res = await axios.put(`/techniciens/${currentTechnicien.id}`, { ...currentTechnicien, ...payload });
+                const res = await api.put(`/techniciens/${currentTechnicien.id}`, { ...currentTechnicien, ...payload });
                 message.success('Technicien modifié avec succès');
                 setCurrentTechnicien(res.data);
                 form.setFieldsValue(res.data);
             } else {
-                const res = await axios.post('/techniciens', payload);
+                const res = await api.post('/techniciens', payload);
                 message.success('Technicien ajouté avec succès');
                 setIsEdit(true);
                 setCurrentTechnicien(res.data);
@@ -130,7 +130,7 @@ const Techniciens: React.FC = () => {
     const handleDelete = async (id: number | undefined) => {
         if (!id) return;
         try {
-            await axios.delete(`/techniciens/${id}`);
+            await api.delete(`/techniciens/${id}`);
             message.success('Technicien supprimé avec succès');
             fetchTechniciens(searchQuery);
         } catch {
@@ -148,7 +148,7 @@ const Techniciens: React.FC = () => {
         setKpiDrawerVisible(true);
         setKpiLoading(true);
         try {
-            const res = await axios.get(`/techniciens/${technicien.id}/kpi`);
+            const res = await api.get(`/techniciens/${technicien.id}/kpi`);
             setKpiData(res.data);
         } catch {
             message.error('Erreur lors du chargement des KPI.');

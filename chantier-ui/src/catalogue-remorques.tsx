@@ -17,7 +17,7 @@ import {
   Card,
 } from "antd";
 import { PlusCircleOutlined, EditOutlined, DeleteOutlined, SearchOutlined } from "@ant-design/icons";
-import axios from "axios";
+import api from "./api.ts";
 import ImageUpload from "./ImageUpload.tsx";
 import DocumentUpload from "./DocumentUpload.tsx";
 import FournisseurRemorques from "./fournisseur-remorques.tsx";
@@ -97,7 +97,7 @@ const RemorqueCatalogue: React.FC = () => {
   const fetchRemorques = async () => {
     setLoading(true);
     try {
-      const response = await axios.get("/catalogue/remorques");
+      const response = await api.get("/catalogue/remorques");
       setRemorques(response.data || []);
     } catch (e) {
       message.error("Erreur lors du chargement des remorques");
@@ -125,7 +125,7 @@ const RemorqueCatalogue: React.FC = () => {
   const handleDelete = async (id: number) => {
     setLoading(true);
     try {
-      await axios.delete(`/catalogue/remorques/${id}`);
+      await api.delete(`/catalogue/remorques/${id}`);
       message.success("Remorque supprimée");
       fetchRemorques();
     } catch {
@@ -149,12 +149,12 @@ const RemorqueCatalogue: React.FC = () => {
 
       setLoading(true);
       if (editingRemorque && editingRemorque.id) {
-        const res = await axios.put(`/catalogue/remorques/${editingRemorque.id}`, { ...editingRemorque, ...values });
+        const res = await api.put(`/catalogue/remorques/${editingRemorque.id}`, { ...editingRemorque, ...values });
         message.success("Remorque modifiée");
         setEditingRemorque(res.data);
         form.setFieldsValue(res.data);
       } else {
-        const res = await axios.post("/catalogue/remorques", values);
+        const res = await api.post("/catalogue/remorques", values);
         message.success("Remorque ajoutée");
         setEditingRemorque(res.data);
         form.setFieldsValue(res.data);
@@ -216,7 +216,7 @@ const RemorqueCatalogue: React.FC = () => {
   const handleSearch = async (value: string) => {
     setLoading(true);
     try {
-      const response = await axios.get("/catalogue/remorques/search", {
+      const response = await api.get("/catalogue/remorques/search", {
         params: value
           ? {
               modele: value,

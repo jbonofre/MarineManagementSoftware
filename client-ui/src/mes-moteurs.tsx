@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Card, Table, Tag, Spin, message } from 'antd';
-import axios from 'axios';
+import api from './api.ts';
 
 interface MoteurClientEntity {
     id: number;
@@ -28,7 +28,7 @@ export default function MesMoteurs({ clientId }: MesMoteursProps) {
 
     useEffect(() => {
         setLoading(true);
-        axios.get(`/portal/clients/${clientId}/moteurs`)
+        api.get(`/portal/clients/${clientId}/moteurs`)
             .then((res) => setMoteurs(res.data || []))
             .catch(() => message.error('Erreur lors du chargement des moteurs'))
             .finally(() => setLoading(false));

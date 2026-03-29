@@ -26,7 +26,10 @@ export default function Login({ setUser }: LoginProps) {
                 email: values.email,
                 motDePasse: values.motDePasse || ''
             });
-            setUser(res.data);
+            const { token, ...userData } = res.data;
+            localStorage.setItem('moussaillon-technicien-token', token);
+            localStorage.setItem('moussaillon-technicien-user', JSON.stringify(userData));
+            setUser(userData);
         } catch {
             message.error("Identifiants invalides.");
         } finally {

@@ -38,9 +38,22 @@ public class TechnicienPortalResource {
     @Inject
     Mailer mailer;
 
+    @Inject
+    TokenService tokenService;
+
     public static class LoginRequest {
         public String email;
         public String motDePasse;
+    }
+
+    public static class AuthResponse {
+        public String token;
+        public long id;
+        public String nom;
+        public String prenom;
+        public String email;
+        public String telephone;
+        public String couleur;
     }
 
     public static class ChangePasswordRequest {
@@ -172,7 +185,8 @@ public class TechnicienPortalResource {
 
     @POST
     @Path("/login")
-    public TechnicienEntity login(LoginRequest request) {
+    @Transactional
+    public Response login(LoginRequest request) {
         if (request == null || request.email == null || request.email.isBlank()) {
             throw new WebApplicationException("L'email est requis", Response.Status.BAD_REQUEST);
         }
@@ -183,11 +197,24 @@ public class TechnicienPortalResource {
         }
         TechnicienEntity technicien = techniciens.get(0);
         if (technicien.motDePasse != null && !technicien.motDePasse.isBlank()) {
-            if (request.motDePasse == null || !request.motDePasse.equals(technicien.motDePasse)) {
+            if (request.motDePasse == null || !PasswordUtil.verify(request.motDePasse, technicien.motDePasse)) {
                 throw new WebApplicationException("Mot de passe invalide", Response.Status.UNAUTHORIZED);
             }
+            // Opportunistic rehash of legacy plaintext passwords
+            if (PasswordUtil.needsRehash(technicien.motDePasse)) {
+                technicien.motDePasse = PasswordUtil.hash(request.motDePasse);
+            }
         }
-        return technicien;
+
+        AuthResponse auth = new AuthResponse();
+        auth.token = tokenService.generateToken(String.valueOf(technicien.id), "technicien", technicien.email, technicien.id);
+        auth.id = technicien.id;
+        auth.nom = technicien.nom;
+        auth.prenom = technicien.prenom;
+        auth.email = technicien.email;
+        auth.telephone = technicien.telephone;
+        auth.couleur = technicien.couleur;
+        return Response.ok(auth).build();
     }
 
     @POST
@@ -205,11 +232,11 @@ public class TechnicienPortalResource {
             throw new WebApplicationException("Technicien non trouve", Response.Status.NOT_FOUND);
         }
         if (technicien.motDePasse != null && !technicien.motDePasse.isBlank()) {
-            if (request.currentPassword == null || !request.currentPassword.equals(technicien.motDePasse)) {
+            if (request.currentPassword == null || !PasswordUtil.verify(request.currentPassword, technicien.motDePasse)) {
                 throw new WebApplicationException("Mot de passe actuel invalide", Response.Status.UNAUTHORIZED);
             }
         }
-        technicien.motDePasse = request.newPassword;
+        technicien.motDePasse = PasswordUtil.hash(request.newPassword);
         return Response.noContent().build();
     }
 

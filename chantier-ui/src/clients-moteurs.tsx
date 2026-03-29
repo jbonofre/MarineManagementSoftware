@@ -26,7 +26,7 @@ import {
   DeleteOutlined,
   SearchOutlined,
 } from "@ant-design/icons";
-import axios from "axios";
+import api from "./api.ts";
 import ImageUpload from './ImageUpload.tsx';
 import DocumentUpload from './DocumentUpload.tsx';
 import dayjs from "dayjs";
@@ -83,7 +83,7 @@ const ClientsMoteurs: React.FC<ClientsMoteursProps> = ({ clientId }) => {
       if (q && q.trim() !== "") {
         url = `/moteurs/search?q=${encodeURIComponent(q)}`;
       }
-      const res = await axios.get(url);
+      const res = await api.get(url);
       let moteursData = res.data;
       // Filter by clientId if provided
       if (clientId) {
@@ -100,7 +100,7 @@ const ClientsMoteurs: React.FC<ClientsMoteursProps> = ({ clientId }) => {
 
   const fetchCatalogueMoteurs = async () => {
     try {
-      const res = await axios.get("/catalogue/moteurs");
+      const res = await api.get("/catalogue/moteurs");
       setCatalogueMoteurs(res.data);
     } catch {
       message.error("Erreur lors du chargement du catalogue de moteurs");
@@ -110,7 +110,7 @@ const ClientsMoteurs: React.FC<ClientsMoteursProps> = ({ clientId }) => {
 
   const fetchClients = async () => {
     try {
-      const res = await axios.get("/clients");
+      const res = await api.get("/clients");
       setClients(res.data);
     } catch {
       setClients([]);
@@ -151,7 +151,7 @@ const ClientsMoteurs: React.FC<ClientsMoteursProps> = ({ clientId }) => {
     if (!id) return;
     setLoading(true);
     try {
-      await axios.delete(`/moteurs/${id}`);
+      await api.delete(`/moteurs/${id}`);
       message.success("Moteur supprimé");
       fetchMoteurs();
     } catch {
@@ -163,7 +163,7 @@ const ClientsMoteurs: React.FC<ClientsMoteursProps> = ({ clientId }) => {
   const handleClientAdd = async () => {
     try {
       const values = await clientForm.validateFields();
-      const res = await axios.post("/clients", values);
+      const res = await api.post("/clients", values);
       message.success("Client ajouté");
       setClientModalVisible(false);
       clientForm.resetFields();
@@ -179,7 +179,7 @@ const ClientsMoteurs: React.FC<ClientsMoteursProps> = ({ clientId }) => {
   const handleCatalogueAdd = async () => {
     try {
       const values = await catalogueForm.validateFields();
-      const res = await axios.post("/catalogue/moteurs", values);
+      const res = await api.post("/catalogue/moteurs", values);
       message.success("Moteur catalogue ajouté");
       setCatalogueModalVisible(false);
       catalogueForm.resetFields();
@@ -207,7 +207,7 @@ const ClientsMoteurs: React.FC<ClientsMoteursProps> = ({ clientId }) => {
       };
       if (editing && editing.id) {
         // update
-        const res = await axios.put(`/moteurs/${editing.id}`, payload);
+        const res = await api.put(`/moteurs/${editing.id}`, payload);
         message.success("Moteur modifié");
         const updated = res.data;
         setEditing(updated);
@@ -222,7 +222,7 @@ const ClientsMoteurs: React.FC<ClientsMoteursProps> = ({ clientId }) => {
         });
       } else {
         // create
-        const res = await axios.post("/moteurs", payload);
+        const res = await api.post("/moteurs", payload);
         message.success("Moteur ajouté");
         const created = res.data;
         setEditing(created);

@@ -25,7 +25,9 @@ public class ClientResource {
 
     @GET
     public List<ClientEntity> list() {
-        return ClientEntity.listAll();
+        List<ClientEntity> clients = ClientEntity.listAll();
+        clients.forEach(c -> c.motDePasse = null);
+        return clients;
     }
 
     @GET
@@ -35,13 +37,21 @@ public class ClientResource {
             return ClientEntity.listAll();
         }
         String likePattern = "%" + q.toLowerCase() + "%";
-        return ClientEntity.list("LOWER(nom) LIKE ?1 OR LOWER(prenom) LIKE ?1 OR LOWER(type) LIKE ?1 OR LOWER(email) LIKE ?1 OR LOWER(telephone) LIKE ?1", likePattern);
+        List<ClientEntity> clients = ClientEntity.list("LOWER(nom) LIKE ?1 OR LOWER(prenom) LIKE ?1 OR LOWER(type) LIKE ?1 OR LOWER(email) LIKE ?1 OR LOWER(telephone) LIKE ?1", likePattern);
+        clients.forEach(c -> c.motDePasse = null);
+        return clients;
     }
 
     @POST
     @Transactional
     public ClientEntity create(ClientEntity client) {
+        if (client.motDePasse != null && !client.motDePasse.isBlank()) {
+            client.motDePasse = PasswordUtil.hash(client.motDePasse);
+        }
         client.persist();
+        client.flush();
+        ClientEntity.getEntityManager().detach(client);
+        client.motDePasse = null;
         return client;
     }
 
@@ -52,6 +62,7 @@ public class ClientResource {
         if (entity == null) {
             throw new WebApplicationException("Le client (" + id + ") n'est pas trouvé", 404);
         }
+        entity.motDePasse = null;
         return entity;
     }
 
@@ -93,6 +104,9 @@ public class ClientResource {
         entity.naf = client.naf;
         entity.documents = client.documents != null ? client.documents : new java.util.ArrayList<>();
 
+        entity.flush();
+        ClientEntity.getEntityManager().detach(entity);
+        entity.motDePasse = null;
         return entity;
     }
 
@@ -109,7 +123,7 @@ public class ClientResource {
         }
 
         String password = generatePassword();
-        client.motDePasse = password;
+        client.motDePasse = PasswordUtil.hash(password);
 
         SocieteEntity societe = SocieteEntity.findById(1L);
         String societeNom = societe != null ? societe.nom : "moussAIllon";

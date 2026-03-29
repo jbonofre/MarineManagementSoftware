@@ -18,7 +18,7 @@ import {
     message
 } from 'antd';
 import { DeleteOutlined, EditOutlined, PlusCircleOutlined, PlusOutlined } from '@ant-design/icons';
-import axios from 'axios';
+import api from './api.ts';
 import ImageUpload from './ImageUpload.tsx';
 
 interface MoteurCatalogueEntity {
@@ -216,7 +216,7 @@ export default function Forfaits() {
         setLoading(true);
         try {
             const endpoint = query && query.trim() ? '/forfaits/search' : '/forfaits';
-            const response = await axios.get(endpoint, { params: query && query.trim() ? { q: query } : {} });
+            const response = await api.get(endpoint, { params: query && query.trim() ? { q: query } : {} });
             setForfaits(response.data || []);
         } catch {
             message.error('Erreur lors du chargement des forfaits.');
@@ -228,10 +228,10 @@ export default function Forfaits() {
     const fetchOptions = async () => {
         try {
             const [moteursRes, bateauxRes, produitsRes, mainOeuvresRes] = await Promise.all([
-                axios.get('/catalogue/moteurs'),
-                axios.get('/catalogue/bateaux'),
-                axios.get('/catalogue/produits'),
-                axios.get('/main-oeuvres'),
+                api.get('/catalogue/moteurs'),
+                api.get('/catalogue/bateaux'),
+                api.get('/catalogue/produits'),
+                api.get('/main-oeuvres'),
             ]);
             setMoteurs(moteursRes.data || []);
             setBateaux(bateauxRes.data || []);
@@ -258,7 +258,7 @@ export default function Forfaits() {
         try {
             const values = await newProduitForm.validateFields();
             values.images = values.images || [];
-            const res = await axios.post('/catalogue/produits', values);
+            const res = await api.post('/catalogue/produits', values);
             const created = res.data as ProduitCatalogueEntity;
             message.success('Produit ajouté avec succès');
             setProduits((prev) => [...prev, created]);
@@ -301,7 +301,7 @@ export default function Forfaits() {
     const handleNewMainOeuvreSave = async () => {
         try {
             const values = await newMainOeuvreForm.validateFields();
-            const res = await axios.post('/main-oeuvres', values);
+            const res = await api.post('/main-oeuvres', values);
             const created = res.data as MainOeuvreEntity;
             message.success("Main d'oeuvre ajoutée avec succès");
             setMainOeuvresList((prev) => [...prev, created]);
@@ -419,12 +419,12 @@ export default function Forfaits() {
             const values = await form.validateFields();
             const payload = toPayload(values);
             if (isEdit && currentForfait?.id) {
-                const res = await axios.put(`/forfaits/${currentForfait.id}`, { ...currentForfait, ...payload });
+                const res = await api.put(`/forfaits/${currentForfait.id}`, { ...currentForfait, ...payload });
                 message.success('Forfait modifié avec succès');
                 setCurrentForfait(res.data);
                 form.setFieldsValue(values);
             } else {
-                const res = await axios.post('/forfaits', payload);
+                const res = await api.post('/forfaits', payload);
                 message.success('Forfait ajouté avec succès');
                 setIsEdit(true);
                 setCurrentForfait(res.data);
@@ -441,7 +441,7 @@ export default function Forfaits() {
             return;
         }
         try {
-            await axios.delete(`/forfaits/${id}`);
+            await api.delete(`/forfaits/${id}`);
             message.success('Forfait supprimé avec succès');
             fetchForfaits(searchQuery);
         } catch {

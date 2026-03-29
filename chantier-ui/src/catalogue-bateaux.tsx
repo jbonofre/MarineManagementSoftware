@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Image, Table, Rate, Row, Col, Card, Button, Modal, Form, AutoComplete, Input, InputNumber, Select, Space, Popconfirm, message } from 'antd';
 import { PlusCircleOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
-import axios from 'axios';
+import api from './api.ts';
 import FournisseurBateaux from './fournisseur-bateaux.tsx';
 import ImageUpload from './ImageUpload.tsx';
 import DocumentUpload from './DocumentUpload.tsx';
@@ -98,7 +98,7 @@ const CatalogueBateaux: React.FC = () => {
     const fetchBateaux = async () => {
         setLoading(true);
         try {
-            const res = await axios.get('/catalogue/bateaux');
+            const res = await api.get('/catalogue/bateaux');
             setBateaux(res.data);
         } catch {
             message.error('Erreur lors du chargement des bateaux.');
@@ -129,12 +129,12 @@ const CatalogueBateaux: React.FC = () => {
             const bateauToSave = values;
 
             if (isEdit && currentBateau && currentBateau.id) {
-                const res = await axios.put(`/catalogue/bateaux/${currentBateau.id}`, bateauToSave);
+                const res = await api.put(`/catalogue/bateaux/${currentBateau.id}`, bateauToSave);
                 message.success('Bateau modifié avec succès');
                 setCurrentBateau(res.data);
                 form.setFieldsValue(res.data);
             } else {
-                const res = await axios.post('/catalogue/bateaux', bateauToSave);
+                const res = await api.post('/catalogue/bateaux', bateauToSave);
                 message.success('Bateau ajouté avec succès');
                 setIsEdit(true);
                 setCurrentBateau(res.data);
@@ -149,7 +149,7 @@ const CatalogueBateaux: React.FC = () => {
     const handleDelete = async (id: number | undefined) => {
         if (!id) return;
         try {
-            await axios.delete(`/catalogue/bateaux/${id}`);
+            await api.delete(`/catalogue/bateaux/${id}`);
             message.success('Bateau supprimé avec succès');
             fetchBateaux();
         } catch {
@@ -251,7 +251,7 @@ const CatalogueBateaux: React.FC = () => {
                                 onSearch={async (value) => {
                                     setLoading(true);
                                     try {
-                                        const response = await axios.get('/catalogue/bateaux/search', { params: { q: value } });
+                                        const response = await api.get('/catalogue/bateaux/search', { params: { q: value } });
                                         setBateaux(response.data);
                                     } catch (error) {
                                         message.error('Erreur lors de la recherche');

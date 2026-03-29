@@ -21,7 +21,7 @@ import {
     DeleteOutlined,
     EyeOutlined,
 } from '@ant-design/icons';
-import axios from 'axios';
+import api from './api.ts';
 import ImageUpload from './ImageUpload.tsx';
 
 interface BateauClientEntity {
@@ -92,9 +92,9 @@ export default function PetitesAnnonces({ clientId }: PetitesAnnoncesProps) {
     const fetchData = () => {
         setLoading(true);
         Promise.all([
-            axios.get('/annonces/active'),
-            axios.get(`/annonces/client/${clientId}`),
-            axios.get(`/portal/clients/${clientId}/bateaux`),
+            api.get('/annonces/active'),
+            api.get(`/annonces/client/${clientId}`),
+            api.get(`/portal/clients/${clientId}/bateaux`),
         ])
             .then(([allRes, myRes, bateauxRes]) => {
                 setAllAnnonces(allRes.data || []);
@@ -154,11 +154,11 @@ export default function PetitesAnnonces({ clientId }: PetitesAnnoncesProps) {
                 payload.bateau = { id: values.bateauId };
             }
             if (editing) {
-                const res = await axios.put(`/annonces/${editing.id}`, payload);
+                const res = await api.put(`/annonces/${editing.id}`, payload);
                 message.success('Annonce mise a jour');
                 setEditing(res.data);
             } else {
-                const res = await axios.post('/annonces', payload);
+                const res = await api.post('/annonces', payload);
                 message.success('Annonce creee');
                 setEditing(res.data);
             }
@@ -170,7 +170,7 @@ export default function PetitesAnnonces({ clientId }: PetitesAnnoncesProps) {
 
     const handleDelete = async (id: number) => {
         try {
-            await axios.delete(`/annonces/${id}`);
+            await api.delete(`/annonces/${id}`);
             message.success('Annonce supprimee');
             fetchData();
         } catch {

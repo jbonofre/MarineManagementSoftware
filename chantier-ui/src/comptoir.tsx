@@ -19,7 +19,7 @@ import {
     message
 } from 'antd';
 import { CreditCardOutlined, DeleteOutlined, EditOutlined, PlusCircleOutlined, PlusOutlined, PrinterOutlined, FileTextOutlined } from '@ant-design/icons';
-import axios from 'axios';
+import api from './api.ts';
 import ImageUpload from './ImageUpload.tsx';
 
 interface ClientEntity {
@@ -315,7 +315,7 @@ export default function Comptoir() {
         setLoading(true);
         try {
             const activeFilters = nextFilters || {};
-            const response = await axios.get('/ventes/search', {
+            const response = await api.get('/ventes/search', {
                 params: {
                     type: 'COMPTOIR',
                     status: 'PAYEE',
@@ -342,13 +342,13 @@ export default function Comptoir() {
                 produitsRes,
                 servicesRes
             ] = await Promise.all([
-                axios.get('/clients'),
-                axios.get('/bateaux'),
-                axios.get('/moteurs'),
-                axios.get('/remorques'),
-                axios.get('/forfaits'),
-                axios.get('/catalogue/produits'),
-                axios.get('/services')
+                api.get('/clients'),
+                api.get('/bateaux'),
+                api.get('/moteurs'),
+                api.get('/remorques'),
+                api.get('/forfaits'),
+                api.get('/catalogue/produits'),
+                api.get('/services')
             ]);
             setClients(clientsRes.data || []);
             setBateaux(bateauxRes.data || []);
@@ -378,7 +378,7 @@ export default function Comptoir() {
         try {
             const values = await newProduitForm.validateFields();
             values.images = values.images || [];
-            const res = await axios.post('/catalogue/produits', values);
+            const res = await api.post('/catalogue/produits', values);
             const created = res.data as ProduitCatalogueEntity;
             message.success('Produit ajouté avec succès');
             setProduits((prev) => [...prev, created]);
@@ -496,12 +496,12 @@ export default function Comptoir() {
             const values = await form.validateFields();
             const payload = toPayload(values);
             if (isEdit && currentVente?.id) {
-                const res = await axios.put(`/ventes/${currentVente.id}`, { ...currentVente, ...payload, type: 'COMPTOIR' });
+                const res = await api.put(`/ventes/${currentVente.id}`, { ...currentVente, ...payload, type: 'COMPTOIR' });
                 message.success('Vente comptoir modifiee avec succes');
                 setCurrentVente(res.data);
                 form.setFieldsValue(values);
             } else {
-                const res = await axios.post('/ventes', payload);
+                const res = await api.post('/ventes', payload);
                 message.success('Vente comptoir ajoutee avec succes');
                 setIsEdit(true);
                 setCurrentVente(res.data);
@@ -514,7 +514,7 @@ export default function Comptoir() {
                 // Les erreurs de validation sont affichees dans le formulaire.
                 return;
             }
-            if (axios.isAxiosError(error)) {
+            if (api.isAxiosError(error)) {
                 message.error(error.response?.data?.message || "Erreur lors de l'enregistrement de la vente comptoir.");
                 return;
             }
@@ -527,7 +527,7 @@ export default function Comptoir() {
             return;
         }
         try {
-            await axios.delete(`/ventes/${id}`);
+            await api.delete(`/ventes/${id}`);
             message.success('Vente comptoir supprimee avec succes');
             fetchVentes(filters);
         } catch {
@@ -682,7 +682,7 @@ export default function Comptoir() {
             return;
         }
         try {
-            const res = await axios.post(`/ventes/${vente.id}/payment-link/${provider}`);
+            const res = await api.post(`/ventes/${vente.id}/payment-link/${provider}`);
             window.open(res.data.url, '_blank', 'noopener,noreferrer');
         } catch {
             message.error(`Erreur lors de la creation du lien de paiement ${provider === 'stripe' ? 'Stripe' : 'PayPlug'}`);

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Row, Col, AutoComplete, Table, Button, Modal, Form, Input, InputNumber, Rate, Space, Popconfirm, message, Select, Image, Card } from 'antd';
 import { EditOutlined, DeleteOutlined, PlusCircleOutlined } from '@ant-design/icons';
-import axios from 'axios';
+import api from './api.ts';
 import FournisseurMoteurs from './fournisseur-moteurs.tsx';
 import ImageUpload from './ImageUpload.tsx';
 import DocumentUpload from './DocumentUpload.tsx';
@@ -124,7 +124,7 @@ const MoteurCatalogue = () => {
   const fetchMoteurs = async () => {
     setLoading(true);
     try {
-      const res = await axios.get('/catalogue/moteurs');
+      const res = await api.get('/catalogue/moteurs');
       const data = res.data ?? [];
       setMoteurs(data);
       setHelices((prev) => attachMoteursToHelices(prev, data));
@@ -138,7 +138,7 @@ const MoteurCatalogue = () => {
   const fetchHelices = async () => {
     setLoading(true);
     try {
-      const res = await axios.get('/catalogue/helices');
+      const res = await api.get('/catalogue/helices');
       const data = res.data ?? [];
       setHelices(attachMoteursToHelices(data, moteurs));
     } catch {
@@ -172,7 +172,7 @@ const MoteurCatalogue = () => {
   const handleDelete = async (id: number | undefined) => {
     if (!id) return;
     try {
-      await axios.delete(`/catalogue/moteurs/${id}`);
+      await api.delete(`/catalogue/moteurs/${id}`);
       message.success('Moteur supprimé avec succès');
       fetchMoteurs();
     } catch {
@@ -191,7 +191,7 @@ const MoteurCatalogue = () => {
       };
 
       if (editingMoteur && editingMoteur.id != null) {
-        const res = await axios.put(`/catalogue/moteurs/${editingMoteur.id}`, moteurToSave);
+        const res = await api.put(`/catalogue/moteurs/${editingMoteur.id}`, moteurToSave);
         message.success('Moteur modifié avec succès');
         setEditingMoteur(res.data);
         form.setFieldsValue({
@@ -199,7 +199,7 @@ const MoteurCatalogue = () => {
           helicesCompatibles: (res.data.helicesCompatibles || []).map((h: { id: number }) => h.id),
         });
       } else {
-        const res = await axios.post('/catalogue/moteurs', moteurToSave);
+        const res = await api.post('/catalogue/moteurs', moteurToSave);
         message.success('Moteur ajouté avec succès');
         setEditingMoteur(res.data);
         form.setFieldsValue({
@@ -314,7 +314,7 @@ const MoteurCatalogue = () => {
                 onSearch={async (value) => {
                   setLoading(true);
                   try {
-                    const response = await axios.get('/catalogue/moteurs/search', { params: { q: value } });
+                    const response = await api.get('/catalogue/moteurs/search', { params: { q: value } });
                     setMoteurs(response.data);
                   } catch (error) {
                     message.error('Erreur lors de la recherche');

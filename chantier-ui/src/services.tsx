@@ -4,7 +4,7 @@ import {
     Popconfirm, message, Tabs, Select, AutoComplete
 } from 'antd';
 import { PlusCircleOutlined, EditOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons';
-import axios from 'axios';
+import api from './api.ts';
 
 interface MainOeuvreEntity {
     id: number;
@@ -121,7 +121,7 @@ export default function Services() {
             if (query && query.trim()) {
                 url = '/services/search';
             }
-            const response = await axios.get(url, { params: query && query.trim() ? { q: query } : {} });
+            const response = await api.get(url, { params: query && query.trim() ? { q: query } : {} });
             setServices(response.data);
         } catch {
             message.error('Erreur lors du chargement des services.');
@@ -132,8 +132,8 @@ export default function Services() {
     const fetchOptions = async () => {
         try {
             const [moRes, prodRes] = await Promise.all([
-                axios.get('/main-oeuvres'),
-                axios.get('/catalogue/produits')
+                api.get('/main-oeuvres'),
+                api.get('/catalogue/produits')
             ]);
             setAllMainOeuvres(moRes.data || []);
             setAllProduits(prodRes.data || []);
@@ -202,7 +202,7 @@ export default function Services() {
             return;
         }
         try {
-            await axios.delete(`/services/${id}`);
+            await api.delete(`/services/${id}`);
             message.success('Service supprimé avec succès');
             fetchServices(searchQuery);
         } catch {
@@ -215,11 +215,11 @@ export default function Services() {
             const values = await form.validateFields();
             const payload = toPayload(values);
             if (isEdit && currentService?.id) {
-                const res = await axios.put(`/services/${currentService.id}`, { ...currentService, ...payload });
+                const res = await api.put(`/services/${currentService.id}`, { ...currentService, ...payload });
                 message.success('Service modifié avec succès');
                 setCurrentService(res.data);
             } else {
-                const res = await axios.post('/services', payload);
+                const res = await api.post('/services', payload);
                 message.success('Service ajouté avec succès');
                 setIsEdit(true);
                 setCurrentService(res.data);
@@ -311,7 +311,7 @@ export default function Services() {
     const handleNewMainOeuvreSave = async () => {
         try {
             const values = await newMainOeuvreForm.validateFields();
-            const res = await axios.post('/main-oeuvres', values);
+            const res = await api.post('/main-oeuvres', values);
             const created = res.data as MainOeuvreEntity;
             message.success("Main d'oeuvre ajoutée avec succès");
             setAllMainOeuvres((prev) => [...prev, created]);
@@ -356,7 +356,7 @@ export default function Services() {
         try {
             const values = await newProduitForm.validateFields();
             values.images = values.images || [];
-            const res = await axios.post('/catalogue/produits', values);
+            const res = await api.post('/catalogue/produits', values);
             const created = res.data as ProduitCatalogueEntity;
             message.success('Produit ajouté avec succès');
             setAllProduits((prev) => [...prev, created]);

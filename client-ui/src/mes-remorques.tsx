@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Card, Table, Tag, Spin, message } from 'antd';
-import axios from 'axios';
+import api from './api.ts';
 
 interface RemorqueClientEntity {
     id: number;
@@ -28,7 +28,7 @@ export default function MesRemorques({ clientId }: MesRemorquesProps) {
 
     useEffect(() => {
         setLoading(true);
-        axios.get(`/portal/clients/${clientId}/remorques`)
+        api.get(`/portal/clients/${clientId}/remorques`)
             .then((res) => setRemorques(res.data || []))
             .catch(() => message.error('Erreur lors du chargement des remorques'))
             .finally(() => setLoading(false));
