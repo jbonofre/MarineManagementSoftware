@@ -147,13 +147,13 @@ function Clients() {
       message.warning("Ce client n'a pas d'adresse email.");
       return;
     }
-    const password = form.getFieldValue("password");
-    if (!password) {
+    const motDePasse = form.getFieldValue("motDePasse");
+    if (!motDePasse) {
       message.warning("Veuillez saisir un mot de passe avant de l'envoyer.");
       return;
     }
     try {
-      await api.post(`/clients/${record.id}/send-password`, { password });
+      await api.post(`/clients/${record.id}/send-password`, { password: motDePasse });
       message.success(`Mot de passe envoyé à ${record.email}`);
     } catch {
       message.error("Erreur lors de l'envoi du mot de passe");
@@ -327,7 +327,7 @@ function Clients() {
           </Row>
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item label="Mot de passe" name="password">
+              <Form.Item label="Mot de passe" name="motDePasse">
                 <Input.Password />
               </Form.Item>
             </Col>
@@ -335,14 +335,14 @@ function Clients() {
               <Form.Item
                 label="Confirmer le mot de passe"
                 name="confirmPassword"
-                dependencies={["password"]}
+                dependencies={["motDePasse"]}
                 rules={[
                   ({ getFieldValue }) => ({
                     validator(_, value) {
-                      if (!value && !getFieldValue("password")) {
+                      if (!value && !getFieldValue("motDePasse")) {
                         return Promise.resolve();
                       }
-                      if (value === getFieldValue("password")) {
+                      if (value === getFieldValue("motDePasse")) {
                         return Promise.resolve();
                       }
                       return Promise.reject(new Error("Les mots de passe ne correspondent pas"));
@@ -365,7 +365,7 @@ function Clients() {
                     const generated = Array.from(crypto.getRandomValues(new Uint8Array(16)))
                       .map((b) => chars[b % chars.length])
                       .join("");
-                    form.setFieldsValue({ password: generated, confirmPassword: generated });
+                    form.setFieldsValue({ motDePasse: generated, confirmPassword: generated });
                   }}
                 >
                   Générer un mot de passe
