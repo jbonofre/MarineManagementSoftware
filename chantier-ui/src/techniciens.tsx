@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Space, Table, Button, Input, Form, Modal, Card, Row, Col, Popconfirm, message, Drawer, Statistic, Progress, Divider, Spin } from 'antd';
-import { PlusCircleOutlined, EditOutlined, DeleteOutlined, UserOutlined, BarChartOutlined, CheckCircleOutlined, ClockCircleOutlined, ExclamationCircleOutlined, WarningOutlined, EuroCircleOutlined } from '@ant-design/icons';
+import { Space, Table, Button, Input, Form, Modal, Card, Row, Col, Popconfirm, message, Drawer, Statistic, Progress, Divider, Spin, Checkbox } from 'antd';
+import { PlusCircleOutlined, EditOutlined, DeleteOutlined, UserOutlined, BarChartOutlined, CheckCircleOutlined, ClockCircleOutlined, ExclamationCircleOutlined, WarningOutlined, EuroCircleOutlined, KeyOutlined, MailOutlined } from '@ant-design/icons';
 import api from './api.ts';
 
 // --- Types ---
@@ -103,7 +103,7 @@ const Techniciens: React.FC = () => {
 
     const handleModalOk = async () => {
         try {
-            const values = await form.validateFields();
+            const { confirmMotDePasse, ...values } = await form.validateFields();
             const payload = {
                 ...values,
                 couleur: values.couleur || defaultTechnicien.couleur
@@ -141,6 +141,24 @@ const Techniciens: React.FC = () => {
     const handleSearch = (value: string) => {
         setSearchQuery(value);
         fetchTechniciens(value);
+    };
+
+    const handleSendPassword = async (technicien: TechnicienEntity) => {
+        if (!technicien.email) {
+            message.warning("Ce technicien n'a pas d'adresse email.");
+            return;
+        }
+        const password = form.getFieldValue("motDePasse");
+        if (!password) {
+            message.warning("Veuillez saisir un mot de passe avant de l'envoyer.");
+            return;
+        }
+        try {
+            await api.post(`/techniciens/${technicien.id}/send-password`, { password });
+            message.success(`Mot de passe envoyé à ${technicien.email}`);
+        } catch {
+            message.error("Erreur lors de l'envoi du mot de passe");
+        }
     };
 
     const openKpiDrawer = async (technicien: TechnicienEntity) => {
@@ -325,17 +343,77 @@ const Techniciens: React.FC = () => {
                                         </Form.Item>
                                     </Col>
                                 </Row>
-                                <Form.Item 
-                                    name="motDePasse" 
-                                    label="Mot de passe"
-                                    rules={
-                                        isEdit
-                                            ? []
-                                            : [{ required: true, message: "Le mot de passe est requis" }]
-                                    }
-                                >
-                                    <Input.Password autoComplete="new-password" />
-                                </Form.Item>
+                                <Row gutter={16}>
+                                    <Col span={12}>
+                                        <Form.Item
+                                            name="motDePasse"
+                                            label="Mot de passe"
+                                            rules={
+                                                isEdit
+                                                    ? []
+                                                    : [{ required: true, message: "Le mot de passe est requis" }]
+                                            }
+                                        >
+                                            <Input.Password autoComplete="new-password" />
+                                        </Form.Item>
+                                    </Col>
+                                    <Col span={12}>
+                                        <Form.Item
+                                            name="confirmMotDePasse"
+                                            label="Confirmer le mot de passe"
+                                            dependencies={["motDePasse"]}
+                                            rules={[
+                                                ({ getFieldValue }) => ({
+                                                    validator(_, value) {
+                                                        if (!value && !getFieldValue("motDePasse")) {
+                                                            return Promise.resolve();
+                                                        }
+                                                        if (value === getFieldValue("motDePasse")) {
+                                                            return Promise.resolve();
+                                                        }
+                                                        return Promise.reject(new Error("Les mots de passe ne correspondent pas"));
+                                                    },
+                                                }),
+                                            ]}
+                                        >
+                                            <Input.Password autoComplete="new-password" />
+                                        </Form.Item>
+                                    </Col>
+                                </Row>
+                                <Row>
+                                    <Col>
+                                        <Space>
+                                            <Button
+                                                icon={<KeyOutlined />}
+                                                size="small"
+                                                onClick={() => {
+                                                    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%&*";
+                                                    const generated = Array.from(crypto.getRandomValues(new Uint8Array(16)))
+                                                        .map((b) => chars[b % chars.length])
+                                                        .join("");
+                                                    form.setFieldsValue({ motDePasse: generated, confirmMotDePasse: generated });
+                                                }}
+                                            >
+                                                Générer un mot de passe
+                                            </Button>
+                                            {isEdit && currentTechnicien && currentTechnicien.id && (
+                                                <Popconfirm
+                                                    title="Envoyer le mot de passe par email ?"
+                                                    onConfirm={() => handleSendPassword(currentTechnicien)}
+                                                    disabled={!currentTechnicien.email}
+                                                >
+                                                    <Button
+                                                        icon={<MailOutlined />}
+                                                        disabled={!currentTechnicien.email}
+                                                        size="small"
+                                                    >
+                                                        Envoyer le mot de passe par email
+                                                    </Button>
+                                                </Popconfirm>
+                                            )}
+                                        </Space>
+                                    </Col>
+                                </Row>
                                 <Form.Item
                                     name="couleur"
                                     label="Couleur"

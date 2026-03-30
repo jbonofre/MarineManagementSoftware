@@ -147,9 +147,14 @@ function Clients() {
       message.warning("Ce client n'a pas d'adresse email.");
       return;
     }
+    const password = form.getFieldValue("password");
+    if (!password) {
+      message.warning("Veuillez saisir un mot de passe avant de l'envoyer.");
+      return;
+    }
     try {
-      await api.post(`/clients/${record.id}/send-password`);
-      message.success(`Mot de passe envoye a ${record.email}`);
+      await api.post(`/clients/${record.id}/send-password`, { password });
+      message.success(`Mot de passe envoyé à ${record.email}`);
     } catch {
       message.error("Erreur lors de l'envoi du mot de passe");
     }
@@ -157,7 +162,7 @@ function Clients() {
 
   const handleModalOk = async () => {
     try {
-      const values = await form.validateFields();
+      const { confirmPassword, ...values } = await form.validateFields();
       setLoading(true);
       if (editing && editing.id) {
         // update
@@ -319,25 +324,69 @@ function Clients() {
                 <Input />
               </Form.Item>
             </Col>
-            {editing && editing.id && (
-              <Col span={12}>
-                <Form.Item label=" ">
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="Mot de passe" name="password">
+                <Input.Password />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                label="Confirmer le mot de passe"
+                name="confirmPassword"
+                dependencies={["password"]}
+                rules={[
+                  ({ getFieldValue }) => ({
+                    validator(_, value) {
+                      if (!value && !getFieldValue("password")) {
+                        return Promise.resolve();
+                      }
+                      if (value === getFieldValue("password")) {
+                        return Promise.resolve();
+                      }
+                      return Promise.reject(new Error("Les mots de passe ne correspondent pas"));
+                    },
+                  }),
+                ]}
+              >
+                <Input.Password />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row>
+            <Col>
+              <Space>
+                <Button
+                  icon={<KeyOutlined />}
+                  size="small"
+                  onClick={() => {
+                    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%&*";
+                    const generated = Array.from(crypto.getRandomValues(new Uint8Array(16)))
+                      .map((b) => chars[b % chars.length])
+                      .join("");
+                    form.setFieldsValue({ password: generated, confirmPassword: generated });
+                  }}
+                >
+                  Générer un mot de passe
+                </Button>
+                {editing && editing.id && (
                   <Popconfirm
-                    title="Générer un mot de passe et l'envoyer par email ?"
+                    title="Envoyer le mot de passe par email ?"
                     onConfirm={() => handleSendPassword(editing)}
                     disabled={!editing.email}
                   >
                     <Button
-                      icon={<KeyOutlined />}
+                      icon={<MailOutlined />}
                       disabled={!editing.email}
                       size="small"
                     >
-                      Générer et envoyer le mot de passe par email
+                      Envoyer le mot de passe par email
                     </Button>
                   </Popconfirm>
-                </Form.Item>
-              </Col>
-            )}
+                )}
+              </Space>
+            </Col>
           </Row>
           <Row gutter={16}>
             <Col span={12}>
