@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Image, Table, Rate, Row, Col, Card, Button, Modal, Form, AutoComplete, Input, InputNumber, Select, Space, Popconfirm, message } from 'antd';
 import { PlusCircleOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
-import axios from 'axios';
+import api from './api.ts';
 import FournisseurProduits from './fournisseur-produits.tsx';
 import ImageUpload from './ImageUpload.tsx';
 import DocumentUpload from './DocumentUpload.tsx';
@@ -84,7 +84,7 @@ const CatalogueProduits: React.FC = () => {
     const fetchProduits = async () => {
         setLoading(true);
         try {
-            const res = await axios.get('/catalogue/produits');
+            const res = await api.get('/catalogue/produits');
             setProduits(res.data);
         } catch {
             message.error('Erreur lors du chargement des produits.');
@@ -122,12 +122,12 @@ const CatalogueProduits: React.FC = () => {
             values.images = values.images || [];
             values.documents = values.documents || [];
             if (isEdit && currentProduit && currentProduit.id) {
-                const res = await axios.put(`/catalogue/produits/${currentProduit.id}`, { ...currentProduit, ...values });
+                const res = await api.put(`/catalogue/produits/${currentProduit.id}`, { ...currentProduit, ...values });
                 message.success('Produit modifié avec succès');
                 setCurrentProduit(res.data);
                 form.setFieldsValue({ ...defaultProduit, ...res.data, images: res.data.images || [] });
             } else {
-                const res = await axios.post('/catalogue/produits', values);
+                const res = await api.post('/catalogue/produits', values);
                 message.success('Produit ajouté avec succès');
                 setIsEdit(true);
                 setCurrentProduit(res.data);
@@ -142,7 +142,7 @@ const CatalogueProduits: React.FC = () => {
     const handleDelete = async (id: number | undefined) => {
         if (!id) return;
         try {
-            await axios.delete(`/catalogue/produits/${id}`);
+            await api.delete(`/catalogue/produits/${id}`);
             message.success('Produit supprimé avec succès');
             fetchProduits();
         } catch {
@@ -254,7 +254,7 @@ const CatalogueProduits: React.FC = () => {
                                 onSearch={async (value) => {
                                     setLoading(true);
                                     try {
-                                        const r = await axios.get('/catalogue/produits/search', { params: { q: value } });
+                                        const r = await api.get('/catalogue/produits/search', { params: { q: value } });
                                         setProduits(r.data);
                                     } catch {
                                         message.error('Erreur lors de la recherche');

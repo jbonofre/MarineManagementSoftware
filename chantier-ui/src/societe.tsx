@@ -1,3 +1,4 @@
+import { fetchWithAuth } from './api.ts';
 import { useState, useEffect } from 'react';
 import { Card, Row, Col, Space, Image, Button, Form, Input, InputNumber, Spin, message } from 'antd';
 import { PlusCircleOutlined, PauseCircleOutlined, DeleteOutlined, DeploymentUnitOutlined, SaveOutlined } from '@ant-design/icons';
@@ -14,7 +15,7 @@ export default function Societe(props) {
     const [ newImageForm ] = Form.useForm();
 
     useEffect(() => {
-       fetch('./societe')
+       fetchWithAuth('./societe')
        .then((response) => {
             if (!response.ok) {
                 throw new Error('Erreur (code ' + response.status + ')');
@@ -49,7 +50,7 @@ export default function Societe(props) {
     const updateSocieteFunction = (values) => {
         let newSociete = values;
         newSociete.images = images;
-        fetch('./societe', {
+        fetchWithAuth('./societe', {
             method: 'PUT',
             body: JSON.stringify(newSociete),
             headers: {

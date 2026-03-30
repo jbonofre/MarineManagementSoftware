@@ -11,7 +11,6 @@ import jakarta.ws.rs.core.Response;
 import net.nanthrax.moussaillon.persistence.ClientEntity;
 import net.nanthrax.moussaillon.persistence.SocieteEntity;
 
-import java.security.SecureRandom;
 import java.util.List;
 
 @Path("/clients")
@@ -25,7 +24,9 @@ public class ClientResource {
 
     @GET
     public List<ClientEntity> list() {
-        return ClientEntity.listAll();
+        List<ClientEntity> clients = ClientEntity.listAll();
+        clients.forEach(c -> c.motDePasse = null);
+        return clients;
     }
 
     @GET
@@ -35,13 +36,21 @@ public class ClientResource {
             return ClientEntity.listAll();
         }
         String likePattern = "%" + q.toLowerCase() + "%";
-        return ClientEntity.list("LOWER(nom) LIKE ?1 OR LOWER(prenom) LIKE ?1 OR LOWER(type) LIKE ?1 OR LOWER(email) LIKE ?1 OR LOWER(telephone) LIKE ?1", likePattern);
+        List<ClientEntity> clients = ClientEntity.list("LOWER(nom) LIKE ?1 OR LOWER(prenom) LIKE ?1 OR LOWER(type) LIKE ?1 OR LOWER(email) LIKE ?1 OR LOWER(telephone) LIKE ?1", likePattern);
+        clients.forEach(c -> c.motDePasse = null);
+        return clients;
     }
 
     @POST
     @Transactional
     public ClientEntity create(ClientEntity client) {
+        if (client.motDePasse != null && !client.motDePasse.isBlank()) {
+            client.motDePasse = PasswordUtil.hash(client.motDePasse);
+        }
         client.persist();
+        client.flush();
+        ClientEntity.getEntityManager().detach(client);
+        client.motDePasse = null;
         return client;
     }
 
@@ -52,6 +61,7 @@ public class ClientResource {
         if (entity == null) {
             throw new WebApplicationException("Le client (" + id + ") n'est pas trouvé", 404);
         }
+        entity.motDePasse = null;
         return entity;
     }
 
@@ -93,31 +103,36 @@ public class ClientResource {
         entity.naf = client.naf;
         entity.documents = client.documents != null ? client.documents : new java.util.ArrayList<>();
 
+        entity.flush();
+        ClientEntity.getEntityManager().detach(entity);
+        entity.motDePasse = null;
         return entity;
     }
 
     @POST
     @Path("{id}/send-password")
     @Transactional
-    public Response sendPassword(@PathParam("id") long id) {
+    public Response sendPassword(@PathParam("id") long id, PasswordRequest request) {
         ClientEntity client = ClientEntity.findById(id);
         if (client == null) {
-            throw new WebApplicationException("Le client (" + id + ") n'est pas trouve", 404);
+            throw new WebApplicationException("Le client (" + id + ") n'est pas trouvé", 404);
         }
         if (client.email == null || client.email.isBlank()) {
             throw new WebApplicationException("Le client n'a pas d'adresse email", 400);
         }
+        if (request.password == null || request.password.isBlank()) {
+            throw new WebApplicationException("Le mot de passe est requis", 400);
+        }
 
-        String password = generatePassword();
-        client.motDePasse = password;
+        client.motDePasse = PasswordUtil.hash(request.password);
 
         SocieteEntity societe = SocieteEntity.findById(1L);
         String societeNom = societe != null ? societe.nom : "moussAIllon";
 
         String subject = "Votre mot de passe - Espace Client " + societeNom;
         String body = "Bonjour " + (client.prenom != null ? client.prenom : client.nom) + ",\n\n"
-                + "Votre mot de passe pour acceder a l'Espace Client " + societeNom + " :\n\n"
-                + "    " + password + "\n\n"
+                + "Votre mot de passe pour accéder à l'Espace Client " + societeNom + " :\n\n"
+                + "    " + request.password + "\n\n"
                 + "Connectez-vous avec votre email : " + client.email + "\n\n"
                 + "Cordialement,\n"
                 + societeNom;
@@ -125,16 +140,6 @@ public class ClientResource {
         mailer.send(Mail.withText(client.email, subject, body));
 
         return Response.ok().build();
-    }
-
-    private static String generatePassword() {
-        String chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
-        SecureRandom random = new SecureRandom();
-        StringBuilder sb = new StringBuilder(8);
-        for (int i = 0; i < 8; i++) {
-            sb.append(chars.charAt(random.nextInt(chars.length())));
-        }
-        return sb.toString();
     }
 
 }

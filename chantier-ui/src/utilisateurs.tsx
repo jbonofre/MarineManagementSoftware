@@ -1,3 +1,4 @@
+import { fetchWithAuth } from './api.ts';
 import React, { useEffect, useState } from 'react';
 import { Space, Table, Button, Input, Form, Modal, Avatar, Spin, Select, Popconfirm, message, Row, Col } from 'antd';
 import { UserOutlined, PlusCircleOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
@@ -111,7 +112,7 @@ export default function Utilisateurs() {
         if (query) {
             url = `/users/search?q=${encodeURIComponent(query)}`;
         }
-        fetch(url)
+        fetchWithAuth(url)
             .then(r => {
                 if (!r.ok) throw new Error("Erreur HTTP: " + r.status);
                 return r.json();
@@ -131,7 +132,7 @@ export default function Utilisateurs() {
     // Create User
     const handleCreate = (data) => {
         setModalLoading(true);
-        fetch('/users', {
+        fetchWithAuth('/users', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ ...data, roles: rolesToString(data.roles) })
@@ -155,7 +156,7 @@ export default function Utilisateurs() {
     // Update User
     const handleUpdate = (data) => {
         setModalLoading(true);
-        fetch(`/users/${encodeURIComponent(editUser.name)}`, {
+        fetchWithAuth(`/users/${encodeURIComponent(editUser.name)}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ ...editUser, ...data, roles: rolesToString(data.roles) })
@@ -178,7 +179,7 @@ export default function Utilisateurs() {
 
     // Delete User
     const handleDelete = user => {
-        fetch(`/users/${encodeURIComponent(user.name)}`, { method: 'DELETE' })
+        fetchWithAuth(`/users/${encodeURIComponent(user.name)}`, { method: 'DELETE' })
             .then(res => {
                 if (!res.ok) throw new Error("Erreur HTTP: " + res.status);
                 message.success("Utilisateur supprimé");

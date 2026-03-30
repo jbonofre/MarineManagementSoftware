@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Button, Card, Modal, Table, Tag, Spin, message } from 'antd';
 import { EyeOutlined, CreditCardOutlined } from '@ant-design/icons';
-import axios from 'axios';
+import api from './api.ts';
 
 interface VenteEntity {
     id: number;
@@ -61,7 +61,7 @@ export default function MesFactures({ clientId }: MesFacturesProps) {
 
     useEffect(() => {
         setLoading(true);
-        axios.get(`/portal/clients/${clientId}/ventes`)
+        api.get(`/portal/clients/${clientId}/ventes`)
             .then((res) => setVentes(res.data || []))
             .catch(() => message.error('Erreur lors du chargement des factures'))
             .finally(() => setLoading(false));
@@ -69,7 +69,7 @@ export default function MesFactures({ clientId }: MesFacturesProps) {
 
     const handlePayment = async (vente: VenteEntity, provider: 'stripe' | 'payplug') => {
         try {
-            const res = await axios.post(`/ventes/${vente.id}/payment-link/${provider}`);
+            const res = await api.post(`/ventes/${vente.id}/payment-link/${provider}`);
             window.open(res.data.url, '_blank', 'noopener,noreferrer');
         } catch {
             message.error(`Erreur lors de la creation du lien de paiement`);

@@ -32,7 +32,7 @@ import {
     ExclamationCircleOutlined,
     StopOutlined,
 } from '@ant-design/icons';
-import axios from 'axios';
+import api from './api.ts';
 
 interface Client {
     id: number;
@@ -175,10 +175,10 @@ export default function MobileApp({ user, onLogout }: MobileAppProps) {
             switch (p) {
                 case 'dashboard': {
                     const [b, m, r, v] = await Promise.all([
-                        axios.get(`/portal/clients/${clientId}/bateaux`),
-                        axios.get(`/portal/clients/${clientId}/moteurs`),
-                        axios.get(`/portal/clients/${clientId}/remorques`),
-                        axios.get(`/portal/clients/${clientId}/ventes`),
+                        api.get(`/portal/clients/${clientId}/bateaux`),
+                        api.get(`/portal/clients/${clientId}/moteurs`),
+                        api.get(`/portal/clients/${clientId}/remorques`),
+                        api.get(`/portal/clients/${clientId}/ventes`),
                     ]);
                     setBateaux(b.data || []);
                     setMoteurs(m.data || []);
@@ -187,33 +187,33 @@ export default function MobileApp({ user, onLogout }: MobileAppProps) {
                     break;
                 }
                 case 'bateaux': {
-                    const res = await axios.get(`/portal/clients/${clientId}/bateaux`);
+                    const res = await api.get(`/portal/clients/${clientId}/bateaux`);
                     setBateaux(res.data || []);
                     break;
                 }
                 case 'moteurs': {
-                    const res = await axios.get(`/portal/clients/${clientId}/moteurs`);
+                    const res = await api.get(`/portal/clients/${clientId}/moteurs`);
                     setMoteurs(res.data || []);
                     break;
                 }
                 case 'remorques': {
-                    const res = await axios.get(`/portal/clients/${clientId}/remorques`);
+                    const res = await api.get(`/portal/clients/${clientId}/remorques`);
                     setRemorques(res.data || []);
                     break;
                 }
                 case 'factures':
                 case 'prestations': {
-                    const res = await axios.get(`/portal/clients/${clientId}/ventes`);
+                    const res = await api.get(`/portal/clients/${clientId}/ventes`);
                     setVentes(res.data || []);
                     break;
                 }
                 case 'annonces': {
-                    const res = await axios.get('/annonces/active');
+                    const res = await api.get('/annonces/active');
                     setAnnonces(res.data || []);
                     break;
                 }
                 case 'profil': {
-                    const res = await axios.get(`/portal/clients/${clientId}`);
+                    const res = await api.get(`/portal/clients/${clientId}`);
                     setProfile(res.data);
                     break;
                 }
@@ -231,7 +231,7 @@ export default function MobileApp({ user, onLogout }: MobileAppProps) {
 
     const handlePayment = async (vente: VenteEntity, provider: 'stripe' | 'payplug') => {
         try {
-            const res = await axios.post(`/ventes/${vente.id}/payment-link/${provider}`);
+            const res = await api.post(`/ventes/${vente.id}/payment-link/${provider}`);
             window.open(res.data.url, '_blank', 'noopener,noreferrer');
         } catch {
             message.error('Erreur lors de la creation du lien de paiement');
@@ -458,7 +458,7 @@ export default function MobileApp({ user, onLogout }: MobileAppProps) {
                 status: 'ACTIVE',
                 client: { id: clientId },
             };
-            const res = await axios.post('/annonces', payload);
+            const res = await api.post('/annonces', payload);
             message.success('Annonce creee');
             setAnnonceFormOpen(false);
             fetchData('annonces');
@@ -469,7 +469,7 @@ export default function MobileApp({ user, onLogout }: MobileAppProps) {
 
     const handleDeleteAnnonce = async (id: number) => {
         try {
-            await axios.delete(`/annonces/${id}`);
+            await api.delete(`/annonces/${id}`);
             message.success('Annonce supprimee');
             fetchData('annonces');
         } catch {

@@ -28,7 +28,7 @@ import {
 } from "@ant-design/icons";
 
 const { TextArea } = Input;
-import axios from "axios";
+import api from "./api.ts";
 import ImageUpload from './ImageUpload.tsx';
 
 const { Option } = Select;
@@ -142,7 +142,7 @@ const FournisseurBateaux = ({ fournisseurId, bateauId }: { fournisseurId?: numbe
         url = `/fournisseur-bateau/fournisseur/${fournisseurId}`;
       }
       if (url) {
-        const { data } = await axios.get(url);
+        const { data } = await api.get(url);
         setBateauxAssocies(data);
       }
     } catch {
@@ -155,7 +155,7 @@ const FournisseurBateaux = ({ fournisseurId, bateauId }: { fournisseurId?: numbe
   const fetchBateauxCatalogue = async () => {
     setLoading(true);
     try {
-      const { data } = await axios.get("/catalogue/bateaux");
+      const { data } = await api.get("/catalogue/bateaux");
       setBateauxCatalogue(data);
     } catch {
       message.error("Erreur lors du chargement du catalogue de bateaux");
@@ -167,7 +167,7 @@ const FournisseurBateaux = ({ fournisseurId, bateauId }: { fournisseurId?: numbe
   const fetchFournisseurs = async () => {
     setLoading(true);
     try {
-      const { data } = await axios.get("/catalogue/fournisseurs");
+      const { data } = await api.get("/catalogue/fournisseurs");
       setFournisseurs(data);
     } catch {
       message.error("Erreur lors du chargement des fournisseurs");
@@ -190,7 +190,7 @@ const FournisseurBateaux = ({ fournisseurId, bateauId }: { fournisseurId?: numbe
   const handleBateauAdd = async () => {
     try {
       const values = await bateauForm.validateFields();
-      const res = await axios.post("/catalogue/bateaux", values);
+      const res = await api.post("/catalogue/bateaux", values);
       message.success("Bateau créé");
       setBateauModalVisible(false);
       bateauForm.resetFields();
@@ -205,7 +205,7 @@ const FournisseurBateaux = ({ fournisseurId, bateauId }: { fournisseurId?: numbe
   const handleFournisseurAdd = async () => {
     try {
       const values = await fournisseurForm.validateFields();
-      const res = await axios.post("/catalogue/fournisseurs", values);
+      const res = await api.post("/catalogue/fournisseurs", values);
       message.success("Fournisseur créé");
       setFournisseurModalVisible(false);
       fournisseurForm.resetFields();
@@ -246,7 +246,7 @@ const FournisseurBateaux = ({ fournisseurId, bateauId }: { fournisseurId?: numbe
     if (!id) return;
     setLoading(true);
     try {
-      await axios.delete(`/fournisseur-bateau/${id}`);
+      await api.delete(`/fournisseur-bateau/${id}`);
       message.success("Supprimé avec succès");
       fetchAssocies();
     } catch {
@@ -284,12 +284,12 @@ const FournisseurBateaux = ({ fournisseurId, bateauId }: { fournisseurId?: numbe
 
       if (editing && editing.id) {
         // update
-        const res = await axios.put(`/fournisseur-bateau/${editing.id}`, body);
+        const res = await api.put(`/fournisseur-bateau/${editing.id}`, body);
         message.success("Modifié avec succès");
         setEditing(res.data);
       } else {
         // create
-        const res = await axios.post("/fournisseur-bateau", body);
+        const res = await api.post("/fournisseur-bateau", body);
         message.success("Ajouté avec succès");
         setEditing(res.data);
       }

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Card, Col, Row, Statistic } from 'antd';
 import { ShopOutlined, ToolOutlined, CarOutlined, FileTextOutlined } from '@ant-design/icons';
-import axios from 'axios';
+import api from './api.ts';
 
 interface DashboardProps {
     clientId: number;
@@ -15,10 +15,10 @@ export default function Dashboard({ clientId }: DashboardProps) {
 
     useEffect(() => {
         Promise.all([
-            axios.get(`/portal/clients/${clientId}/bateaux`),
-            axios.get(`/portal/clients/${clientId}/moteurs`),
-            axios.get(`/portal/clients/${clientId}/remorques`),
-            axios.get(`/portal/clients/${clientId}/ventes`),
+            api.get(`/portal/clients/${clientId}/bateaux`),
+            api.get(`/portal/clients/${clientId}/moteurs`),
+            api.get(`/portal/clients/${clientId}/remorques`),
+            api.get(`/portal/clients/${clientId}/ventes`),
         ]).then(([bateaux, moteurs, remorques, ventes]) => {
             setBateauxCount(bateaux.data.length);
             setMoteursCount(moteurs.data.length);

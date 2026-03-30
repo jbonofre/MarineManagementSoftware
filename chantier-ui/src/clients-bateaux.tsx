@@ -26,7 +26,7 @@ import {
   DeleteOutlined,
   SearchOutlined,
 } from "@ant-design/icons";
-import axios from "axios";
+import api from "./api.ts";
 import ImageUpload from './ImageUpload.tsx';
 import DocumentUpload from './DocumentUpload.tsx';
 import dayjs from "dayjs";
@@ -103,7 +103,7 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
       if (q && q.trim() !== "") {
         url = `/bateaux/search?q=${encodeURIComponent(q)}`;
       }
-      const res = await axios.get(url);
+      const res = await api.get(url);
       let bateauxData = res.data;
       // Filter by clientId if provided
       if (clientId) {
@@ -120,7 +120,7 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
 
   const fetchBateauxCatalogue = async () => {
     try {
-      const res = await axios.get('/catalogue/bateaux');
+      const res = await api.get('/catalogue/bateaux');
       setBateauxCatalogue(res.data);
     } catch {
       message.error("Erreur lors du chargement du catalogue de bateaux");
@@ -130,7 +130,7 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
 
   const fetchMoteursCatalogue = async () => {
     try {
-      const res = await axios.get('/catalogue/moteurs');
+      const res = await api.get('/catalogue/moteurs');
       setMoteursCatalogue(res.data);
     } catch {
       message.error("Erreur lors du chargement du catalogue de moteurs");
@@ -146,7 +146,7 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
   }, [clientId]);
 
   const fetchClients = async () => {
-    const res = await axios.get('/clients');
+    const res = await api.get('/clients');
     setClients(res.data);
   };
 
@@ -177,7 +177,7 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
     if (!id) return;
     setLoading(true);
     try {
-      await axios.delete(`/bateaux/${id}`);
+      await api.delete(`/bateaux/${id}`);
       message.success("Bateau supprimé");
       fetchBateaux();
     } catch {
@@ -189,7 +189,7 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
   const handleCatalogueAdd = async () => {
     try {
       const values = await catalogueForm.validateFields();
-      const res = await axios.post("/catalogue/bateaux", values);
+      const res = await api.post("/catalogue/bateaux", values);
       message.success("Modèle catalogue ajouté");
       setCatalogueModalVisible(false);
       catalogueForm.resetFields();
@@ -205,7 +205,7 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
   const handleMoteurAdd = async () => {
     try {
       const values = await moteurForm.validateFields();
-      const res = await axios.post("/catalogue/moteurs", values);
+      const res = await api.post("/catalogue/moteurs", values);
       message.success("Moteur catalogue ajouté");
       setMoteurModalVisible(false);
       moteurForm.resetFields();
@@ -223,7 +223,7 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
   const handleClientAdd = async () => {
     try {
       const values = await clientForm.validateFields();
-      const res = await axios.post("/clients", values);
+      const res = await api.post("/clients", values);
       message.success("Client ajouté");
       setClientModalVisible(false);
       clientForm.resetFields();
@@ -258,7 +258,7 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
       };
       if (editing && editing.id) {
         // update
-        const res = await axios.put(`/bateaux/${editing.id}`, payload);
+        const res = await api.put(`/bateaux/${editing.id}`, payload);
         message.success("Bateau modifié");
         const updated = res.data;
         setEditing(updated);
@@ -273,7 +273,7 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
         });
       } else {
         // create
-        const res = await axios.post("/bateaux", payload);
+        const res = await api.post("/bateaux", payload);
         message.success("Bateau ajouté");
         const created = res.data;
         setEditing(created);

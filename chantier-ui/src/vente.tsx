@@ -20,7 +20,7 @@ import {
     message
 } from 'antd';
 import { CalendarOutlined, CreditCardOutlined, DeleteOutlined, EditOutlined, MailOutlined, PlusCircleOutlined, PlusOutlined, PrinterOutlined, SendOutlined } from '@ant-design/icons';
-import axios from 'axios';
+import api from './api.ts';
 import { useHistory } from 'react-router-dom';
 import ImageUpload from './ImageUpload.tsx';
 import DocumentUpload from './DocumentUpload.tsx';
@@ -560,7 +560,7 @@ export default function Vente() {
             const hasType = !!activeFilters.type;
             const hasClient = activeFilters.clientId !== undefined;
             const endpoint = hasStatus || hasType || hasClient ? '/ventes/search' : '/ventes';
-            const response = await axios.get(endpoint, {
+            const response = await api.get(endpoint, {
                 params: {
                     ...(hasStatus ? { status: activeFilters.status } : {}),
                     ...(hasType ? { type: activeFilters.type } : {}),
@@ -591,18 +591,18 @@ export default function Vente() {
                 catMoteursRes,
                 catRemorquesRes
             ] = await Promise.all([
-                axios.get('/clients'),
-                axios.get('/bateaux'),
-                axios.get('/moteurs'),
-                axios.get('/remorques'),
-                axios.get('/forfaits'),
-                axios.get('/catalogue/produits'),
-                axios.get('/services'),
-                axios.get('/main-oeuvres'),
-                axios.get('/techniciens'),
-                axios.get('/catalogue/bateaux'),
-                axios.get('/catalogue/moteurs'),
-                axios.get('/catalogue/remorques')
+                api.get('/clients'),
+                api.get('/bateaux'),
+                api.get('/moteurs'),
+                api.get('/remorques'),
+                api.get('/forfaits'),
+                api.get('/catalogue/produits'),
+                api.get('/services'),
+                api.get('/main-oeuvres'),
+                api.get('/techniciens'),
+                api.get('/catalogue/bateaux'),
+                api.get('/catalogue/moteurs'),
+                api.get('/catalogue/remorques')
             ]);
             setClients(clientsRes.data || []);
             setBateaux(bateauxRes.data || []);
@@ -637,7 +637,7 @@ export default function Vente() {
         try {
             const values = await newProduitForm.validateFields();
             values.images = values.images || [];
-            const res = await axios.post('/catalogue/produits', values);
+            const res = await api.post('/catalogue/produits', values);
             const created = res.data as ProduitCatalogueEntity;
             message.success('Produit ajouté avec succès');
             setProduits((prev) => [...prev, created]);
@@ -740,13 +740,13 @@ export default function Vente() {
                 prixTTC: values.prixTTC || 0
             };
             if (editServiceId) {
-                const res = await axios.put(`/services/${editServiceId}`, { id: editServiceId, ...payload });
+                const res = await api.put(`/services/${editServiceId}`, { id: editServiceId, ...payload });
                 const updated = res.data as ServiceEntity;
                 message.success('Service modifié avec succès');
                 setServices((prev) => prev.map((s) => s.id === editServiceId ? updated : s));
                 recalculateFromLines('auto');
             } else {
-                const res = await axios.post('/services', payload);
+                const res = await api.post('/services', payload);
                 const created = res.data as ServiceEntity;
                 message.success('Service ajouté avec succès');
                 setServices((prev) => [...prev, created]);
@@ -884,7 +884,7 @@ export default function Vente() {
                 montantTVA: values.montantTVA || 0,
                 prixTTC: values.prixTTC || 0
             };
-            const res = await axios.post('/forfaits', payload);
+            const res = await api.post('/forfaits', payload);
             const created = res.data as ForfaitEntity;
             message.success('Forfait ajouté avec succès');
             setForfaits((prev) => [...prev, created]);
@@ -984,7 +984,7 @@ export default function Vente() {
     const handleNewClientSave = async () => {
         try {
             const values = await newClientForm.validateFields();
-            const res = await axios.post('/clients', values);
+            const res = await api.post('/clients', values);
             const created = res.data as ClientEntity;
             message.success('Client ajouté avec succès');
             setClients((prev) => [...prev, created]);
@@ -1003,7 +1003,7 @@ export default function Vente() {
     const handleNewBateauSave = async () => {
         try {
             const values = await newBateauForm.validateFields();
-            const res = await axios.post('/bateaux', values);
+            const res = await api.post('/bateaux', values);
             const created = res.data;
             message.success('Bateau ajouté avec succès');
             setBateaux((prev) => [...prev, created]);
@@ -1020,7 +1020,7 @@ export default function Vente() {
     const handleNewMoteurSave = async () => {
         try {
             const values = await newMoteurForm.validateFields();
-            const res = await axios.post('/moteurs', values);
+            const res = await api.post('/moteurs', values);
             const created = res.data;
             message.success('Moteur ajouté avec succès');
             setMoteurs((prev) => [...prev, created]);
@@ -1037,7 +1037,7 @@ export default function Vente() {
     const handleNewRemorqueSave = async () => {
         try {
             const values = await newRemorqueForm.validateFields();
-            const res = await axios.post('/remorques', values);
+            const res = await api.post('/remorques', values);
             const created = res.data;
             message.success('Remorque ajoutée avec succès');
             setRemorques((prev) => [...prev, created]);
@@ -1116,10 +1116,10 @@ export default function Vente() {
             setCurrentVente(vente);
             setModalVisible(true);
             if (vente.id) {
-                axios.get<RappelHistoriqueEntity[]>(`/rappels/vente/${vente.id}`).then(res => setRappelHistorique(res.data)).catch(() => setRappelHistorique([]));
+                api.get<RappelHistoriqueEntity[]>(`/rappels/vente/${vente.id}`).then(res => setRappelHistorique(res.data)).catch(() => setRappelHistorique([]));
                 // Fetch the full vente to ensure all nested data is loaded
                 try {
-                    const res = await axios.get<VenteEntity>(`/ventes/${vente.id}`);
+                    const res = await api.get<VenteEntity>(`/ventes/${vente.id}`);
                     const fullVente = res.data;
                     setCurrentVente(fullVente);
                     populateForm(fullVente);
@@ -1222,12 +1222,12 @@ export default function Vente() {
             const values = await form.validateFields();
             const payload = toPayload(values);
             if (isEdit && currentVente?.id) {
-                const res = await axios.put(`/ventes/${currentVente.id}`, { ...currentVente, ...payload });
+                const res = await api.put(`/ventes/${currentVente.id}`, { ...currentVente, ...payload });
                 message.success('Vente modifiee avec succes');
                 setCurrentVente(res.data);
                 form.setFieldsValue(values);
             } else {
-                const res = await axios.post('/ventes', payload);
+                const res = await api.post('/ventes', payload);
                 message.success('Vente ajoutee avec succes');
                 setIsEdit(true);
                 setCurrentVente(res.data);
@@ -1244,7 +1244,7 @@ export default function Vente() {
             return;
         }
         try {
-            await axios.delete(`/ventes/${id}`);
+            await api.delete(`/ventes/${id}`);
             message.success('Vente supprimee avec succes');
             fetchVentes(filters);
         } catch {
@@ -1459,7 +1459,7 @@ export default function Vente() {
             return;
         }
         try {
-            const res = await axios.post(`/ventes/${vente.id}/payment-link/${provider}`);
+            const res = await api.post(`/ventes/${vente.id}/payment-link/${provider}`);
             window.open(res.data.url, '_blank', 'noopener,noreferrer');
         } catch {
             message.error(`Erreur lors de la creation du lien de paiement ${provider === 'stripe' ? 'Stripe' : 'PayPlug'}`);
@@ -2192,9 +2192,9 @@ export default function Vente() {
                                                         icon={<SendOutlined />}
                                                         onClick={async () => {
                                                             try {
-                                                                await axios.post(`/ventes/${currentVente.id}/rappel`);
+                                                                await api.post(`/ventes/${currentVente.id}/rappel`);
                                                                 message.success('Rappel envoye avec succes');
-                                                                axios.get<RappelHistoriqueEntity[]>(`/rappels/vente/${currentVente.id}`).then(res => setRappelHistorique(res.data)).catch(() => {});
+                                                                api.get<RappelHistoriqueEntity[]>(`/rappels/vente/${currentVente.id}`).then(res => setRappelHistorique(res.data)).catch(() => {});
                                                             } catch (err: any) {
                                                                 message.error(err?.response?.data || 'Erreur lors de l\'envoi du rappel');
                                                             }

@@ -7,15 +7,28 @@ import './app.css';
 
 export default function App() {
 
-    const [ user, setUser ] = useState();
+    const [ user, setUser ] = useState(() => {
+        const stored = localStorage.getItem('moussaillon-user');
+        return stored ? JSON.parse(stored) : null;
+    });
+
+    const handleSetUser = (u) => {
+        if (u) {
+            setUser(u);
+        } else {
+            localStorage.removeItem('moussaillon-token');
+            localStorage.removeItem('moussaillon-user');
+            setUser(null);
+        }
+    };
 
     if (user) {
         return(
-            <Workspace user={user.name} roles={user.roles} setUser={setUser} />
+            <Workspace user={user.name} roles={user.roles} setUser={handleSetUser} />
         );
     } else {
         return(
-            <Login user={user} setUser={setUser} />
+            <Login user={user} setUser={handleSetUser} />
         );
     }
 

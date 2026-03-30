@@ -29,7 +29,7 @@ import {
   ShrinkOutlined,
   ShoppingCartOutlined,
 } from "@ant-design/icons";
-import axios from "axios";
+import api from "./api.ts";
 import ImageUpload from './ImageUpload.tsx';
 
 const { Option } = Select;
@@ -138,7 +138,7 @@ const FournisseurProduits = ({
         url = `/fournisseur-produit/fournisseur/${fournisseurId}`;
       }
       if (url) {
-        const { data } = await axios.get(url);
+        const { data } = await api.get(url);
         setAssocies(data);
       }
     } catch {
@@ -151,7 +151,7 @@ const FournisseurProduits = ({
   const fetchProduits = async () => {
     setLoading(true);
     try {
-      const { data } = await axios.get("/catalogue/produits");
+      const { data } = await api.get("/catalogue/produits");
       setProduits(data);
     } catch {
       message.error("Erreur lors du chargement des produits catalogue");
@@ -163,7 +163,7 @@ const FournisseurProduits = ({
   const fetchFournisseurs = async () => {
     setLoading(true);
     try {
-      const { data } = await axios.get("/catalogue/fournisseurs");
+      const { data } = await api.get("/catalogue/fournisseurs");
       setFournisseurs(data);
     } catch {
       message.error("Erreur lors du chargement des fournisseurs");
@@ -187,7 +187,7 @@ const FournisseurProduits = ({
     try {
       const values = await produitForm.validateFields();
       values.images = values.images || [];
-      const res = await axios.post("/catalogue/produits", values);
+      const res = await api.post("/catalogue/produits", values);
       message.success("Produit créé");
       setProduitModalVisible(false);
       produitForm.resetFields();
@@ -202,7 +202,7 @@ const FournisseurProduits = ({
   const handleFournisseurAdd = async () => {
     try {
       const values = await fournisseurForm.validateFields();
-      const res = await axios.post("/catalogue/fournisseurs", values);
+      const res = await api.post("/catalogue/fournisseurs", values);
       message.success("Fournisseur créé");
       setFournisseurModalVisible(false);
       fournisseurForm.resetFields();
@@ -243,7 +243,7 @@ const FournisseurProduits = ({
     if (!id) return;
     setLoading(true);
     try {
-      await axios.delete(`/fournisseur-produit/${id}`);
+      await api.delete(`/fournisseur-produit/${id}`);
       message.success("Supprimé avec succès");
       fetchAssocies();
     } catch {
@@ -281,12 +281,12 @@ const FournisseurProduits = ({
 
       if (editing && editing.id) {
         // update
-        const res = await axios.put(`/fournisseur-produit/${editing.id}`, body);
+        const res = await api.put(`/fournisseur-produit/${editing.id}`, body);
         message.success("Modifié avec succès");
         setEditing(res.data);
       } else {
         // create
-        const res = await axios.post("/fournisseur-produit", body);
+        const res = await api.post("/fournisseur-produit", body);
         message.success("Ajouté avec succès");
         setEditing(res.data);
       }
@@ -328,7 +328,7 @@ const FournisseurProduits = ({
     };
 
     try {
-      await axios.post("/commandes-fournisseur", body);
+      await api.post("/commandes-fournisseur", body);
       message.success(`Commande brouillon créée pour ${record.produit.nom} (x${qte})`);
     } catch {
       message.error("Erreur lors de la création de la commande");

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Card, Row, Col, Space, Input, Button, Table, Modal, Form, InputNumber, Popconfirm, message } from 'antd';
 import { PlusCircleOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
-import axios from 'axios';
+import api from './api.ts';
 
 interface MainOeuvreEntity {
     id?: number;
@@ -47,7 +47,7 @@ export default function MainOeuvres() {
             if (query && query.trim()) {
                 url = '/main-oeuvres/search';
             }
-            const response = await axios.get(url, { params: query && query.trim() ? { q: query } : {} });
+            const response = await api.get(url, { params: query && query.trim() ? { q: query } : {} });
             setMainOeuvres(response.data);
         } catch {
             message.error("Erreur lors du chargement des main d'oeuvres.");
@@ -81,7 +81,7 @@ export default function MainOeuvres() {
             return;
         }
         try {
-            await axios.delete(`/main-oeuvres/${id}`);
+            await api.delete(`/main-oeuvres/${id}`);
             message.success("Main d'oeuvre supprimée avec succès");
             fetchMainOeuvres(searchQuery);
         } catch {
@@ -94,12 +94,12 @@ export default function MainOeuvres() {
             const values = await form.validateFields();
             const payload = { ...values };
             if (isEdit && currentMainOeuvre?.id) {
-                const res = await axios.put(`/main-oeuvres/${currentMainOeuvre.id}`, { ...currentMainOeuvre, ...payload });
+                const res = await api.put(`/main-oeuvres/${currentMainOeuvre.id}`, { ...currentMainOeuvre, ...payload });
                 message.success("Main d'oeuvre modifiée avec succès");
                 setCurrentMainOeuvre(res.data);
                 form.setFieldsValue(res.data);
             } else {
-                const res = await axios.post('/main-oeuvres', payload);
+                const res = await api.post('/main-oeuvres', payload);
                 message.success("Main d'oeuvre ajoutée avec succès");
                 setIsEdit(true);
                 setCurrentMainOeuvre(res.data);

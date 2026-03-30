@@ -8,7 +8,7 @@ import {
     CalendarOutlined,
     StopOutlined,
 } from '@ant-design/icons';
-import axios from 'axios';
+import api from './api.ts';
 
 interface ChecklistItem {
     id: number;
@@ -155,7 +155,7 @@ export default function MesPrestations({ clientId }: MesPrestationsProps) {
 
     useEffect(() => {
         setLoading(true);
-        axios.get(`/portal/clients/${clientId}/ventes`)
+        api.get(`/portal/clients/${clientId}/ventes`)
             .then((res) => setVentes((res.data || []).filter((v: VenteEntity) => getPlanningItems(v).length > 0)))
             .catch(() => message.error('Erreur lors du chargement des prestations'))
             .finally(() => setLoading(false));

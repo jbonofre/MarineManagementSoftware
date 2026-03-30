@@ -26,7 +26,7 @@ import {
   MinusCircleOutlined,
   SearchOutlined,
 } from "@ant-design/icons";
-import axios from "axios";
+import api from "./api.ts";
 import dayjs from "dayjs";
 
 const { Option } = Select;
@@ -178,7 +178,7 @@ const CommandesFournisseur = ({ fournisseurId }: { fournisseurId?: number }) => 
       const url = fournisseurId
         ? `/commandes-fournisseur/search?fournisseurId=${fournisseurId}`
         : "/commandes-fournisseur";
-      const { data } = await axios.get(url);
+      const { data } = await api.get(url);
       setCommandes(data);
     } catch {
       message.error("Erreur lors du chargement des commandes fournisseur");
@@ -189,7 +189,7 @@ const CommandesFournisseur = ({ fournisseurId }: { fournisseurId?: number }) => 
 
   const fetchFournisseurs = async () => {
     try {
-      const { data } = await axios.get("/catalogue/fournisseurs");
+      const { data } = await api.get("/catalogue/fournisseurs");
       setFournisseurs(data);
     } catch {
       message.error("Erreur lors du chargement des fournisseurs");
@@ -199,10 +199,10 @@ const CommandesFournisseur = ({ fournisseurId }: { fournisseurId?: number }) => 
   const fetchFournisseurArticles = async (fId: number) => {
     try {
       const [produits, bateaux, moteurs, helices] = await Promise.all([
-        axios.get(`/fournisseur-produit/fournisseur/${fId}`),
-        axios.get(`/fournisseur-bateau/fournisseur/${fId}`),
-        axios.get(`/fournisseur-moteur/fournisseur/${fId}`),
-        axios.get(`/fournisseur-helice/fournisseur/${fId}`),
+        api.get(`/fournisseur-produit/fournisseur/${fId}`),
+        api.get(`/fournisseur-bateau/fournisseur/${fId}`),
+        api.get(`/fournisseur-moteur/fournisseur/${fId}`),
+        api.get(`/fournisseur-helice/fournisseur/${fId}`),
       ]);
       const items: ArticleItem[] = [
         ...(produits.data as FournisseurProduit[]).filter((fp) => fp.produit).map((fp) => ({
@@ -247,7 +247,7 @@ const CommandesFournisseur = ({ fournisseurId }: { fournisseurId?: number }) => 
   const handleFournisseurAdd = async () => {
     try {
       const values = await fournisseurForm.validateFields();
-      const res = await axios.post("/catalogue/fournisseurs", values);
+      const res = await api.post("/catalogue/fournisseurs", values);
       message.success("Fournisseur créé");
       setFournisseurModalVisible(false);
       fournisseurForm.resetFields();
@@ -293,7 +293,7 @@ const CommandesFournisseur = ({ fournisseurId }: { fournisseurId?: number }) => 
     try {
       const params: any = { q: value };
       if (fournisseurId) params.fournisseurId = fournisseurId;
-      const { data } = await axios.get("/commandes-fournisseur/search", { params });
+      const { data } = await api.get("/commandes-fournisseur/search", { params });
       setCommandes(data);
     } catch {
       message.error("Erreur lors de la recherche");
@@ -352,7 +352,7 @@ const CommandesFournisseur = ({ fournisseurId }: { fournisseurId?: number }) => 
     if (!id) return;
     setLoading(true);
     try {
-      await axios.delete(`/commandes-fournisseur/${id}`);
+      await api.delete(`/commandes-fournisseur/${id}`);
       message.success("Commande supprimée");
       fetchCommandes();
     } catch {
@@ -441,10 +441,10 @@ const CommandesFournisseur = ({ fournisseurId }: { fournisseurId?: number }) => 
 
       setLoading(true);
       if (editing && editing.id) {
-        await axios.put(`/commandes-fournisseur/${editing.id}`, body);
+        await api.put(`/commandes-fournisseur/${editing.id}`, body);
         message.success("Commande modifiée");
       } else {
-        await axios.post("/commandes-fournisseur", body);
+        await api.post("/commandes-fournisseur", body);
         message.success("Commande créée");
       }
       setModalVisible(false);

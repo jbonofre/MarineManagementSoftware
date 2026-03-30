@@ -22,7 +22,7 @@ import {
   SaveOutlined,
   SearchOutlined,
 } from "@ant-design/icons";
-import axios from "axios";
+import api, { fetchWithAuth } from './api.ts';
 import DocumentUpload from "./DocumentUpload.tsx";
 import FournisseurBateaux from "./fournisseur-bateaux.tsx";
 import FournisseurHelices from "./fournisseur-helices.tsx";
@@ -77,7 +77,7 @@ const Fournisseurs = () => {
   const fetchFournisseurs = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/catalogue/fournisseurs");
+      const res = await fetchWithAuth("/catalogue/fournisseurs");
       if (!res.ok) throw new Error("Erreur lors du chargement");
       setFournisseurs(await res.json());
     } catch {
@@ -107,7 +107,7 @@ const Fournisseurs = () => {
     if (!id) return;
     setLoading(true);
     try {
-      const res = await fetch(`/catalogue/fournisseurs/${id}`, { method: "DELETE" });
+      const res = await fetchWithAuth(`/catalogue/fournisseurs/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error();
       message.success("Fournisseur supprimé");
       fetchFournisseurs();
@@ -124,7 +124,7 @@ const Fournisseurs = () => {
       setLoading(true);
       if (editing) {
         // Update
-        const res = await fetch(`/catalogue/fournisseurs/${editing.id}`, {
+        const res = await fetchWithAuth(`/catalogue/fournisseurs/${editing.id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ ...editing, ...values }),
@@ -136,7 +136,7 @@ const Fournisseurs = () => {
         form.setFieldsValue(updated);
       } else {
         // Create
-        const res = await fetch("/catalogue/fournisseurs", {
+        const res = await fetchWithAuth("/catalogue/fournisseurs", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(values),
@@ -159,7 +159,7 @@ const Fournisseurs = () => {
   const handleSearch = async (value: string) => {
     setLoading(true);
     try {
-      const response = await axios.get("/catalogue/fournisseurs/search", { params: { q: value } });
+      const response = await api.get("/catalogue/fournisseurs/search", { params: { q: value } });
       setFournisseurs(response.data);
     } catch {
       message.error("Erreur lors de la recherche");

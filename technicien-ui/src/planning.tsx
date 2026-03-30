@@ -18,7 +18,7 @@ import {
     message,
 } from 'antd';
 import { CheckCircleOutlined, ClockCircleOutlined, EditOutlined, ExclamationCircleOutlined, ReloadOutlined } from '@ant-design/icons';
-import axios from 'axios';
+import api from './api.ts';
 
 type TaskStatus = 'EN_ATTENTE' | 'PLANIFIEE' | 'EN_COURS' | 'TERMINEE' | 'INCIDENT' | 'ANNULEE';
 
@@ -108,7 +108,7 @@ export default function Planning({ technicienId }: PlanningProps) {
     const fetchItems = async () => {
         setLoading(true);
         try {
-            const res = await axios.get(`/technicien-portal/techniciens/${technicienId}/taches`);
+            const res = await api.get(`/technicien-portal/techniciens/${technicienId}/taches`);
             setItems(res.data || []);
         } catch {
             message.error('Erreur lors du chargement des taches');
@@ -157,7 +157,7 @@ export default function Planning({ technicienId }: PlanningProps) {
             const endpoint = item.itemType === 'forfait'
                 ? `/technicien-portal/forfaits/${item.itemId}`
                 : `/technicien-portal/services/${item.itemId}`;
-            const res = await axios.put(endpoint, {
+            const res = await api.put(endpoint, {
                 status: 'EN_COURS',
                 dateDebut: nowIso(),
                 dureeReelle: item.dureeReelle || 0,
@@ -205,7 +205,7 @@ export default function Planning({ technicienId }: PlanningProps) {
                         const endpoint = currentItem.itemType === 'forfait'
                             ? `/technicien-portal/forfaits/${currentItem.itemId}`
                             : `/technicien-portal/services/${currentItem.itemId}`;
-                        await axios.put(endpoint, {
+                        await api.put(endpoint, {
                             status: 'TERMINEE',
                             dateFin: finIso,
                             dureeReelle,
@@ -234,7 +234,7 @@ export default function Planning({ technicienId }: PlanningProps) {
             const endpoint = currentItem.itemType === 'forfait'
                 ? `/technicien-portal/forfaits/${currentItem.itemId}`
                 : `/technicien-portal/services/${currentItem.itemId}`;
-            const res = await axios.put(endpoint, {
+            const res = await api.put(endpoint, {
                 status: values.status,
                 dureeReelle: values.dureeReelle || 0,
                 dateFin: values.status === 'TERMINEE' ? nowIso() : undefined,

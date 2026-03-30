@@ -24,7 +24,10 @@ export default function Login({ setUser }: LoginProps) {
         setLoading(true);
         try {
             const res = await axios.post('/portal/login', { email: values.email, password: values.password });
-            setUser(res.data);
+            const { token, ...userData } = res.data;
+            localStorage.setItem('moussaillon-client-token', token);
+            localStorage.setItem('moussaillon-client-user', JSON.stringify(userData));
+            setUser(userData);
         } catch {
             message.error("Email ou mot de passe incorrect.");
         } finally {

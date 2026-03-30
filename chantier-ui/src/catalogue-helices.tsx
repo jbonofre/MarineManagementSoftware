@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Table, Button, Modal, Form, Input, InputNumber, Image, Select, message, Popconfirm, Space, Row, Col, Rate, Card } from 'antd';
-import axios from 'axios';
+import api, { fetchWithAuth } from './api.ts';
 import { PlusCircleOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons';
 import FournisseurHelices from './fournisseur-helices.tsx';
 import ImageUpload from './ImageUpload.tsx';
@@ -63,18 +63,18 @@ const defaultHelice: HeliceCatalogueEntity = {
     prixVenteTTC: 0,
 };
 const fetchHelices = async (): Promise<HeliceCatalogueEntity[]> => {
-    const res = await fetch('/catalogue/helices');
+    const res = await fetchWithAuth('/catalogue/helices');
     if (!res.ok) throw new Error('Échec de récupération du catalogue des hélices');
     return await res.json();
 };
 const fetchMoteurs = async (): Promise<MoteurCatalogueEntity[]> => {
-    const res = await fetch('/catalogue/moteurs');
+    const res = await fetchWithAuth('/catalogue/moteurs');
     if (!res.ok) throw new Error('Échec de récupération du catalogue des moteurs');
     return await res.json();
 };
 
 const createHelice = async (helice: HeliceCatalogueEntity) => {
-    const res = await fetch('/catalogue/helices', {
+    const res = await fetchWithAuth('/catalogue/helices', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(helice),
@@ -84,7 +84,7 @@ const createHelice = async (helice: HeliceCatalogueEntity) => {
 };
 
 const updateHelice = async (id: number, helice: HeliceCatalogueEntity) => {
-    const res = await fetch(`/catalogue/helices/${id}`, {
+    const res = await fetchWithAuth(`/catalogue/helices/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(helice),
@@ -94,7 +94,7 @@ const updateHelice = async (id: number, helice: HeliceCatalogueEntity) => {
 };
 
 const deleteHelice = async (id: number) => {
-    const res = await fetch(`/catalogue/helices/${id}`, {
+    const res = await fetchWithAuth(`/catalogue/helices/${id}`, {
         method: 'DELETE'
     });
     if (!res.ok) throw new Error("Erreur lors de la suppression");
@@ -193,7 +193,7 @@ const HeliceCatalogueView: React.FC = () => {
                     ? [...(moteur.helicesCompatibles || []), sanitizedHelice]
                     : (moteur.helicesCompatibles || []).filter((linkedHelice) => linkedHelice.id !== helice.id);
                 const payload = { ...moteur, helicesCompatibles: updatedHelices };
-                await axios.put(`/catalogue/moteurs/${moteurId}`, payload);
+                await api.put(`/catalogue/moteurs/${moteurId}`, payload);
             }),
         );
     };
@@ -345,7 +345,7 @@ const HeliceCatalogueView: React.FC = () => {
                                 onSearch={async (value) => {
                                     setLoading(true);
                                     try {
-                                        const response = await axios.get('/catalogue/helices/search', { params: { q: value } });
+                                        const response = await api.get('/catalogue/helices/search', { params: { q: value } });
                                         setHelices(response.data);
                                     } catch (error) {
                                         message.error('Erreur lors de la recherche');
