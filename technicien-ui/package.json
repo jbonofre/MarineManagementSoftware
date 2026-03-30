@@ -3,7 +3,7 @@
   "version": "0.9-SNAPSHOT",
   "main": "/index.tsx",
   "dependencies": {
-    "@ant-design/icons": "^6.0.0",
+    "@ant-design/icons": "^6.1.1",
     "ajv": "^8.18.0",
     "antd": "^6.0.0",
     "axios": "^1.6.0",
