@@ -1,6 +1,10 @@
 package net.nanthrax.moussaillon.services;
 
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import io.quarkus.mailer.Mail;
 import io.quarkus.mailer.Mailer;
@@ -19,6 +23,7 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import net.nanthrax.moussaillon.persistence.EmailTemplateEntity;
 import net.nanthrax.moussaillon.persistence.ForfaitEntity;
 import net.nanthrax.moussaillon.persistence.ForfaitProduitEntity;
 import net.nanthrax.moussaillon.persistence.ProduitCatalogueEntity;
@@ -39,6 +44,115 @@ public class VenteResource {
 
     @Inject
     RappelScheduler rappelScheduler;
+
+    @POST
+    @Path("{id}/email")
+    @Transactional
+    public Response envoyerFactureEmail(@PathParam("id") long id) {
+        VenteEntity entity = VenteEntity.findById(id);
+        if (entity == null) {
+            throw new WebApplicationException("La vente (" + id + ") n'est pas trouvée", 404);
+        }
+        if (entity.client == null || entity.client.email == null || entity.client.email.isBlank()) {
+            throw new WebApplicationException("Le client n'a pas d'adresse email", 400);
+        }
+
+        SocieteEntity societe = SocieteEntity.findById(1L);
+        String societeNom = societe != null ? societe.nom : "moussAIllon";
+        String clientName = entity.client.prenom != null ? entity.client.prenom : entity.client.nom;
+        String dateStr = entity.date != null
+                ? new Timestamp(entity.date.getTime()).toLocalDateTime().toLocalDate().toString()
+                : "-";
+        String typeLabel = entity.type != null ? entity.type.name() : "-";
+        String statutLabel = entity.status != null ? entity.status.name() : "-";
+        String prixVenteTTC = String.format("%.2f EUR", entity.prixVenteTTC);
+        String modePaiement = entity.modePaiement != null ? entity.modePaiement.name() : "-";
+
+        // Build invoice lines
+        StringBuilder lignes = new StringBuilder();
+        if (entity.venteForfaits != null) {
+            for (VenteForfaitEntity vf : entity.venteForfaits) {
+                String nom = vf.forfait != null ? vf.forfait.nom : "Forfait";
+                double total = vf.forfait != null ? vf.forfait.prixTTC * vf.quantite : 0;
+                lignes.append("- Forfait : ").append(nom)
+                        .append(" x").append(vf.quantite)
+                        .append(" = ").append(String.format("%.2f EUR", total)).append("\n");
+            }
+        }
+        if (entity.produits != null) {
+            Map<Long, int[]> produitCount = new HashMap<>();
+            Map<Long, ProduitCatalogueEntity> produitMap = new HashMap<>();
+            for (ProduitCatalogueEntity p : entity.produits) {
+                if (p.id != null) {
+                    produitCount.computeIfAbsent(p.id, k -> new int[]{0, 0});
+                    produitCount.get(p.id)[0]++;
+                    produitCount.get(p.id)[1] += (int) (p.prixVenteTTC * 100);
+                    produitMap.putIfAbsent(p.id, p);
+                }
+            }
+            for (Map.Entry<Long, int[]> entry : produitCount.entrySet()) {
+                ProduitCatalogueEntity p = produitMap.get(entry.getKey());
+                String nom = p.nom + (p.marque != null ? " (" + p.marque + ")" : "");
+                int qty = entry.getValue()[0];
+                double total = entry.getValue()[1] / 100.0;
+                lignes.append("- Produit : ").append(nom)
+                        .append(" x").append(qty)
+                        .append(" = ").append(String.format("%.2f EUR", total)).append("\n");
+            }
+        }
+        if (entity.venteServices != null) {
+            for (VenteServiceEntity vs : entity.venteServices) {
+                String nom = vs.service != null ? vs.service.nom : "Service";
+                double total = vs.service != null ? vs.service.prixTTC * vs.quantite : 0;
+                lignes.append("- Service : ").append(nom)
+                        .append(" x").append(vs.quantite)
+                        .append(" = ").append(String.format("%.2f EUR", total)).append("\n");
+            }
+        }
+        if (lignes.length() == 0) {
+            lignes.append("Aucun élément");
+        }
+
+        EmailTemplateEntity template = EmailTemplateEntity.findByType(EmailTemplateEntity.Type.FACTURE);
+        String subject;
+        String body;
+        if (template != null) {
+            subject = template.sujet
+                    .replace("{client}", clientName)
+                    .replace("{typeVente}", typeLabel)
+                    .replace("{reference}", String.valueOf(entity.id))
+                    .replace("{date}", dateStr)
+                    .replace("{statut}", statutLabel)
+                    .replace("{prixVenteTTC}", prixVenteTTC)
+                    .replace("{modePaiement}", modePaiement)
+                    .replace("{lignes}", lignes.toString().trim())
+                    .replace("{societe}", societeNom);
+            body = template.contenu
+                    .replace("{client}", clientName)
+                    .replace("{typeVente}", typeLabel)
+                    .replace("{reference}", String.valueOf(entity.id))
+                    .replace("{date}", dateStr)
+                    .replace("{statut}", statutLabel)
+                    .replace("{prixVenteTTC}", prixVenteTTC)
+                    .replace("{modePaiement}", modePaiement)
+                    .replace("{lignes}", lignes.toString().trim())
+                    .replace("{societe}", societeNom);
+        } else {
+            subject = "Votre " + typeLabel + " #" + entity.id + " - " + societeNom;
+            body = "Bonjour " + clientName + ",\n\n"
+                    + "Veuillez trouver les informations de votre " + typeLabel + " #" + entity.id + ".\n\n"
+                    + "Date             : " + dateStr + "\n"
+                    + "Type             : " + typeLabel + "\n"
+                    + "Statut           : " + statutLabel + "\n"
+                    + "Prix vente TTC   : " + prixVenteTTC + "\n"
+                    + "Mode de paiement : " + modePaiement + "\n\n"
+                    + "Lignes :\n" + lignes + "\n"
+                    + "Cordialement,\n" + societeNom;
+        }
+
+        mailer.send(Mail.withHtml(entity.client.email, subject, body));
+        return Response.ok().build();
+    }
 
     @POST
     @Path("{id}/rappel")
@@ -310,19 +424,42 @@ public class VenteResource {
         String societeNom = societe != null ? societe.nom : "moussAIllon";
         String clientName = vente.client.prenom != null ? vente.client.prenom : vente.client.nom;
 
-        String subject = "Incident sur votre intervention - " + societeNom;
-        String body = "Bonjour " + clientName + ",\n\n"
-                + "Nous vous informons qu'un incident a ete signale sur l'intervention \"" + itemNom + "\".\n\n";
+        String detailsBlock = "";
         if (incidentDetails != null && !incidentDetails.isBlank()) {
-            body += "Details : " + incidentDetails + "\n\n";
+            detailsBlock = "Détails : " + incidentDetails + "\n\n";
         }
+        String dateBlock = "";
         if (incidentDate != null) {
-            body += "Date de l'incident : " + incidentDate + "\n\n";
+            dateBlock = "Date de l'incident : " + incidentDate + "\n\n";
         }
-        body += "Notre equipe met tout en oeuvre pour resoudre la situation dans les meilleurs delais.\n\n"
-                + "Cordialement,\n" + societeNom;
 
-        mailer.send(Mail.withText(vente.client.email, subject, body));
+        EmailTemplateEntity template = EmailTemplateEntity.findByType(EmailTemplateEntity.Type.INCIDENT);
+        String subject;
+        String body;
+        if (template != null) {
+            subject = template.sujet
+                    .replace("{client}", clientName)
+                    .replace("{intervention}", itemNom)
+                    .replace("{details}", detailsBlock)
+                    .replace("{dateIncident}", dateBlock)
+                    .replace("{societe}", societeNom);
+            body = template.contenu
+                    .replace("{client}", clientName)
+                    .replace("{intervention}", itemNom)
+                    .replace("{details}", detailsBlock)
+                    .replace("{dateIncident}", dateBlock)
+                    .replace("{societe}", societeNom);
+        } else {
+            subject = "Incident sur votre intervention - " + societeNom;
+            body = "Bonjour " + clientName + ",\n\n"
+                    + "Nous vous informons qu'un incident a été signalé sur l'intervention \"" + itemNom + "\".\n\n"
+                    + detailsBlock
+                    + dateBlock
+                    + "Notre équipe met tout en œuvre pour résoudre la situation dans les meilleurs délais.\n\n"
+                    + "Cordialement,\n" + societeNom;
+        }
+
+        mailer.send(Mail.withHtml(vente.client.email, subject, body));
     }
 
     private void decrementStock(VenteEntity vente) {

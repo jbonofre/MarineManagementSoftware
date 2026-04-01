@@ -1469,80 +1469,24 @@ export default function Vente() {
         );
     };
 
-    const handleEmail = (vente: VenteEntity) => {
+    const handleEmail = async (vente: VenteEntity) => {
+        if (!vente.id) {
+            message.warning('La vente doit être enregistrée avant d\'envoyer un email.');
+            return;
+        }
         const selectedClientId = form.getFieldValue('clientId');
         const fallbackClient = clients.find((client) => client.id === vente.client?.id || client.id === selectedClientId);
         const email = vente.client?.email || fallbackClient?.email || '';
         if (!email) {
-            message.warning("Aucun email client n'est renseigne pour cette vente.");
+            message.warning("Aucun email client n'est renseigné pour cette vente.");
             return;
         }
-
-        const forfaitLines = (vente.venteForfaits || []).map(vf => ({
-            type: 'Forfait',
-            label: vf.forfait?.nom || '',
-            quantite: vf.quantite || 1,
-            totalPrixTTC: (vf.forfait?.prixTTC || 0) * (vf.quantite || 1)
-        }));
-        const produitLines = Array.from(
-            (vente.produits || []).reduce((acc, item) => {
-                const label = `${item.nom}${item.marque ? ` (${item.marque})` : ''}`;
-                const key = item.id ? `id-${item.id}` : `label-${label}`;
-                const current = acc.get(key) || { type: 'Produit', label, quantite: 0, totalPrixTTC: 0 };
-                current.quantite += 1;
-                current.totalPrixTTC += item.prixVenteTTC || 0;
-                acc.set(key, current);
-                return acc;
-            }, new Map<string, { type: string; label: string; quantite: number; totalPrixTTC: number }>())
-                .values()
-        );
-        const serviceLines = (vente.venteServices || []).map(vs => ({
-            type: 'Service',
-            label: vs.service?.nom || '',
-            quantite: vs.quantite || 1,
-            totalPrixTTC: (vs.service?.prixTTC || 0) * (vs.quantite || 1)
-        }));
-        const invoiceLines = [...forfaitLines, ...produitLines, ...serviceLines];
-        const formatColumn = (value: string, width: number, align: 'left' | 'right' = 'left') => {
-            const truncated = value.length > width ? `${value.slice(0, width - 1)}.` : value;
-            return align === 'right' ? truncated.padStart(width) : truncated.padEnd(width);
-        };
-        const typeWidth = 8;
-        const designationWidth = 38;
-        const qtyWidth = 5;
-        const priceWidth = 13;
-        const rowSeparator = '-'.repeat(typeWidth + designationWidth + qtyWidth + priceWidth + 9);
-        const invoiceTableLines = invoiceLines.length > 0
-            ? [
-                `${formatColumn('Type', typeWidth)} | ${formatColumn('Designation', designationWidth)} | ${formatColumn('Qte', qtyWidth, 'right')} | ${formatColumn('Prix total', priceWidth, 'right')}`,
-                rowSeparator,
-                ...invoiceLines.map((line) =>
-                    `${formatColumn(line.type, typeWidth)} | ${formatColumn(line.label, designationWidth)} | ${formatColumn(String(line.quantite), qtyWidth, 'right')} | ${formatColumn(formatEuro(line.totalPrixTTC), priceWidth, 'right')}`
-                )
-            ]
-            : ['Aucun element'];
-
-        const subject = encodeURIComponent(`Vente #${vente.id || '-'}`);
-        const body = encodeURIComponent(
-            [
-                `Bonjour ${getClientLabel(vente.client || fallbackClient)},`,
-                '',
-                `Veuillez trouver les informations de votre vente #${vente.id || '-'}.`,
-                '',
-                `Date             : ${formatDate(vente.date)}`,
-                `Type             : ${vente.type || '-'}`,
-                `Statut           : ${vente.status || '-'}`,
-                `Prix vente TTC   : ${formatEuro(vente.prixVenteTTC)}`,
-                `Mode de paiement : ${vente.modePaiement || '-'}`,
-                '',
-                'Lignes:',
-                ...invoiceTableLines,
-                '',
-                'Cordialement,'
-            ].join('\n')
-        );
-
-        window.open(`mailto:${email}?subject=${subject}&body=${body}`, '_blank', 'noopener,noreferrer');
+        try {
+            await axios.post(`/ventes/${vente.id}/email`);
+            message.success('L\'email a été envoyé à ' + email);
+        } catch {
+            message.error('Erreur lors de l\'envoi de l\'email.');
+        }
     };
 
     const handlePayment = async (vente: VenteEntity, provider: 'stripe' | 'payplug') => {
