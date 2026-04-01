@@ -1,18 +1,17 @@
 import { fetchWithAuth } from './api.ts';
 import { useState, useEffect } from 'react';
-import { Card, Row, Col, Space, Image, Button, Form, Input, InputNumber, Spin, message } from 'antd';
-import { PlusCircleOutlined, PauseCircleOutlined, DeleteOutlined, DeploymentUnitOutlined, SaveOutlined } from '@ant-design/icons';
+import { Card, Row, Col, Space, Button, Form, Input, InputNumber, Spin, message } from 'antd';
+import { PauseCircleOutlined, DeploymentUnitOutlined, SaveOutlined } from '@ant-design/icons';
 import { demo } from './workspace.tsx';
+import ImageUpload from './ImageUpload.tsx';
 
 const { TextArea } = Input;
 
 export default function Societe(props) {
 
     const [ societe, setSociete ] = useState();
-    const [ images, setImages ] = useState();
 
     const [ societeForm ] = Form.useForm();
-    const [ newImageForm ] = Form.useForm();
 
     useEffect(() => {
        fetchWithAuth('./societe')
@@ -24,11 +23,6 @@ export default function Societe(props) {
        })
        .then(data => {
            setSociete(data);
-           if (data.images) {
-               setImages(data.images);
-           } else {
-               setImages([]);
-           }
        })
        .catch((error) => {
             message.error('Une erreur est survenue: ' + error.message);
@@ -40,16 +34,8 @@ export default function Societe(props) {
         return(<Spin/>);
     }
 
-    const imagesRender = images.map((image) =>
-      <Space><Image width={200} src={image} /><Button icon={<DeleteOutlined/>} onClick={() => {
-        const newImages = images.filter((img) => img !== image);
-        setImages(newImages);
-      }} /></Space>
-    );
-
     const updateSocieteFunction = (values) => {
         let newSociete = values;
-        newSociete.images = images;
         fetchWithAuth('./societe', {
             method: 'PUT',
             body: JSON.stringify(newSociete),
@@ -65,11 +51,6 @@ export default function Societe(props) {
         })
         .then((data) => {
             setSociete(data);
-            if(data.images) {
-                setImages(data.images);
-            } else {
-                setImages([]);
-            }
             message.info('La société a été mise à jour.')
         })
         .catch((error) => {
@@ -78,16 +59,9 @@ export default function Societe(props) {
         });
     };
 
-    const addImage = (values) => {
-        const newImages = [...images,...[ values.image ]];
-        setImages(newImages);
-    };
-
     return(
       <>
       <Card title={<Space><DeploymentUnitOutlined/> Société</Space>}>
-        <Row gutter={[16,16]}>
-            <Col span={19}>
                 <Form name="societe" labelCol={{ span: 8 }}
                     form={societeForm}
                     onFinish={updateSocieteFunction}
@@ -129,6 +103,9 @@ export default function Societe(props) {
                     <Form.Item name="bancaire" label="Coordonnées bancaires">
                         <TextArea rows={6} allowClear={true} />
                     </Form.Item>
+                    <Form.Item name="images" label="Images">
+                        <ImageUpload />
+                    </Form.Item>
                     <Form.Item label={null}>
                         <Space>
                             <Button onClick={() => societeForm.submit()} type="primary" icon={<SaveOutlined/>}>Enregistrer</Button>
@@ -136,21 +113,6 @@ export default function Societe(props) {
                         </Space>
                     </Form.Item>
                 </Form>
-            </Col>
-            <Col span={5}>
-                <Space direction="vertical" align="center">
-                {imagesRender}
-                <Form form={newImageForm} component={false} onFinish={addImage}>
-                <Space.Compact>
-                <Form.Item name="image" rules={[{ required: true, message: 'L\'adresse de l\'image est requise' }]}>
-                <Input placeholder="Adresse de l'image" allowClear={true} />
-                </Form.Item>
-                <Button type="primary" icon={<PlusCircleOutlined/>} onClick={() => newImageForm.submit()} />
-                </Space.Compact>
-                </Form>
-                </Space>
-            </Col>
-        </Row>
       </Card>
       </>
     );

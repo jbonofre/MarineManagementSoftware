@@ -13,7 +13,6 @@ import {
     Spin,
     message,
     Popconfirm,
-    Image,
 } from 'antd';
 import {
     PlusOutlined,
@@ -363,13 +362,11 @@ export default function PetitesAnnonces({ clientId }: PetitesAnnoncesProps) {
                         {(detailAnnonce.photos || []).length > 0 && (
                             <>
                                 <p><strong>Photos:</strong></p>
-                                <Image.PreviewGroup>
-                                    <Space wrap>
-                                        {detailAnnonce.photos!.map((url, i) => (
-                                            <Image key={i} width={150} src={url} style={{ borderRadius: 4 }} />
-                                        ))}
-                                    </Space>
-                                </Image.PreviewGroup>
+                                <Space wrap>
+                                    {detailAnnonce.photos!.map((url, i) => (
+                                        <img key={i} width={150} src={url} style={{ borderRadius: 4, cursor: 'pointer' }} onClick={() => window.open(url, '_blank')} />
+                                    ))}
+                                </Space>
                             </>
                         )}
                     </div>

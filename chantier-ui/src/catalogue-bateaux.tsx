@@ -188,7 +188,9 @@ const CatalogueBateaux: React.FC = () => {
             dataIndex: 'modele',
             render: (_,record) => (
                 <Space>
-                    <Image width={50} src={record.images[0]} />
+                    {record.images && record.images[0] && (
+                        <Image width={50} src={record.images[0]} />
+                    )}
                     {record.modele}
                 </Space>
             ),
