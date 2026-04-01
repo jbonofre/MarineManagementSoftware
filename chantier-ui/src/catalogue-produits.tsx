@@ -73,6 +73,7 @@ const CatalogueProduits: React.FC = () => {
     const [isEdit, setIsEdit] = useState<boolean>(false);
     const [currentProduit, setCurrentProduit] = useState<ProduitCatalogueEntity | null>(null);
     const [form] = Form.useForm();
+    const [formDirty, setFormDirty] = useState(false);
 
     // Unique marque options
     const marqueOptions = useMemo(() => {
@@ -96,6 +97,23 @@ const CatalogueProduits: React.FC = () => {
         fetchProduits();
     }, []);
 
+    const handleModalCancel = () => {
+        if (formDirty) {
+            Modal.confirm({
+                title: "Modifications non enregistrées",
+                content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
+                okText: "Fermer",
+                cancelText: "Annuler",
+                onOk: () => {
+                    setFormDirty(false);
+                    setModalVisible(false);
+                },
+            });
+        } else {
+            setModalVisible(false);
+        }
+    };
+
     const openModal = (produit?: ProduitCatalogueEntity) => {
         if (produit) {
             setIsEdit(true);
@@ -113,6 +131,7 @@ const CatalogueProduits: React.FC = () => {
             form.resetFields();
             form.setFieldsValue(defaultProduit);
         }
+        setFormDirty(false);
         setModalVisible(true);
     };
 
@@ -133,6 +152,7 @@ const CatalogueProduits: React.FC = () => {
                 setCurrentProduit(res.data);
                 form.setFieldsValue({ ...defaultProduit, ...res.data, images: res.data.images || [] });
             }
+            setFormDirty(false);
             fetchProduits();
         } catch (err) {
             // form validation error
@@ -220,6 +240,7 @@ const CatalogueProduits: React.FC = () => {
 
     // prix/tva calculation autocalc
     const onValuesChange = (changedValues, allValues) => {
+        setFormDirty(true);
         if (changedValues.prixVenteHT !== undefined || changedValues.tva !== undefined) {
             const prixVenteHT = form.getFieldValue('prixVenteHT') || 0;
             const tva = form.getFieldValue('tva') || 0;
@@ -281,7 +302,7 @@ const CatalogueProduits: React.FC = () => {
                             title={isEdit ? 'Modifier un produit' : 'Ajouter un produit'}
                             open={modalVisible}
                             onOk={handleModalOk}
-                            onCancel={() => setModalVisible(false)}
+                            onCancel={handleModalCancel}
                             maskClosable={false}
                             width={1024}
                             okText="Enregistrer"

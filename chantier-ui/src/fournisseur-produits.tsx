@@ -118,6 +118,7 @@ const FournisseurProduits = ({
   const [fournisseurs, setFournisseurs] = useState<Fournisseur[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
+  const [formDirty, setFormDirty] = useState(false);
   const [editing, setEditing] = useState<Partial<FournisseurProduit> | null>(null);
   const [form] = Form.useForm();
   const [fournisseurModalVisible, setFournisseurModalVisible] = useState(false);
@@ -214,6 +215,23 @@ const FournisseurProduits = ({
     }
   };
 
+  const handleModalCancel = () => {
+    if (formDirty) {
+      Modal.confirm({
+        title: "Modifications non enregistrées",
+        content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
+        okText: "Fermer",
+        cancelText: "Annuler",
+        onOk: () => {
+          setFormDirty(false);
+          setModalVisible(false);
+        },
+      });
+    } else {
+      setModalVisible(false);
+    }
+  };
+
   // Add
   const handleNew = () => {
     setEditing({
@@ -221,6 +239,7 @@ const FournisseurProduits = ({
       fournisseur: isFournisseurMode ? { id: fournisseurId!, nom: "" } : undefined,
       produit: isProduitMode ? { id: produitId!, nom: "" } : undefined,
     });
+    setFormDirty(false);
     setModalVisible(true);
     setTimeout(() => form.resetFields());
   };
@@ -228,6 +247,7 @@ const FournisseurProduits = ({
   // Edit
   const handleEdit = (record: FournisseurProduit) => {
     setEditing({ ...record, produit: { ...record.produit }, fournisseur: { ...record.fournisseur } });
+    setFormDirty(false);
     setModalVisible(true);
     setTimeout(() => {
       if (isProduitMode) {
@@ -290,6 +310,7 @@ const FournisseurProduits = ({
         message.success("Ajouté avec succès");
         setEditing(res.data);
       }
+      setFormDirty(false);
       fetchAssocies();
     } catch (e: any) {
       if (e.errorFields) return;
@@ -407,7 +428,7 @@ const FournisseurProduits = ({
 
       <Modal
         open={modalVisible}
-        onCancel={() => setModalVisible(false)}
+        onCancel={handleModalCancel}
         onOk={handleModalOk}
         destroyOnHidden
         title={
@@ -426,6 +447,7 @@ const FournisseurProduits = ({
           layout="vertical"
           initialValues={editing || defaultFournisseurProduit}
           onValuesChange={(changed, all) => {
+            setFormDirty(true);
             // Compute montantTVA et TTC dynamiquement
             if ("prixAchatHT" in changed || "tva" in changed) {
               let prixAchatHT = all.prixAchatHT ?? 0;

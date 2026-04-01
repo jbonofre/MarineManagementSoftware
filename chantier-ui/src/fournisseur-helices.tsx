@@ -101,6 +101,7 @@ const FournisseurHelices = ({
   const [fournisseurs, setFournisseurs] = useState<Fournisseur[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
+  const [formDirty, setFormDirty] = useState(false);
   const [editing, setEditing] = useState<Partial<FournisseurHelice> | null>(null);
   const [form] = Form.useForm();
   const [fournisseurModalVisible, setFournisseurModalVisible] = useState(false);
@@ -198,6 +199,23 @@ const FournisseurHelices = ({
     }
   };
 
+  const handleModalCancel = () => {
+    if (formDirty) {
+      Modal.confirm({
+        title: "Modifications non enregistrées",
+        content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
+        okText: "Fermer",
+        cancelText: "Annuler",
+        onOk: () => {
+          setFormDirty(false);
+          setModalVisible(false);
+        },
+      });
+    } else {
+      setModalVisible(false);
+    }
+  };
+
   // Add
   const handleNew = () => {
     setEditing({
@@ -205,6 +223,7 @@ const FournisseurHelices = ({
       fournisseur: isFournisseurMode ? { id: fournisseurId!, nom: "" } : undefined,
       helice: isHeliceMode ? { id: heliceId!, marque: "", modele: "" } : undefined,
     });
+    setFormDirty(false);
     setModalVisible(true);
     setTimeout(() => form.resetFields());
   };
@@ -216,6 +235,7 @@ const FournisseurHelices = ({
       helice: { ...record.helice },
       fournisseur: { ...record.fournisseur },
     });
+    setFormDirty(false);
     setModalVisible(true);
     setTimeout(() => {
       if (isHeliceMode) {
@@ -278,6 +298,7 @@ const FournisseurHelices = ({
         message.success("Ajouté avec succès");
         setEditing(res.data);
       }
+      setFormDirty(false);
       fetchAssociees();
     } catch (e: any) {
       if (e.errorFields) return;
@@ -368,7 +389,7 @@ const FournisseurHelices = ({
 
       <Modal
         open={modalVisible}
-        onCancel={() => setModalVisible(false)}
+        onCancel={handleModalCancel}
         onOk={handleModalOk}
         destroyOnHidden
         title={
@@ -387,6 +408,7 @@ const FournisseurHelices = ({
           layout="vertical"
           initialValues={editing || defaultFournisseurHelice}
           onValuesChange={(changed, all) => {
+            setFormDirty(true);
             // Calcul dynamique du montant TVA et TTC
             if ("prixAchatHT" in changed || "tva" in changed) {
               let prixAchatHT = all.prixAchatHT ?? 0;

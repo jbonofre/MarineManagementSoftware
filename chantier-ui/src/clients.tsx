@@ -87,6 +87,7 @@ function Clients() {
   const [searchNom, setSearchNom] = useState("");
   const [searchType, setSearchType] = useState("");
   const [form] = Form.useForm();
+  const [formDirty, setFormDirty] = useState(false);
 
   const fetchClients = async (params: { nom?: string; type?: string } = {}) => {
     setLoading(true);
@@ -121,13 +122,32 @@ function Clients() {
   const handleAdd = () => {
     setEditing(null);
     form.resetFields();
+    setFormDirty(false);
     setModalVisible(true);
   };
 
   const handleEdit = (record) => {
     setEditing(record);
     form.setFieldsValue(record);
+    setFormDirty(false);
     setModalVisible(true);
+  };
+
+  const handleModalCancel = () => {
+    if (formDirty) {
+      Modal.confirm({
+        title: "Modifications non enregistrées",
+        content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
+        okText: "Fermer",
+        cancelText: "Annuler",
+        onOk: () => {
+          setFormDirty(false);
+          setModalVisible(false);
+        },
+      });
+    } else {
+      setModalVisible(false);
+    }
   };
 
   const handleDelete = async (id) => {
@@ -171,6 +191,7 @@ function Clients() {
         const updated = res.data;
         setEditing(updated);
         form.setFieldsValue(updated);
+        setFormDirty(false);
       } else {
         // create
         const res = await api.post("/clients", values);
@@ -178,6 +199,7 @@ function Clients() {
         const created = res.data;
         setEditing(created);
         form.setFieldsValue(created);
+        setFormDirty(false);
       }
       fetchClients();
     } catch (e) {
@@ -276,14 +298,14 @@ function Clients() {
       <Modal
         open={modalVisible}
         title={editing ? "Modifier le client" : "Ajouter un client"}
-        onCancel={() => setModalVisible(false)}
+        onCancel={handleModalCancel}
         onOk={handleModalOk}
         okText="Enregistrer"
         cancelText="Annuler"
         destroyOnHidden
         width={1024}
       >
-        <Form layout="vertical" form={form} initialValues={defaultClient}>
+        <Form layout="vertical" form={form} initialValues={defaultClient} onValuesChange={() => setFormDirty(true)}>
           <Form.Item name="id" hidden>
             <Input />
           </Form.Item>

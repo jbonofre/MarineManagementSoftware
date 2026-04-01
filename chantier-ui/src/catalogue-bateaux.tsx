@@ -89,6 +89,7 @@ const CatalogueBateaux: React.FC = () => {
     const [isEdit, setIsEdit] = useState<boolean>(false);
     const [currentBateau, setCurrentBateau] = useState<BateauCatalogueEntity | null>(null);
     const [form] = Form.useForm();
+    const [formDirty, setFormDirty] = useState(false);
 
     const marqueOptions = useMemo(() => {
         const uniqueMarques = Array.from(new Set(bateaux.map((bateau) => bateau.marque))).filter(Boolean) as string[];
@@ -110,6 +111,23 @@ const CatalogueBateaux: React.FC = () => {
         fetchBateaux();
     }, []);
 
+    const handleModalCancel = () => {
+        if (formDirty) {
+            Modal.confirm({
+                title: "Modifications non enregistrées",
+                content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
+                okText: "Fermer",
+                cancelText: "Annuler",
+                onOk: () => {
+                    setFormDirty(false);
+                    setModalVisible(false);
+                },
+            });
+        } else {
+            setModalVisible(false);
+        }
+    };
+
     const openModal = (bateau?: BateauCatalogueEntity) => {
         if (bateau) {
             setIsEdit(true);
@@ -120,6 +138,7 @@ const CatalogueBateaux: React.FC = () => {
             setCurrentBateau(null);
             form.resetFields();
         }
+        setFormDirty(false);
         setModalVisible(true);
     };
 
@@ -140,6 +159,7 @@ const CatalogueBateaux: React.FC = () => {
                 setCurrentBateau(res.data);
                 form.setFieldsValue(res.data);
             }
+            setFormDirty(false);
             fetchBateaux();
         } catch (err) {
             // Validation error already shown by Form.Item
@@ -218,6 +238,7 @@ const CatalogueBateaux: React.FC = () => {
     ];
 
     const onValuesChange = (changedValues, allValues) => {
+        setFormDirty(true);
         if (changedValues.prixVenteHT || changedValues.tva) {
             const prixVenteHT = form.getFieldValue('prixVenteHT');
             const tva = form.getFieldValue('tva');
@@ -279,7 +300,7 @@ const CatalogueBateaux: React.FC = () => {
                         title={isEdit ? 'Modifier un bateau' : 'Ajouter un bateau'}
                         open={modalVisible}
                         onOk={handleModalOk}
-                        onCancel={() => setModalVisible(false)}
+                        onCancel={handleModalCancel}
                         maskClosable={false}
                         width={1024}
                         okText="Enregistrer"

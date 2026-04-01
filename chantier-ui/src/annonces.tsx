@@ -80,6 +80,7 @@ export default function Annonces() {
     const [publishModalOpen, setPublishModalOpen] = useState(false);
     const [publishAnnonce, setPublishAnnonce] = useState<Annonce | null>(null);
     const [form] = Form.useForm();
+    const [formDirty, setFormDirty] = useState(false);
 
     const fetchAnnonces = () => {
         setLoading(true);
@@ -111,6 +112,7 @@ export default function Annonces() {
         setEditing(null);
         form.resetFields();
         form.setFieldsValue({ status: 'ACTIVE' });
+        setFormDirty(false);
         setModalOpen(true);
     };
 
@@ -127,7 +129,25 @@ export default function Annonces() {
             clientId: annonce.client?.id,
             bateauId: annonce.bateau?.id,
         });
+        setFormDirty(false);
         setModalOpen(true);
+    };
+
+    const handleModalCancel = () => {
+        if (formDirty) {
+            Modal.confirm({
+                title: "Modifications non enregistrées",
+                content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
+                okText: "Fermer",
+                cancelText: "Annuler",
+                onOk: () => {
+                    setFormDirty(false);
+                    setModalOpen(false);
+                },
+            });
+        } else {
+            setModalOpen(false);
+        }
     };
 
     const openDetail = (annonce: Annonce) => {
@@ -163,6 +183,7 @@ export default function Annonces() {
                 message.success('Annonce creee');
                 setEditing(res.data);
             }
+            setFormDirty(false);
             fetchAnnonces();
         } catch {
             // validation error
@@ -304,13 +325,13 @@ export default function Annonces() {
             <Modal
                 title={editing ? 'Modifier l\'annonce' : 'Nouvelle annonce'}
                 open={modalOpen}
-                onCancel={() => setModalOpen(false)}
+                onCancel={handleModalCancel}
                 onOk={handleSave}
                 okText={editing ? 'Mettre a jour' : 'Publier'}
                 cancelText="Annuler"
                 width={650}
             >
-                <Form form={form} layout="vertical">
+                <Form form={form} layout="vertical" onValuesChange={() => setFormDirty(true)}>
                     <Form.Item name="titre" label="Titre" rules={[{ required: true, message: 'Le titre est requis' }]}>
                         <Input placeholder="Ex: Beneteau Flyer 7.7 - Excellent etat" />
                     </Form.Item>

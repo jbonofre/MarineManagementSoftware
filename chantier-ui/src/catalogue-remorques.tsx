@@ -92,6 +92,7 @@ const RemorqueCatalogue: React.FC = () => {
   const [modalVisible, setModalVisible] = useState<boolean>(false);
   const [form] = Form.useForm();
   const [editingRemorque, setEditingRemorque] = useState<any>(null);
+  const [formDirty, setFormDirty] = useState(false);
 
   // Fetch all remorques
   const fetchRemorques = async () => {
@@ -110,6 +111,23 @@ const RemorqueCatalogue: React.FC = () => {
     fetchRemorques();
   }, []);
 
+  const handleModalCancel = () => {
+    if (formDirty) {
+      Modal.confirm({
+        title: "Modifications non enregistrées",
+        content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
+        okText: "Fermer",
+        cancelText: "Annuler",
+        onOk: () => {
+          setFormDirty(false);
+          setModalVisible(false);
+        },
+      });
+    } else {
+      setModalVisible(false);
+    }
+  };
+
   // Modal open for add/edit
   const openModal = (remorque: any = null) => {
     setEditingRemorque(remorque);
@@ -118,6 +136,7 @@ const RemorqueCatalogue: React.FC = () => {
     } else {
       form.setFieldsValue(defaultRemorque);
     }
+    setFormDirty(false);
     setModalVisible(true);
   };
 
@@ -159,6 +178,7 @@ const RemorqueCatalogue: React.FC = () => {
         setEditingRemorque(res.data);
         form.setFieldsValue(res.data);
       }
+      setFormDirty(false);
       fetchRemorques();
     } catch (e: any) {
       if (e?.errorFields) return; // Ant design form error
@@ -170,6 +190,7 @@ const RemorqueCatalogue: React.FC = () => {
 
   // When change TTC/TVA
   const onValuesChange = (changed: any, all: any) => {
+    setFormDirty(true);
     const hasChanged = (key: string) => Object.prototype.hasOwnProperty.call(changed, key);
     const currentTva = toNumber(all.tva, 20);
     const currentHT = toNumber(all.prixVenteHT, 0);
@@ -308,7 +329,7 @@ const RemorqueCatalogue: React.FC = () => {
         open={modalVisible}
         title={editingRemorque ? "Modifier une remorque" : "Ajouter une remorque"}
         onOk={handleModalOk}
-        onCancel={() => setModalVisible(false)}
+        onCancel={handleModalCancel}
         maskClosable={false}
         okText="Enregistrer"
         cancelText="Annuler"

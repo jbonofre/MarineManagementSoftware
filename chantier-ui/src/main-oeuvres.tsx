@@ -39,6 +39,7 @@ export default function MainOeuvres() {
     const [currentMainOeuvre, setCurrentMainOeuvre] = useState<MainOeuvreEntity | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [form] = Form.useForm();
+    const [formDirty, setFormDirty] = useState(false);
 
     const fetchMainOeuvres = async (query?: string) => {
         setLoading(true);
@@ -73,7 +74,25 @@ export default function MainOeuvres() {
             form.resetFields();
             form.setFieldsValue(defaultMainOeuvre);
         }
+        setFormDirty(false);
         setModalVisible(true);
+    };
+
+    const handleModalCancel = () => {
+        if (formDirty) {
+            Modal.confirm({
+                title: "Modifications non enregistrées",
+                content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
+                okText: "Fermer",
+                cancelText: "Annuler",
+                onOk: () => {
+                    setFormDirty(false);
+                    setModalVisible(false);
+                },
+            });
+        } else {
+            setModalVisible(false);
+        }
     };
 
     const handleDelete = async (id?: number) => {
@@ -105,6 +124,7 @@ export default function MainOeuvres() {
                 setCurrentMainOeuvre(res.data);
                 form.setFieldsValue(res.data);
             }
+            setFormDirty(false);
             fetchMainOeuvres(searchQuery);
         } catch {
             // Validation errors are handled by form rules.
@@ -208,7 +228,7 @@ export default function MainOeuvres() {
                 title={isEdit ? "Modifier une main d'oeuvre" : "Ajouter une main d'oeuvre"}
                 open={modalVisible}
                 onOk={handleModalOk}
-                onCancel={() => setModalVisible(false)}
+                onCancel={handleModalCancel}
                 okText="Enregistrer"
                 cancelText="Annuler"
                 maskClosable={false}
@@ -219,7 +239,7 @@ export default function MainOeuvres() {
                     form={form}
                     layout="vertical"
                     initialValues={defaultMainOeuvre}
-                    onValuesChange={onValuesChange}
+                    onValuesChange={(...args) => { setFormDirty(true); onValuesChange(...args); }}
                 >
                     <Form.Item
                         name="nom"

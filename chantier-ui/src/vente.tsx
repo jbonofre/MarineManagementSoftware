@@ -463,6 +463,9 @@ export default function Vente() {
     const [catalogueRemorques, setCatalogueRemorques] = useState<Array<{ id: number; marque?: string; modele?: string }>>([]);
     const [loading, setLoading] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
+    const [formDirty, setFormDirty] = useState(false);
+    const suppressDirtyRef = React.useRef(false);
+    const savedLinesRef = React.useRef<{ forfaitIds: number[]; serviceIds: number[]; produitIds: number[] }>({ forfaitIds: [], serviceIds: [], produitIds: [] });
     const [isEdit, setIsEdit] = useState(false);
     const [currentVente, setCurrentVente] = useState<VenteEntity | null>(null);
     const [rappelHistorique, setRappelHistorique] = useState<RappelHistoriqueEntity[]>([]);
@@ -472,21 +475,28 @@ export default function Vente() {
     const [newProduitModalVisible, setNewProduitModalVisible] = useState(false);
     const [newProduitTargetLine, setNewProduitTargetLine] = useState<number | null>(null);
     const [newProduitForm] = Form.useForm();
+    const [newProduitFormDirty, setNewProduitFormDirty] = useState(false);
     const [newServiceModalVisible, setNewServiceModalVisible] = useState(false);
     const [newServiceTargetLine, setNewServiceTargetLine] = useState<number | null>(null);
     const [editServiceId, setEditServiceId] = useState<number | null>(null);
     const [newServiceForm] = Form.useForm();
+    const [newServiceFormDirty, setNewServiceFormDirty] = useState(false);
     const [newForfaitModalVisible, setNewForfaitModalVisible] = useState(false);
     const [newForfaitTargetLine, setNewForfaitTargetLine] = useState<number | null>(null);
     const [newForfaitForm] = Form.useForm();
+    const [newForfaitFormDirty, setNewForfaitFormDirty] = useState(false);
     const [newClientModalVisible, setNewClientModalVisible] = useState(false);
     const [newClientForm] = Form.useForm();
+    const [newClientFormDirty, setNewClientFormDirty] = useState(false);
     const [newBateauModalVisible, setNewBateauModalVisible] = useState(false);
     const [newBateauForm] = Form.useForm();
+    const [newBateauFormDirty, setNewBateauFormDirty] = useState(false);
     const [newMoteurModalVisible, setNewMoteurModalVisible] = useState(false);
     const [newMoteurForm] = Form.useForm();
+    const [newMoteurFormDirty, setNewMoteurFormDirty] = useState(false);
     const [newRemorqueModalVisible, setNewRemorqueModalVisible] = useState(false);
     const [newRemorqueForm] = Form.useForm();
+    const [newRemorqueFormDirty, setNewRemorqueFormDirty] = useState(false);
 
     const marqueOptions = useMemo(() => {
         const unique = Array.from(new Set(produits.map((p) => p.marque).filter(Boolean))) as string[];
@@ -626,10 +636,28 @@ export default function Vente() {
         fetchOptions();
     }, []);
 
+    const makeInnerModalCancel = (dirty: boolean, setDirty: (v: boolean) => void, setVisible: (v: boolean) => void) => () => {
+        if (dirty) {
+            Modal.confirm({
+                title: "Modifications non enregistrées",
+                content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
+                okText: "Fermer",
+                cancelText: "Annuler",
+                onOk: () => {
+                    setDirty(false);
+                    setVisible(false);
+                },
+            });
+        } else {
+            setVisible(false);
+        }
+    };
+
     const openNewProduitModal = (lineIndex: number) => {
         setNewProduitTargetLine(lineIndex);
         newProduitForm.resetFields();
         newProduitForm.setFieldsValue(defaultNewProduit);
+        setNewProduitFormDirty(false);
         setNewProduitModalVisible(true);
     };
 
@@ -655,6 +683,7 @@ export default function Vente() {
     };
 
     const onNewProduitValuesChange = (changedValues: Record<string, unknown>) => {
+        setNewProduitFormDirty(true);
         if (changedValues.prixVenteHT !== undefined || changedValues.tva !== undefined) {
             const prixVenteHT = newProduitForm.getFieldValue('prixVenteHT') || 0;
             const tva = newProduitForm.getFieldValue('tva') || 0;
@@ -678,6 +707,7 @@ export default function Vente() {
         setEditServiceId(null);
         newServiceForm.resetFields();
         newServiceForm.setFieldsValue(defaultNewService);
+        setNewServiceFormDirty(false);
         setNewServiceModalVisible(true);
     };
 
@@ -705,6 +735,7 @@ export default function Vente() {
             montantTVA: service.montantTVA || 0,
             prixTTC: service.prixTTC || 0,
         });
+        setNewServiceFormDirty(false);
         setNewServiceModalVisible(true);
     };
 
@@ -765,6 +796,7 @@ export default function Vente() {
     };
 
     const onNewServiceValuesChange = (changedValues: Record<string, unknown>) => {
+        setNewServiceFormDirty(true);
         // Auto-add new line when last line is complete
         if (changedValues.mainOeuvres !== undefined) {
             const currentLines = newServiceForm.getFieldValue('mainOeuvres') || [];
@@ -842,6 +874,7 @@ export default function Vente() {
         setNewForfaitTargetLine(lineIndex);
         newForfaitForm.resetFields();
         newForfaitForm.setFieldsValue(defaultNewForfait);
+        setNewForfaitFormDirty(false);
         setNewForfaitModalVisible(true);
     };
 
@@ -902,6 +935,7 @@ export default function Vente() {
     };
 
     const onNewForfaitValuesChange = (changedValues: Record<string, unknown>) => {
+        setNewForfaitFormDirty(true);
         // Auto-add new line when last line is complete
         if (changedValues.produits !== undefined) {
             const currentLines = newForfaitForm.getFieldValue('produits') || [];
@@ -978,6 +1012,7 @@ export default function Vente() {
     const openNewClientModal = () => {
         newClientForm.resetFields();
         newClientForm.setFieldsValue({ nom: '', prenom: '', type: 'PARTICULIER', email: '', telephone: '', adresse: '', siren: '', siret: '', tva: '', naf: '', remise: 0, evaluation: 0, notes: '' });
+        setNewClientFormDirty(false);
         setNewClientModalVisible(true);
     };
 
@@ -998,6 +1033,7 @@ export default function Vente() {
     const openNewBateauModal = () => {
         newBateauForm.resetFields();
         newBateauForm.setFieldsValue({ name: '', immatriculation: '', numeroSerie: '', numeroClef: '', dateMeS: '', dateAchat: '', dateFinDeGuarantie: '', localisation: '' });
+        setNewBateauFormDirty(false);
         setNewBateauModalVisible(true);
     };
     const handleNewBateauSave = async () => {
@@ -1015,6 +1051,7 @@ export default function Vente() {
     const openNewMoteurModal = () => {
         newMoteurForm.resetFields();
         newMoteurForm.setFieldsValue({ numeroSerie: '', numeroClef: '', dateMeS: '', dateAchat: '', dateFinDeGuarantie: '' });
+        setNewMoteurFormDirty(false);
         setNewMoteurModalVisible(true);
     };
     const handleNewMoteurSave = async () => {
@@ -1032,6 +1069,7 @@ export default function Vente() {
     const openNewRemorqueModal = () => {
         newRemorqueForm.resetFields();
         newRemorqueForm.setFieldsValue({ immatriculation: '', dateMeS: '', dateAchat: '', dateFinDeGuarantie: '' });
+        setNewRemorqueFormDirty(false);
         setNewRemorqueModalVisible(true);
     };
     const handleNewRemorqueSave = async () => {
@@ -1044,6 +1082,14 @@ export default function Vente() {
             form.setFieldValue('remorqueId', created.id);
             setNewRemorqueModalVisible(false);
         } catch { }
+    };
+
+    const snapshotSavedLines = (vente?: VenteEntity | null) => {
+        savedLinesRef.current = {
+            forfaitIds: (vente?.venteForfaits || []).map(vf => vf.forfait?.id).filter(Boolean).sort() as number[],
+            serviceIds: (vente?.venteServices || []).map(vs => vs.service?.id).filter(Boolean).sort() as number[],
+            produitIds: (vente?.produits || []).map(p => p?.id).filter(Boolean).sort() as number[],
+        };
     };
 
     const populateForm = (vente: VenteEntity) => {
@@ -1110,10 +1156,47 @@ export default function Vente() {
         });
     };
 
+    const handleModalCancel = () => {
+        const venteForfaits = form.getFieldValue('venteForfaits') || [];
+        const venteServices = form.getFieldValue('venteServices') || [];
+        const venteProduits = form.getFieldValue('produits') || [];
+        const currentForfaitIds = venteForfaits.map((l: { forfaitId?: number }) => l.forfaitId).filter(Boolean).sort() as number[];
+        const currentServiceIds = venteServices.map((l: { serviceId?: number }) => l.serviceId).filter(Boolean).sort() as number[];
+        const currentProduitIds = venteProduits.map((l: { produitId?: number }) => l.produitId).filter(Boolean).sort() as number[];
+        const saved = savedLinesRef.current;
+        const linesChanged =
+            JSON.stringify(currentForfaitIds) !== JSON.stringify(saved.forfaitIds) ||
+            JSON.stringify(currentServiceIds) !== JSON.stringify(saved.serviceIds) ||
+            JSON.stringify(currentProduitIds) !== JSON.stringify(saved.produitIds);
+
+        if (linesChanged) {
+            Modal.warning({
+                title: "Impossible de fermer",
+                content: "Des forfaits, services ou produits n'ont pas été enregistrés. Veuillez enregistrer avant de fermer.",
+            });
+        } else if (formDirty) {
+            Modal.confirm({
+                title: "Modifications non enregistrées",
+                content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
+                okText: "Fermer",
+                cancelText: "Annuler",
+                onOk: () => {
+                    setFormDirty(false);
+                    setModalVisible(false);
+                },
+            });
+        } else {
+            setModalVisible(false);
+        }
+    };
+
     const openModal = async (vente?: VenteEntity) => {
+        suppressDirtyRef.current = true;
         if (vente) {
             setIsEdit(true);
             setCurrentVente(vente);
+            snapshotSavedLines(vente);
+            setFormDirty(false);
             setModalVisible(true);
             if (vente.id) {
                 api.get<RappelHistoriqueEntity[]>(`/rappels/vente/${vente.id}`).then(res => setRappelHistorique(res.data)).catch(() => setRappelHistorique([]));
@@ -1122,6 +1205,7 @@ export default function Vente() {
                     const res = await api.get<VenteEntity>(`/ventes/${vente.id}`);
                     const fullVente = res.data;
                     setCurrentVente(fullVente);
+                    snapshotSavedLines(fullVente);
                     populateForm(fullVente);
                 } catch {
                     populateForm(vente);
@@ -1133,10 +1217,13 @@ export default function Vente() {
             setIsEdit(false);
             setCurrentVente(null);
             setRappelHistorique([]);
+            snapshotSavedLines(null);
             form.resetFields();
             form.setFieldsValue({ ...defaultVente, date: getTodayIsoDate() });
+            setFormDirty(false);
             setModalVisible(true);
         }
+        setTimeout(() => { suppressDirtyRef.current = false; }, 0);
     };
 
     const toPayload = (values: VenteFormValues): VenteEntity => ({
@@ -1221,18 +1308,23 @@ export default function Vente() {
         try {
             const values = await form.validateFields();
             const payload = toPayload(values);
+            suppressDirtyRef.current = true;
             if (isEdit && currentVente?.id) {
                 const res = await api.put(`/ventes/${currentVente.id}`, { ...currentVente, ...payload });
                 message.success('Vente modifiee avec succes');
                 setCurrentVente(res.data);
-                form.setFieldsValue(values);
+                snapshotSavedLines(res.data);
+                populateForm(res.data);
             } else {
                 const res = await api.post('/ventes', payload);
                 message.success('Vente ajoutee avec succes');
                 setIsEdit(true);
                 setCurrentVente(res.data);
-                form.setFieldsValue(values);
+                snapshotSavedLines(res.data);
+                populateForm(res.data);
             }
+            setFormDirty(false);
+            setTimeout(() => { suppressDirtyRef.current = false; }, 0);
             fetchVentes(filters);
         } catch {
             // Les erreurs de validation sont affichees par le formulaire.
@@ -1518,6 +1610,9 @@ export default function Vente() {
     };
 
     const onValuesChange = (changedValues: Partial<VenteFormValues>, allValues: VenteFormValues) => {
+        if (!suppressDirtyRef.current) {
+            setFormDirty(true);
+        }
         if (changedValues.venteForfaits !== undefined) {
             const currentForfaitLines = allValues.venteForfaits || [];
             if (currentForfaitLines.length === 0) {
@@ -1773,7 +1868,7 @@ export default function Vente() {
             <Modal
                 title={isEdit ? 'Modifier une vente' : 'Ajouter une vente'}
                 open={modalVisible}
-                onCancel={() => setModalVisible(false)}
+                onCancel={handleModalCancel}
                 footer={[
                     <Button
                         key="print"
@@ -1801,7 +1896,7 @@ export default function Vente() {
                             Lien de paiement
                         </Button>
                     </Dropdown>,
-                    <Button key="cancel" onClick={() => setModalVisible(false)}>
+                    <Button key="cancel" onClick={handleModalCancel}>
                         Annuler
                     </Button>,
                     <Button key="save" type="primary" onClick={handleSave}>
@@ -2322,7 +2417,7 @@ export default function Vente() {
                     title="Créer un produit"
                     open={newProduitModalVisible}
                     onOk={handleNewProduitSave}
-                    onCancel={() => setNewProduitModalVisible(false)}
+                    onCancel={makeInnerModalCancel(newProduitFormDirty, setNewProduitFormDirty, setNewProduitModalVisible)}
                     maskClosable={false}
                     width={1024}
                     okText="Enregistrer"
@@ -2464,7 +2559,7 @@ export default function Vente() {
                     title={editServiceId ? "Modifier un service" : "Créer un service"}
                     open={newServiceModalVisible}
                     onOk={handleNewServiceSave}
-                    onCancel={() => setNewServiceModalVisible(false)}
+                    onCancel={makeInnerModalCancel(newServiceFormDirty, setNewServiceFormDirty, setNewServiceModalVisible)}
                     maskClosable={false}
                     width={1000}
                     okText="Enregistrer"
@@ -2624,7 +2719,7 @@ export default function Vente() {
                     title="Créer un forfait"
                     open={newForfaitModalVisible}
                     onOk={handleNewForfaitSave}
-                    onCancel={() => setNewForfaitModalVisible(false)}
+                    onCancel={makeInnerModalCancel(newForfaitFormDirty, setNewForfaitFormDirty, setNewForfaitModalVisible)}
                     maskClosable={false}
                     width={1024}
                     okText="Enregistrer"
@@ -2811,14 +2906,14 @@ export default function Vente() {
                 title="Créer un client"
                 open={newClientModalVisible}
                 onOk={handleNewClientSave}
-                onCancel={() => setNewClientModalVisible(false)}
+                onCancel={makeInnerModalCancel(newClientFormDirty, setNewClientFormDirty, setNewClientModalVisible)}
                 maskClosable={false}
                 width={800}
                 okText="Enregistrer"
                 cancelText="Annuler"
                 destroyOnHidden
             >
-                <Form form={newClientForm} layout="vertical">
+                <Form form={newClientForm} layout="vertical" onValuesChange={() => setNewClientFormDirty(true)}>
                     <Row gutter={16}>
                         <Col span={12}>
                             <Form.Item name="type" label="Type" rules={[{ required: true, message: 'Le type est requis' }]}>
@@ -2917,14 +3012,14 @@ export default function Vente() {
                 title="Créer un bateau"
                 open={newBateauModalVisible}
                 onOk={handleNewBateauSave}
-                onCancel={() => setNewBateauModalVisible(false)}
+                onCancel={makeInnerModalCancel(newBateauFormDirty, setNewBateauFormDirty, setNewBateauModalVisible)}
                 maskClosable={false}
                 width={800}
                 okText="Enregistrer"
                 cancelText="Annuler"
                 destroyOnHidden
             >
-                <Form form={newBateauForm} layout="vertical">
+                <Form form={newBateauForm} layout="vertical" onValuesChange={() => setNewBateauFormDirty(true)}>
                     <Row gutter={16}>
                         <Col span={12}>
                             <Form.Item name="name" label="Nom" rules={[{ required: true, message: 'Le nom est requis' }]}>
@@ -3035,14 +3130,14 @@ export default function Vente() {
                 title="Créer un moteur"
                 open={newMoteurModalVisible}
                 onOk={handleNewMoteurSave}
-                onCancel={() => setNewMoteurModalVisible(false)}
+                onCancel={makeInnerModalCancel(newMoteurFormDirty, setNewMoteurFormDirty, setNewMoteurModalVisible)}
                 maskClosable={false}
                 width={800}
                 okText="Enregistrer"
                 cancelText="Annuler"
                 destroyOnHidden
             >
-                <Form form={newMoteurForm} layout="vertical">
+                <Form form={newMoteurForm} layout="vertical" onValuesChange={() => setNewMoteurFormDirty(true)}>
                     <Row gutter={16}>
                         <Col span={12}>
                             <Form.Item name="numeroSerie" label="Numéro de série" rules={[{ required: true, message: 'Le numéro de série est requis' }]}>
@@ -3113,14 +3208,14 @@ export default function Vente() {
                 title="Créer une remorque"
                 open={newRemorqueModalVisible}
                 onOk={handleNewRemorqueSave}
-                onCancel={() => setNewRemorqueModalVisible(false)}
+                onCancel={makeInnerModalCancel(newRemorqueFormDirty, setNewRemorqueFormDirty, setNewRemorqueModalVisible)}
                 maskClosable={false}
                 width={800}
                 okText="Enregistrer"
                 cancelText="Annuler"
                 destroyOnHidden
             >
-                <Form form={newRemorqueForm} layout="vertical">
+                <Form form={newRemorqueForm} layout="vertical" onValuesChange={() => setNewRemorqueFormDirty(true)}>
                     <Row gutter={16}>
                         <Col span={12}>
                             <Form.Item name="immatriculation" label="Immatriculation" rules={[{ required: true, message: "L'immatriculation est requise" }]}>

@@ -29,19 +29,38 @@ function rolesToString(roles) {
 // User Form Modal component
 const UserFormModal = ({ visible, onCancel, onSubmit, initialValues, loading }) => {
     const [form] = Form.useForm();
+    const [formDirty, setFormDirty] = useState(false);
 
     useEffect(() => {
         if (visible) {
             form.resetFields();
             form.setFieldsValue(initialValues || {});
+            setFormDirty(false);
         }
     }, [visible, initialValues]);
+
+    const handleCancel = () => {
+        if (formDirty) {
+            Modal.confirm({
+                title: "Modifications non enregistrées",
+                content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
+                okText: "Fermer",
+                cancelText: "Annuler",
+                onOk: () => {
+                    setFormDirty(false);
+                    onCancel();
+                },
+            });
+        } else {
+            onCancel();
+        }
+    };
 
     return (
         <Modal
             open={visible}
             title={initialValues && initialValues.name ? "Modifier l'utilisateur" : "Créer un utilisateur"}
-            onCancel={onCancel}
+            onCancel={handleCancel}
             onOk={() => {
                 form
                     .validateFields()
@@ -55,7 +74,7 @@ const UserFormModal = ({ visible, onCancel, onSubmit, initialValues, loading }) 
             okText="Enregistrer"
             cancelText="Annuler"
         >
-            <Form form={form} layout="vertical" initialValues={initialValues}>
+            <Form form={form} layout="vertical" initialValues={initialValues} onValuesChange={() => setFormDirty(true)}>
                 <Form.Item
                     label="Utilisateur"
                     name="name"

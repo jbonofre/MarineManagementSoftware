@@ -86,6 +86,7 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
   const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
+  const [formDirty, setFormDirty] = useState(false);
   const [editing, setEditing] = useState<BateauClient | null>(null);
   const [search, setSearch] = useState("");
   const [form] = Form.useForm();
@@ -150,9 +151,27 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
     setClients(res.data);
   };
 
+  const handleModalCancel = () => {
+    if (formDirty) {
+      Modal.confirm({
+        title: "Modifications non enregistrées",
+        content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
+        okText: "Fermer",
+        cancelText: "Annuler",
+        onOk: () => {
+          setFormDirty(false);
+          setModalVisible(false);
+        },
+      });
+    } else {
+      setModalVisible(false);
+    }
+  };
+
   const handleAdd = () => {
     setEditing(null);
     form.resetFields();
+    setFormDirty(false);
     if (clientId) {
       form.setFieldsValue({ proprietaires: [clientId] });
     }
@@ -161,6 +180,7 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
 
   const handleEdit = (record: BateauClient) => {
     setEditing(record);
+    setFormDirty(false);
     form.setFieldsValue({
       ...record,
       dateMeS: record.dateMeS ? dayjs(record.dateMeS) : null,
@@ -287,6 +307,7 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
           moteurs: created.moteurs?.map((m: any) => m.id || m) || [],
         });
       }
+      setFormDirty(false);
       fetchBateaux();
     } catch (e) {
       if (e && e.response) {
@@ -349,7 +370,7 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
       <Modal
         open={modalVisible}
         title={editing ? "Modifier le bateau" : "Ajouter un bateau"}
-        onCancel={() => setModalVisible(false)}
+        onCancel={handleModalCancel}
         onOk={handleModalOk}
         okText="Enregistrer"
         cancelText="Annuler"
@@ -357,6 +378,7 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
         width={1024}
       >
         <Form layout="vertical" form={form} initialValues={defaultBateau} onValuesChange={(changedValues) => {
+            setFormDirty(true);
             if (changedValues.localisationGps) {
               form.setFieldsValue({ localisation: changedValues.localisationGps });
             }
@@ -412,12 +434,16 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
           <Form.Item label="Localisation GPS" name="localisationGps">
             <LocationPicker />
           </Form.Item>
-          <Form.Item label="Images" name="images">
-            <ImageUpload />
-          </Form.Item>
-          <Form.Item label="Documents" name="documents">
-            <DocumentUpload />
-          </Form.Item>
+          {editing && (
+            <>
+              <Form.Item label="Images" name="images">
+                <ImageUpload />
+              </Form.Item>
+              <Form.Item label="Documents" name="documents">
+                <DocumentUpload />
+              </Form.Item>
+            </>
+          )}
           {/* Association avec un bateau du catalogue */}
           <Form.Item label="Modèle catalogue" style={{ marginBottom: 0 }}>
             <Space.Compact style={{ width: "100%" }}>

@@ -121,6 +121,7 @@ const FournisseurBateaux = ({ fournisseurId, bateauId }: { fournisseurId?: numbe
   const [fournisseurs, setFournisseurs] = useState<Fournisseur[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
+  const [formDirty, setFormDirty] = useState(false);
   const [editing, setEditing] = useState<Partial<FournisseurBateau> | null>(null);
   const [form] = Form.useForm();
   const [fournisseurModalVisible, setFournisseurModalVisible] = useState(false);
@@ -217,6 +218,23 @@ const FournisseurBateaux = ({ fournisseurId, bateauId }: { fournisseurId?: numbe
     }
   };
 
+  const handleModalCancel = () => {
+    if (formDirty) {
+      Modal.confirm({
+        title: "Modifications non enregistrées",
+        content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
+        okText: "Fermer",
+        cancelText: "Annuler",
+        onOk: () => {
+          setFormDirty(false);
+          setModalVisible(false);
+        },
+      });
+    } else {
+      setModalVisible(false);
+    }
+  };
+
   // Add
   const handleNew = () => {
     setEditing({
@@ -224,6 +242,7 @@ const FournisseurBateaux = ({ fournisseurId, bateauId }: { fournisseurId?: numbe
       fournisseur: isFournisseurMode ? { id: fournisseurId!, nom: "" } : undefined,
       bateau: isBateauMode ? { id: bateauId!, marque: "", modele: "" } : undefined,
     });
+    setFormDirty(false);
     setModalVisible(true);
     setTimeout(() => form.resetFields());
   };
@@ -231,6 +250,7 @@ const FournisseurBateaux = ({ fournisseurId, bateauId }: { fournisseurId?: numbe
   // Edit
   const handleEdit = (record: FournisseurBateau) => {
     setEditing({ ...record, bateau: { ...record.bateau }, fournisseur: { ...record.fournisseur } });
+    setFormDirty(false);
     setModalVisible(true);
     setTimeout(() => {
       if (isBateauMode) {
@@ -293,6 +313,7 @@ const FournisseurBateaux = ({ fournisseurId, bateauId }: { fournisseurId?: numbe
         message.success("Ajouté avec succès");
         setEditing(res.data);
       }
+      setFormDirty(false);
       fetchAssocies();
     } catch (e: any) {
       if (e.errorFields) return;
@@ -362,7 +383,7 @@ const FournisseurBateaux = ({ fournisseurId, bateauId }: { fournisseurId?: numbe
 
       <Modal
         open={modalVisible}
-        onCancel={() => setModalVisible(false)}
+        onCancel={handleModalCancel}
         onOk={handleModalOk}
         destroyOnHidden
         title={editing && editing.id ? "Modifier l'association" : (isBateauMode ? "Associer un Fournisseur" : "Associer un Bateau")}
@@ -375,6 +396,7 @@ const FournisseurBateaux = ({ fournisseurId, bateauId }: { fournisseurId?: numbe
           layout="vertical"
           initialValues={editing || defaultFournisseurBateau}
           onValuesChange={(changed, all) => {
+            setFormDirty(true);
             // Compute montantTVA et TTC dynamiquement
             if ("prixAchatHT" in changed || "tva" in changed) {
               let prixAchatHT = all.prixAchatHT ?? 0;

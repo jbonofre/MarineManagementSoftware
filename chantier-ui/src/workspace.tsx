@@ -115,6 +115,26 @@ function Header(props) {
     const [ preferencesLoading, setPreferencesLoading ] = useState(false);
     const [ preferencesForm ] = Form.useForm();
     const [ selectedTheme, setSelectedTheme ] = useState<UserTheme>(props.theme || 'LIGHT');
+    const [ formDirty, setFormDirty ] = useState(false);
+
+    const handlePreferencesCancel = () => {
+        if (formDirty) {
+            Modal.confirm({
+                title: "Modifications non enregistrées",
+                content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
+                okText: "Fermer",
+                cancelText: "Annuler",
+                onOk: () => {
+                    setFormDirty(false);
+                    preferencesForm.resetFields();
+                    setPreferencesVisible(false);
+                },
+            });
+        } else {
+            preferencesForm.resetFields();
+            setPreferencesVisible(false);
+        }
+    };
 
     const roleLabels = { admin: 'Admin', manager: 'Manager', magasinier: 'Magasinier', vendeur: 'Vendeur' };
     const userRoles = props.roles ? (Array.isArray(props.roles) ? props.roles : props.roles.split(',').map(r => r.trim())) : [];
@@ -150,6 +170,7 @@ function Header(props) {
                             newPassword: '',
                             confirmPassword: ''
                         });
+                        setFormDirty(false);
                         setPreferencesVisible(true);
                     }
                 }} /></Col>
@@ -161,15 +182,13 @@ function Header(props) {
                 cancelText="Annuler"
                 confirmLoading={preferencesLoading}
                 onOk={() => preferencesForm.submit()}
-                onCancel={() => {
-                    preferencesForm.resetFields();
-                    setPreferencesVisible(false);
-                }}
+                onCancel={handlePreferencesCancel}
                 destroyOnHidden
             >
                 <Form
                     form={preferencesForm}
                     layout="vertical"
+                    onValuesChange={() => setFormDirty(true)}
                     onFinish={(values) => {
                         const shouldChangePassword = !!values.newPassword;
                         const shouldChangeTheme = selectedTheme !== props.theme;
@@ -246,6 +265,7 @@ function Header(props) {
                                 if (shouldChangeTheme) {
                                     props.setTheme(selectedTheme);
                                 }
+                                setFormDirty(false);
                                 preferencesForm.resetFields();
                                 setPreferencesVisible(false);
                             })
