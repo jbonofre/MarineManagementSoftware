@@ -54,16 +54,16 @@ public class EmailTemplateResource {
                 EmailTemplateEntity facture = new EmailTemplateEntity();
                 facture.type = EmailTemplateEntity.Type.FACTURE;
                 facture.sujet = "Votre {typeVente} #{reference} - {societe}";
-                facture.contenu = "Bonjour {client},\n\n"
-                        + "Veuillez trouver les informations de votre {typeVente} #{reference}.\n\n"
-                        + "Date             : {date}\n"
-                        + "Type             : {typeVente}\n"
-                        + "Statut           : {statut}\n"
-                        + "Prix vente TTC   : {prixVenteTTC}\n"
-                        + "Mode de paiement : {modePaiement}\n\n"
-                        + "Lignes :\n{lignes}\n\n"
-                        + "N'hésitez pas à nous contacter pour toute question.\n\n"
-                        + "Cordialement,\n{societe}";
+                facture.contenu = "<p>Bonjour {client},</p>"
+                        + "<p>Veuillez trouver les informations de votre {typeVente} #{reference}.</p>"
+                        + "<table><tr><td><strong>Date</strong></td><td>{date}</td></tr>"
+                        + "<tr><td><strong>Type</strong></td><td>{typeVente}</td></tr>"
+                        + "<tr><td><strong>Statut</strong></td><td>{statut}</td></tr>"
+                        + "<tr><td><strong>Prix vente TTC</strong></td><td>{prixVenteTTC}</td></tr>"
+                        + "<tr><td><strong>Mode de paiement</strong></td><td>{modePaiement}</td></tr></table>"
+                        + "<p><strong>Lignes :</strong><br/>{lignes}</p>"
+                        + "<p>N'hésitez pas à nous contacter pour toute question.</p>"
+                        + "<p>Cordialement,<br/>{societe}</p>";
                 facture.description = "Variables disponibles : {client}, {typeVente}, {reference}, {date}, {statut}, {prixVenteTTC}, {modePaiement}, {lignes}, {societe}";
                 facture.persist();
             }
@@ -73,40 +73,38 @@ public class EmailTemplateResource {
         EmailTemplateEntity rappel = new EmailTemplateEntity();
         rappel.type = EmailTemplateEntity.Type.RAPPEL;
         rappel.sujet = "Rappel {numeroRappel} - Votre {typeVente} - {societe}";
-        rappel.contenu = "Bonjour {client},\n\n"
-                + "Ceci est un rappel concernant votre {typeVente} (référence #{reference}).\n\n"
-                + "Date prévue : {datePrevue}\n"
-                + "Montant TTC : {montantTTC} EUR\n\n"
-                + "N'hésitez pas à nous contacter pour toute question.\n\n"
-                + "Cordialement,\n{societe}";
+        rappel.contenu = "<p>Bonjour {client},</p>"
+                + "<p>Ceci est un rappel concernant votre {typeVente} (référence #{reference}).</p>"
+                + "<p>Date prévue : {datePrevue}<br/>Montant TTC : {montantTTC} EUR</p>"
+                + "<p>N'hésitez pas à nous contacter pour toute question.</p>"
+                + "<p>Cordialement,<br/>{societe}</p>";
         rappel.description = "Variables disponibles : {client}, {typeVente}, {reference}, {datePrevue}, {montantTTC}, {societe}, {numeroRappel}";
         rappel.persist();
 
         EmailTemplateEntity incident = new EmailTemplateEntity();
         incident.type = EmailTemplateEntity.Type.INCIDENT;
         incident.sujet = "Incident sur votre intervention - {societe}";
-        incident.contenu = "Bonjour {client},\n\n"
-                + "Nous vous informons qu'un incident a été signalé sur l'intervention \"{intervention}\".\n\n"
-                + "{details}"
-                + "{dateIncident}"
-                + "Notre équipe met tout en œuvre pour résoudre la situation dans les meilleurs délais.\n\n"
-                + "Cordialement,\n{societe}";
+        incident.contenu = "<p>Bonjour {client},</p>"
+                + "<p>Nous vous informons qu'un incident a été signalé sur l'intervention \"{intervention}\".</p>"
+                + "<p>{details}{dateIncident}</p>"
+                + "<p>Notre équipe met tout en œuvre pour résoudre la situation dans les meilleurs délais.</p>"
+                + "<p>Cordialement,<br/>{societe}</p>";
         incident.description = "Variables disponibles : {client}, {intervention}, {details}, {dateIncident}, {societe}";
         incident.persist();
 
         EmailTemplateEntity facture = new EmailTemplateEntity();
         facture.type = EmailTemplateEntity.Type.FACTURE;
         facture.sujet = "Votre {typeVente} #{reference} - {societe}";
-        facture.contenu = "Bonjour {client},\n\n"
-                + "Veuillez trouver les informations de votre {typeVente} #{reference}.\n\n"
-                + "Date             : {date}\n"
-                + "Type             : {typeVente}\n"
-                + "Statut           : {statut}\n"
-                + "Prix vente TTC   : {prixVenteTTC}\n"
-                + "Mode de paiement : {modePaiement}\n\n"
-                + "Lignes :\n{lignes}\n\n"
-                + "N'hésitez pas à nous contacter pour toute question.\n\n"
-                + "Cordialement,\n{societe}";
+        facture.contenu = "<p>Bonjour {client},</p>"
+                + "<p>Veuillez trouver les informations de votre {typeVente} #{reference}.</p>"
+                + "<table><tr><td><strong>Date</strong></td><td>{date}</td></tr>"
+                + "<tr><td><strong>Type</strong></td><td>{typeVente}</td></tr>"
+                + "<tr><td><strong>Statut</strong></td><td>{statut}</td></tr>"
+                + "<tr><td><strong>Prix vente TTC</strong></td><td>{prixVenteTTC}</td></tr>"
+                + "<tr><td><strong>Mode de paiement</strong></td><td>{modePaiement}</td></tr></table>"
+                + "<p><strong>Lignes :</strong><br/>{lignes}</p>"
+                + "<p>N'hésitez pas à nous contacter pour toute question.</p>"
+                + "<p>Cordialement,<br/>{societe}</p>";
         facture.description = "Variables disponibles : {client}, {typeVente}, {reference}, {date}, {statut}, {prixVenteTTC}, {modePaiement}, {lignes}, {societe}";
         facture.persist();
 

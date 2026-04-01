@@ -22,7 +22,7 @@ public class EmailTemplateEntity extends PanacheEntity {
     @Column(nullable = false)
     public String sujet;
 
-    @Column(nullable = false, length = 4000)
+    @Column(nullable = false, length = 10000)
     public String contenu;
 
     public String description;

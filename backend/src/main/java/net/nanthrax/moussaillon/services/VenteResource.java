@@ -150,7 +150,7 @@ public class VenteResource {
                     + "Cordialement,\n" + societeNom;
         }
 
-        mailer.send(Mail.withText(entity.client.email, subject, body));
+        mailer.send(Mail.withHtml(entity.client.email, subject, body));
         return Response.ok().build();
     }
 
@@ -459,7 +459,7 @@ public class VenteResource {
                     + "Cordialement,\n" + societeNom;
         }
 
-        mailer.send(Mail.withText(vente.client.email, subject, body));
+        mailer.send(Mail.withHtml(vente.client.email, subject, body));
     }
 
     private void decrementStock(VenteEntity vente) {

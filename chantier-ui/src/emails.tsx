@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Card, Space, Button, Form, Input, Table, Modal, Tag, Spin, message } from 'antd';
 import { MailOutlined, EditOutlined, InfoCircleOutlined } from '@ant-design/icons';
-
-const { TextArea } = Input;
+import ReactQuill from 'react-quill-new';
+import 'react-quill-new/dist/quill.snow.css';
 
 const TYPE_LABELS = {
     RAPPEL: 'Rappel',
@@ -173,7 +173,7 @@ export default function Emails() {
                         label="Contenu de l'email"
                         rules={[{ required: true, message: 'Le contenu est requis' }]}
                     >
-                        <TextArea rows={12} />
+                        <ReactQuill theme="snow" style={{ height: 300, marginBottom: 42 }} />
                     </Form.Item>
                 </Form>
             </Modal>

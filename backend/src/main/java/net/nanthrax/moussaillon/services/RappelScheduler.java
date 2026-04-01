@@ -94,7 +94,7 @@ public class RappelScheduler {
                     + "Cordialement,\n" + societeNom;
         }
 
-        mailer.send(Mail.withText(vente.client.email, subject, body));
+        mailer.send(Mail.withHtml(vente.client.email, subject, body));
 
         RappelHistoriqueEntity historique = new RappelHistoriqueEntity();
         historique.vente = vente;
