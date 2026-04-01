@@ -97,7 +97,9 @@ const Techniciens: React.FC = () => {
             setIsEdit(false);
             setCurrentTechnicien(null);
             form.resetFields();
-            form.setFieldsValue(defaultTechnicien);
+            const randomColor = '#' + Array.from(crypto.getRandomValues(new Uint8Array(3)))
+                .map(b => b.toString(16).padStart(2, '0')).join('');
+            form.setFieldsValue({ ...defaultTechnicien, couleur: randomColor });
         }
         setFormDirty(false);
         setModalVisible(true);
