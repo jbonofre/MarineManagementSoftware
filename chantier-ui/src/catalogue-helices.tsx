@@ -298,7 +298,9 @@ const HeliceCatalogueView: React.FC = () => {
         { title: 'Modèle', dataIndex: 'modele', key: 'modele',
             render: (_, record) => (
                 <Space>
-                    <Image width={50} src={record.images[0]} />
+                    {record.images && record.images[0] && (
+                        <Image width={50} src={record.images[0]} />
+                    )}
                     {record.modele}
                 </Space>
             ),

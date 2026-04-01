@@ -245,7 +245,9 @@ const MoteurCatalogue = () => {
       dataIndex: 'modele',
       render: (_: any, record: any) => (
         <Space>
-          <Image width={50} src={record.images[0]} />
+          {record.images && record.images[0] && (
+            <Image width={50} src={record.images[0]} />
+          )}
           {record.modele}
         </Space>
       ),
