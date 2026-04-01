@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Upload, message, Button, List, Input, Space } from 'antd';
 import { DeleteOutlined, InboxOutlined, FileOutlined, FilePdfOutlined, FileWordOutlined, FileExcelOutlined, DownloadOutlined, LinkOutlined } from '@ant-design/icons';
 import type { UploadProps } from 'antd';
-import axios from 'axios';
+import api from './api.ts';
 
 const { Dragger } = Upload;
 
@@ -37,7 +37,7 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ value = [], onChange })
 
     const handleDownload = async (url: string) => {
         try {
-            const res = await axios.get(url, { responseType: 'blob' });
+            const res = await api.get(url, { responseType: 'blob' });
             const blob = new Blob([res.data], { type: res.headers['content-type'] });
             const blobUrl = window.URL.createObjectURL(blob);
             window.open(blobUrl, '_blank');
@@ -51,7 +51,7 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ value = [], onChange })
         const formData = new FormData();
         formData.append('files', file as File);
         try {
-            const res = await axios.post('/documents', formData, {
+            const res = await api.post('/documents', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
             const urls: string[] = res.data;

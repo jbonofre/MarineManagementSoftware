@@ -25,7 +25,7 @@ import {
   MailOutlined,
   KeyOutlined,
 } from "@ant-design/icons";
-import axios from "axios";
+import api from "./api.ts";
 import BateauxClients from "./clients-bateaux.tsx";
 import ClientsMoteurs from "./clients-moteurs.tsx";
 import RemorquesClients from "./clients-remorques.tsx";
@@ -87,6 +87,7 @@ function Clients() {
   const [searchNom, setSearchNom] = useState("");
   const [searchType, setSearchType] = useState("");
   const [form] = Form.useForm();
+  const [formDirty, setFormDirty] = useState(false);
 
   const fetchClients = async (params: { nom?: string; type?: string } = {}) => {
     setLoading(true);
@@ -96,7 +97,7 @@ function Clients() {
       if (params.nom) searchParams.push(`nom=${encodeURIComponent(params.nom)}`);
       if (params.type) searchParams.push(`type=${encodeURIComponent(params.type)}`);
       if (searchParams.length) url += `/search?${searchParams.join("&")}`;
-      const res = await axios.get(url);
+      const res = await api.get(url);
       setClients(res.data);
     } catch {
       message.error("Erreur lors du chargement des clients");
@@ -121,19 +122,38 @@ function Clients() {
   const handleAdd = () => {
     setEditing(null);
     form.resetFields();
+    setFormDirty(false);
     setModalVisible(true);
   };
 
   const handleEdit = (record) => {
     setEditing(record);
     form.setFieldsValue(record);
+    setFormDirty(false);
     setModalVisible(true);
+  };
+
+  const handleModalCancel = () => {
+    if (formDirty) {
+      Modal.confirm({
+        title: "Modifications non enregistrées",
+        content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
+        okText: "Fermer",
+        cancelText: "Annuler",
+        onOk: () => {
+          setFormDirty(false);
+          setModalVisible(false);
+        },
+      });
+    } else {
+      setModalVisible(false);
+    }
   };
 
   const handleDelete = async (id) => {
     setLoading(true);
     try {
-      await axios.delete(`/clients/${id}`);
+      await api.delete(`/clients/${id}`);
       message.success("Client supprimé");
       fetchClients();
     } catch {
@@ -147,9 +167,14 @@ function Clients() {
       message.warning("Ce client n'a pas d'adresse email.");
       return;
     }
+    const motDePasse = form.getFieldValue("motDePasse");
+    if (!motDePasse) {
+      message.warning("Veuillez saisir un mot de passe avant de l'envoyer.");
+      return;
+    }
     try {
-      await axios.post(`/clients/${record.id}/send-password`);
-      message.success(`Mot de passe envoye a ${record.email}`);
+      await api.post(`/clients/${record.id}/send-password`, { password: motDePasse });
+      message.success(`Mot de passe envoyé à ${record.email}`);
     } catch {
       message.error("Erreur lors de l'envoi du mot de passe");
     }
@@ -157,22 +182,24 @@ function Clients() {
 
   const handleModalOk = async () => {
     try {
-      const values = await form.validateFields();
+      const { confirmPassword, ...values } = await form.validateFields();
       setLoading(true);
       if (editing && editing.id) {
         // update
-        const res = await axios.put(`/clients/${editing.id}`, values);
+        const res = await api.put(`/clients/${editing.id}`, values);
         message.success("Client modifié");
         const updated = res.data;
         setEditing(updated);
         form.setFieldsValue(updated);
+        setFormDirty(false);
       } else {
         // create
-        const res = await axios.post("/clients", values);
+        const res = await api.post("/clients", values);
         message.success("Client ajouté");
         const created = res.data;
         setEditing(created);
         form.setFieldsValue(created);
+        setFormDirty(false);
       }
       fetchClients();
     } catch (e) {
@@ -247,7 +274,7 @@ function Clients() {
           onSearch={async (value) => {
             setLoading(true);
             try {
-              const response = await axios.get('/clients/search', { params: { q: value } });
+              const response = await api.get('/clients/search', { params: { q: value } });
               setClients(response.data);
             } catch (error) {
               message.error('Erreur lors de la recherche');
@@ -271,14 +298,14 @@ function Clients() {
       <Modal
         open={modalVisible}
         title={editing ? "Modifier le client" : "Ajouter un client"}
-        onCancel={() => setModalVisible(false)}
+        onCancel={handleModalCancel}
         onOk={handleModalOk}
         okText="Enregistrer"
         cancelText="Annuler"
         destroyOnHidden
         width={1024}
       >
-        <Form layout="vertical" form={form} initialValues={defaultClient}>
+        <Form layout="vertical" form={form} initialValues={defaultClient} onValuesChange={() => setFormDirty(true)}>
           <Form.Item name="id" hidden>
             <Input />
           </Form.Item>
@@ -319,25 +346,69 @@ function Clients() {
                 <Input />
               </Form.Item>
             </Col>
-            {editing && editing.id && (
-              <Col span={12}>
-                <Form.Item label=" ">
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="Mot de passe" name="motDePasse">
+                <Input.Password />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                label="Confirmer le mot de passe"
+                name="confirmPassword"
+                dependencies={["motDePasse"]}
+                rules={[
+                  ({ getFieldValue }) => ({
+                    validator(_, value) {
+                      if (!value && !getFieldValue("motDePasse")) {
+                        return Promise.resolve();
+                      }
+                      if (value === getFieldValue("motDePasse")) {
+                        return Promise.resolve();
+                      }
+                      return Promise.reject(new Error("Les mots de passe ne correspondent pas"));
+                    },
+                  }),
+                ]}
+              >
+                <Input.Password />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row>
+            <Col>
+              <Space>
+                <Button
+                  icon={<KeyOutlined />}
+                  size="small"
+                  onClick={() => {
+                    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%&*";
+                    const generated = Array.from(crypto.getRandomValues(new Uint8Array(16)))
+                      .map((b) => chars[b % chars.length])
+                      .join("");
+                    form.setFieldsValue({ motDePasse: generated, confirmPassword: generated });
+                  }}
+                >
+                  Générer un mot de passe
+                </Button>
+                {editing && editing.id && (
                   <Popconfirm
-                    title="Générer un mot de passe et l'envoyer par email ?"
+                    title="Envoyer le mot de passe par email ?"
                     onConfirm={() => handleSendPassword(editing)}
                     disabled={!editing.email}
                   >
                     <Button
-                      icon={<KeyOutlined />}
+                      icon={<MailOutlined />}
                       disabled={!editing.email}
                       size="small"
                     >
-                      Générer et envoyer le mot de passe par email
+                      Envoyer le mot de passe par email
                     </Button>
                   </Popconfirm>
-                </Form.Item>
-              </Col>
-            )}
+                )}
+              </Space>
+            </Col>
           </Row>
           <Row gutter={16}>
             <Col span={12}>

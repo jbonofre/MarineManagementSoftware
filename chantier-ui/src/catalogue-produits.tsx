@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Image, Table, Rate, Row, Col, Card, Button, Modal, Form, AutoComplete, Input, InputNumber, Select, Space, Popconfirm, message } from 'antd';
 import { PlusCircleOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
-import axios from 'axios';
+import api from './api.ts';
 import FournisseurProduits from './fournisseur-produits.tsx';
 import ImageUpload from './ImageUpload.tsx';
 import DocumentUpload from './DocumentUpload.tsx';
@@ -73,6 +73,7 @@ const CatalogueProduits: React.FC = () => {
     const [isEdit, setIsEdit] = useState<boolean>(false);
     const [currentProduit, setCurrentProduit] = useState<ProduitCatalogueEntity | null>(null);
     const [form] = Form.useForm();
+    const [formDirty, setFormDirty] = useState(false);
 
     // Unique marque options
     const marqueOptions = useMemo(() => {
@@ -84,7 +85,7 @@ const CatalogueProduits: React.FC = () => {
     const fetchProduits = async () => {
         setLoading(true);
         try {
-            const res = await axios.get('/catalogue/produits');
+            const res = await api.get('/catalogue/produits');
             setProduits(res.data);
         } catch {
             message.error('Erreur lors du chargement des produits.');
@@ -95,6 +96,23 @@ const CatalogueProduits: React.FC = () => {
     useEffect(() => {
         fetchProduits();
     }, []);
+
+    const handleModalCancel = () => {
+        if (formDirty) {
+            Modal.confirm({
+                title: "Modifications non enregistrées",
+                content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
+                okText: "Fermer",
+                cancelText: "Annuler",
+                onOk: () => {
+                    setFormDirty(false);
+                    setModalVisible(false);
+                },
+            });
+        } else {
+            setModalVisible(false);
+        }
+    };
 
     const openModal = (produit?: ProduitCatalogueEntity) => {
         if (produit) {
@@ -113,6 +131,7 @@ const CatalogueProduits: React.FC = () => {
             form.resetFields();
             form.setFieldsValue(defaultProduit);
         }
+        setFormDirty(false);
         setModalVisible(true);
     };
 
@@ -122,17 +141,18 @@ const CatalogueProduits: React.FC = () => {
             values.images = values.images || [];
             values.documents = values.documents || [];
             if (isEdit && currentProduit && currentProduit.id) {
-                const res = await axios.put(`/catalogue/produits/${currentProduit.id}`, { ...currentProduit, ...values });
+                const res = await api.put(`/catalogue/produits/${currentProduit.id}`, { ...currentProduit, ...values });
                 message.success('Produit modifié avec succès');
                 setCurrentProduit(res.data);
                 form.setFieldsValue({ ...defaultProduit, ...res.data, images: res.data.images || [] });
             } else {
-                const res = await axios.post('/catalogue/produits', values);
+                const res = await api.post('/catalogue/produits', values);
                 message.success('Produit ajouté avec succès');
                 setIsEdit(true);
                 setCurrentProduit(res.data);
                 form.setFieldsValue({ ...defaultProduit, ...res.data, images: res.data.images || [] });
             }
+            setFormDirty(false);
             fetchProduits();
         } catch (err) {
             // form validation error
@@ -142,7 +162,7 @@ const CatalogueProduits: React.FC = () => {
     const handleDelete = async (id: number | undefined) => {
         if (!id) return;
         try {
-            await axios.delete(`/catalogue/produits/${id}`);
+            await api.delete(`/catalogue/produits/${id}`);
             message.success('Produit supprimé avec succès');
             fetchProduits();
         } catch {
@@ -220,6 +240,7 @@ const CatalogueProduits: React.FC = () => {
 
     // prix/tva calculation autocalc
     const onValuesChange = (changedValues, allValues) => {
+        setFormDirty(true);
         if (changedValues.prixVenteHT !== undefined || changedValues.tva !== undefined) {
             const prixVenteHT = form.getFieldValue('prixVenteHT') || 0;
             const tva = form.getFieldValue('tva') || 0;
@@ -254,7 +275,7 @@ const CatalogueProduits: React.FC = () => {
                                 onSearch={async (value) => {
                                     setLoading(true);
                                     try {
-                                        const r = await axios.get('/catalogue/produits/search', { params: { q: value } });
+                                        const r = await api.get('/catalogue/produits/search', { params: { q: value } });
                                         setProduits(r.data);
                                     } catch {
                                         message.error('Erreur lors de la recherche');
@@ -281,7 +302,7 @@ const CatalogueProduits: React.FC = () => {
                             title={isEdit ? 'Modifier un produit' : 'Ajouter un produit'}
                             open={modalVisible}
                             onOk={handleModalOk}
-                            onCancel={() => setModalVisible(false)}
+                            onCancel={handleModalCancel}
                             maskClosable={false}
                             width={1024}
                             okText="Enregistrer"

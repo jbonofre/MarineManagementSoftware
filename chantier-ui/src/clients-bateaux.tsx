@@ -26,7 +26,7 @@ import {
   DeleteOutlined,
   SearchOutlined,
 } from "@ant-design/icons";
-import axios from "axios";
+import api from "./api.ts";
 import ImageUpload from './ImageUpload.tsx';
 import DocumentUpload from './DocumentUpload.tsx';
 import dayjs from "dayjs";
@@ -86,6 +86,7 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
   const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
+  const [formDirty, setFormDirty] = useState(false);
   const [editing, setEditing] = useState<BateauClient | null>(null);
   const [search, setSearch] = useState("");
   const [form] = Form.useForm();
@@ -103,7 +104,7 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
       if (q && q.trim() !== "") {
         url = `/bateaux/search?q=${encodeURIComponent(q)}`;
       }
-      const res = await axios.get(url);
+      const res = await api.get(url);
       let bateauxData = res.data;
       // Filter by clientId if provided
       if (clientId) {
@@ -120,7 +121,7 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
 
   const fetchBateauxCatalogue = async () => {
     try {
-      const res = await axios.get('/catalogue/bateaux');
+      const res = await api.get('/catalogue/bateaux');
       setBateauxCatalogue(res.data);
     } catch {
       message.error("Erreur lors du chargement du catalogue de bateaux");
@@ -130,7 +131,7 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
 
   const fetchMoteursCatalogue = async () => {
     try {
-      const res = await axios.get('/catalogue/moteurs');
+      const res = await api.get('/catalogue/moteurs');
       setMoteursCatalogue(res.data);
     } catch {
       message.error("Erreur lors du chargement du catalogue de moteurs");
@@ -146,13 +147,31 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
   }, [clientId]);
 
   const fetchClients = async () => {
-    const res = await axios.get('/clients');
+    const res = await api.get('/clients');
     setClients(res.data);
+  };
+
+  const handleModalCancel = () => {
+    if (formDirty) {
+      Modal.confirm({
+        title: "Modifications non enregistrées",
+        content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
+        okText: "Fermer",
+        cancelText: "Annuler",
+        onOk: () => {
+          setFormDirty(false);
+          setModalVisible(false);
+        },
+      });
+    } else {
+      setModalVisible(false);
+    }
   };
 
   const handleAdd = () => {
     setEditing(null);
     form.resetFields();
+    setFormDirty(false);
     if (clientId) {
       form.setFieldsValue({ proprietaires: [clientId] });
     }
@@ -161,6 +180,7 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
 
   const handleEdit = (record: BateauClient) => {
     setEditing(record);
+    setFormDirty(false);
     form.setFieldsValue({
       ...record,
       dateMeS: record.dateMeS ? dayjs(record.dateMeS) : null,
@@ -177,7 +197,7 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
     if (!id) return;
     setLoading(true);
     try {
-      await axios.delete(`/bateaux/${id}`);
+      await api.delete(`/bateaux/${id}`);
       message.success("Bateau supprimé");
       fetchBateaux();
     } catch {
@@ -189,7 +209,7 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
   const handleCatalogueAdd = async () => {
     try {
       const values = await catalogueForm.validateFields();
-      const res = await axios.post("/catalogue/bateaux", values);
+      const res = await api.post("/catalogue/bateaux", values);
       message.success("Modèle catalogue ajouté");
       setCatalogueModalVisible(false);
       catalogueForm.resetFields();
@@ -205,7 +225,7 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
   const handleMoteurAdd = async () => {
     try {
       const values = await moteurForm.validateFields();
-      const res = await axios.post("/catalogue/moteurs", values);
+      const res = await api.post("/catalogue/moteurs", values);
       message.success("Moteur catalogue ajouté");
       setMoteurModalVisible(false);
       moteurForm.resetFields();
@@ -223,7 +243,7 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
   const handleClientAdd = async () => {
     try {
       const values = await clientForm.validateFields();
-      const res = await axios.post("/clients", values);
+      const res = await api.post("/clients", values);
       message.success("Client ajouté");
       setClientModalVisible(false);
       clientForm.resetFields();
@@ -258,7 +278,7 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
       };
       if (editing && editing.id) {
         // update
-        const res = await axios.put(`/bateaux/${editing.id}`, payload);
+        const res = await api.put(`/bateaux/${editing.id}`, payload);
         message.success("Bateau modifié");
         const updated = res.data;
         setEditing(updated);
@@ -273,7 +293,7 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
         });
       } else {
         // create
-        const res = await axios.post("/bateaux", payload);
+        const res = await api.post("/bateaux", payload);
         message.success("Bateau ajouté");
         const created = res.data;
         setEditing(created);
@@ -287,6 +307,7 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
           moteurs: created.moteurs?.map((m: any) => m.id || m) || [],
         });
       }
+      setFormDirty(false);
       fetchBateaux();
     } catch (e) {
       if (e && e.response) {
@@ -349,7 +370,7 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
       <Modal
         open={modalVisible}
         title={editing ? "Modifier le bateau" : "Ajouter un bateau"}
-        onCancel={() => setModalVisible(false)}
+        onCancel={handleModalCancel}
         onOk={handleModalOk}
         okText="Enregistrer"
         cancelText="Annuler"
@@ -357,6 +378,7 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
         width={1024}
       >
         <Form layout="vertical" form={form} initialValues={defaultBateau} onValuesChange={(changedValues) => {
+            setFormDirty(true);
             if (changedValues.localisationGps) {
               form.setFieldsValue({ localisation: changedValues.localisationGps });
             }
@@ -412,12 +434,16 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
           <Form.Item label="Localisation GPS" name="localisationGps">
             <LocationPicker />
           </Form.Item>
-          <Form.Item label="Images" name="images">
-            <ImageUpload />
-          </Form.Item>
-          <Form.Item label="Documents" name="documents">
-            <DocumentUpload />
-          </Form.Item>
+          {editing && (
+            <>
+              <Form.Item label="Images" name="images">
+                <ImageUpload />
+              </Form.Item>
+              <Form.Item label="Documents" name="documents">
+                <DocumentUpload />
+              </Form.Item>
+            </>
+          )}
           {/* Association avec un bateau du catalogue */}
           <Form.Item label="Modèle catalogue" style={{ marginBottom: 0 }}>
             <Space.Compact style={{ width: "100%" }}>

@@ -4,7 +4,7 @@ import {
     Popconfirm, message, Tabs, Select, AutoComplete
 } from 'antd';
 import { PlusCircleOutlined, EditOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons';
-import axios from 'axios';
+import api from './api.ts';
 
 interface MainOeuvreEntity {
     id: number;
@@ -96,13 +96,17 @@ export default function Services() {
     const [searchQuery, setSearchQuery] = useState('');
     const [form] = Form.useForm<ServiceFormValues>();
 
+    const [formDirty, setFormDirty] = useState(false);
+
     const [newMainOeuvreModalVisible, setNewMainOeuvreModalVisible] = useState(false);
     const [newMainOeuvreTargetLine, setNewMainOeuvreTargetLine] = useState<number | null>(null);
     const [newMainOeuvreForm] = Form.useForm();
+    const [newMainOeuvreFormDirty, setNewMainOeuvreFormDirty] = useState(false);
 
     const [newProduitModalVisible, setNewProduitModalVisible] = useState(false);
     const [newProduitTargetLine, setNewProduitTargetLine] = useState<number | null>(null);
     const [newProduitForm] = Form.useForm();
+    const [newProduitFormDirty, setNewProduitFormDirty] = useState(false);
 
     const mainOeuvreOptions = useMemo(
         () => allMainOeuvres.map((mo) => ({ value: mo.id, label: mo.nom })),
@@ -121,7 +125,7 @@ export default function Services() {
             if (query && query.trim()) {
                 url = '/services/search';
             }
-            const response = await axios.get(url, { params: query && query.trim() ? { q: query } : {} });
+            const response = await api.get(url, { params: query && query.trim() ? { q: query } : {} });
             setServices(response.data);
         } catch {
             message.error('Erreur lors du chargement des services.');
@@ -132,8 +136,8 @@ export default function Services() {
     const fetchOptions = async () => {
         try {
             const [moRes, prodRes] = await Promise.all([
-                axios.get('/main-oeuvres'),
-                axios.get('/catalogue/produits')
+                api.get('/main-oeuvres'),
+                api.get('/catalogue/produits')
             ]);
             setAllMainOeuvres(moRes.data || []);
             setAllProduits(prodRes.data || []);
@@ -173,7 +177,59 @@ export default function Services() {
             form.resetFields();
             form.setFieldsValue(defaultService);
         }
+        setFormDirty(false);
         setModalVisible(true);
+    };
+
+    const handleModalCancel = () => {
+        if (formDirty) {
+            Modal.confirm({
+                title: "Modifications non enregistrées",
+                content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
+                okText: "Fermer",
+                cancelText: "Annuler",
+                onOk: () => {
+                    setFormDirty(false);
+                    setModalVisible(false);
+                },
+            });
+        } else {
+            setModalVisible(false);
+        }
+    };
+
+    const handleNewMainOeuvreCancel = () => {
+        if (newMainOeuvreFormDirty) {
+            Modal.confirm({
+                title: "Modifications non enregistrées",
+                content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
+                okText: "Fermer",
+                cancelText: "Annuler",
+                onOk: () => {
+                    setNewMainOeuvreFormDirty(false);
+                    setNewMainOeuvreModalVisible(false);
+                },
+            });
+        } else {
+            setNewMainOeuvreModalVisible(false);
+        }
+    };
+
+    const handleNewProduitCancel = () => {
+        if (newProduitFormDirty) {
+            Modal.confirm({
+                title: "Modifications non enregistrées",
+                content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
+                okText: "Fermer",
+                cancelText: "Annuler",
+                onOk: () => {
+                    setNewProduitFormDirty(false);
+                    setNewProduitModalVisible(false);
+                },
+            });
+        } else {
+            setNewProduitModalVisible(false);
+        }
     };
 
     const toPayload = (values: ServiceFormValues): Partial<ServiceEntity> => ({
@@ -202,7 +258,7 @@ export default function Services() {
             return;
         }
         try {
-            await axios.delete(`/services/${id}`);
+            await api.delete(`/services/${id}`);
             message.success('Service supprimé avec succès');
             fetchServices(searchQuery);
         } catch {
@@ -215,15 +271,16 @@ export default function Services() {
             const values = await form.validateFields();
             const payload = toPayload(values);
             if (isEdit && currentService?.id) {
-                const res = await axios.put(`/services/${currentService.id}`, { ...currentService, ...payload });
+                const res = await api.put(`/services/${currentService.id}`, { ...currentService, ...payload });
                 message.success('Service modifié avec succès');
                 setCurrentService(res.data);
             } else {
-                const res = await axios.post('/services', payload);
+                const res = await api.post('/services', payload);
                 message.success('Service ajouté avec succès');
                 setIsEdit(true);
                 setCurrentService(res.data);
             }
+            setFormDirty(false);
             fetchServices(searchQuery);
         } catch {
             // Validation errors are handled by form rules.
@@ -305,13 +362,14 @@ export default function Services() {
         setNewMainOeuvreTargetLine(lineIndex);
         newMainOeuvreForm.resetFields();
         newMainOeuvreForm.setFieldsValue(defaultNewMainOeuvre);
+        setNewMainOeuvreFormDirty(false);
         setNewMainOeuvreModalVisible(true);
     };
 
     const handleNewMainOeuvreSave = async () => {
         try {
             const values = await newMainOeuvreForm.validateFields();
-            const res = await axios.post('/main-oeuvres', values);
+            const res = await api.post('/main-oeuvres', values);
             const created = res.data as MainOeuvreEntity;
             message.success("Main d'oeuvre ajoutée avec succès");
             setAllMainOeuvres((prev) => [...prev, created]);
@@ -321,6 +379,7 @@ export default function Services() {
                 updated[newMainOeuvreTargetLine] = { ...updated[newMainOeuvreTargetLine], mainOeuvreId: created.id };
                 form.setFieldValue('mainOeuvres', updated);
             }
+            setNewMainOeuvreFormDirty(false);
             setNewMainOeuvreModalVisible(false);
         } catch {
             // validation errors shown in form
@@ -349,6 +408,7 @@ export default function Services() {
         setNewProduitTargetLine(lineIndex);
         newProduitForm.resetFields();
         newProduitForm.setFieldsValue(defaultNewProduit);
+        setNewProduitFormDirty(false);
         setNewProduitModalVisible(true);
     };
 
@@ -356,7 +416,7 @@ export default function Services() {
         try {
             const values = await newProduitForm.validateFields();
             values.images = values.images || [];
-            const res = await axios.post('/catalogue/produits', values);
+            const res = await api.post('/catalogue/produits', values);
             const created = res.data as ProduitCatalogueEntity;
             message.success('Produit ajouté avec succès');
             setAllProduits((prev) => [...prev, created]);
@@ -366,6 +426,7 @@ export default function Services() {
                 updated[newProduitTargetLine] = { ...updated[newProduitTargetLine], produitId: created.id };
                 form.setFieldValue('produits', updated);
             }
+            setNewProduitFormDirty(false);
             setNewProduitModalVisible(false);
         } catch {
             // validation errors shown in form
@@ -476,7 +537,7 @@ export default function Services() {
                 title={isEdit ? 'Modifier un service' : 'Ajouter un service'}
                 open={modalVisible}
                 onOk={handleModalOk}
-                onCancel={() => setModalVisible(false)}
+                onCancel={handleModalCancel}
                 okText="Enregistrer"
                 cancelText="Annuler"
                 maskClosable={false}
@@ -487,7 +548,7 @@ export default function Services() {
                     form={form}
                     layout="vertical"
                     initialValues={defaultService}
-                    onValuesChange={onValuesChange}
+                    onValuesChange={(...args) => { setFormDirty(true); onValuesChange(...args); }}
                 >
                     <Form.Item
                         name="nom"
@@ -681,14 +742,14 @@ export default function Services() {
                 title="Créer une Main d'Oeuvre"
                 open={newMainOeuvreModalVisible}
                 onOk={handleNewMainOeuvreSave}
-                onCancel={() => setNewMainOeuvreModalVisible(false)}
+                onCancel={handleNewMainOeuvreCancel}
                 okText="Enregistrer"
                 cancelText="Annuler"
                 maskClosable={false}
                 destroyOnHidden
                 width={700}
             >
-                <Form form={newMainOeuvreForm} layout="vertical" initialValues={defaultNewMainOeuvre} onValuesChange={onNewMainOeuvreValuesChange}>
+                <Form form={newMainOeuvreForm} layout="vertical" initialValues={defaultNewMainOeuvre} onValuesChange={(...args) => { setNewMainOeuvreFormDirty(true); onNewMainOeuvreValuesChange(...args); }}>
                     <Form.Item name="nom" label="Nom" rules={[{ required: true, message: 'Le nom est requis' }]}>
                         <Input allowClear />
                     </Form.Item>
@@ -725,14 +786,14 @@ export default function Services() {
                 title="Créer un Produit"
                 open={newProduitModalVisible}
                 onOk={handleNewProduitSave}
-                onCancel={() => setNewProduitModalVisible(false)}
+                onCancel={handleNewProduitCancel}
                 okText="Enregistrer"
                 cancelText="Annuler"
                 maskClosable={false}
                 destroyOnHidden
                 width={700}
             >
-                <Form form={newProduitForm} layout="vertical" initialValues={defaultNewProduit} onValuesChange={onNewProduitValuesChange}>
+                <Form form={newProduitForm} layout="vertical" initialValues={defaultNewProduit} onValuesChange={(...args) => { setNewProduitFormDirty(true); onNewProduitValuesChange(...args); }}>
                     <Form.Item name="nom" label="Nom" rules={[{ required: true, message: 'Le nom est requis' }]}>
                         <Input allowClear />
                     </Form.Item>

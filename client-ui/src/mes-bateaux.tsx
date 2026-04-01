@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Card, Table, Tag, Spin, message } from 'antd';
-import axios from 'axios';
+import api from './api.ts';
 
 interface BateauClientEntity {
     id: number;
@@ -33,7 +33,7 @@ export default function MesBateaux({ clientId }: MesBateauxProps) {
 
     useEffect(() => {
         setLoading(true);
-        axios.get(`/portal/clients/${clientId}/bateaux`)
+        api.get(`/portal/clients/${clientId}/bateaux`)
             .then((res) => setBateaux(res.data || []))
             .catch(() => message.error('Erreur lors du chargement des bateaux'))
             .finally(() => setLoading(false));

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Table, Button, Modal, Form, Input, InputNumber, Image, Select, message, Popconfirm, Space, Row, Col, Rate, Card } from 'antd';
-import axios from 'axios';
+import api, { fetchWithAuth } from './api.ts';
 import { PlusCircleOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons';
 import FournisseurHelices from './fournisseur-helices.tsx';
 import ImageUpload from './ImageUpload.tsx';
@@ -63,18 +63,18 @@ const defaultHelice: HeliceCatalogueEntity = {
     prixVenteTTC: 0,
 };
 const fetchHelices = async (): Promise<HeliceCatalogueEntity[]> => {
-    const res = await fetch('/catalogue/helices');
+    const res = await fetchWithAuth('/catalogue/helices');
     if (!res.ok) throw new Error('Échec de récupération du catalogue des hélices');
     return await res.json();
 };
 const fetchMoteurs = async (): Promise<MoteurCatalogueEntity[]> => {
-    const res = await fetch('/catalogue/moteurs');
+    const res = await fetchWithAuth('/catalogue/moteurs');
     if (!res.ok) throw new Error('Échec de récupération du catalogue des moteurs');
     return await res.json();
 };
 
 const createHelice = async (helice: HeliceCatalogueEntity) => {
-    const res = await fetch('/catalogue/helices', {
+    const res = await fetchWithAuth('/catalogue/helices', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(helice),
@@ -84,7 +84,7 @@ const createHelice = async (helice: HeliceCatalogueEntity) => {
 };
 
 const updateHelice = async (id: number, helice: HeliceCatalogueEntity) => {
-    const res = await fetch(`/catalogue/helices/${id}`, {
+    const res = await fetchWithAuth(`/catalogue/helices/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(helice),
@@ -94,7 +94,7 @@ const updateHelice = async (id: number, helice: HeliceCatalogueEntity) => {
 };
 
 const deleteHelice = async (id: number) => {
-    const res = await fetch(`/catalogue/helices/${id}`, {
+    const res = await fetchWithAuth(`/catalogue/helices/${id}`, {
         method: 'DELETE'
     });
     if (!res.ok) throw new Error("Erreur lors de la suppression");
@@ -131,6 +131,7 @@ const HeliceCatalogueView: React.FC = () => {
     const [form] = Form.useForm();
     const [moteurs, setMoteurs] = useState<MoteurCatalogueEntity[]>([]);
     const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
+    const [formDirty, setFormDirty] = useState(false);
 
     const loadHelices = async () => {
         setLoading(true);
@@ -193,7 +194,7 @@ const HeliceCatalogueView: React.FC = () => {
                     ? [...(moteur.helicesCompatibles || []), sanitizedHelice]
                     : (moteur.helicesCompatibles || []).filter((linkedHelice) => linkedHelice.id !== helice.id);
                 const payload = { ...moteur, helicesCompatibles: updatedHelices };
-                await axios.put(`/catalogue/moteurs/${moteurId}`, payload);
+                await api.put(`/catalogue/moteurs/${moteurId}`, payload);
             }),
         );
     };
@@ -213,9 +214,27 @@ const HeliceCatalogueView: React.FC = () => {
         }
     };
 
+    const handleModalCancel = () => {
+        if (formDirty) {
+            Modal.confirm({
+                title: "Modifications non enregistrées",
+                content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
+                okText: "Fermer",
+                cancelText: "Annuler",
+                onOk: () => {
+                    setFormDirty(false);
+                    setModalOpen(false);
+                },
+            });
+        } else {
+            setModalOpen(false);
+        }
+    };
+
     const openEditModal = (record: HeliceCatalogueEntity) => {
         setEditing(record);
         setModalMode('edit');
+        setFormDirty(false);
         setModalOpen(true);
         const moteurIds =
             record.moteursCompatibles?.map((m) => m.id).filter((id): id is number => typeof id === 'number') ||
@@ -229,6 +248,7 @@ const HeliceCatalogueView: React.FC = () => {
     const openCreateModal = () => {
         setEditing(null);
         setModalMode('create');
+        setFormDirty(false);
         setModalOpen(true);
         form.resetFields();
     };
@@ -259,6 +279,7 @@ const HeliceCatalogueView: React.FC = () => {
                 ...result,
                 moteursCompatibles: moteurIds,
             });
+            setFormDirty(false);
             await loadHelices();
             await loadMoteurs();
         } catch (e: any) {
@@ -312,6 +333,7 @@ const HeliceCatalogueView: React.FC = () => {
     ];
 
     const onValuesChange = (changedValues, allValues) => {
+        setFormDirty(true);
         if (changedValues.prixVenteHT || changedValues.tva) {
             const prixVenteHT = form.getFieldValue('prixVenteHT');
             const tva = form.getFieldValue('tva');
@@ -345,7 +367,7 @@ const HeliceCatalogueView: React.FC = () => {
                                 onSearch={async (value) => {
                                     setLoading(true);
                                     try {
-                                        const response = await axios.get('/catalogue/helices/search', { params: { q: value } });
+                                        const response = await api.get('/catalogue/helices/search', { params: { q: value } });
                                         setHelices(response.data);
                                     } catch (error) {
                                         message.error('Erreur lors de la recherche');
@@ -365,7 +387,7 @@ const HeliceCatalogueView: React.FC = () => {
                     <Modal
                         open={modalOpen}
                         title={modalMode === 'edit' ? 'Modifier une Hélice' : 'Nouvelle Hélice'}
-                        onCancel={() => setModalOpen(false)}
+                        onCancel={handleModalCancel}
                         onOk={handleModalOk}
                         okText="Enregistrer"
                         cancelText="Annuler"

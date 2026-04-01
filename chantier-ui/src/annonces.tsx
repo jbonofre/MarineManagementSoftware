@@ -15,7 +15,7 @@ import {
     message,
 } from 'antd';
 import { DeleteOutlined, EditOutlined, EyeOutlined, PlusCircleOutlined, SendOutlined, StopOutlined } from '@ant-design/icons';
-import axios from 'axios';
+import api from './api.ts';
 import ImageUpload from './ImageUpload.tsx';
 
 interface ClientEntity {
@@ -80,23 +80,24 @@ export default function Annonces() {
     const [publishModalOpen, setPublishModalOpen] = useState(false);
     const [publishAnnonce, setPublishAnnonce] = useState<Annonce | null>(null);
     const [form] = Form.useForm();
+    const [formDirty, setFormDirty] = useState(false);
 
     const fetchAnnonces = () => {
         setLoading(true);
-        axios.get('/annonces')
+        api.get('/annonces')
             .then((res) => setAnnonces(res.data || []))
             .catch(() => message.error('Erreur lors du chargement des annonces'))
             .finally(() => setLoading(false));
     };
 
     const fetchClients = () => {
-        axios.get('/clients')
+        api.get('/clients')
             .then((res) => setClients(res.data || []))
             .catch(() => {});
     };
 
     const fetchBateaux = () => {
-        axios.get('/bateaux/clients')
+        api.get('/bateaux/clients')
             .then((res) => setBateaux(res.data || []))
             .catch(() => {});
     };
@@ -111,6 +112,7 @@ export default function Annonces() {
         setEditing(null);
         form.resetFields();
         form.setFieldsValue({ status: 'ACTIVE' });
+        setFormDirty(false);
         setModalOpen(true);
     };
 
@@ -127,7 +129,25 @@ export default function Annonces() {
             clientId: annonce.client?.id,
             bateauId: annonce.bateau?.id,
         });
+        setFormDirty(false);
         setModalOpen(true);
+    };
+
+    const handleModalCancel = () => {
+        if (formDirty) {
+            Modal.confirm({
+                title: "Modifications non enregistrées",
+                content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
+                okText: "Fermer",
+                cancelText: "Annuler",
+                onOk: () => {
+                    setFormDirty(false);
+                    setModalOpen(false);
+                },
+            });
+        } else {
+            setModalOpen(false);
+        }
     };
 
     const openDetail = (annonce: Annonce) => {
@@ -155,14 +175,15 @@ export default function Annonces() {
                 payload.bateau = { id: values.bateauId };
             }
             if (editing) {
-                const res = await axios.put(`/annonces/${editing.id}`, payload);
+                const res = await api.put(`/annonces/${editing.id}`, payload);
                 message.success('Annonce mise a jour');
                 setEditing(res.data);
             } else {
-                const res = await axios.post('/annonces', payload);
+                const res = await api.post('/annonces', payload);
                 message.success('Annonce creee');
                 setEditing(res.data);
             }
+            setFormDirty(false);
             fetchAnnonces();
         } catch {
             // validation error
@@ -171,7 +192,7 @@ export default function Annonces() {
 
     const handleDelete = async (id: number) => {
         try {
-            await axios.delete(`/annonces/${id}`);
+            await api.delete(`/annonces/${id}`);
             message.success('Annonce supprimee');
             fetchAnnonces();
         } catch {
@@ -186,7 +207,7 @@ export default function Annonces() {
 
     const handlePublish = async (id: number, plateforme: string) => {
         try {
-            await axios.post(`/annonces/${id}/publier`, { plateforme });
+            await api.post(`/annonces/${id}/publier`, { plateforme });
             message.success(`Annonce publiee sur ${plateformes.find(p => p.key === plateforme)?.label || plateforme}`);
             fetchAnnonces();
         } catch {
@@ -196,7 +217,7 @@ export default function Annonces() {
 
     const handleUnpublish = async (id: number, plateforme: string) => {
         try {
-            await axios.post(`/annonces/${id}/depublier`, { plateforme });
+            await api.post(`/annonces/${id}/depublier`, { plateforme });
             message.success(`Annonce retiree de ${plateformes.find(p => p.key === plateforme)?.label || plateforme}`);
             fetchAnnonces();
         } catch {
@@ -304,13 +325,13 @@ export default function Annonces() {
             <Modal
                 title={editing ? 'Modifier l\'annonce' : 'Nouvelle annonce'}
                 open={modalOpen}
-                onCancel={() => setModalOpen(false)}
+                onCancel={handleModalCancel}
                 onOk={handleSave}
                 okText={editing ? 'Mettre a jour' : 'Publier'}
                 cancelText="Annuler"
                 width={650}
             >
-                <Form form={form} layout="vertical">
+                <Form form={form} layout="vertical" onValuesChange={() => setFormDirty(true)}>
                     <Form.Item name="titre" label="Titre" rules={[{ required: true, message: 'Le titre est requis' }]}>
                         <Input placeholder="Ex: Beneteau Flyer 7.7 - Excellent etat" />
                     </Form.Item>

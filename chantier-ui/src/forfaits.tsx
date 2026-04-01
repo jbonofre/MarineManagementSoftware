@@ -18,7 +18,7 @@ import {
     message
 } from 'antd';
 import { DeleteOutlined, EditOutlined, PlusCircleOutlined, PlusOutlined } from '@ant-design/icons';
-import axios from 'axios';
+import api from './api.ts';
 import ImageUpload from './ImageUpload.tsx';
 
 interface MoteurCatalogueEntity {
@@ -179,12 +179,15 @@ export default function Forfaits() {
     const [currentForfait, setCurrentForfait] = useState<ForfaitEntity | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [form] = Form.useForm<ForfaitFormValues>();
+    const [formDirty, setFormDirty] = useState(false);
     const [newProduitModalVisible, setNewProduitModalVisible] = useState(false);
     const [newProduitTargetLine, setNewProduitTargetLine] = useState<number | null>(null);
     const [newProduitForm] = Form.useForm();
+    const [newProduitFormDirty, setNewProduitFormDirty] = useState(false);
     const [newMainOeuvreModalVisible, setNewMainOeuvreModalVisible] = useState(false);
     const [newMainOeuvreTargetLine, setNewMainOeuvreTargetLine] = useState<number | null>(null);
     const [newMainOeuvreForm] = Form.useForm();
+    const [newMainOeuvreFormDirty, setNewMainOeuvreFormDirty] = useState(false);
 
     const marqueOptions = useMemo(() => {
         const unique = Array.from(new Set(produits.map((p) => p.marque).filter(Boolean))) as string[];
@@ -216,7 +219,7 @@ export default function Forfaits() {
         setLoading(true);
         try {
             const endpoint = query && query.trim() ? '/forfaits/search' : '/forfaits';
-            const response = await axios.get(endpoint, { params: query && query.trim() ? { q: query } : {} });
+            const response = await api.get(endpoint, { params: query && query.trim() ? { q: query } : {} });
             setForfaits(response.data || []);
         } catch {
             message.error('Erreur lors du chargement des forfaits.');
@@ -228,10 +231,10 @@ export default function Forfaits() {
     const fetchOptions = async () => {
         try {
             const [moteursRes, bateauxRes, produitsRes, mainOeuvresRes] = await Promise.all([
-                axios.get('/catalogue/moteurs'),
-                axios.get('/catalogue/bateaux'),
-                axios.get('/catalogue/produits'),
-                axios.get('/main-oeuvres'),
+                api.get('/catalogue/moteurs'),
+                api.get('/catalogue/bateaux'),
+                api.get('/catalogue/produits'),
+                api.get('/main-oeuvres'),
             ]);
             setMoteurs(moteursRes.data || []);
             setBateaux(bateauxRes.data || []);
@@ -251,6 +254,7 @@ export default function Forfaits() {
         setNewProduitTargetLine(lineIndex);
         newProduitForm.resetFields();
         newProduitForm.setFieldsValue(defaultNewProduit);
+        setNewProduitFormDirty(false);
         setNewProduitModalVisible(true);
     };
 
@@ -258,7 +262,7 @@ export default function Forfaits() {
         try {
             const values = await newProduitForm.validateFields();
             values.images = values.images || [];
-            const res = await axios.post('/catalogue/produits', values);
+            const res = await api.post('/catalogue/produits', values);
             const created = res.data as ProduitCatalogueEntity;
             message.success('Produit ajouté avec succès');
             setProduits((prev) => [...prev, created]);
@@ -268,6 +272,7 @@ export default function Forfaits() {
                 updated[newProduitTargetLine] = { ...updated[newProduitTargetLine], produitId: created.id };
                 form.setFieldValue('produits', updated);
             }
+            setNewProduitFormDirty(false);
             setNewProduitModalVisible(false);
         } catch {
             // validation errors shown in form
@@ -295,13 +300,14 @@ export default function Forfaits() {
         setNewMainOeuvreTargetLine(lineIndex);
         newMainOeuvreForm.resetFields();
         newMainOeuvreForm.setFieldsValue(defaultNewMainOeuvre);
+        setNewMainOeuvreFormDirty(false);
         setNewMainOeuvreModalVisible(true);
     };
 
     const handleNewMainOeuvreSave = async () => {
         try {
             const values = await newMainOeuvreForm.validateFields();
-            const res = await axios.post('/main-oeuvres', values);
+            const res = await api.post('/main-oeuvres', values);
             const created = res.data as MainOeuvreEntity;
             message.success("Main d'oeuvre ajoutée avec succès");
             setMainOeuvresList((prev) => [...prev, created]);
@@ -311,6 +317,7 @@ export default function Forfaits() {
                 updated[newMainOeuvreTargetLine] = { ...updated[newMainOeuvreTargetLine], mainOeuvreId: created.id };
                 form.setFieldValue('mainOeuvres', updated);
             }
+            setNewMainOeuvreFormDirty(false);
             setNewMainOeuvreModalVisible(false);
         } catch {
             // validation errors shown in form
@@ -374,7 +381,59 @@ export default function Forfaits() {
             form.resetFields();
             form.setFieldsValue(defaultForfait);
         }
+        setFormDirty(false);
         setModalVisible(true);
+    };
+
+    const handleModalCancel = () => {
+        if (formDirty) {
+            Modal.confirm({
+                title: "Modifications non enregistrées",
+                content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
+                okText: "Fermer",
+                cancelText: "Annuler",
+                onOk: () => {
+                    setFormDirty(false);
+                    setModalVisible(false);
+                },
+            });
+        } else {
+            setModalVisible(false);
+        }
+    };
+
+    const handleNewProduitCancel = () => {
+        if (newProduitFormDirty) {
+            Modal.confirm({
+                title: "Modifications non enregistrées",
+                content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
+                okText: "Fermer",
+                cancelText: "Annuler",
+                onOk: () => {
+                    setNewProduitFormDirty(false);
+                    setNewProduitModalVisible(false);
+                },
+            });
+        } else {
+            setNewProduitModalVisible(false);
+        }
+    };
+
+    const handleNewMainOeuvreCancel = () => {
+        if (newMainOeuvreFormDirty) {
+            Modal.confirm({
+                title: "Modifications non enregistrées",
+                content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
+                okText: "Fermer",
+                cancelText: "Annuler",
+                onOk: () => {
+                    setNewMainOeuvreFormDirty(false);
+                    setNewMainOeuvreModalVisible(false);
+                },
+            });
+        } else {
+            setNewMainOeuvreModalVisible(false);
+        }
     };
 
     const toPayload = (values: ForfaitFormValues): Partial<ForfaitEntity> => ({
@@ -419,17 +478,18 @@ export default function Forfaits() {
             const values = await form.validateFields();
             const payload = toPayload(values);
             if (isEdit && currentForfait?.id) {
-                const res = await axios.put(`/forfaits/${currentForfait.id}`, { ...currentForfait, ...payload });
+                const res = await api.put(`/forfaits/${currentForfait.id}`, { ...currentForfait, ...payload });
                 message.success('Forfait modifié avec succès');
                 setCurrentForfait(res.data);
                 form.setFieldsValue(values);
             } else {
-                const res = await axios.post('/forfaits', payload);
+                const res = await api.post('/forfaits', payload);
                 message.success('Forfait ajouté avec succès');
                 setIsEdit(true);
                 setCurrentForfait(res.data);
                 form.setFieldsValue(values);
             }
+            setFormDirty(false);
             fetchForfaits(searchQuery);
         } catch {
             // Les erreurs de validation sont affichées par le formulaire.
@@ -441,7 +501,7 @@ export default function Forfaits() {
             return;
         }
         try {
-            await axios.delete(`/forfaits/${id}`);
+            await api.delete(`/forfaits/${id}`);
             message.success('Forfait supprimé avec succès');
             fetchForfaits(searchQuery);
         } catch {
@@ -674,14 +734,14 @@ export default function Forfaits() {
                 title={isEdit ? 'Modifier un forfait' : 'Ajouter un forfait'}
                 open={modalVisible}
                 onOk={handleSave}
-                onCancel={() => setModalVisible(false)}
+                onCancel={handleModalCancel}
                 okText="Enregistrer"
                 cancelText="Annuler"
                 maskClosable={false}
                 destroyOnHidden
                 width={1024}
             >
-                <Form form={form} layout="vertical" initialValues={defaultForfait} onValuesChange={onValuesChange}>
+                <Form form={form} layout="vertical" initialValues={defaultForfait} onValuesChange={(...args) => { setFormDirty(true); onValuesChange(...args); }}>
                     <Form.Item
                         name="reference"
                         label="Reference"
@@ -965,14 +1025,14 @@ export default function Forfaits() {
                     title="Créer un produit"
                     open={newProduitModalVisible}
                     onOk={handleNewProduitSave}
-                    onCancel={() => setNewProduitModalVisible(false)}
+                    onCancel={handleNewProduitCancel}
                     maskClosable={false}
                     width={1024}
                     okText="Enregistrer"
                     cancelText="Annuler"
                     destroyOnHidden
                 >
-                    <Form form={newProduitForm} layout="vertical" initialValues={defaultNewProduit} onValuesChange={onNewProduitValuesChange}>
+                    <Form form={newProduitForm} layout="vertical" initialValues={defaultNewProduit} onValuesChange={(...args) => { setNewProduitFormDirty(true); onNewProduitValuesChange(...args); }}>
                         <Row gutter={16}>
                             <Col span={12}>
                                 <Form.Item name="marque" label="Marque">
@@ -1051,14 +1111,14 @@ export default function Forfaits() {
                     title="Créer une Main d'Oeuvre"
                     open={newMainOeuvreModalVisible}
                     onOk={handleNewMainOeuvreSave}
-                    onCancel={() => setNewMainOeuvreModalVisible(false)}
+                    onCancel={handleNewMainOeuvreCancel}
                     maskClosable={false}
                     width={900}
                     okText="Enregistrer"
                     cancelText="Annuler"
                     destroyOnHidden
                 >
-                    <Form form={newMainOeuvreForm} layout="vertical" initialValues={defaultNewMainOeuvre} onValuesChange={onNewMainOeuvreValuesChange}>
+                    <Form form={newMainOeuvreForm} layout="vertical" initialValues={defaultNewMainOeuvre} onValuesChange={(...args) => { setNewMainOeuvreFormDirty(true); onNewMainOeuvreValuesChange(...args); }}>
                         <Form.Item name="nom" label="Nom" rules={[{ required: true, message: 'Le nom est requis' }]}>
                             <Input allowClear />
                         </Form.Item>

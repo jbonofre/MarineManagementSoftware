@@ -1,9 +1,10 @@
+import { fetchWithAuth } from './api.ts';
 import React, { useEffect, useState } from 'react';
 import { Layout, Input, Col, Row, Image, Menu, Form, Modal, message, ConfigProvider, theme as antdTheme, Switch as AntSwitch } from 'antd';
 import { Route, Switch } from 'react-router';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { Link } from 'react-router-dom';
-import { UserOutlined, TeamOutlined, HomeOutlined, AmazonOutlined, SettingOutlined, ToolOutlined, StockOutlined, FileOutlined, FileProtectOutlined, ReadOutlined, DesktopOutlined, DeploymentUnitOutlined, DisconnectOutlined, DashboardOutlined, CalendarOutlined, FileDoneOutlined, CheckSquareOutlined, RedoOutlined, ShoppingCartOutlined } from '@ant-design/icons';
+import { UserOutlined, TeamOutlined, HomeOutlined, AmazonOutlined, SettingOutlined, ToolOutlined, StockOutlined, FileOutlined, FileProtectOutlined, ReadOutlined, DesktopOutlined, DeploymentUnitOutlined, DisconnectOutlined, DashboardOutlined, CalendarOutlined, FileDoneOutlined, CheckSquareOutlined, RedoOutlined, ShoppingCartOutlined, MailOutlined } from '@ant-design/icons';
 import Icon from '@ant-design/icons';
 import { ReactComponent as BoatOutlined } from './boat.svg';
 import { ReactComponent as EngineOutlined } from './moteur.svg';
@@ -32,6 +33,7 @@ import Comptoir from './comptoir.tsx';
 import Dashboard from './dashboard.tsx';
 import Annonces from './annonces.tsx';
 import CommandesFournisseur from './commandes-fournisseur.tsx';
+import Emails from './emails.tsx';
 
 export function demo() {
     message.warning("Vous êtes sur une version de démonstration de moussAIllon. Il n'est pas possible d'ajouter ou supprimer des éléments.")
@@ -83,7 +85,8 @@ function SideMenu(props) {
       ] },
       { key: 'parametrage', label: 'Paramétrage', icon: <SettingOutlined/>, requiredRole: 'admin', children: [
         { key: 'societe', label: <Link to="/societe">Société</Link>, icon: <DeploymentUnitOutlined/> },
-        { key: 'utilisateurs', label: <Link to="/utilisateurs">Utilisateurs</Link>, icon: <UserOutlined/> }
+        { key: 'utilisateurs', label: <Link to="/utilisateurs">Utilisateurs</Link>, icon: <UserOutlined/> },
+        { key: 'emails', label: <Link to="/emails">Emails</Link>, icon: <MailOutlined/> }
       ] }
     ];
 
@@ -114,6 +117,26 @@ function Header(props) {
     const [ preferencesLoading, setPreferencesLoading ] = useState(false);
     const [ preferencesForm ] = Form.useForm();
     const [ selectedTheme, setSelectedTheme ] = useState<UserTheme>(props.theme || 'LIGHT');
+    const [ formDirty, setFormDirty ] = useState(false);
+
+    const handlePreferencesCancel = () => {
+        if (formDirty) {
+            Modal.confirm({
+                title: "Modifications non enregistrées",
+                content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
+                okText: "Fermer",
+                cancelText: "Annuler",
+                onOk: () => {
+                    setFormDirty(false);
+                    preferencesForm.resetFields();
+                    setPreferencesVisible(false);
+                },
+            });
+        } else {
+            preferencesForm.resetFields();
+            setPreferencesVisible(false);
+        }
+    };
 
     const roleLabels = { admin: 'Admin', manager: 'Manager', magasinier: 'Magasinier', vendeur: 'Vendeur' };
     const userRoles = props.roles ? (Array.isArray(props.roles) ? props.roles : props.roles.split(',').map(r => r.trim())) : [];
@@ -149,6 +172,7 @@ function Header(props) {
                             newPassword: '',
                             confirmPassword: ''
                         });
+                        setFormDirty(false);
                         setPreferencesVisible(true);
                     }
                 }} /></Col>
@@ -160,15 +184,13 @@ function Header(props) {
                 cancelText="Annuler"
                 confirmLoading={preferencesLoading}
                 onOk={() => preferencesForm.submit()}
-                onCancel={() => {
-                    preferencesForm.resetFields();
-                    setPreferencesVisible(false);
-                }}
+                onCancel={handlePreferencesCancel}
                 destroyOnHidden
             >
                 <Form
                     form={preferencesForm}
                     layout="vertical"
+                    onValuesChange={() => setFormDirty(true)}
                     onFinish={(values) => {
                         const shouldChangePassword = !!values.newPassword;
                         const shouldChangeTheme = selectedTheme !== props.theme;
@@ -184,7 +206,7 @@ function Header(props) {
                             if (!shouldChangePassword) {
                                 return Promise.resolve();
                             }
-                            return fetch(`/users/${encodeURIComponent(props.user)}/change-password`, {
+                            return fetchWithAuth(`/users/${encodeURIComponent(props.user)}/change-password`, {
                                 method: 'POST',
                                 headers: {
                                     'Content-Type': 'application/json'
@@ -205,7 +227,7 @@ function Header(props) {
                             if (!shouldChangeTheme) {
                                 return Promise.resolve();
                             }
-                            return fetch(`/users/${encodeURIComponent(props.user)}`)
+                            return fetchWithAuth(`/users/${encodeURIComponent(props.user)}`)
                                 .then(async (response) => {
                                     if (!response.ok) {
                                         const errorText = await response.text();
@@ -214,7 +236,7 @@ function Header(props) {
                                     return response.json();
                                 })
                                 .then((userData) => {
-                                    return fetch(`/users/${encodeURIComponent(props.user)}`, {
+                                    return fetchWithAuth(`/users/${encodeURIComponent(props.user)}`, {
                                         method: 'PUT',
                                         headers: {
                                             'Content-Type': 'application/json'
@@ -245,6 +267,7 @@ function Header(props) {
                                 if (shouldChangeTheme) {
                                     props.setTheme(selectedTheme);
                                 }
+                                setFormDirty(false);
                                 preferencesForm.resetFields();
                                 setPreferencesVisible(false);
                             })
@@ -346,7 +369,7 @@ export default function Workspace(props) {
     const [ theme, setTheme ] = useState<UserTheme>('LIGHT');
 
     useEffect(() => {
-        fetch(`/users/${encodeURIComponent(props.user)}`)
+        fetchWithAuth(`/users/${encodeURIComponent(props.user)}`)
             .then((response) => {
                 if (!response.ok) {
                     return null;
@@ -420,6 +443,9 @@ export default function Workspace(props) {
                         </Route>
                         <Route path="/utilisateurs" key="utilisateurs">
                             <ProtectedRoute roles={props.roles} requiredRole="admin"><Utilisateurs /></ProtectedRoute>
+                        </Route>
+                        <Route path="/emails" key="emails">
+                            <ProtectedRoute roles={props.roles} requiredRole="admin"><Emails /></ProtectedRoute>
                         </Route>
                         <Route path="/prestations" key="prestations">
                             <ProtectedRoute roles={props.roles} requiredRole="vendeur"><Vente /></ProtectedRoute>

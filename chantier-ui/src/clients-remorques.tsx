@@ -25,7 +25,7 @@ import {
   SearchOutlined,
   DeleteOutlined as DeleteIcon,
 } from "@ant-design/icons";
-import axios from "axios";
+import api from "./api.ts";
 import ImageUpload from './ImageUpload.tsx';
 import DocumentUpload from './DocumentUpload.tsx';
 import dayjs from "dayjs";
@@ -66,6 +66,7 @@ function RemorquesClients({ clientId }: RemorquesClientsProps) {
   const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
+  const [formDirty, setFormDirty] = useState(false);
   const [editing, setEditing] = useState<RemorqueClient | null>(null);
   const [form] = Form.useForm();
   const [catalogueModalVisible, setCatalogueModalVisible] = useState(false);
@@ -80,7 +81,7 @@ function RemorquesClients({ clientId }: RemorquesClientsProps) {
       if (q && q.trim() !== "") {
         url = `/remorques/search?q=${encodeURIComponent(q)}`;
       }
-      const res = await axios.get(url);
+      const res = await api.get(url);
       let remorquesData = res.data;
       // Filter by clientId if provided (property: proprietaire.id)
       if (clientId) {
@@ -98,7 +99,7 @@ function RemorquesClients({ clientId }: RemorquesClientsProps) {
 
   const fetchRemorquesCatalogue = async () => {
     try {
-      const res = await axios.get("/catalogue/remorques");
+      const res = await api.get("/catalogue/remorques");
       setRemorquesCatalogue(res.data);
     } catch {
       message.error("Erreur lors du chargement du catalogue de remorques");
@@ -108,7 +109,7 @@ function RemorquesClients({ clientId }: RemorquesClientsProps) {
 
   const fetchClients = async () => {
     try {
-      const res = await axios.get("/clients");
+      const res = await api.get("/clients");
       setClients(res.data);
     } catch {
       setClients([]);
@@ -122,9 +123,27 @@ function RemorquesClients({ clientId }: RemorquesClientsProps) {
     // eslint-disable-next-line
   }, [clientId]);
 
+  const handleModalCancel = () => {
+    if (formDirty) {
+      Modal.confirm({
+        title: "Modifications non enregistrées",
+        content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
+        okText: "Fermer",
+        cancelText: "Annuler",
+        onOk: () => {
+          setFormDirty(false);
+          setModalVisible(false);
+        },
+      });
+    } else {
+      setModalVisible(false);
+    }
+  };
+
   const handleAdd = () => {
     setEditing(null);
     form.resetFields();
+    setFormDirty(false);
     if (clientId) {
       form.setFieldsValue({ proprietaireId: clientId });
     }
@@ -133,6 +152,7 @@ function RemorquesClients({ clientId }: RemorquesClientsProps) {
 
   const handleEdit = (record: RemorqueClient) => {
     setEditing(record);
+    setFormDirty(false);
     form.setFieldsValue({
       ...record,
       dateMeS: record.dateMeS ? dayjs(record.dateMeS) : null,
@@ -148,7 +168,7 @@ function RemorquesClients({ clientId }: RemorquesClientsProps) {
     if (!id) return;
     setLoading(true);
     try {
-      await axios.delete(`/remorques/${id}`);
+      await api.delete(`/remorques/${id}`);
       message.success("Remorque supprimée");
       fetchRemorques();
     } catch {
@@ -160,7 +180,7 @@ function RemorquesClients({ clientId }: RemorquesClientsProps) {
   const handleClientAdd = async () => {
     try {
       const values = await clientForm.validateFields();
-      const res = await axios.post("/clients", values);
+      const res = await api.post("/clients", values);
       message.success("Client ajouté");
       setClientModalVisible(false);
       clientForm.resetFields();
@@ -176,7 +196,7 @@ function RemorquesClients({ clientId }: RemorquesClientsProps) {
   const handleCatalogueAdd = async () => {
     try {
       const values = await catalogueForm.validateFields();
-      const res = await axios.post("/catalogue/remorques", values);
+      const res = await api.post("/catalogue/remorques", values);
       message.success("Remorque catalogue ajoutée");
       setCatalogueModalVisible(false);
       catalogueForm.resetFields();
@@ -205,7 +225,7 @@ function RemorquesClients({ clientId }: RemorquesClientsProps) {
       };
       if (editing && editing.id) {
         // update
-        const res = await axios.put(`/remorques/${editing.id}`, payload);
+        const res = await api.put(`/remorques/${editing.id}`, payload);
         message.success("Remorque modifiée");
         const updated = res.data;
         setEditing(updated);
@@ -219,7 +239,7 @@ function RemorquesClients({ clientId }: RemorquesClientsProps) {
         });
       } else {
         // create
-        const res = await axios.post("/remorques", payload);
+        const res = await api.post("/remorques", payload);
         message.success("Remorque ajoutée");
         const created = res.data;
         setEditing(created);
@@ -232,6 +252,7 @@ function RemorquesClients({ clientId }: RemorquesClientsProps) {
           proprietaireId: created.proprietaire?.id || undefined,
         });
       }
+      setFormDirty(false);
       fetchRemorques();
     } catch (e) {
       if (e && e.response) {
@@ -299,14 +320,14 @@ function RemorquesClients({ clientId }: RemorquesClientsProps) {
       <Modal
         open={modalVisible}
         title={editing ? "Modifier la remorque" : "Ajouter une remorque"}
-        onCancel={() => setModalVisible(false)}
+        onCancel={handleModalCancel}
         onOk={handleModalOk}
         okText="Enregistrer"
         cancelText="Annuler"
         destroyOnHidden
         width={1024}
       >
-        <Form layout="vertical" form={form} initialValues={defaultRemorque}>
+        <Form layout="vertical" form={form} initialValues={defaultRemorque} onValuesChange={() => setFormDirty(true)}>
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item label="Immatriculation" name="immatriculation" rules={[{ required: true, message: "Immatriculation requise" }]}>

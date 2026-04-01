@@ -19,7 +19,7 @@ import {
     message
 } from 'antd';
 import { CreditCardOutlined, DeleteOutlined, EditOutlined, PlusCircleOutlined, PlusOutlined, PrinterOutlined, FileTextOutlined } from '@ant-design/icons';
-import axios from 'axios';
+import api from './api.ts';
 import ImageUpload from './ImageUpload.tsx';
 
 interface ClientEntity {
@@ -269,9 +269,11 @@ export default function Comptoir() {
     const [filters, setFilters] = useState<SearchFilters>({});
     const [searchForm] = Form.useForm<SearchFilters>();
     const [form] = Form.useForm<VenteFormValues>();
+    const [formDirty, setFormDirty] = useState(false);
     const [newProduitModalVisible, setNewProduitModalVisible] = useState(false);
     const [newProduitTargetLine, setNewProduitTargetLine] = useState<number | null>(null);
     const [newProduitForm] = Form.useForm();
+    const [newProduitFormDirty, setNewProduitFormDirty] = useState(false);
 
     const marqueOptions = useMemo(() => {
         const unique = Array.from(new Set(produits.map((p) => p.marque).filter(Boolean))) as string[];
@@ -315,7 +317,7 @@ export default function Comptoir() {
         setLoading(true);
         try {
             const activeFilters = nextFilters || {};
-            const response = await axios.get('/ventes/search', {
+            const response = await api.get('/ventes/search', {
                 params: {
                     type: 'COMPTOIR',
                     status: 'PAYEE',
@@ -342,13 +344,13 @@ export default function Comptoir() {
                 produitsRes,
                 servicesRes
             ] = await Promise.all([
-                axios.get('/clients'),
-                axios.get('/bateaux'),
-                axios.get('/moteurs'),
-                axios.get('/remorques'),
-                axios.get('/forfaits'),
-                axios.get('/catalogue/produits'),
-                axios.get('/services')
+                api.get('/clients'),
+                api.get('/bateaux'),
+                api.get('/moteurs'),
+                api.get('/remorques'),
+                api.get('/forfaits'),
+                api.get('/catalogue/produits'),
+                api.get('/services')
             ]);
             setClients(clientsRes.data || []);
             setBateaux(bateauxRes.data || []);
@@ -371,6 +373,7 @@ export default function Comptoir() {
         setNewProduitTargetLine(lineIndex);
         newProduitForm.resetFields();
         newProduitForm.setFieldsValue(defaultNewProduit);
+        setNewProduitFormDirty(false);
         setNewProduitModalVisible(true);
     };
 
@@ -378,7 +381,7 @@ export default function Comptoir() {
         try {
             const values = await newProduitForm.validateFields();
             values.images = values.images || [];
-            const res = await axios.post('/catalogue/produits', values);
+            const res = await api.post('/catalogue/produits', values);
             const created = res.data as ProduitCatalogueEntity;
             message.success('Produit ajouté avec succès');
             setProduits((prev) => [...prev, created]);
@@ -389,6 +392,7 @@ export default function Comptoir() {
                 form.setFieldValue('produits', updated);
                 recalculateFromLines('auto');
             }
+            setNewProduitFormDirty(false);
             setNewProduitModalVisible(false);
         } catch {
             // validation errors shown in form
@@ -450,7 +454,42 @@ export default function Comptoir() {
             form.resetFields();
             form.setFieldsValue({ ...defaultVente, date: getTodayIsoDate() });
         }
+        setFormDirty(false);
         setModalVisible(true);
+    };
+
+    const handleModalCancel = () => {
+        if (formDirty) {
+            Modal.confirm({
+                title: "Modifications non enregistrées",
+                content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
+                okText: "Fermer",
+                cancelText: "Annuler",
+                onOk: () => {
+                    setFormDirty(false);
+                    setModalVisible(false);
+                },
+            });
+        } else {
+            setModalVisible(false);
+        }
+    };
+
+    const handleNewProduitCancel = () => {
+        if (newProduitFormDirty) {
+            Modal.confirm({
+                title: "Modifications non enregistrées",
+                content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
+                okText: "Fermer",
+                cancelText: "Annuler",
+                onOk: () => {
+                    setNewProduitFormDirty(false);
+                    setNewProduitModalVisible(false);
+                },
+            });
+        } else {
+            setNewProduitModalVisible(false);
+        }
     };
 
     const expandByQuantity = <T,>(items: T[], quantite: number): T[] =>
@@ -496,17 +535,18 @@ export default function Comptoir() {
             const values = await form.validateFields();
             const payload = toPayload(values);
             if (isEdit && currentVente?.id) {
-                const res = await axios.put(`/ventes/${currentVente.id}`, { ...currentVente, ...payload, type: 'COMPTOIR' });
+                const res = await api.put(`/ventes/${currentVente.id}`, { ...currentVente, ...payload, type: 'COMPTOIR' });
                 message.success('Vente comptoir modifiee avec succes');
                 setCurrentVente(res.data);
                 form.setFieldsValue(values);
             } else {
-                const res = await axios.post('/ventes', payload);
+                const res = await api.post('/ventes', payload);
                 message.success('Vente comptoir ajoutee avec succes');
                 setIsEdit(true);
                 setCurrentVente(res.data);
                 form.setFieldsValue(values);
             }
+            setFormDirty(false);
             fetchVentes(filters);
         } catch (error) {
             const formError = error as { errorFields?: unknown[] };
@@ -514,7 +554,7 @@ export default function Comptoir() {
                 // Les erreurs de validation sont affichees dans le formulaire.
                 return;
             }
-            if (axios.isAxiosError(error)) {
+            if (api.isAxiosError(error)) {
                 message.error(error.response?.data?.message || "Erreur lors de l'enregistrement de la vente comptoir.");
                 return;
             }
@@ -527,7 +567,7 @@ export default function Comptoir() {
             return;
         }
         try {
-            await axios.delete(`/ventes/${id}`);
+            await api.delete(`/ventes/${id}`);
             message.success('Vente comptoir supprimee avec succes');
             fetchVentes(filters);
         } catch {
@@ -682,7 +722,7 @@ export default function Comptoir() {
             return;
         }
         try {
-            const res = await axios.post(`/ventes/${vente.id}/payment-link/${provider}`);
+            const res = await api.post(`/ventes/${vente.id}/payment-link/${provider}`);
             window.open(res.data.url, '_blank', 'noopener,noreferrer');
         } catch {
             message.error(`Erreur lors de la creation du lien de paiement ${provider === 'stripe' ? 'Stripe' : 'PayPlug'}`);
@@ -922,7 +962,7 @@ export default function Comptoir() {
             <Modal
                 title={isEdit ? 'Modifier une vente comptoir' : 'Ajouter une vente comptoir'}
                 open={modalVisible}
-                onCancel={() => setModalVisible(false)}
+                onCancel={handleModalCancel}
                 footer={[
                     <Button
                         key="print-invoice"
@@ -950,7 +990,7 @@ export default function Comptoir() {
                             Lien de paiement
                         </Button>
                     </Dropdown>,
-                    <Button key="cancel" onClick={() => setModalVisible(false)}>
+                    <Button key="cancel" onClick={handleModalCancel}>
                         Annuler
                     </Button>,
                     <Button key="save" type="primary" onClick={handleSave}>
@@ -961,7 +1001,7 @@ export default function Comptoir() {
                 destroyOnHidden
                 width={1100}
             >
-                <Form form={form} layout="vertical" initialValues={defaultVente} onValuesChange={onValuesChange}>
+                <Form form={form} layout="vertical" initialValues={defaultVente} onValuesChange={(...args) => { setFormDirty(true); onValuesChange(...args); }}>
                     <Row gutter={16}>
                         <Col span={8}>
                             <Form.Item name="date" label="Date">
@@ -1113,7 +1153,7 @@ export default function Comptoir() {
                     title="Créer un produit"
                     open={newProduitModalVisible}
                     onOk={handleNewProduitSave}
-                    onCancel={() => setNewProduitModalVisible(false)}
+                    onCancel={handleNewProduitCancel}
                     maskClosable={false}
                     width={1024}
                     okText="Enregistrer"
@@ -1124,7 +1164,7 @@ export default function Comptoir() {
                         form={newProduitForm}
                         layout="vertical"
                         initialValues={defaultNewProduit}
-                        onValuesChange={onNewProduitValuesChange}
+                        onValuesChange={(...args) => { setNewProduitFormDirty(true); onNewProduitValuesChange(...args); }}
                     >
                         <Row gutter={16}>
                             <Col span={12}>

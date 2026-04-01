@@ -28,7 +28,7 @@ import {
     UserOutlined,
     WarningOutlined,
 } from '@ant-design/icons';
-import axios from 'axios';
+import api from './api.ts';
 
 interface Technicien {
     id: number;
@@ -119,7 +119,7 @@ export default function MobileApp({ user, onLogout, onChangePassword }: MobileAp
     const fetchItems = async () => {
         setLoading(true);
         try {
-            const res = await axios.get(`/technicien-portal/techniciens/${user.id}/taches`);
+            const res = await api.get(`/technicien-portal/techniciens/${user.id}/taches`);
             setItems(res.data || []);
         } catch {
             message.error('Erreur lors du chargement');
@@ -161,7 +161,7 @@ export default function MobileApp({ user, onLogout, onChangePassword }: MobileAp
             const endpoint = currentItem.itemType === 'forfait'
                 ? `/technicien-portal/forfaits/${currentItem.itemId}`
                 : `/technicien-portal/services/${currentItem.itemId}`;
-            const res = await axios.put(endpoint, {
+            const res = await api.put(endpoint, {
                 status: values.status,
                 dureeReelle: values.dureeReelle || 0,
                 notes: values.notes || '',

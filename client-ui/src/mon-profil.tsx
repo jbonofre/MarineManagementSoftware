@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Button, Card, Descriptions, Form, Input, Spin, Tag, message } from 'antd';
 import { LockOutlined, ReloadOutlined } from '@ant-design/icons';
-import axios from 'axios';
+import api from './api.ts';
 
 interface Client {
     id: number;
@@ -36,7 +36,7 @@ export default function MonProfil({ clientId }: MonProfilProps) {
 
     const fetchProfile = () => {
         setLoading(true);
-        axios.get(`/portal/clients/${clientId}`)
+        api.get(`/portal/clients/${clientId}`)
             .then((res) => setClient(res.data))
             .catch(() => message.error('Erreur lors du chargement du profil'))
             .finally(() => setLoading(false));
@@ -49,7 +49,7 @@ export default function MonProfil({ clientId }: MonProfilProps) {
     const handleChangePassword = async (values: { currentPassword: string; newPassword: string }) => {
         setChangingPassword(true);
         try {
-            await axios.post(`/portal/clients/${clientId}/change-password`, {
+            await api.post(`/portal/clients/${clientId}/change-password`, {
                 currentPassword: values.currentPassword,
                 newPassword: values.newPassword,
             });

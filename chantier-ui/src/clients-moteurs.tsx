@@ -26,7 +26,7 @@ import {
   DeleteOutlined,
   SearchOutlined,
 } from "@ant-design/icons";
-import axios from "axios";
+import api from "./api.ts";
 import ImageUpload from './ImageUpload.tsx';
 import DocumentUpload from './DocumentUpload.tsx';
 import dayjs from "dayjs";
@@ -69,6 +69,7 @@ const ClientsMoteurs: React.FC<ClientsMoteursProps> = ({ clientId }) => {
   const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
+  const [formDirty, setFormDirty] = useState(false);
   const [editing, setEditing] = useState<MoteurClient | null>(null);
   const [form] = Form.useForm();
   const [catalogueModalVisible, setCatalogueModalVisible] = useState(false);
@@ -83,7 +84,7 @@ const ClientsMoteurs: React.FC<ClientsMoteursProps> = ({ clientId }) => {
       if (q && q.trim() !== "") {
         url = `/moteurs/search?q=${encodeURIComponent(q)}`;
       }
-      const res = await axios.get(url);
+      const res = await api.get(url);
       let moteursData = res.data;
       // Filter by clientId if provided
       if (clientId) {
@@ -100,7 +101,7 @@ const ClientsMoteurs: React.FC<ClientsMoteursProps> = ({ clientId }) => {
 
   const fetchCatalogueMoteurs = async () => {
     try {
-      const res = await axios.get("/catalogue/moteurs");
+      const res = await api.get("/catalogue/moteurs");
       setCatalogueMoteurs(res.data);
     } catch {
       message.error("Erreur lors du chargement du catalogue de moteurs");
@@ -110,7 +111,7 @@ const ClientsMoteurs: React.FC<ClientsMoteursProps> = ({ clientId }) => {
 
   const fetchClients = async () => {
     try {
-      const res = await axios.get("/clients");
+      const res = await api.get("/clients");
       setClients(res.data);
     } catch {
       setClients([]);
@@ -124,9 +125,27 @@ const ClientsMoteurs: React.FC<ClientsMoteursProps> = ({ clientId }) => {
     // eslint-disable-next-line
   }, [clientId]);
 
+  const handleModalCancel = () => {
+    if (formDirty) {
+      Modal.confirm({
+        title: "Modifications non enregistrées",
+        content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
+        okText: "Fermer",
+        cancelText: "Annuler",
+        onOk: () => {
+          setFormDirty(false);
+          setModalVisible(false);
+        },
+      });
+    } else {
+      setModalVisible(false);
+    }
+  };
+
   const handleAdd = () => {
     setEditing(null);
     form.resetFields();
+    setFormDirty(false);
     if (clientId) {
       form.setFieldsValue({ proprietaireId: clientId });
     }
@@ -135,6 +154,7 @@ const ClientsMoteurs: React.FC<ClientsMoteursProps> = ({ clientId }) => {
 
   const handleEdit = (record: MoteurClient) => {
     setEditing(record);
+    setFormDirty(false);
     form.setFieldsValue({
       ...record,
       dateMeS: record.dateMeS ? dayjs(record.dateMeS) : null,
@@ -151,7 +171,7 @@ const ClientsMoteurs: React.FC<ClientsMoteursProps> = ({ clientId }) => {
     if (!id) return;
     setLoading(true);
     try {
-      await axios.delete(`/moteurs/${id}`);
+      await api.delete(`/moteurs/${id}`);
       message.success("Moteur supprimé");
       fetchMoteurs();
     } catch {
@@ -163,7 +183,7 @@ const ClientsMoteurs: React.FC<ClientsMoteursProps> = ({ clientId }) => {
   const handleClientAdd = async () => {
     try {
       const values = await clientForm.validateFields();
-      const res = await axios.post("/clients", values);
+      const res = await api.post("/clients", values);
       message.success("Client ajouté");
       setClientModalVisible(false);
       clientForm.resetFields();
@@ -179,7 +199,7 @@ const ClientsMoteurs: React.FC<ClientsMoteursProps> = ({ clientId }) => {
   const handleCatalogueAdd = async () => {
     try {
       const values = await catalogueForm.validateFields();
-      const res = await axios.post("/catalogue/moteurs", values);
+      const res = await api.post("/catalogue/moteurs", values);
       message.success("Moteur catalogue ajouté");
       setCatalogueModalVisible(false);
       catalogueForm.resetFields();
@@ -207,7 +227,7 @@ const ClientsMoteurs: React.FC<ClientsMoteursProps> = ({ clientId }) => {
       };
       if (editing && editing.id) {
         // update
-        const res = await axios.put(`/moteurs/${editing.id}`, payload);
+        const res = await api.put(`/moteurs/${editing.id}`, payload);
         message.success("Moteur modifié");
         const updated = res.data;
         setEditing(updated);
@@ -222,7 +242,7 @@ const ClientsMoteurs: React.FC<ClientsMoteursProps> = ({ clientId }) => {
         });
       } else {
         // create
-        const res = await axios.post("/moteurs", payload);
+        const res = await api.post("/moteurs", payload);
         message.success("Moteur ajouté");
         const created = res.data;
         setEditing(created);
@@ -236,6 +256,7 @@ const ClientsMoteurs: React.FC<ClientsMoteursProps> = ({ clientId }) => {
           images: created.images ?? [],
         });
       }
+      setFormDirty(false);
       fetchMoteurs();
     } catch (e: any) {
       if (e && e.response) {
@@ -322,14 +343,14 @@ const ClientsMoteurs: React.FC<ClientsMoteursProps> = ({ clientId }) => {
       <Modal
         open={modalVisible}
         title={editing ? "Modifier le moteur" : "Ajouter un moteur"}
-        onCancel={() => setModalVisible(false)}
+        onCancel={handleModalCancel}
         onOk={handleModalOk}
         okText="Enregistrer"
         cancelText="Annuler"
         destroyOnHidden
         width={1024}
       >
-        <Form layout="vertical" form={form} initialValues={defaultMoteur}>
+        <Form layout="vertical" form={form} initialValues={defaultMoteur} onValuesChange={() => setFormDirty(true)}>
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item label="Numéro de série" name="numeroSerie" rules={[{ required: true, message: "Numéro de série requis" }]}>

@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Image, Table, Rate, Row, Col, Card, Button, Modal, Form, AutoComplete, Input, InputNumber, Select, Space, Popconfirm, message } from 'antd';
 import { PlusCircleOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
-import axios from 'axios';
+import api from './api.ts';
 import FournisseurBateaux from './fournisseur-bateaux.tsx';
 import ImageUpload from './ImageUpload.tsx';
 import DocumentUpload from './DocumentUpload.tsx';
@@ -89,6 +89,7 @@ const CatalogueBateaux: React.FC = () => {
     const [isEdit, setIsEdit] = useState<boolean>(false);
     const [currentBateau, setCurrentBateau] = useState<BateauCatalogueEntity | null>(null);
     const [form] = Form.useForm();
+    const [formDirty, setFormDirty] = useState(false);
 
     const marqueOptions = useMemo(() => {
         const uniqueMarques = Array.from(new Set(bateaux.map((bateau) => bateau.marque))).filter(Boolean) as string[];
@@ -98,7 +99,7 @@ const CatalogueBateaux: React.FC = () => {
     const fetchBateaux = async () => {
         setLoading(true);
         try {
-            const res = await axios.get('/catalogue/bateaux');
+            const res = await api.get('/catalogue/bateaux');
             setBateaux(res.data);
         } catch {
             message.error('Erreur lors du chargement des bateaux.');
@@ -110,6 +111,23 @@ const CatalogueBateaux: React.FC = () => {
         fetchBateaux();
     }, []);
 
+    const handleModalCancel = () => {
+        if (formDirty) {
+            Modal.confirm({
+                title: "Modifications non enregistrées",
+                content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
+                okText: "Fermer",
+                cancelText: "Annuler",
+                onOk: () => {
+                    setFormDirty(false);
+                    setModalVisible(false);
+                },
+            });
+        } else {
+            setModalVisible(false);
+        }
+    };
+
     const openModal = (bateau?: BateauCatalogueEntity) => {
         if (bateau) {
             setIsEdit(true);
@@ -120,6 +138,7 @@ const CatalogueBateaux: React.FC = () => {
             setCurrentBateau(null);
             form.resetFields();
         }
+        setFormDirty(false);
         setModalVisible(true);
     };
 
@@ -129,17 +148,18 @@ const CatalogueBateaux: React.FC = () => {
             const bateauToSave = values;
 
             if (isEdit && currentBateau && currentBateau.id) {
-                const res = await axios.put(`/catalogue/bateaux/${currentBateau.id}`, bateauToSave);
+                const res = await api.put(`/catalogue/bateaux/${currentBateau.id}`, bateauToSave);
                 message.success('Bateau modifié avec succès');
                 setCurrentBateau(res.data);
                 form.setFieldsValue(res.data);
             } else {
-                const res = await axios.post('/catalogue/bateaux', bateauToSave);
+                const res = await api.post('/catalogue/bateaux', bateauToSave);
                 message.success('Bateau ajouté avec succès');
                 setIsEdit(true);
                 setCurrentBateau(res.data);
                 form.setFieldsValue(res.data);
             }
+            setFormDirty(false);
             fetchBateaux();
         } catch (err) {
             // Validation error already shown by Form.Item
@@ -149,7 +169,7 @@ const CatalogueBateaux: React.FC = () => {
     const handleDelete = async (id: number | undefined) => {
         if (!id) return;
         try {
-            await axios.delete(`/catalogue/bateaux/${id}`);
+            await api.delete(`/catalogue/bateaux/${id}`);
             message.success('Bateau supprimé avec succès');
             fetchBateaux();
         } catch {
@@ -218,6 +238,7 @@ const CatalogueBateaux: React.FC = () => {
     ];
 
     const onValuesChange = (changedValues, allValues) => {
+        setFormDirty(true);
         if (changedValues.prixVenteHT || changedValues.tva) {
             const prixVenteHT = form.getFieldValue('prixVenteHT');
             const tva = form.getFieldValue('tva');
@@ -251,7 +272,7 @@ const CatalogueBateaux: React.FC = () => {
                                 onSearch={async (value) => {
                                     setLoading(true);
                                     try {
-                                        const response = await axios.get('/catalogue/bateaux/search', { params: { q: value } });
+                                        const response = await api.get('/catalogue/bateaux/search', { params: { q: value } });
                                         setBateaux(response.data);
                                     } catch (error) {
                                         message.error('Erreur lors de la recherche');
@@ -279,7 +300,7 @@ const CatalogueBateaux: React.FC = () => {
                         title={isEdit ? 'Modifier un bateau' : 'Ajouter un bateau'}
                         open={modalVisible}
                         onOk={handleModalOk}
-                        onCancel={() => setModalVisible(false)}
+                        onCancel={handleModalCancel}
                         maskClosable={false}
                         width={1024}
                         okText="Enregistrer"

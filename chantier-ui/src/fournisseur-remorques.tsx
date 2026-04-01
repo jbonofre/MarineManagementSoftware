@@ -24,7 +24,7 @@ import {
   PlusCircleOutlined,
   ShrinkOutlined,
 } from "@ant-design/icons";
-import axios from "axios";
+import api from "./api.ts";
 
 const { Option } = Select;
 
@@ -115,6 +115,7 @@ const FournisseurRemorques = ({
   const [fournisseurs, setFournisseurs] = useState<Fournisseur[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
+  const [formDirty, setFormDirty] = useState(false);
   const [editing, setEditing] = useState<Partial<FournisseurRemorque> | null>(null);
   const [form] = Form.useForm();
   const [fournisseurModalVisible, setFournisseurModalVisible] = useState(false);
@@ -135,7 +136,7 @@ const FournisseurRemorques = ({
         url = `/fournisseur-remorque/fournisseur/${fournisseurId}`;
       }
       if (url) {
-        const { data } = await axios.get(url);
+        const { data } = await api.get(url);
         setRemorquesAssocies(data);
       }
     } catch {
@@ -148,7 +149,7 @@ const FournisseurRemorques = ({
   const fetchRemorquesCatalogue = async () => {
     setLoading(true);
     try {
-      const { data } = await axios.get("/catalogue/remorques");
+      const { data } = await api.get("/catalogue/remorques");
       setRemorquesCatalogue(data);
     } catch {
       message.error("Erreur lors du chargement du catalogue de remorques");
@@ -160,7 +161,7 @@ const FournisseurRemorques = ({
   const fetchFournisseurs = async () => {
     setLoading(true);
     try {
-      const { data } = await axios.get("/catalogue/fournisseurs");
+      const { data } = await api.get("/catalogue/fournisseurs");
       setFournisseurs(data);
     } catch {
       message.error("Erreur lors du chargement des fournisseurs");
@@ -183,7 +184,7 @@ const FournisseurRemorques = ({
   const handleRemorqueAdd = async () => {
     try {
       const values = await remorqueForm.validateFields();
-      const res = await axios.post("/catalogue/remorques", values);
+      const res = await api.post("/catalogue/remorques", values);
       message.success("Remorque créée");
       setRemorqueModalVisible(false);
       remorqueForm.resetFields();
@@ -198,7 +199,7 @@ const FournisseurRemorques = ({
   const handleFournisseurAdd = async () => {
     try {
       const values = await fournisseurForm.validateFields();
-      const res = await axios.post("/catalogue/fournisseurs", values);
+      const res = await api.post("/catalogue/fournisseurs", values);
       message.success("Fournisseur créé");
       setFournisseurModalVisible(false);
       fournisseurForm.resetFields();
@@ -210,12 +211,30 @@ const FournisseurRemorques = ({
     }
   };
 
+  const handleModalCancel = () => {
+    if (formDirty) {
+      Modal.confirm({
+        title: "Modifications non enregistrées",
+        content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
+        okText: "Fermer",
+        cancelText: "Annuler",
+        onOk: () => {
+          setFormDirty(false);
+          setModalVisible(false);
+        },
+      });
+    } else {
+      setModalVisible(false);
+    }
+  };
+
   const handleNew = () => {
     setEditing({
       ...defaultFournisseurRemorque,
       fournisseur: isFournisseurMode ? { id: fournisseurId!, nom: "" } : undefined,
       remorque: isRemorqueMode ? { id: remorqueId!, marque: "", modele: "" } : undefined,
     });
+    setFormDirty(false);
     setModalVisible(true);
     setTimeout(() => form.resetFields());
   };
@@ -226,6 +245,7 @@ const FournisseurRemorques = ({
       remorque: { ...record.remorque },
       fournisseur: { ...record.fournisseur },
     });
+    setFormDirty(false);
     setModalVisible(true);
     setTimeout(() => {
       if (isRemorqueMode) {
@@ -240,7 +260,7 @@ const FournisseurRemorques = ({
     if (!id) return;
     setLoading(true);
     try {
-      await axios.delete(`/fournisseur-remorque/${id}`);
+      await api.delete(`/fournisseur-remorque/${id}`);
       message.success("Supprimé avec succès");
       fetchAssocies();
     } catch {
@@ -276,14 +296,15 @@ const FournisseurRemorques = ({
       setLoading(true);
 
       if (editing && editing.id) {
-        const res = await axios.put(`/fournisseur-remorque/${editing.id}`, body);
+        const res = await api.put(`/fournisseur-remorque/${editing.id}`, body);
         message.success("Modifié avec succès");
         setEditing(res.data);
       } else {
-        const res = await axios.post("/fournisseur-remorque", body);
+        const res = await api.post("/fournisseur-remorque", body);
         message.success("Ajouté avec succès");
         setEditing(res.data);
       }
+      setFormDirty(false);
       fetchAssocies();
     } catch (e: any) {
       if (e.errorFields) return;
@@ -370,7 +391,7 @@ const FournisseurRemorques = ({
 
       <Modal
         open={modalVisible}
-        onCancel={() => setModalVisible(false)}
+        onCancel={handleModalCancel}
         onOk={handleModalOk}
         destroyOnHidden
         title={
@@ -389,6 +410,7 @@ const FournisseurRemorques = ({
           layout="vertical"
           initialValues={editing || defaultFournisseurRemorque}
           onValuesChange={(changed, all) => {
+            setFormDirty(true);
             if ("prixAchatHT" in changed || "tva" in changed) {
               let prixAchatHT = all.prixAchatHT ?? 0;
               let tva = all.tva ?? 20;

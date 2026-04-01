@@ -27,7 +27,8 @@ public class UserResourceTest {
             .statusCode(200)
             .body("name", is("admin"))
             .body("email", is("admin@test.com"))
-            .body("roles", is("ADMIN"));
+            .body("roles", is("ADMIN"))
+            .body("password", nullValue());
     }
 
     @Test
@@ -46,7 +47,8 @@ public class UserResourceTest {
             .when().post("/users/authenticate")
             .then()
             .statusCode(200)
-            .body("name", is("admin"));
+            .body("name", is("admin"))
+            .body("token", notNullValue());
     }
 
     @Test
@@ -78,7 +80,8 @@ public class UserResourceTest {
             .when().post("/users")
             .then()
             .statusCode(201)
-            .body("name", is("testuser"));
+            .body("name", is("testuser"))
+            .body("password", nullValue());
 
         // Supprimer
         given()
@@ -102,7 +105,8 @@ public class UserResourceTest {
             .body("{\"name\":\"technicien1\",\"password\":\"newpass\"}")
             .when().post("/users/authenticate")
             .then()
-            .statusCode(200);
+            .statusCode(200)
+            .body("token", notNullValue());
     }
 
     @Test

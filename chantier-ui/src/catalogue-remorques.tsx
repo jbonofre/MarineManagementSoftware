@@ -17,7 +17,7 @@ import {
   Card,
 } from "antd";
 import { PlusCircleOutlined, EditOutlined, DeleteOutlined, SearchOutlined } from "@ant-design/icons";
-import axios from "axios";
+import api from "./api.ts";
 import ImageUpload from "./ImageUpload.tsx";
 import DocumentUpload from "./DocumentUpload.tsx";
 import FournisseurRemorques from "./fournisseur-remorques.tsx";
@@ -92,12 +92,13 @@ const RemorqueCatalogue: React.FC = () => {
   const [modalVisible, setModalVisible] = useState<boolean>(false);
   const [form] = Form.useForm();
   const [editingRemorque, setEditingRemorque] = useState<any>(null);
+  const [formDirty, setFormDirty] = useState(false);
 
   // Fetch all remorques
   const fetchRemorques = async () => {
     setLoading(true);
     try {
-      const response = await axios.get("/catalogue/remorques");
+      const response = await api.get("/catalogue/remorques");
       setRemorques(response.data || []);
     } catch (e) {
       message.error("Erreur lors du chargement des remorques");
@@ -110,6 +111,23 @@ const RemorqueCatalogue: React.FC = () => {
     fetchRemorques();
   }, []);
 
+  const handleModalCancel = () => {
+    if (formDirty) {
+      Modal.confirm({
+        title: "Modifications non enregistrées",
+        content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
+        okText: "Fermer",
+        cancelText: "Annuler",
+        onOk: () => {
+          setFormDirty(false);
+          setModalVisible(false);
+        },
+      });
+    } else {
+      setModalVisible(false);
+    }
+  };
+
   // Modal open for add/edit
   const openModal = (remorque: any = null) => {
     setEditingRemorque(remorque);
@@ -118,6 +136,7 @@ const RemorqueCatalogue: React.FC = () => {
     } else {
       form.setFieldsValue(defaultRemorque);
     }
+    setFormDirty(false);
     setModalVisible(true);
   };
 
@@ -125,7 +144,7 @@ const RemorqueCatalogue: React.FC = () => {
   const handleDelete = async (id: number) => {
     setLoading(true);
     try {
-      await axios.delete(`/catalogue/remorques/${id}`);
+      await api.delete(`/catalogue/remorques/${id}`);
       message.success("Remorque supprimée");
       fetchRemorques();
     } catch {
@@ -149,16 +168,17 @@ const RemorqueCatalogue: React.FC = () => {
 
       setLoading(true);
       if (editingRemorque && editingRemorque.id) {
-        const res = await axios.put(`/catalogue/remorques/${editingRemorque.id}`, { ...editingRemorque, ...values });
+        const res = await api.put(`/catalogue/remorques/${editingRemorque.id}`, { ...editingRemorque, ...values });
         message.success("Remorque modifiée");
         setEditingRemorque(res.data);
         form.setFieldsValue(res.data);
       } else {
-        const res = await axios.post("/catalogue/remorques", values);
+        const res = await api.post("/catalogue/remorques", values);
         message.success("Remorque ajoutée");
         setEditingRemorque(res.data);
         form.setFieldsValue(res.data);
       }
+      setFormDirty(false);
       fetchRemorques();
     } catch (e: any) {
       if (e?.errorFields) return; // Ant design form error
@@ -170,6 +190,7 @@ const RemorqueCatalogue: React.FC = () => {
 
   // When change TTC/TVA
   const onValuesChange = (changed: any, all: any) => {
+    setFormDirty(true);
     const hasChanged = (key: string) => Object.prototype.hasOwnProperty.call(changed, key);
     const currentTva = toNumber(all.tva, 20);
     const currentHT = toNumber(all.prixVenteHT, 0);
@@ -216,7 +237,7 @@ const RemorqueCatalogue: React.FC = () => {
   const handleSearch = async (value: string) => {
     setLoading(true);
     try {
-      const response = await axios.get("/catalogue/remorques/search", {
+      const response = await api.get("/catalogue/remorques/search", {
         params: value
           ? {
               modele: value,
@@ -308,7 +329,7 @@ const RemorqueCatalogue: React.FC = () => {
         open={modalVisible}
         title={editingRemorque ? "Modifier une remorque" : "Ajouter une remorque"}
         onOk={handleModalOk}
-        onCancel={() => setModalVisible(false)}
+        onCancel={handleModalCancel}
         maskClosable={false}
         okText="Enregistrer"
         cancelText="Annuler"

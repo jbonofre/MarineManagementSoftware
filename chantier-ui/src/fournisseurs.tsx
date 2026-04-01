@@ -22,7 +22,7 @@ import {
   SaveOutlined,
   SearchOutlined,
 } from "@ant-design/icons";
-import axios from "axios";
+import api, { fetchWithAuth } from './api.ts';
 import DocumentUpload from "./DocumentUpload.tsx";
 import FournisseurBateaux from "./fournisseur-bateaux.tsx";
 import FournisseurHelices from "./fournisseur-helices.tsx";
@@ -72,12 +72,13 @@ const Fournisseurs = () => {
   const [modalVisible, setModalVisible] = useState<boolean>(false);
   const [editing, setEditing] = useState<Fournisseur | null>(null);
   const [form] = Form.useForm();
+  const [formDirty, setFormDirty] = useState(false);
 
   // Fetch list
   const fetchFournisseurs = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/catalogue/fournisseurs");
+      const res = await fetchWithAuth("/catalogue/fournisseurs");
       if (!res.ok) throw new Error("Erreur lors du chargement");
       setFournisseurs(await res.json());
     } catch {
@@ -94,20 +95,39 @@ const Fournisseurs = () => {
   const handleNew = () => {
     setEditing(null);
     form.resetFields();
+    setFormDirty(false);
     setModalVisible(true);
   };
 
   const handleEdit = (record: Fournisseur) => {
     setEditing(record);
     form.setFieldsValue(record);
+    setFormDirty(false);
     setModalVisible(true);
+  };
+
+  const handleModalCancel = () => {
+    if (formDirty) {
+      Modal.confirm({
+        title: "Modifications non enregistrées",
+        content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
+        okText: "Fermer",
+        cancelText: "Annuler",
+        onOk: () => {
+          setFormDirty(false);
+          setModalVisible(false);
+        },
+      });
+    } else {
+      setModalVisible(false);
+    }
   };
 
   const handleDelete = async (id?: number) => {
     if (!id) return;
     setLoading(true);
     try {
-      const res = await fetch(`/catalogue/fournisseurs/${id}`, { method: "DELETE" });
+      const res = await fetchWithAuth(`/catalogue/fournisseurs/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error();
       message.success("Fournisseur supprimé");
       fetchFournisseurs();
@@ -124,7 +144,7 @@ const Fournisseurs = () => {
       setLoading(true);
       if (editing) {
         // Update
-        const res = await fetch(`/catalogue/fournisseurs/${editing.id}`, {
+        const res = await fetchWithAuth(`/catalogue/fournisseurs/${editing.id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ ...editing, ...values }),
@@ -132,11 +152,12 @@ const Fournisseurs = () => {
         if (!res.ok) throw new Error();
         const updated = await res.json();
         message.success("Fournisseur modifié");
+        setFormDirty(false);
         setEditing(updated);
         form.setFieldsValue(updated);
       } else {
         // Create
-        const res = await fetch("/catalogue/fournisseurs", {
+        const res = await fetchWithAuth("/catalogue/fournisseurs", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(values),
@@ -144,6 +165,7 @@ const Fournisseurs = () => {
         if (!res.ok) throw new Error();
         const created = await res.json();
         message.success("Fournisseur créé");
+        setFormDirty(false);
         setEditing(created);
         form.setFieldsValue(created);
       }
@@ -159,7 +181,7 @@ const Fournisseurs = () => {
   const handleSearch = async (value: string) => {
     setLoading(true);
     try {
-      const response = await axios.get("/catalogue/fournisseurs/search", { params: { q: value } });
+      const response = await api.get("/catalogue/fournisseurs/search", { params: { q: value } });
       setFournisseurs(response.data);
     } catch {
       message.error("Erreur lors de la recherche");
@@ -230,7 +252,7 @@ const Fournisseurs = () => {
       </Card>
       <Modal
         open={modalVisible}
-        onCancel={() => setModalVisible(false)}
+        onCancel={handleModalCancel}
         onOk={handleModalOk}
         destroyOnHidden
         title={editing ? "Modifier Fournisseur" : "Nouveau Fournisseur"}
@@ -244,6 +266,7 @@ const Fournisseurs = () => {
           form={form}
           layout="vertical"
           initialValues={defaultFournisseur}
+          onValuesChange={() => setFormDirty(true)}
         >
           <Row gutter={16}>
             <Col span={12}>

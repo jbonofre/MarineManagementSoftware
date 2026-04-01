@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Modal, Form, Input, message } from 'antd';
-import axios from 'axios';
+import api from './api.ts';
 
 interface ChangePasswordModalProps {
     technicienId: number;
@@ -25,7 +25,7 @@ export default function ChangePasswordModal({ technicienId, open, onClose }: Cha
         }
         setLoading(true);
         try {
-            await axios.post('/technicien-portal/change-password', {
+            await api.post('/technicien-portal/change-password', {
                 technicienId,
                 currentPassword: values.currentPassword || '',
                 newPassword: values.newPassword,

@@ -14,7 +14,6 @@ public class UserEntity extends PanacheEntityBase {
     @Column(nullable = false)
     public String roles;
 
-    @Column(nullable = false)
     public String password;
 
     @Column(nullable = false)

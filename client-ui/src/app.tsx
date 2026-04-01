@@ -38,16 +38,26 @@ interface Client {
 }
 
 export default function App() {
-    const [user, setUser] = useState<Client | null>(null);
+    const [user, setUser] = useState<Client | null>(() => {
+        const stored = localStorage.getItem('moussaillon-client-user');
+        return stored ? JSON.parse(stored) : null;
+    });
     const [currentPage, setCurrentPage] = useState('dashboard');
     const isMobile = useIsMobile();
+
+    const handleLogout = () => {
+        localStorage.removeItem('moussaillon-client-token');
+        localStorage.removeItem('moussaillon-client-user');
+        setUser(null);
+        setCurrentPage('dashboard');
+    };
 
     if (!user) {
         return <Login setUser={setUser} />;
     }
 
     if (isMobile) {
-        return <MobileApp user={user} onLogout={() => { setUser(null); setCurrentPage('dashboard'); }} />;
+        return <MobileApp user={user} onLogout={handleLogout} />;
     }
 
     const clientName = `${user.prenom || ''} ${user.nom}`.trim();
@@ -106,7 +116,7 @@ export default function App() {
                     </span>
                     <Button
                         icon={<LogoutOutlined />}
-                        onClick={() => { setUser(null); setCurrentPage('dashboard'); }}
+                        onClick={handleLogout}
                     >
                         Deconnexion
                     </Button>

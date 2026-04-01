@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Badge, Button, Card, Col, Empty, Form, Input, Modal, Row, Select, Space, Table, Tag, Typography, message } from 'antd';
 import { CalendarOutlined, EditOutlined, EyeOutlined, WarningOutlined } from '@ant-design/icons';
-import axios from 'axios';
+import api from './api.ts';
 import dayjs from 'dayjs';
 
 type VenteType = 'DEVIS' | 'FACTURE' | 'COMPTOIR';
@@ -264,6 +264,7 @@ export default function Planning() {
     const [selectedStatus, setSelectedStatus] = useState<PlanningStatus | undefined>(undefined);
     const [selectedTechnicien, setSelectedTechnicien] = useState<number | undefined>(undefined);
     const [modalVisible, setModalVisible] = useState(false);
+    const [formDirty, setFormDirty] = useState(false);
     const [saving, setSaving] = useState(false);
     const [currentRow, setCurrentRow] = useState<PlanningItemRow | null>(null);
     const [form] = Form.useForm<PlanningFormValues>();
@@ -278,7 +279,7 @@ export default function Planning() {
         setPrestationModalVisible(true);
         setPrestationLoading(true);
         try {
-            const res = await axios.get(`/ventes/${venteId}`);
+            const res = await api.get(`/ventes/${venteId}`);
             setPrestationVente(res.data);
         } catch {
             message.error('Erreur lors du chargement de la prestation.');
@@ -291,7 +292,7 @@ export default function Planning() {
     const fetchVentes = async () => {
         setLoading(true);
         try {
-            const response = await axios.get('/ventes');
+            const response = await api.get('/ventes');
             setVentes(response.data || []);
         } catch {
             message.error('Erreur lors du chargement du planning.');
@@ -302,7 +303,7 @@ export default function Planning() {
 
     const fetchTechniciens = async () => {
         try {
-            const response = await axios.get('/techniciens');
+            const response = await api.get('/techniciens');
             setTechniciens(response.data || []);
         } catch {
             message.error('Erreur lors du chargement des techniciens.');
@@ -336,7 +337,29 @@ export default function Planning() {
             status: row.item.status === 'EN_ATTENTE' ? 'PLANIFIEE' : (row.item.status || 'PLANIFIEE'),
             technicienIds: (row.item.techniciens || []).map(t => t.id),
         });
+        setFormDirty(false);
         setModalVisible(true);
+    };
+
+    const handleModalCancel = () => {
+        if (formDirty) {
+            Modal.confirm({
+                title: "Modifications non enregistrées",
+                content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
+                okText: "Fermer",
+                cancelText: "Annuler",
+                onOk: () => {
+                    setFormDirty(false);
+                    setModalVisible(false);
+                    setCurrentRow(null);
+                    form.resetFields();
+                },
+            });
+        } else {
+            setModalVisible(false);
+            setCurrentRow(null);
+            form.resetFields();
+        }
     };
 
 
@@ -441,7 +464,7 @@ export default function Planning() {
             const values = await form.validateFields();
             setSaving(true);
             const venteId = currentRow.vente.id;
-            const latestVenteResponse = await axios.get(`/ventes/${venteId}`);
+            const latestVenteResponse = await api.get(`/ventes/${venteId}`);
             const latestVente = (latestVenteResponse.data || currentRow.vente) as VenteEntity;
 
             const listKey = currentRow.itemType === 'forfait' ? 'venteForfaits' : 'venteServices';
@@ -474,8 +497,9 @@ export default function Planning() {
                 [listKey]: latestList
             };
 
-            const res = await axios.put(`/ventes/${venteId}`, updatedVente);
+            const res = await api.put(`/ventes/${venteId}`, updatedVente);
             message.success('Planning mis a jour.');
+            setFormDirty(false);
             const savedVente = res.data as VenteEntity;
             const savedList = savedVente[listKey] || [];
             const savedEntry = savedList[itemToUpdateIndex] || latestList[itemToUpdateIndex];
@@ -533,7 +557,7 @@ export default function Planning() {
             if (Array.isArray(formError.errorFields) && formError.errorFields.length > 0) {
                 return;
             }
-            if (axios.isAxiosError(error)) {
+            if (api.isAxiosError(error)) {
                 message.error(error.response?.data?.message || "Erreur lors de la mise a jour.");
                 return;
             }
@@ -953,14 +977,10 @@ export default function Planning() {
                 confirmLoading={saving}
                 cancelText="Annuler"
                 width={720}
-                onCancel={() => {
-                    setModalVisible(false);
-                    setCurrentRow(null);
-                    form.resetFields();
-                }}
+                onCancel={handleModalCancel}
                 destroyOnHidden
             >
-                <Form form={form} layout="vertical">
+                <Form form={form} layout="vertical" onValuesChange={() => setFormDirty(true)}>
                     <Form.Item
                         name="date"
                         label="Date et heure planifiees"

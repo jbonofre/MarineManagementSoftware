@@ -26,7 +26,7 @@ import {
   MinusCircleOutlined,
   SearchOutlined,
 } from "@ant-design/icons";
-import axios from "axios";
+import api from "./api.ts";
 import dayjs from "dayjs";
 
 const { Option } = Select;
@@ -169,8 +169,10 @@ const CommandesFournisseur = ({ fournisseurId }: { fournisseurId?: number }) => 
   const [lignes, setLignes] = useState<CommandeFournisseurLigne[]>([]);
   const [selectedFournisseurId, setSelectedFournisseurId] = useState<number | undefined>(fournisseurId);
   const [form] = Form.useForm();
+  const [formDirty, setFormDirty] = useState(false);
   const [fournisseurModalVisible, setFournisseurModalVisible] = useState(false);
   const [fournisseurForm] = Form.useForm();
+  const [fournisseurFormDirty, setFournisseurFormDirty] = useState(false);
 
   const fetchCommandes = async () => {
     setLoading(true);
@@ -178,7 +180,7 @@ const CommandesFournisseur = ({ fournisseurId }: { fournisseurId?: number }) => 
       const url = fournisseurId
         ? `/commandes-fournisseur/search?fournisseurId=${fournisseurId}`
         : "/commandes-fournisseur";
-      const { data } = await axios.get(url);
+      const { data } = await api.get(url);
       setCommandes(data);
     } catch {
       message.error("Erreur lors du chargement des commandes fournisseur");
@@ -189,7 +191,7 @@ const CommandesFournisseur = ({ fournisseurId }: { fournisseurId?: number }) => 
 
   const fetchFournisseurs = async () => {
     try {
-      const { data } = await axios.get("/catalogue/fournisseurs");
+      const { data } = await api.get("/catalogue/fournisseurs");
       setFournisseurs(data);
     } catch {
       message.error("Erreur lors du chargement des fournisseurs");
@@ -199,10 +201,10 @@ const CommandesFournisseur = ({ fournisseurId }: { fournisseurId?: number }) => 
   const fetchFournisseurArticles = async (fId: number) => {
     try {
       const [produits, bateaux, moteurs, helices] = await Promise.all([
-        axios.get(`/fournisseur-produit/fournisseur/${fId}`),
-        axios.get(`/fournisseur-bateau/fournisseur/${fId}`),
-        axios.get(`/fournisseur-moteur/fournisseur/${fId}`),
-        axios.get(`/fournisseur-helice/fournisseur/${fId}`),
+        api.get(`/fournisseur-produit/fournisseur/${fId}`),
+        api.get(`/fournisseur-bateau/fournisseur/${fId}`),
+        api.get(`/fournisseur-moteur/fournisseur/${fId}`),
+        api.get(`/fournisseur-helice/fournisseur/${fId}`),
       ]);
       const items: ArticleItem[] = [
         ...(produits.data as FournisseurProduit[]).filter((fp) => fp.produit).map((fp) => ({
@@ -247,8 +249,9 @@ const CommandesFournisseur = ({ fournisseurId }: { fournisseurId?: number }) => 
   const handleFournisseurAdd = async () => {
     try {
       const values = await fournisseurForm.validateFields();
-      const res = await axios.post("/catalogue/fournisseurs", values);
+      const res = await api.post("/catalogue/fournisseurs", values);
       message.success("Fournisseur créé");
+      setFournisseurFormDirty(false);
       setFournisseurModalVisible(false);
       fournisseurForm.resetFields();
       await fetchFournisseurs();
@@ -293,7 +296,7 @@ const CommandesFournisseur = ({ fournisseurId }: { fournisseurId?: number }) => 
     try {
       const params: any = { q: value };
       if (fournisseurId) params.fournisseurId = fournisseurId;
-      const { data } = await axios.get("/commandes-fournisseur/search", { params });
+      const { data } = await api.get("/commandes-fournisseur/search", { params });
       setCommandes(data);
     } catch {
       message.error("Erreur lors de la recherche");
@@ -321,6 +324,7 @@ const CommandesFournisseur = ({ fournisseurId }: { fournisseurId?: number }) => 
       montantTTC: 0,
       tva: 20,
     });
+    setFormDirty(false);
     setModalVisible(true);
   };
 
@@ -345,14 +349,49 @@ const CommandesFournisseur = ({ fournisseurId }: { fournisseurId?: number }) => 
       date: record.date ? dayjs(record.date) : undefined,
       dateReception: record.dateReception ? dayjs(record.dateReception) : undefined,
     });
+    setFormDirty(false);
     setModalVisible(true);
+  };
+
+  const handleModalCancel = () => {
+    if (formDirty) {
+      Modal.confirm({
+        title: "Modifications non enregistrées",
+        content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
+        okText: "Fermer",
+        cancelText: "Annuler",
+        onOk: () => {
+          setFormDirty(false);
+          setModalVisible(false);
+        },
+      });
+    } else {
+      setModalVisible(false);
+    }
+  };
+
+  const handleFournisseurModalCancel = () => {
+    if (fournisseurFormDirty) {
+      Modal.confirm({
+        title: "Modifications non enregistrées",
+        content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
+        okText: "Fermer",
+        cancelText: "Annuler",
+        onOk: () => {
+          setFournisseurFormDirty(false);
+          setFournisseurModalVisible(false);
+        },
+      });
+    } else {
+      setFournisseurModalVisible(false);
+    }
   };
 
   const handleDelete = async (id?: number) => {
     if (!id) return;
     setLoading(true);
     try {
-      await axios.delete(`/commandes-fournisseur/${id}`);
+      await api.delete(`/commandes-fournisseur/${id}`);
       message.success("Commande supprimée");
       fetchCommandes();
     } catch {
@@ -441,12 +480,13 @@ const CommandesFournisseur = ({ fournisseurId }: { fournisseurId?: number }) => 
 
       setLoading(true);
       if (editing && editing.id) {
-        await axios.put(`/commandes-fournisseur/${editing.id}`, body);
+        await api.put(`/commandes-fournisseur/${editing.id}`, body);
         message.success("Commande modifiée");
       } else {
-        await axios.post("/commandes-fournisseur", body);
+        await api.post("/commandes-fournisseur", body);
         message.success("Commande créée");
       }
+      setFormDirty(false);
       setModalVisible(false);
       fetchCommandes();
     } catch (e: any) {
@@ -541,7 +581,7 @@ const CommandesFournisseur = ({ fournisseurId }: { fournisseurId?: number }) => 
 
       <Modal
         open={modalVisible}
-        onCancel={() => setModalVisible(false)}
+        onCancel={handleModalCancel}
         onOk={handleModalOk}
         destroyOnHidden
         width={1024}
@@ -551,7 +591,7 @@ const CommandesFournisseur = ({ fournisseurId }: { fournisseurId?: number }) => 
         maskClosable={false}
         confirmLoading={loading}
       >
-        <Form form={form} layout="vertical">
+        <Form form={form} layout="vertical" onValuesChange={() => setFormDirty(true)}>
           <Row gutter={16}>
             <Col span={8}>
               <Form.Item
@@ -605,6 +645,7 @@ const CommandesFournisseur = ({ fournisseurId }: { fournisseurId?: number }) => 
                       icon={<PlusCircleOutlined />}
                       onClick={() => {
                         fournisseurForm.resetFields();
+                        setFournisseurFormDirty(false);
                         setFournisseurModalVisible(true);
                       }}
                     />
@@ -734,14 +775,14 @@ const CommandesFournisseur = ({ fournisseurId }: { fournisseurId?: number }) => 
       <Modal
         open={fournisseurModalVisible}
         title="Nouveau Fournisseur"
-        onCancel={() => setFournisseurModalVisible(false)}
+        onCancel={handleFournisseurModalCancel}
         onOk={handleFournisseurAdd}
         okText="Ajouter"
         cancelText="Annuler"
         destroyOnHidden
         width={1024}
       >
-        <Form layout="vertical" form={fournisseurForm} initialValues={{ evaluation: 0 }}>
+        <Form layout="vertical" form={fournisseurForm} initialValues={{ evaluation: 0 }} onValuesChange={() => setFournisseurFormDirty(true)}>
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item label="Nom" name="nom" rules={[{ required: true, message: "Champ requis" }]}>

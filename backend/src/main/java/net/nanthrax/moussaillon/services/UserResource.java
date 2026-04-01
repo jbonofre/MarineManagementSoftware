@@ -1,6 +1,7 @@
 package net.nanthrax.moussaillon.services;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -15,6 +16,22 @@ import java.util.List;
 @Consumes(MediaType.APPLICATION_JSON)
 public class UserResource {
 
+    @Inject
+    TokenService tokenService;
+
+    public static class LoginRequest {
+        public String name;
+        public String password;
+    }
+
+    public static class AuthResponse {
+        public String token;
+        public String name;
+        public String roles;
+        public String email;
+        public UserEntity.Theme theme;
+    }
+
     public static class ChangePasswordRequest {
         public String currentPassword;
         public String newPassword;
@@ -22,16 +39,26 @@ public class UserResource {
 
     @POST
     @Path("/authenticate")
-    public Response authenticate(UserEntity user) {
-        if (user == null || user.name == null || user.password == null) {
+    @Transactional
+    public Response authenticate(LoginRequest request) {
+        if (request == null || request.name == null || request.password == null) {
             return Response.status(Response.Status.BAD_REQUEST).entity("Nom d'utilisateur et mot de passe requis.").build();
         }
-        UserEntity entity = UserEntity.findById(user.name);
-        if (entity == null || !entity.password.equals(user.password)) {
+        UserEntity entity = UserEntity.findById(request.name);
+        if (entity == null || !PasswordUtil.verify(request.password, entity.password)) {
             return Response.status(Response.Status.UNAUTHORIZED).entity("Identifiants invalides.").build();
         }
-        // You can return more data if needed (e.g., JWT token, user details, etc.)
-        return Response.ok(entity).build();
+        // Opportunistic rehash of legacy plaintext passwords
+        if (PasswordUtil.needsRehash(entity.password)) {
+            entity.password = PasswordUtil.hash(request.password);
+        }
+        AuthResponse auth = new AuthResponse();
+        auth.token = tokenService.generateToken(entity.name, entity.roles, entity.email, null);
+        auth.name = entity.name;
+        auth.roles = entity.roles;
+        auth.email = entity.email;
+        auth.theme = entity.theme;
+        return Response.ok(auth).build();
     }
 
     @POST
@@ -49,11 +76,11 @@ public class UserResource {
         if (entity == null) {
             return Response.status(Response.Status.NOT_FOUND).entity("L'utilisateur " + name + " n'est pas trouvé").build();
         }
-        if (!entity.password.equals(request.currentPassword)) {
+        if (!PasswordUtil.verify(request.currentPassword, entity.password)) {
             return Response.status(Response.Status.UNAUTHORIZED).entity("Mot de passe actuel invalide.").build();
         }
 
-        entity.password = request.newPassword;
+        entity.password = PasswordUtil.hash(request.newPassword);
         return Response.noContent().build();
     }
 
@@ -61,21 +88,27 @@ public class UserResource {
     @Path("/search")
     public List<UserEntity> search(@QueryParam("q") String query) {
         if (query == null || query.trim().isEmpty()) {
-            return UserEntity.listAll();
+            return sanitizeList(UserEntity.listAll());
         }
         String likeQuery = "%" + query.toLowerCase() + "%";
-        return UserEntity.list("lower(name) like ?1 or lower(email) like ?1", likeQuery);
+        return sanitizeList(UserEntity.list("lower(name) like ?1 or lower(email) like ?1", likeQuery));
     }
 
     @GET
     public List<UserEntity> list() {
-        return UserEntity.listAll();
+        return sanitizeList(UserEntity.listAll());
     }
 
     @POST
     @Transactional
     public Response create(UserEntity user) {
+        if (user.password != null && !user.password.isBlank()) {
+            user.password = PasswordUtil.hash(user.password);
+        }
         user.persist();
+        user.flush();
+        UserEntity.getEntityManager().detach(user);
+        user.password = null;
         return Response.ok(user).status(201).build();
     }
 
@@ -86,6 +119,7 @@ public class UserResource {
         if (entity == null) {
             throw new WebApplicationException("L'utilisateur " + name + " n'est pas trouvé", 404);
         }
+        entity.password = null;
         return entity;
     }
 
@@ -113,10 +147,20 @@ public class UserResource {
         entity.name = user.name;
         entity.email = user.email;
         entity.roles = user.roles;
-        entity.password = user.password;
+        if (user.password != null && !user.password.isBlank()) {
+            entity.password = PasswordUtil.hash(user.password);
+        }
         entity.theme = user.theme;
 
+        entity.flush();
+        UserEntity.getEntityManager().detach(entity);
+        entity.password = null;
         return entity;
+    }
+
+    private List<UserEntity> sanitizeList(List<UserEntity> users) {
+        users.forEach(u -> u.password = null);
+        return users;
     }
 
 }

@@ -26,9 +26,18 @@ interface Technicien {
 }
 
 export default function App() {
-    const [user, setUser] = useState<Technicien | null>(null);
+    const [user, setUser] = useState<Technicien | null>(() => {
+        const stored = localStorage.getItem('moussaillon-technicien-user');
+        return stored ? JSON.parse(stored) : null;
+    });
     const [passwordModalOpen, setPasswordModalOpen] = useState(false);
     const isMobile = useIsMobile();
+
+    const handleLogout = () => {
+        localStorage.removeItem('moussaillon-technicien-token');
+        localStorage.removeItem('moussaillon-technicien-user');
+        setUser(null);
+    };
 
     if (!user) {
         return <Login setUser={setUser} />;
@@ -37,7 +46,7 @@ export default function App() {
     if (isMobile) {
         return (
             <>
-                <MobileApp user={user} onLogout={() => setUser(null)} onChangePassword={() => setPasswordModalOpen(true)} />
+                <MobileApp user={user} onLogout={handleLogout} onChangePassword={() => setPasswordModalOpen(true)} />
                 <ChangePasswordModal
                     technicienId={user.id}
                     open={passwordModalOpen}
@@ -79,7 +88,7 @@ export default function App() {
                     </Button>
                     <Button
                         icon={<LogoutOutlined />}
-                        onClick={() => setUser(null)}
+                        onClick={handleLogout}
                     >
                         Deconnexion
                     </Button>

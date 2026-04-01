@@ -23,7 +23,10 @@ export default function Login(props) {
                     return response.json();
                 })
                 .then((data) => {
-                    props.setUser({ name: data.name, roles: data.roles || '' });
+                    localStorage.setItem('moussaillon-token', data.token);
+                    const user = { name: data.name, roles: data.roles || '', theme: data.theme };
+                    localStorage.setItem('moussaillon-user', JSON.stringify(user));
+                    props.setUser(user);
                 })
                 .catch((error) => {
                     message.error('Une erreur est survenue: ' + error.message);

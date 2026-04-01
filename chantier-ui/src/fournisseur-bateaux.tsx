@@ -28,7 +28,7 @@ import {
 } from "@ant-design/icons";
 
 const { TextArea } = Input;
-import axios from "axios";
+import api from "./api.ts";
 import ImageUpload from './ImageUpload.tsx';
 
 const { Option } = Select;
@@ -121,6 +121,7 @@ const FournisseurBateaux = ({ fournisseurId, bateauId }: { fournisseurId?: numbe
   const [fournisseurs, setFournisseurs] = useState<Fournisseur[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
+  const [formDirty, setFormDirty] = useState(false);
   const [editing, setEditing] = useState<Partial<FournisseurBateau> | null>(null);
   const [form] = Form.useForm();
   const [fournisseurModalVisible, setFournisseurModalVisible] = useState(false);
@@ -142,7 +143,7 @@ const FournisseurBateaux = ({ fournisseurId, bateauId }: { fournisseurId?: numbe
         url = `/fournisseur-bateau/fournisseur/${fournisseurId}`;
       }
       if (url) {
-        const { data } = await axios.get(url);
+        const { data } = await api.get(url);
         setBateauxAssocies(data);
       }
     } catch {
@@ -155,7 +156,7 @@ const FournisseurBateaux = ({ fournisseurId, bateauId }: { fournisseurId?: numbe
   const fetchBateauxCatalogue = async () => {
     setLoading(true);
     try {
-      const { data } = await axios.get("/catalogue/bateaux");
+      const { data } = await api.get("/catalogue/bateaux");
       setBateauxCatalogue(data);
     } catch {
       message.error("Erreur lors du chargement du catalogue de bateaux");
@@ -167,7 +168,7 @@ const FournisseurBateaux = ({ fournisseurId, bateauId }: { fournisseurId?: numbe
   const fetchFournisseurs = async () => {
     setLoading(true);
     try {
-      const { data } = await axios.get("/catalogue/fournisseurs");
+      const { data } = await api.get("/catalogue/fournisseurs");
       setFournisseurs(data);
     } catch {
       message.error("Erreur lors du chargement des fournisseurs");
@@ -190,7 +191,7 @@ const FournisseurBateaux = ({ fournisseurId, bateauId }: { fournisseurId?: numbe
   const handleBateauAdd = async () => {
     try {
       const values = await bateauForm.validateFields();
-      const res = await axios.post("/catalogue/bateaux", values);
+      const res = await api.post("/catalogue/bateaux", values);
       message.success("Bateau créé");
       setBateauModalVisible(false);
       bateauForm.resetFields();
@@ -205,7 +206,7 @@ const FournisseurBateaux = ({ fournisseurId, bateauId }: { fournisseurId?: numbe
   const handleFournisseurAdd = async () => {
     try {
       const values = await fournisseurForm.validateFields();
-      const res = await axios.post("/catalogue/fournisseurs", values);
+      const res = await api.post("/catalogue/fournisseurs", values);
       message.success("Fournisseur créé");
       setFournisseurModalVisible(false);
       fournisseurForm.resetFields();
@@ -217,6 +218,23 @@ const FournisseurBateaux = ({ fournisseurId, bateauId }: { fournisseurId?: numbe
     }
   };
 
+  const handleModalCancel = () => {
+    if (formDirty) {
+      Modal.confirm({
+        title: "Modifications non enregistrées",
+        content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
+        okText: "Fermer",
+        cancelText: "Annuler",
+        onOk: () => {
+          setFormDirty(false);
+          setModalVisible(false);
+        },
+      });
+    } else {
+      setModalVisible(false);
+    }
+  };
+
   // Add
   const handleNew = () => {
     setEditing({
@@ -224,6 +242,7 @@ const FournisseurBateaux = ({ fournisseurId, bateauId }: { fournisseurId?: numbe
       fournisseur: isFournisseurMode ? { id: fournisseurId!, nom: "" } : undefined,
       bateau: isBateauMode ? { id: bateauId!, marque: "", modele: "" } : undefined,
     });
+    setFormDirty(false);
     setModalVisible(true);
     setTimeout(() => form.resetFields());
   };
@@ -231,6 +250,7 @@ const FournisseurBateaux = ({ fournisseurId, bateauId }: { fournisseurId?: numbe
   // Edit
   const handleEdit = (record: FournisseurBateau) => {
     setEditing({ ...record, bateau: { ...record.bateau }, fournisseur: { ...record.fournisseur } });
+    setFormDirty(false);
     setModalVisible(true);
     setTimeout(() => {
       if (isBateauMode) {
@@ -246,7 +266,7 @@ const FournisseurBateaux = ({ fournisseurId, bateauId }: { fournisseurId?: numbe
     if (!id) return;
     setLoading(true);
     try {
-      await axios.delete(`/fournisseur-bateau/${id}`);
+      await api.delete(`/fournisseur-bateau/${id}`);
       message.success("Supprimé avec succès");
       fetchAssocies();
     } catch {
@@ -284,15 +304,16 @@ const FournisseurBateaux = ({ fournisseurId, bateauId }: { fournisseurId?: numbe
 
       if (editing && editing.id) {
         // update
-        const res = await axios.put(`/fournisseur-bateau/${editing.id}`, body);
+        const res = await api.put(`/fournisseur-bateau/${editing.id}`, body);
         message.success("Modifié avec succès");
         setEditing(res.data);
       } else {
         // create
-        const res = await axios.post("/fournisseur-bateau", body);
+        const res = await api.post("/fournisseur-bateau", body);
         message.success("Ajouté avec succès");
         setEditing(res.data);
       }
+      setFormDirty(false);
       fetchAssocies();
     } catch (e: any) {
       if (e.errorFields) return;
@@ -362,7 +383,7 @@ const FournisseurBateaux = ({ fournisseurId, bateauId }: { fournisseurId?: numbe
 
       <Modal
         open={modalVisible}
-        onCancel={() => setModalVisible(false)}
+        onCancel={handleModalCancel}
         onOk={handleModalOk}
         destroyOnHidden
         title={editing && editing.id ? "Modifier l'association" : (isBateauMode ? "Associer un Fournisseur" : "Associer un Bateau")}
@@ -375,6 +396,7 @@ const FournisseurBateaux = ({ fournisseurId, bateauId }: { fournisseurId?: numbe
           layout="vertical"
           initialValues={editing || defaultFournisseurBateau}
           onValuesChange={(changed, all) => {
+            setFormDirty(true);
             // Compute montantTVA et TTC dynamiquement
             if ("prixAchatHT" in changed || "tva" in changed) {
               let prixAchatHT = all.prixAchatHT ?? 0;

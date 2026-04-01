@@ -17,7 +17,8 @@ public class TechnicienPortalResourceTest {
             .when().post("/technicien-portal/login")
             .then()
             .statusCode(200)
-            .body("nom", is("Leclerc"));
+            .body("nom", is("Leclerc"))
+            .body("token", notNullValue());
     }
 
     @Test
@@ -66,7 +67,8 @@ public class TechnicienPortalResourceTest {
             .when().post("/technicien-portal/login")
             .then()
             .statusCode(200)
-            .body("nom", is("Leclerc"));
+            .body("nom", is("Leclerc"))
+            .body("token", notNullValue());
 
         // restore original password
         given()

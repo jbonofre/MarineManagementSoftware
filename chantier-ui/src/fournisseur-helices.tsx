@@ -27,7 +27,7 @@ import {
   SearchOutlined,
   ShrinkOutlined,
 } from "@ant-design/icons";
-import axios from "axios";
+import api from "./api.ts";
 import ImageUpload from './ImageUpload.tsx';
 
 const { Option } = Select;
@@ -101,6 +101,7 @@ const FournisseurHelices = ({
   const [fournisseurs, setFournisseurs] = useState<Fournisseur[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
+  const [formDirty, setFormDirty] = useState(false);
   const [editing, setEditing] = useState<Partial<FournisseurHelice> | null>(null);
   const [form] = Form.useForm();
   const [fournisseurModalVisible, setFournisseurModalVisible] = useState(false);
@@ -122,7 +123,7 @@ const FournisseurHelices = ({
         url = `/fournisseur-helice/fournisseur/${fournisseurId}`;
       }
       if (url) {
-        const { data } = await axios.get(url);
+        const { data } = await api.get(url);
         setHelicesAssociees(data);
       }
     } catch {
@@ -135,7 +136,7 @@ const FournisseurHelices = ({
   const fetchHelicesCatalogue = async () => {
     setLoading(true);
     try {
-      const { data } = await axios.get("/catalogue/helices");
+      const { data } = await api.get("/catalogue/helices");
       setHelicesCatalogue(data);
     } catch {
       message.error("Erreur lors du chargement du catalogue des hélices");
@@ -147,7 +148,7 @@ const FournisseurHelices = ({
   const fetchFournisseurs = async () => {
     setLoading(true);
     try {
-      const { data } = await axios.get("/catalogue/fournisseurs");
+      const { data } = await api.get("/catalogue/fournisseurs");
       setFournisseurs(data);
     } catch {
       message.error("Erreur lors du chargement des fournisseurs");
@@ -171,7 +172,7 @@ const FournisseurHelices = ({
   const handleHeliceAdd = async () => {
     try {
       const values = await heliceForm.validateFields();
-      const res = await axios.post("/catalogue/helices", values);
+      const res = await api.post("/catalogue/helices", values);
       message.success("Hélice créée");
       setHeliceModalVisible(false);
       heliceForm.resetFields();
@@ -186,7 +187,7 @@ const FournisseurHelices = ({
   const handleFournisseurAdd = async () => {
     try {
       const values = await fournisseurForm.validateFields();
-      const res = await axios.post("/catalogue/fournisseurs", values);
+      const res = await api.post("/catalogue/fournisseurs", values);
       message.success("Fournisseur créé");
       setFournisseurModalVisible(false);
       fournisseurForm.resetFields();
@@ -198,6 +199,23 @@ const FournisseurHelices = ({
     }
   };
 
+  const handleModalCancel = () => {
+    if (formDirty) {
+      Modal.confirm({
+        title: "Modifications non enregistrées",
+        content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
+        okText: "Fermer",
+        cancelText: "Annuler",
+        onOk: () => {
+          setFormDirty(false);
+          setModalVisible(false);
+        },
+      });
+    } else {
+      setModalVisible(false);
+    }
+  };
+
   // Add
   const handleNew = () => {
     setEditing({
@@ -205,6 +223,7 @@ const FournisseurHelices = ({
       fournisseur: isFournisseurMode ? { id: fournisseurId!, nom: "" } : undefined,
       helice: isHeliceMode ? { id: heliceId!, marque: "", modele: "" } : undefined,
     });
+    setFormDirty(false);
     setModalVisible(true);
     setTimeout(() => form.resetFields());
   };
@@ -216,6 +235,7 @@ const FournisseurHelices = ({
       helice: { ...record.helice },
       fournisseur: { ...record.fournisseur },
     });
+    setFormDirty(false);
     setModalVisible(true);
     setTimeout(() => {
       if (isHeliceMode) {
@@ -231,7 +251,7 @@ const FournisseurHelices = ({
     if (!id) return;
     setLoading(true);
     try {
-      await axios.delete(`/fournisseur-helice/${id}`);
+      await api.delete(`/fournisseur-helice/${id}`);
       message.success("Supprimé avec succès");
       fetchAssociees();
     } catch {
@@ -269,15 +289,16 @@ const FournisseurHelices = ({
 
       if (editing && editing.id) {
         // update
-        const res = await axios.put(`/fournisseur-helice/${editing.id}`, body);
+        const res = await api.put(`/fournisseur-helice/${editing.id}`, body);
         message.success("Modifié avec succès");
         setEditing(res.data);
       } else {
         // create
-        const res = await axios.post("/fournisseur-helice", body);
+        const res = await api.post("/fournisseur-helice", body);
         message.success("Ajouté avec succès");
         setEditing(res.data);
       }
+      setFormDirty(false);
       fetchAssociees();
     } catch (e: any) {
       if (e.errorFields) return;
@@ -368,7 +389,7 @@ const FournisseurHelices = ({
 
       <Modal
         open={modalVisible}
-        onCancel={() => setModalVisible(false)}
+        onCancel={handleModalCancel}
         onOk={handleModalOk}
         destroyOnHidden
         title={
@@ -387,6 +408,7 @@ const FournisseurHelices = ({
           layout="vertical"
           initialValues={editing || defaultFournisseurHelice}
           onValuesChange={(changed, all) => {
+            setFormDirty(true);
             // Calcul dynamique du montant TVA et TTC
             if ("prixAchatHT" in changed || "tva" in changed) {
               let prixAchatHT = all.prixAchatHT ?? 0;

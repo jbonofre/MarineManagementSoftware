@@ -16,7 +16,7 @@ public class DataInitializer {
             UserEntity admin = new UserEntity();
             admin.name = "admin";
             admin.roles = "admin";
-            admin.password = "admin";
+            admin.password = PasswordUtil.hash("admin");
             admin.email = "contact@msplaisance.com";
             admin.persist();
         }

@@ -3,10 +3,10 @@ import { render, screen, act, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom';
 import ChangePasswordModal from './change-password-modal.tsx';
-import axios from 'axios';
+import api from './api.ts';
 
-jest.mock('axios');
-const mockedAxios = axios as jest.Mocked<typeof axios>;
+jest.mock('./api.ts');
+const mockedApi = api as jest.Mocked<typeof api>;
 
 // antd responsiveObserver requires window.matchMedia to return a valid MediaQueryList.
 // This must be set before any antd component renders and must survive jest.clearAllMocks().
@@ -28,7 +28,7 @@ describe('ChangePasswordModal', () => {
 
     beforeEach(() => {
         onClose.mockClear();
-        mockedAxios.post.mockClear();
+        mockedApi.post.mockClear();
         // re-assign matchMedia in case clearAllMocks wiped it
         window.matchMedia = matchMediaImpl as any;
     });
@@ -48,7 +48,7 @@ describe('ChangePasswordModal', () => {
     });
 
     it('calls API and closes on successful password change', async () => {
-        mockedAxios.post.mockResolvedValueOnce({ data: null, status: 204 });
+        mockedApi.post.mockResolvedValueOnce({ data: null, status: 204 });
         await act(async () => {
             render(<ChangePasswordModal technicienId={100} open={true} onClose={onClose} />);
         });
@@ -65,7 +65,7 @@ describe('ChangePasswordModal', () => {
         });
 
         await waitFor(() => {
-            expect(mockedAxios.post).toHaveBeenCalledWith('/technicien-portal/change-password', {
+            expect(mockedApi.post).toHaveBeenCalledWith('/technicien-portal/change-password', {
                 technicienId: 100,
                 currentPassword: 'oldpass',
                 newPassword: 'newpass123',
@@ -94,7 +94,7 @@ describe('ChangePasswordModal', () => {
     });
 
     it('shows error on API failure', async () => {
-        mockedAxios.post.mockRejectedValueOnce(new Error('Unauthorized'));
+        mockedApi.post.mockRejectedValueOnce(new Error('Unauthorized'));
         await act(async () => {
             render(<ChangePasswordModal technicienId={100} open={true} onClose={onClose} />);
         });
@@ -110,7 +110,7 @@ describe('ChangePasswordModal', () => {
         });
 
         await waitFor(() => {
-            expect(mockedAxios.post).toHaveBeenCalled();
+            expect(mockedApi.post).toHaveBeenCalled();
             expect(onClose).not.toHaveBeenCalled();
         });
     });

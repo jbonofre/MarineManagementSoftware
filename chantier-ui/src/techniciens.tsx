@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Space, Table, Button, Input, Form, Modal, Card, Row, Col, Popconfirm, message, Drawer, Statistic, Progress, Divider, Spin } from 'antd';
-import { PlusCircleOutlined, EditOutlined, DeleteOutlined, UserOutlined, BarChartOutlined, CheckCircleOutlined, ClockCircleOutlined, ExclamationCircleOutlined, WarningOutlined, EuroCircleOutlined } from '@ant-design/icons';
-import axios from 'axios';
+import { Space, Table, Button, Input, Form, Modal, Card, Row, Col, Popconfirm, message, Drawer, Statistic, Progress, Divider, Spin, Checkbox } from 'antd';
+import { PlusCircleOutlined, EditOutlined, DeleteOutlined, UserOutlined, BarChartOutlined, CheckCircleOutlined, ClockCircleOutlined, ExclamationCircleOutlined, WarningOutlined, EuroCircleOutlined, KeyOutlined, MailOutlined } from '@ant-design/icons';
+import api from './api.ts';
 
 // --- Types ---
 
@@ -61,6 +61,7 @@ const Techniciens: React.FC = () => {
     const [isEdit, setIsEdit] = useState<boolean>(false);
     const [currentTechnicien, setCurrentTechnicien] = useState<TechnicienEntity | null>(null);
     const [form] = Form.useForm();
+    const [formDirty, setFormDirty] = useState(false);
     const [searchQuery, setSearchQuery] = useState<string>('');
     const [kpiDrawerVisible, setKpiDrawerVisible] = useState<boolean>(false);
     const [kpiLoading, setKpiLoading] = useState<boolean>(false);
@@ -72,7 +73,7 @@ const Techniciens: React.FC = () => {
         setLoading(true);
         try {
             const url = query ? `/techniciens/search?q=${encodeURIComponent(query)}` : '/techniciens';
-            const res = await axios.get(url);
+            const res = await api.get(url);
             setTechniciens(res.data);
         } catch {
             message.error('Erreur lors du chargement des techniciens.');
@@ -98,25 +99,45 @@ const Techniciens: React.FC = () => {
             form.resetFields();
             form.setFieldsValue(defaultTechnicien);
         }
+        setFormDirty(false);
         setModalVisible(true);
+    };
+
+    const handleModalCancel = () => {
+        if (formDirty) {
+            Modal.confirm({
+                title: "Modifications non enregistrées",
+                content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
+                okText: "Fermer",
+                cancelText: "Annuler",
+                onOk: () => {
+                    setFormDirty(false);
+                    setModalVisible(false);
+                },
+            });
+        } else {
+            setModalVisible(false);
+        }
     };
 
     const handleModalOk = async () => {
         try {
-            const values = await form.validateFields();
+            const { confirmMotDePasse, ...values } = await form.validateFields();
             const payload = {
                 ...values,
                 couleur: values.couleur || defaultTechnicien.couleur
             };
 
             if (isEdit && currentTechnicien && currentTechnicien.id) {
-                const res = await axios.put(`/techniciens/${currentTechnicien.id}`, { ...currentTechnicien, ...payload });
+                const res = await api.put(`/techniciens/${currentTechnicien.id}`, { ...currentTechnicien, ...payload });
                 message.success('Technicien modifié avec succès');
+                setFormDirty(false);
                 setCurrentTechnicien(res.data);
                 form.setFieldsValue(res.data);
             } else {
-                const res = await axios.post('/techniciens', payload);
+                const res = await api.post('/techniciens', payload);
                 message.success('Technicien ajouté avec succès');
+                setFormDirty(false);
                 setIsEdit(true);
                 setCurrentTechnicien(res.data);
                 form.setFieldsValue(res.data);
@@ -130,7 +151,7 @@ const Techniciens: React.FC = () => {
     const handleDelete = async (id: number | undefined) => {
         if (!id) return;
         try {
-            await axios.delete(`/techniciens/${id}`);
+            await api.delete(`/techniciens/${id}`);
             message.success('Technicien supprimé avec succès');
             fetchTechniciens(searchQuery);
         } catch {
@@ -143,12 +164,30 @@ const Techniciens: React.FC = () => {
         fetchTechniciens(value);
     };
 
+    const handleSendPassword = async (technicien: TechnicienEntity) => {
+        if (!technicien.email) {
+            message.warning("Ce technicien n'a pas d'adresse email.");
+            return;
+        }
+        const password = form.getFieldValue("motDePasse");
+        if (!password) {
+            message.warning("Veuillez saisir un mot de passe avant de l'envoyer.");
+            return;
+        }
+        try {
+            await api.post(`/techniciens/${technicien.id}/send-password`, { password });
+            message.success(`Mot de passe envoyé à ${technicien.email}`);
+        } catch {
+            message.error("Erreur lors de l'envoi du mot de passe");
+        }
+    };
+
     const openKpiDrawer = async (technicien: TechnicienEntity) => {
         setKpiTechnicien(technicien);
         setKpiDrawerVisible(true);
         setKpiLoading(true);
         try {
-            const res = await axios.get(`/techniciens/${technicien.id}/kpi`);
+            const res = await api.get(`/techniciens/${technicien.id}/kpi`);
             setKpiData(res.data);
         } catch {
             message.error('Erreur lors du chargement des KPI.');
@@ -271,7 +310,7 @@ const Techniciens: React.FC = () => {
                             title={isEdit ? 'Modifier un technicien' : 'Ajouter un technicien'}
                             open={modalVisible}
                             onOk={handleModalOk}
-                            onCancel={() => setModalVisible(false)}
+                            onCancel={handleModalCancel}
                             maskClosable={false}
                             width={1024}
                             okText="Enregistrer"
@@ -282,6 +321,7 @@ const Techniciens: React.FC = () => {
                                 form={form}
                                 layout="vertical"
                                 initialValues={defaultTechnicien}
+                                onValuesChange={() => setFormDirty(true)}
                             >
                                 <Row gutter={16}>
                                     <Col span={12}>
@@ -325,17 +365,77 @@ const Techniciens: React.FC = () => {
                                         </Form.Item>
                                     </Col>
                                 </Row>
-                                <Form.Item 
-                                    name="motDePasse" 
-                                    label="Mot de passe"
-                                    rules={
-                                        isEdit
-                                            ? []
-                                            : [{ required: true, message: "Le mot de passe est requis" }]
-                                    }
-                                >
-                                    <Input.Password autoComplete="new-password" />
-                                </Form.Item>
+                                <Row gutter={16}>
+                                    <Col span={12}>
+                                        <Form.Item
+                                            name="motDePasse"
+                                            label="Mot de passe"
+                                            rules={
+                                                isEdit
+                                                    ? []
+                                                    : [{ required: true, message: "Le mot de passe est requis" }]
+                                            }
+                                        >
+                                            <Input.Password autoComplete="new-password" />
+                                        </Form.Item>
+                                    </Col>
+                                    <Col span={12}>
+                                        <Form.Item
+                                            name="confirmMotDePasse"
+                                            label="Confirmer le mot de passe"
+                                            dependencies={["motDePasse"]}
+                                            rules={[
+                                                ({ getFieldValue }) => ({
+                                                    validator(_, value) {
+                                                        if (!value && !getFieldValue("motDePasse")) {
+                                                            return Promise.resolve();
+                                                        }
+                                                        if (value === getFieldValue("motDePasse")) {
+                                                            return Promise.resolve();
+                                                        }
+                                                        return Promise.reject(new Error("Les mots de passe ne correspondent pas"));
+                                                    },
+                                                }),
+                                            ]}
+                                        >
+                                            <Input.Password autoComplete="new-password" />
+                                        </Form.Item>
+                                    </Col>
+                                </Row>
+                                <Row>
+                                    <Col>
+                                        <Space>
+                                            <Button
+                                                icon={<KeyOutlined />}
+                                                size="small"
+                                                onClick={() => {
+                                                    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%&*";
+                                                    const generated = Array.from(crypto.getRandomValues(new Uint8Array(16)))
+                                                        .map((b) => chars[b % chars.length])
+                                                        .join("");
+                                                    form.setFieldsValue({ motDePasse: generated, confirmMotDePasse: generated });
+                                                }}
+                                            >
+                                                Générer un mot de passe
+                                            </Button>
+                                            {isEdit && currentTechnicien && currentTechnicien.id && (
+                                                <Popconfirm
+                                                    title="Envoyer le mot de passe par email ?"
+                                                    onConfirm={() => handleSendPassword(currentTechnicien)}
+                                                    disabled={!currentTechnicien.email}
+                                                >
+                                                    <Button
+                                                        icon={<MailOutlined />}
+                                                        disabled={!currentTechnicien.email}
+                                                        size="small"
+                                                    >
+                                                        Envoyer le mot de passe par email
+                                                    </Button>
+                                                </Popconfirm>
+                                            )}
+                                        </Space>
+                                    </Col>
+                                </Row>
                                 <Form.Item
                                     name="couleur"
                                     label="Couleur"

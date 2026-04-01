@@ -1,3 +1,4 @@
+import { fetchWithAuth } from './api.ts';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Typography, Row, Col, Card, Input, Button, Space, Divider, Tag, Modal, theme } from 'antd';
 import { SmileOutlined, RobotOutlined, SendOutlined, QuestionCircleOutlined, AudioOutlined, AudioMutedOutlined } from '@ant-design/icons';
@@ -216,7 +217,7 @@ export default function Home() {
     };
 
     const mcpRequest = async (method: string, params: any): Promise<JsonRpcResponse> => {
-        const response = await fetch('/mcp', {
+        const response = await fetchWithAuth('/mcp', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -299,7 +300,7 @@ export default function Home() {
     };
 
     const callAiChat = async (provider: AiProvider, message: string) => {
-        const response = await fetch('/ai/chat', {
+        const response = await fetchWithAuth('/ai/chat', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
