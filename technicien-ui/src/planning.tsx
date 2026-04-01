@@ -18,9 +18,11 @@ import {
     Tag,
     message,
 } from 'antd';
-import { CheckCircleOutlined, ClockCircleOutlined, EditOutlined, ExclamationCircleOutlined, ReloadOutlined } from '@ant-design/icons';
+import { CheckCircleOutlined, ClockCircleOutlined, EditOutlined, ExclamationCircleOutlined, FileOutlined, PictureOutlined, ReloadOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import api from './api.ts';
+import ImageUpload from './ImageUpload.tsx';
+import DocumentUpload from './DocumentUpload.tsx';
 
 type TaskStatus = 'EN_ATTENTE' | 'PLANIFIEE' | 'EN_COURS' | 'TERMINEE' | 'INCIDENT' | 'ANNULEE';
 
@@ -51,6 +53,8 @@ interface PlanningItem {
     bateauNom?: string;
     quantite?: number;
     taches?: ChecklistItem[];
+    images?: string[];
+    documents?: string[];
 }
 
 interface PlanningProps {
@@ -104,6 +108,8 @@ export default function Planning({ technicienId }: PlanningProps) {
     const [modalVisible, setModalVisible] = useState(false);
     const [currentItem, setCurrentItem] = useState<PlanningItem | null>(null);
     const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
+    const [images, setImages] = useState<string[]>([]);
+    const [documents, setDocuments] = useState<string[]>([]);
     const [form] = Form.useForm();
     const [saving, setSaving] = useState(false);
 
@@ -138,6 +144,8 @@ export default function Planning({ technicienId }: PlanningProps) {
     const openUpdateModal = (item: PlanningItem) => {
         setCurrentItem(item);
         setChecklist((item.taches || []).map((t) => ({ ...t })));
+        setImages(item.images || []);
+        setDocuments(item.documents || []);
         form.setFieldsValue({
             status: item.itemStatus || 'EN_COURS',
             dureeReelle: item.dureeReelle || 0,
@@ -169,6 +177,8 @@ export default function Planning({ technicienId }: PlanningProps) {
             const updated = res.data;
             setCurrentItem({ ...item, ...updated, itemStatus: updated.itemStatus || 'EN_COURS' });
             setChecklist((updated.taches || item.taches || []).map((t: ChecklistItem) => ({ ...t })));
+            setImages(updated.images || item.images || []);
+            setDocuments(updated.documents || item.documents || []);
             form.setFieldsValue({
                 status: 'EN_COURS',
                 dureeReelle: updated.dureeReelle ?? item.dureeReelle ?? 0,
@@ -213,6 +223,8 @@ export default function Planning({ technicienId }: PlanningProps) {
                             dureeReelle,
                             notes: values.notes || '',
                             taches: updated.map((c) => ({ taskId: c.id, done: c.done })),
+                            images,
+                            documents,
                         });
                         message.success('Intervention terminée');
                         fetchItems();
@@ -244,12 +256,20 @@ export default function Planning({ technicienId }: PlanningProps) {
                 incidentDate: values.status === 'INCIDENT' ? (dayjs.isDayjs(values.incidentDate) ? values.incidentDate.format('YYYY-MM-DDTHH:mm:ss') : values.incidentDate) : null,
                 incidentDetails: values.status === 'INCIDENT' ? values.incidentDetails : null,
                 taches: checklist.map((c) => ({ taskId: c.id, done: c.done })),
+                images,
+                documents,
             });
             message.success('Tache mise a jour');
             const updated = res.data;
             setCurrentItem({ ...currentItem, ...updated, itemStatus: updated.itemStatus || values.status });
             if (updated.taches) {
                 setChecklist(updated.taches.map((t: ChecklistItem) => ({ ...t })));
+            }
+            if (updated.images) {
+                setImages(updated.images);
+            }
+            if (updated.documents) {
+                setDocuments(updated.documents);
             }
             form.setFieldsValue({
                 status: updated.itemStatus || values.status,
@@ -358,6 +378,8 @@ export default function Planning({ technicienId }: PlanningProps) {
                                 onClick={() => {
                                     setCurrentItem(record);
                                     setChecklist((record.taches || []).map((t) => ({ ...t })));
+                                    setImages(record.images || []);
+                                    setDocuments(record.documents || []);
                                     form.setFieldsValue({
                                         status: 'INCIDENT',
                                         dureeReelle: record.dureeReelle || 0,
@@ -387,6 +409,8 @@ export default function Planning({ technicienId }: PlanningProps) {
                                     }
                                     setCurrentItem(record);
                                     setChecklist((record.taches || []).map((t) => ({ ...t })));
+                                    setImages(record.images || []);
+                                    setDocuments(record.documents || []);
                                     form.setFieldsValue({
                                         status: 'TERMINEE',
                                         dureeReelle,
@@ -478,6 +502,8 @@ export default function Planning({ technicienId }: PlanningProps) {
                     setModalVisible(false);
                     setCurrentItem(null);
                     setChecklist([]);
+                    setImages([]);
+                    setDocuments([]);
                     form.resetFields();
                 }}
                 destroyOnHidden
@@ -549,6 +575,12 @@ export default function Planning({ technicienId }: PlanningProps) {
                             ))}
                         </Card>
                     )}
+                    <Card size="small" title={<><PictureOutlined /> Images</>} style={{ marginBottom: 12 }}>
+                        <ImageUpload value={images} onChange={setImages} />
+                    </Card>
+                    <Card size="small" title={<><FileOutlined /> Documents</>} style={{ marginBottom: 12 }}>
+                        <DocumentUpload value={documents} onChange={setDocuments} />
+                    </Card>
                     <Form.Item noStyle shouldUpdate={(prev, cur) => prev?.status !== cur?.status}>
                         {({ getFieldValue }) => {
                             if (getFieldValue('status') !== 'INCIDENT') return null;

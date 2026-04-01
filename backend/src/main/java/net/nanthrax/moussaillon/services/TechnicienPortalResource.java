@@ -71,6 +71,8 @@ public class TechnicienPortalResource {
         public String incidentDetails;
         public String notes;
         public List<ChecklistUpdate> taches;
+        public List<String> images;
+        public List<String> documents;
     }
 
     public static class ChecklistUpdate {
@@ -105,6 +107,8 @@ public class TechnicienPortalResource {
         public String bateauNom;
         public int quantite;
         public List<ChecklistItem> taches;
+        public List<String> images;
+        public List<String> documents;
 
         public static PlanningItemWithVente fromForfait(VenteForfaitEntity vf, VenteEntity vente) {
             PlanningItemWithVente item = new PlanningItemWithVente();
@@ -141,6 +145,8 @@ public class TechnicienPortalResource {
                     item.taches.add(ci);
                 }
             }
+            item.images = vf.images != null ? new ArrayList<>(vf.images) : new ArrayList<>();
+            item.documents = vf.documents != null ? new ArrayList<>(vf.documents) : new ArrayList<>();
             return item;
         }
 
@@ -179,6 +185,8 @@ public class TechnicienPortalResource {
                     item.taches.add(ci);
                 }
             }
+            item.images = vs.images != null ? new ArrayList<>(vs.images) : new ArrayList<>();
+            item.documents = vs.documents != null ? new ArrayList<>(vs.documents) : new ArrayList<>();
             return item;
         }
     }
@@ -298,6 +306,14 @@ public class TechnicienPortalResource {
             vf.incidentDetails = request.incidentDetails;
         }
 
+        // Update images and documents (append only)
+        if (request.images != null) {
+            vf.images = request.images;
+        }
+        if (request.documents != null) {
+            vf.documents = request.documents;
+        }
+
         // Update checklist items
         if (request.taches != null) {
             for (ChecklistUpdate cu : request.taches) {
@@ -360,6 +376,14 @@ public class TechnicienPortalResource {
                 vs.incidentDate = Date.valueOf(request.incidentDate);
             }
             vs.incidentDetails = request.incidentDetails;
+        }
+
+        // Update images and documents (append only)
+        if (request.images != null) {
+            vs.images = request.images;
+        }
+        if (request.documents != null) {
+            vs.documents = request.documents;
         }
 
         // Update checklist items

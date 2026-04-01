@@ -61,4 +61,8 @@ public class VenteServiceEntity extends PanacheEntity {
     @JoinColumn(name = "vente_service_id")
     public List<TaskEntity> taches = new ArrayList<>();
 
+    public List<String> images = new ArrayList<>();
+
+    public List<String> documents = new ArrayList<>();
+
 }
