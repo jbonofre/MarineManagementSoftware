@@ -88,7 +88,7 @@ const formatDate = (value?: string) => {
     if (!value) return '-';
     const parsed = new Date(value);
     if (isNaN(parsed.getTime())) return value;
-    return parsed.toLocaleDateString('fr-FR');
+    return parsed.toLocaleString('fr-FR');
 };
 
 const todayIso = () => {
@@ -241,7 +241,7 @@ export default function Planning({ technicienId }: PlanningProps) {
                 dureeReelle: values.dureeReelle || 0,
                 dateFin: values.status === 'TERMINEE' ? nowIso() : undefined,
                 notes: values.notes || '',
-                incidentDate: values.status === 'INCIDENT' ? (dayjs.isDayjs(values.incidentDate) ? values.incidentDate.format('YYYY-MM-DD') : values.incidentDate) : null,
+                incidentDate: values.status === 'INCIDENT' ? (dayjs.isDayjs(values.incidentDate) ? values.incidentDate.format('YYYY-MM-DDTHH:mm:ss') : values.incidentDate) : null,
                 incidentDetails: values.status === 'INCIDENT' ? values.incidentDetails : null,
                 taches: checklist.map((c) => ({ taskId: c.id, done: c.done })),
             });
@@ -559,7 +559,7 @@ export default function Planning({ technicienId }: PlanningProps) {
                                         label="Date de l'incident"
                                         rules={[{ required: true, message: "La date de l'incident est requise" }]}
                                     >
-                                        <DatePicker style={{ width: '100%' }} />
+                                        <DatePicker showTime style={{ width: '100%' }} />
                                     </Form.Item>
                                     <Form.Item
                                         name="incidentDetails"

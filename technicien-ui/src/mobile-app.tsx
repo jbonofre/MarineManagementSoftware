@@ -103,7 +103,7 @@ const formatDate = (value?: string) => {
     if (!value) return '-';
     const parsed = new Date(value);
     if (isNaN(parsed.getTime())) return value;
-    return parsed.toLocaleDateString('fr-FR');
+    return parsed.toLocaleString('fr-FR');
 };
 
 export default function MobileApp({ user, onLogout, onChangePassword }: MobileAppProps) {
@@ -167,7 +167,7 @@ export default function MobileApp({ user, onLogout, onChangePassword }: MobileAp
                 status: values.status,
                 dureeReelle: values.dureeReelle || 0,
                 notes: values.notes || '',
-                incidentDate: values.status === 'INCIDENT' ? (dayjs.isDayjs(values.incidentDate) ? values.incidentDate.format('YYYY-MM-DD') : values.incidentDate) : null,
+                incidentDate: values.status === 'INCIDENT' ? (dayjs.isDayjs(values.incidentDate) ? values.incidentDate.format('YYYY-MM-DDTHH:mm:ss') : values.incidentDate) : null,
                 incidentDetails: values.status === 'INCIDENT' ? values.incidentDetails : null,
                 taches: checklist.map((c) => ({ taskId: c.id, done: c.done })),
             });
@@ -374,7 +374,7 @@ export default function MobileApp({ user, onLogout, onChangePassword }: MobileAp
                             return (
                                 <Card size="small" title="Incident" style={{ marginBottom: 12, borderColor: '#ff4d4f' }}>
                                     <Form.Item name="incidentDate" label="Date de l'incident" rules={[{ required: true, message: 'Requise' }]}>
-                                        <DatePicker style={{ width: '100%' }} />
+                                        <DatePicker showTime style={{ width: '100%' }} />
                                     </Form.Item>
                                     <Form.Item name="incidentDetails" label="Details" rules={[{ required: true, message: 'Requis' }]}>
                                         <Input.TextArea rows={3} />

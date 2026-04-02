@@ -409,7 +409,7 @@ const defaultVente: VenteFormValues = {
 };
 
 const formatEuro = (value?: number) => `${(value || 0).toFixed(2)} EUR`;
-const formatDate = (value?: string) => value || '-';
+const formatDate = (value?: string) => value ? value.split('T')[0] : '-';
 const escapeHtml = (value: string) =>
     value
         .replace(/&/g, '&amp;')
@@ -1656,7 +1656,7 @@ export default function Vente() {
         {
             title: 'Date',
             dataIndex: 'date',
-            render: (value: string) => value || '-'
+            render: (value: string) => formatDate(value)
         },
         {
             title: 'Type',
