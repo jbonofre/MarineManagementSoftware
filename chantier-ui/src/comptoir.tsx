@@ -15,10 +15,12 @@ import {
     Space,
     Table,
     Tag,
+    DatePicker,
     Dropdown,
     message
 } from 'antd';
 import { CreditCardOutlined, DeleteOutlined, EditOutlined, PlusCircleOutlined, PlusOutlined, PrinterOutlined, FileTextOutlined } from '@ant-design/icons';
+import dayjs from 'dayjs';
 import api from './api.ts';
 import ImageUpload from './ImageUpload.tsx';
 
@@ -191,39 +193,22 @@ const defaultVente: VenteFormValues = {
     prixVenteTTC: 0
 };
 
-const getTodayIsoDate = () => {
-    const now = new Date();
-    const timezoneOffsetMs = now.getTimezoneOffset() * 60000;
-    return new Date(now.getTime() - timezoneOffsetMs).toISOString().split('T')[0];
-};
+const getTodayDayjs = () => dayjs();
 
-const toDateInputValue = (value?: string) => {
+const toDateDayjs = (value?: string) => {
     if (!value) {
         return undefined;
     }
-    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-        return value;
-    }
-    const parsedDate = new Date(value);
-    if (Number.isNaN(parsedDate.getTime())) {
-        return undefined;
-    }
-    const timezoneOffsetMs = parsedDate.getTimezoneOffset() * 60000;
-    return new Date(parsedDate.getTime() - timezoneOffsetMs).toISOString().split('T')[0];
+    const d = dayjs(value);
+    return d.isValid() ? d : undefined;
 };
 
-const toBackendDateValue = (value?: string) => {
+const toBackendDateValue = (value?: dayjs.Dayjs | string) => {
     if (!value) {
         return undefined;
     }
-    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-        return value;
-    }
-    const parsedDate = new Date(value);
-    if (Number.isNaN(parsedDate.getTime())) {
-        return undefined;
-    }
-    return parsedDate.toISOString().split('T')[0];
+    const d = dayjs.isDayjs(value) ? value : dayjs(value);
+    return d.isValid() ? d.format('YYYY-MM-DD') : undefined;
 };
 
 const formatEuro = (value?: number) => `${(value || 0).toFixed(2)} EUR`;
@@ -438,7 +423,7 @@ export default function Comptoir() {
                 forfaits: (vente.forfaits || []).filter((item) => !!item?.id).map((item) => ({ forfaitId: item.id, quantite: 1 })),
                 produits: [...produitLines, {}],
                 services: (vente.services || []).filter((item) => !!item?.id).map((item) => ({ serviceId: item.id, quantite: 1 })),
-                date: toDateInputValue(vente.date),
+                date: toDateDayjs(vente.date),
                 montantHT: vente.montantHT || 0,
                 remise: vente.remise || 0,
                 remisePourcentage: vente.montantTTC ? Math.round((((vente.remise || 0) / vente.montantTTC) * 100 + Number.EPSILON) * 100) / 100 : 0,
@@ -452,7 +437,7 @@ export default function Comptoir() {
             setIsEdit(false);
             setCurrentVente(null);
             form.resetFields();
-            form.setFieldsValue({ ...defaultVente, date: getTodayIsoDate() });
+            form.setFieldsValue({ ...defaultVente, date: getTodayDayjs() });
         }
         setFormDirty(false);
         setModalVisible(true);
@@ -1005,7 +990,7 @@ export default function Comptoir() {
                     <Row gutter={16}>
                         <Col span={8}>
                             <Form.Item name="date" label="Date">
-                                <Input type="date" />
+                                <DatePicker style={{ width: '100%' }} />
                             </Form.Item>
                         </Col>
                         <Col span={8}>

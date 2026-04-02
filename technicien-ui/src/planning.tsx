@@ -7,6 +7,7 @@ import {
     Col,
     Empty,
     Form,
+    DatePicker,
     Input,
     InputNumber,
     Modal,
@@ -18,6 +19,7 @@ import {
     message,
 } from 'antd';
 import { CheckCircleOutlined, ClockCircleOutlined, EditOutlined, ExclamationCircleOutlined, ReloadOutlined } from '@ant-design/icons';
+import dayjs from 'dayjs';
 import api from './api.ts';
 
 type TaskStatus = 'EN_ATTENTE' | 'PLANIFIEE' | 'EN_COURS' | 'TERMINEE' | 'INCIDENT' | 'ANNULEE';
@@ -86,7 +88,7 @@ const formatDate = (value?: string) => {
     if (!value) return '-';
     const parsed = new Date(value);
     if (isNaN(parsed.getTime())) return value;
-    return parsed.toLocaleDateString('fr-FR');
+    return parsed.toLocaleString('fr-FR');
 };
 
 const todayIso = () => {
@@ -140,7 +142,7 @@ export default function Planning({ technicienId }: PlanningProps) {
             status: item.itemStatus || 'EN_COURS',
             dureeReelle: item.dureeReelle || 0,
             notes: item.notes || '',
-            incidentDate: item.incidentDate || todayIso(),
+            incidentDate: item.incidentDate ? dayjs(item.incidentDate) : dayjs(),
             incidentDetails: item.incidentDetails || '',
         });
         setModalVisible(true);
@@ -171,7 +173,7 @@ export default function Planning({ technicienId }: PlanningProps) {
                 status: 'EN_COURS',
                 dureeReelle: updated.dureeReelle ?? item.dureeReelle ?? 0,
                 notes: updated.notes ?? item.notes ?? '',
-                incidentDate: todayIso(),
+                incidentDate: dayjs(),
                 incidentDetails: '',
             });
             setModalVisible(true);
@@ -239,7 +241,7 @@ export default function Planning({ technicienId }: PlanningProps) {
                 dureeReelle: values.dureeReelle || 0,
                 dateFin: values.status === 'TERMINEE' ? nowIso() : undefined,
                 notes: values.notes || '',
-                incidentDate: values.status === 'INCIDENT' ? values.incidentDate : null,
+                incidentDate: values.status === 'INCIDENT' ? (dayjs.isDayjs(values.incidentDate) ? values.incidentDate.format('YYYY-MM-DDTHH:mm:ss') : values.incidentDate) : null,
                 incidentDetails: values.status === 'INCIDENT' ? values.incidentDetails : null,
                 taches: checklist.map((c) => ({ taskId: c.id, done: c.done })),
             });
@@ -253,7 +255,7 @@ export default function Planning({ technicienId }: PlanningProps) {
                 status: updated.itemStatus || values.status,
                 dureeReelle: updated.dureeReelle ?? values.dureeReelle,
                 notes: updated.notes ?? values.notes,
-                incidentDate: updated.incidentDate || values.incidentDate,
+                incidentDate: updated.incidentDate ? dayjs(updated.incidentDate) : values.incidentDate,
                 incidentDetails: updated.incidentDetails || values.incidentDetails,
             });
             fetchItems();
@@ -360,7 +362,7 @@ export default function Planning({ technicienId }: PlanningProps) {
                                         status: 'INCIDENT',
                                         dureeReelle: record.dureeReelle || 0,
                                         notes: record.notes || '',
-                                        incidentDate: record.incidentDate || todayIso(),
+                                        incidentDate: record.incidentDate ? dayjs(record.incidentDate) : dayjs(),
                                         incidentDetails: record.incidentDetails || '',
                                     });
                                     setModalVisible(true);
@@ -389,7 +391,7 @@ export default function Planning({ technicienId }: PlanningProps) {
                                         status: 'TERMINEE',
                                         dureeReelle,
                                         notes: record.notes || '',
-                                        incidentDate: todayIso(),
+                                        incidentDate: dayjs(),
                                         incidentDetails: '',
                                     });
                                     setModalVisible(true);
@@ -557,7 +559,7 @@ export default function Planning({ technicienId }: PlanningProps) {
                                         label="Date de l'incident"
                                         rules={[{ required: true, message: "La date de l'incident est requise" }]}
                                     >
-                                        <Input type="date" />
+                                        <DatePicker showTime style={{ width: '100%' }} />
                                     </Form.Item>
                                     <Form.Item
                                         name="incidentDetails"

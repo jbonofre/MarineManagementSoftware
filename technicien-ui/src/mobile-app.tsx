@@ -4,6 +4,7 @@ import {
     Button,
     Card,
     Checkbox,
+    DatePicker,
     Form,
     Input,
     InputNumber,
@@ -28,6 +29,7 @@ import {
     UserOutlined,
     WarningOutlined,
 } from '@ant-design/icons';
+import dayjs from 'dayjs';
 import api from './api.ts';
 
 interface Technicien {
@@ -101,7 +103,7 @@ const formatDate = (value?: string) => {
     if (!value) return '-';
     const parsed = new Date(value);
     if (isNaN(parsed.getTime())) return value;
-    return parsed.toLocaleDateString('fr-FR');
+    return parsed.toLocaleString('fr-FR');
 };
 
 export default function MobileApp({ user, onLogout, onChangePassword }: MobileAppProps) {
@@ -143,7 +145,7 @@ export default function MobileApp({ user, onLogout, onChangePassword }: MobileAp
             status: presetStatus || item.itemStatus || 'EN_COURS',
             dureeReelle: item.dureeReelle || 0,
             notes: item.notes || '',
-            incidentDate: item.incidentDate || todayIso(),
+            incidentDate: item.incidentDate ? dayjs(item.incidentDate) : dayjs(),
             incidentDetails: item.incidentDetails || '',
         });
         setModalVisible(true);
@@ -165,7 +167,7 @@ export default function MobileApp({ user, onLogout, onChangePassword }: MobileAp
                 status: values.status,
                 dureeReelle: values.dureeReelle || 0,
                 notes: values.notes || '',
-                incidentDate: values.status === 'INCIDENT' ? values.incidentDate : null,
+                incidentDate: values.status === 'INCIDENT' ? (dayjs.isDayjs(values.incidentDate) ? values.incidentDate.format('YYYY-MM-DDTHH:mm:ss') : values.incidentDate) : null,
                 incidentDetails: values.status === 'INCIDENT' ? values.incidentDetails : null,
                 taches: checklist.map((c) => ({ taskId: c.id, done: c.done })),
             });
@@ -179,7 +181,7 @@ export default function MobileApp({ user, onLogout, onChangePassword }: MobileAp
                 status: updated.itemStatus || values.status,
                 dureeReelle: updated.dureeReelle ?? values.dureeReelle,
                 notes: updated.notes ?? values.notes,
-                incidentDate: updated.incidentDate || values.incidentDate,
+                incidentDate: updated.incidentDate ? dayjs(updated.incidentDate) : values.incidentDate,
                 incidentDetails: updated.incidentDetails || values.incidentDetails,
             });
             fetchItems();
@@ -372,7 +374,7 @@ export default function MobileApp({ user, onLogout, onChangePassword }: MobileAp
                             return (
                                 <Card size="small" title="Incident" style={{ marginBottom: 12, borderColor: '#ff4d4f' }}>
                                     <Form.Item name="incidentDate" label="Date de l'incident" rules={[{ required: true, message: 'Requise' }]}>
-                                        <Input type="date" />
+                                        <DatePicker showTime style={{ width: '100%' }} />
                                     </Form.Item>
                                     <Form.Item name="incidentDetails" label="Details" rules={[{ required: true, message: 'Requis' }]}>
                                         <Input.TextArea rows={3} />
