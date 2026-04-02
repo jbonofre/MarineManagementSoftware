@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Space, Table, Button, Input, Form, Modal, Card, Row, Col, Popconfirm, message, Drawer, Statistic, Progress, Divider, Spin, Checkbox } from 'antd';
+import { Space, Table, Button, Input, Form, Modal, Card, Row, Col, Popconfirm, message, Drawer, Statistic, Progress, Divider, Spin, Checkbox, ColorPicker } from 'antd';
 import { PlusCircleOutlined, EditOutlined, DeleteOutlined, UserOutlined, BarChartOutlined, CheckCircleOutlined, ClockCircleOutlined, ExclamationCircleOutlined, WarningOutlined, EuroCircleOutlined, KeyOutlined, MailOutlined } from '@ant-design/icons';
 import api from './api.ts';
 
@@ -441,11 +441,9 @@ const Techniciens: React.FC = () => {
                                 <Form.Item
                                     name="couleur"
                                     label="Couleur"
-                                    rules={[
-                                        { pattern: /^#[0-9A-Fa-f]{6}$/, message: 'Format attendu: #RRGGBB' }
-                                    ]}
+                                    getValueFromEvent={(color) => color?.toHexString?.() ?? color}
                                 >
-                                    <Input type="color" />
+                                    <ColorPicker format="hex" />
                                 </Form.Item>
                             </Form>
                         </Modal>
