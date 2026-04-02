@@ -16,10 +16,12 @@ import {
     Tabs,
     Table,
     Tag,
+    DatePicker,
     Dropdown,
     message
 } from 'antd';
 import { CalendarOutlined, CreditCardOutlined, DeleteOutlined, EditOutlined, MailOutlined, PlusCircleOutlined, PlusOutlined, PrinterOutlined, SendOutlined } from '@ant-design/icons';
+import dayjs from 'dayjs';
 import api from './api.ts';
 import { useHistory } from 'react-router-dom';
 import ImageUpload from './ImageUpload.tsx';
@@ -371,44 +373,22 @@ const statusColor: Record<VenteStatus, string> = {
     ANNULEE: 'red'
 };
 
-const getTodayIsoDate = () => {
-    const now = new Date();
-    const timezoneOffsetMs = now.getTimezoneOffset() * 60000;
-    return new Date(now.getTime() - timezoneOffsetMs).toISOString().split('T')[0];
-};
+const getTodayDayjs = () => dayjs();
 
-const toDateInputValue = (value?: string) => {
+const toDateDayjs = (value?: string) => {
     if (!value) {
         return undefined;
     }
-    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-        return value;
-    }
-    // Handle ISO datetime like "2025-06-15T10:00:00"
-    if (/^\d{4}-\d{2}-\d{2}T/.test(value)) {
-        return value.slice(0, 10);
-    }
-    const parsedDate = new Date(value);
-    if (Number.isNaN(parsedDate.getTime())) {
-        return undefined;
-    }
-    const timezoneOffsetMs = parsedDate.getTimezoneOffset() * 60000;
-    return new Date(parsedDate.getTime() - timezoneOffsetMs).toISOString().split('T')[0];
+    const d = dayjs(value);
+    return d.isValid() ? d : undefined;
 };
 
-
-const toBackendDateValue = (value?: string) => {
+const toBackendDateValue = (value?: dayjs.Dayjs | string) => {
     if (!value) {
         return undefined;
     }
-    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-        return value;
-    }
-    const parsedDate = new Date(value);
-    if (Number.isNaN(parsedDate.getTime())) {
-        return undefined;
-    }
-    return parsedDate.toISOString().split('T')[0];
+    const d = dayjs.isDayjs(value) ? value : dayjs(value);
+    return d.isValid() ? d.format('YYYY-MM-DD') : undefined;
 };
 
 const defaultVente: VenteFormValues = {
@@ -1032,7 +1012,7 @@ export default function Vente() {
 
     const openNewBateauModal = () => {
         newBateauForm.resetFields();
-        newBateauForm.setFieldsValue({ name: '', immatriculation: '', numeroSerie: '', numeroClef: '', dateMeS: '', dateAchat: '', dateFinDeGuarantie: '', localisation: '' });
+        newBateauForm.setFieldsValue({ name: '', immatriculation: '', numeroSerie: '', numeroClef: '', dateMeS: null, dateAchat: null, dateFinDeGuarantie: null, localisation: '' });
         setNewBateauFormDirty(false);
         setNewBateauModalVisible(true);
     };
@@ -1050,7 +1030,7 @@ export default function Vente() {
 
     const openNewMoteurModal = () => {
         newMoteurForm.resetFields();
-        newMoteurForm.setFieldsValue({ numeroSerie: '', numeroClef: '', dateMeS: '', dateAchat: '', dateFinDeGuarantie: '' });
+        newMoteurForm.setFieldsValue({ numeroSerie: '', numeroClef: '', dateMeS: null, dateAchat: null, dateFinDeGuarantie: null });
         setNewMoteurFormDirty(false);
         setNewMoteurModalVisible(true);
     };
@@ -1068,7 +1048,7 @@ export default function Vente() {
 
     const openNewRemorqueModal = () => {
         newRemorqueForm.resetFields();
-        newRemorqueForm.setFieldsValue({ immatriculation: '', dateMeS: '', dateAchat: '', dateFinDeGuarantie: '' });
+        newRemorqueForm.setFieldsValue({ immatriculation: '', dateMeS: null, dateAchat: null, dateFinDeGuarantie: null });
         setNewRemorqueFormDirty(false);
         setNewRemorqueModalVisible(true);
     };
@@ -1103,7 +1083,7 @@ export default function Vente() {
             dateFin: vf.dateFin,
             dureeReelle: vf.dureeReelle || 0,
             notes: vf.notes || '',
-            incidentDate: toDateInputValue(vf.incidentDate),
+            incidentDate: toDateDayjs(vf.incidentDate),
             incidentDetails: vf.incidentDetails || '',
             taches: (vf.taches || []).map(t => ({ nom: t.nom || '', description: t.description || '', done: t.done || false })),
         }));
@@ -1117,7 +1097,7 @@ export default function Vente() {
             dateFin: vs.dateFin,
             dureeReelle: vs.dureeReelle || 0,
             notes: vs.notes || '',
-            incidentDate: toDateInputValue(vs.incidentDate),
+            incidentDate: toDateDayjs(vs.incidentDate),
             incidentDetails: vs.incidentDetails || '',
             taches: (vs.taches || []).map(t => ({ nom: t.nom || '', description: t.description || '', done: t.done || false })),
         }));
@@ -1140,7 +1120,7 @@ export default function Vente() {
             venteForfaits: [...venteForfaitLines, { status: 'EN_ATTENTE', quantite: 1 }],
             venteServices: [...venteServiceLines, { status: 'EN_ATTENTE', quantite: 1 }],
             produits: [...produitLines, { quantite: 1 }],
-            date: toDateInputValue(vente.date) || getTodayIsoDate(),
+            date: toDateDayjs(vente.date) || getTodayDayjs(),
             montantHT: vente.montantHT || 0,
             remise: vente.remise || 0,
             remisePourcentage: vente.montantTTC ? Math.round((((vente.remise || 0) / vente.montantTTC) * 100 + Number.EPSILON) * 100) / 100 : 0,
@@ -1219,7 +1199,7 @@ export default function Vente() {
             setRappelHistorique([]);
             snapshotSavedLines(null);
             form.resetFields();
-            form.setFieldsValue({ ...defaultVente, date: getTodayIsoDate() });
+            form.setFieldsValue({ ...defaultVente, date: getTodayDayjs() });
             setFormDirty(false);
             setModalVisible(true);
         }
@@ -1254,7 +1234,7 @@ export default function Vente() {
                     status: line.status || 'EN_ATTENTE',
                     dureeReelle: line.dureeReelle || existingVf?.dureeReelle || 0,
                     notes: line.notes || '',
-                    incidentDate: line.incidentDate,
+                    incidentDate: toBackendDateValue(line.incidentDate),
                     incidentDetails: line.incidentDetails || '',
                     taches,
                 };
@@ -1278,7 +1258,7 @@ export default function Vente() {
                     status: line.status || 'EN_ATTENTE',
                     dureeReelle: line.dureeReelle || existingVs?.dureeReelle || 0,
                     notes: line.notes || '',
-                    incidentDate: line.incidentDate,
+                    incidentDate: toBackendDateValue(line.incidentDate),
                     incidentDetails: line.incidentDetails || '',
                     taches,
                 };
@@ -1873,7 +1853,7 @@ export default function Vente() {
                         </Col>
                         <Col span={6}>
                             <Form.Item name="date" label="Date">
-                                <Input type="date" />
+                                <DatePicker style={{ width: '100%' }} />
                             </Form.Item>
                         </Col>
                         <Col span={6}>
@@ -2991,17 +2971,17 @@ export default function Vente() {
                     <Row gutter={16}>
                         <Col span={8}>
                             <Form.Item name="dateMeS" label="Date MeS">
-                                <Input type="date" />
+                                <DatePicker style={{ width: '100%' }} />
                             </Form.Item>
                         </Col>
                         <Col span={8}>
                             <Form.Item name="dateAchat" label="Date achat">
-                                <Input type="date" />
+                                <DatePicker style={{ width: '100%' }} />
                             </Form.Item>
                         </Col>
                         <Col span={8}>
                             <Form.Item name="dateFinDeGuarantie" label="Date fin garantie">
-                                <Input type="date" />
+                                <DatePicker style={{ width: '100%' }} />
                             </Form.Item>
                         </Col>
                     </Row>
@@ -3097,17 +3077,17 @@ export default function Vente() {
                     <Row gutter={16}>
                         <Col span={8}>
                             <Form.Item name="dateMeS" label="Date MeS">
-                                <Input type="date" />
+                                <DatePicker style={{ width: '100%' }} />
                             </Form.Item>
                         </Col>
                         <Col span={8}>
                             <Form.Item name="dateAchat" label="Date achat">
-                                <Input type="date" />
+                                <DatePicker style={{ width: '100%' }} />
                             </Form.Item>
                         </Col>
                         <Col span={8}>
                             <Form.Item name="dateFinDeGuarantie" label="Date fin garantie">
-                                <Input type="date" />
+                                <DatePicker style={{ width: '100%' }} />
                             </Form.Item>
                         </Col>
                     </Row>
@@ -3170,17 +3150,17 @@ export default function Vente() {
                     <Row gutter={16}>
                         <Col span={8}>
                             <Form.Item name="dateMeS" label="Date MeS">
-                                <Input type="date" />
+                                <DatePicker style={{ width: '100%' }} />
                             </Form.Item>
                         </Col>
                         <Col span={8}>
                             <Form.Item name="dateAchat" label="Date achat">
-                                <Input type="date" />
+                                <DatePicker style={{ width: '100%' }} />
                             </Form.Item>
                         </Col>
                         <Col span={8}>
                             <Form.Item name="dateFinDeGuarantie" label="Date fin garantie">
-                                <Input type="date" />
+                                <DatePicker style={{ width: '100%' }} />
                             </Form.Item>
                         </Col>
                     </Row>

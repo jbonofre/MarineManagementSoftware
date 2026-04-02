@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Badge, Button, Card, Col, Empty, Form, Input, Modal, Row, Select, Space, Table, Tag, Typography, message } from 'antd';
+import { Badge, Button, Card, Col, DatePicker, Empty, Form, Input, Modal, Row, Select, Space, Table, Tag, Typography, message } from 'antd';
 import { CalendarOutlined, EditOutlined, EyeOutlined, WarningOutlined } from '@ant-design/icons';
 import api from './api.ts';
 import dayjs from 'dayjs';
@@ -168,15 +168,12 @@ const toIsoDay = (value?: string) => {
     return parsed.format('YYYY-MM-DD');
 };
 
-const toDateTimeLocalValue = (value?: string) => {
+const toDayjs = (value?: string) => {
     if (!value) {
         return undefined;
     }
     const parsed = dayjs(value);
-    if (!parsed.isValid()) {
-        return undefined;
-    }
-    return parsed.format('YYYY-MM-DDTHH:mm');
+    return parsed.isValid() ? parsed : undefined;
 };
 
 const getTechnicienColor = (techniciens?: TechnicienEntity[]) => {
@@ -328,11 +325,11 @@ export default function Planning() {
         setCurrentRow(row);
         form.setFieldsValue({
             date:
-                toDateTimeLocalValue(row.item.statusDate)
-                || (forcedDate ? `${forcedDate}T08:00` : undefined)
-                || `${selectedDate || todayIso()}T08:00`,
-            dateDebut: toDateTimeLocalValue(row.item.dateDebut) || undefined,
-            dateFin: toDateTimeLocalValue(row.item.dateFin) || undefined,
+                toDayjs(row.item.statusDate)
+                || (forcedDate ? dayjs(`${forcedDate}T08:00`) : undefined)
+                || dayjs(`${selectedDate || todayIso()}T08:00`),
+            dateDebut: toDayjs(row.item.dateDebut),
+            dateFin: toDayjs(row.item.dateFin),
             dureeReelle: row.item.dureeReelle,
             status: row.item.status === 'EN_ATTENTE' ? 'PLANIFIEE' : (row.item.status || 'PLANIFIEE'),
             technicienIds: (row.item.techniciens || []).map(t => t.id),
@@ -485,9 +482,9 @@ export default function Planning() {
             latestList[itemToUpdateIndex] = {
                 ...latestList[itemToUpdateIndex],
                 status: values.status,
-                statusDate: values.date,
-                dateDebut: values.dateDebut || latestList[itemToUpdateIndex].dateDebut,
-                dateFin: values.dateFin || latestList[itemToUpdateIndex].dateFin,
+                statusDate: dayjs.isDayjs(values.date) ? values.date.format('YYYY-MM-DDTHH:mm') : values.date,
+                dateDebut: (dayjs.isDayjs(values.dateDebut) ? values.dateDebut.format('YYYY-MM-DDTHH:mm') : values.dateDebut) || latestList[itemToUpdateIndex].dateDebut,
+                dateFin: (dayjs.isDayjs(values.dateFin) ? values.dateFin.format('YYYY-MM-DDTHH:mm') : values.dateFin) || latestList[itemToUpdateIndex].dateFin,
                 dureeReelle: values.dureeReelle,
                 techniciens: (values.technicienIds || []).map((id: number) => techniciens.find((t) => t.id === id)).filter(Boolean) as TechnicienEntity[],
             };
@@ -544,9 +541,9 @@ export default function Planning() {
 
             setCurrentRow({ ...currentRow, vente: savedVente, item: savedItem });
             form.setFieldsValue({
-                date: toDateTimeLocalValue(savedEntry.statusDate) || values.date,
-                dateDebut: savedEntry.dateDebut || values.dateDebut,
-                dateFin: savedEntry.dateFin || values.dateFin,
+                date: toDayjs(savedEntry.statusDate) || values.date,
+                dateDebut: toDayjs(savedEntry.dateDebut) || values.dateDebut,
+                dateFin: toDayjs(savedEntry.dateFin) || values.dateFin,
                 dureeReelle: savedEntry.dureeReelle ?? values.dureeReelle,
                 status: savedEntry.status || values.status,
                 technicienIds: (savedEntry.techniciens || []).map((t: TechnicienEntity) => t.id),
@@ -686,7 +683,7 @@ export default function Planning() {
                 <Col flex="auto">
                     <Card size="small" title="Filtres">
                         <Space direction="vertical" style={{ width: '100%' }}>
-                            <Input type="date" value={selectedDate} onChange={(event) => setSelectedDate(event.target.value || todayIso())} />
+                            <DatePicker value={dayjs(selectedDate)} onChange={(date) => setSelectedDate(date ? date.format('YYYY-MM-DD') : todayIso())} style={{ width: '100%' }} />
                             <Select
                                 allowClear
                                 options={statusOptions}
@@ -986,7 +983,7 @@ export default function Planning() {
                         label="Date et heure planifiees"
                         rules={[{ required: true, message: 'La date est requise' }]}
                     >
-                        <Input type="datetime-local" />
+                        <DatePicker showTime format="DD/MM/YYYY HH:mm" style={{ width: '100%' }} />
                     </Form.Item>
                     <Form.Item
                         name="status"
@@ -998,12 +995,12 @@ export default function Planning() {
                     <Row gutter={16}>
                         <Col span={12}>
                             <Form.Item name="dateDebut" label="Date de début">
-                                <Input type="datetime-local" disabled />
+                                <DatePicker showTime format="DD/MM/YYYY HH:mm" style={{ width: '100%' }} disabled />
                             </Form.Item>
                         </Col>
                         <Col span={12}>
                             <Form.Item name="dateFin" label="Date de fin">
-                                <Input type="datetime-local" disabled />
+                                <DatePicker showTime format="DD/MM/YYYY HH:mm" style={{ width: '100%' }} disabled />
                             </Form.Item>
                         </Col>
                     </Row>
@@ -1019,7 +1016,7 @@ export default function Planning() {
                             return (
                                 <Card size="small" title="Incident" style={{ marginBottom: 12, borderColor: '#ff4d4f' }}>
                                     <Form.Item name="incidentDate" label="Date de l'incident">
-                                        <Input type="date" />
+                                        <DatePicker style={{ width: '100%' }} />
                                     </Form.Item>
                                     <Form.Item name="incidentDetails" label="Details de l'incident">
                                         <Input.TextArea rows={3} />
