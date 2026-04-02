@@ -2,6 +2,7 @@ import { fetchWithAuth } from './api.ts';
 import React, { useEffect, useState } from 'react';
 import { ArrowDownOutlined, ArrowUpOutlined, ClockCircleOutlined, WarningOutlined } from '@ant-design/icons';
 import { Badge, Button, Card, Col, Empty, List, Progress, Row, Space, Spin, Statistic, Table, Tag, Typography } from 'antd';
+import { Column, Pie } from '@ant-design/charts';
 import dayjs from 'dayjs';
 
 const { Title, Paragraph, Text } = Typography;
@@ -146,6 +147,16 @@ const warningColumns = [
     },
 ];
 
+const canalAcquisitionLabels: Record<string, string> = {
+    BOUCHE_A_OREILLE: 'Bouche à oreille',
+    FACEBOOK: 'Facebook',
+    INSTAGRAM: 'Instagram',
+    LINKEDIN: 'LinkedIn',
+    PASSAGE: 'Passage',
+    SITE_INTERNET: 'Site Internet',
+    PAGES_JAUNES: 'Pages Jaunes',
+};
+
 const interventionColumns = [
     {
         title: 'Client',
@@ -182,6 +193,9 @@ export default function Dashboard() {
     const [data, setData] = useState<DashboardData | null>(null);
     const [loading, setLoading] = useState(true);
     const [warnings, setWarnings] = useState<PlanningWarning[]>([]);
+    const [canalData, setCanalData] = useState<{ canal: string; count: number }[]>([]);
+    const [ventesParJour, setVentesParJour] = useState<{ date: string; ventes: number }[]>([]);
+    const [caParJour, setCaParJour] = useState<{ date: string; ca: number }[]>([]);
 
     useEffect(() => {
         const ventesPromise = fetchWithAuth('/ventes')
@@ -193,12 +207,56 @@ export default function Dashboard() {
                 const caDuMois = ventes
                     .filter(v => v.status === 'PAYEE' && v.date && dayjs(v.date as string).isAfter(startOfMonth))
                     .reduce((sum, v) => sum + ((v.prixVenteTTC as number) || 0), 0);
+
+                // Ventes par jour (30 derniers jours)
+                const depuis = now.subtract(30, 'day').startOf('day');
+                const countParJour: Record<string, number> = {};
+                const caParJourMap: Record<string, number> = {};
+                for (let d = depuis; d.isBefore(now, 'day') || d.isSame(now, 'day'); d = d.add(1, 'day')) {
+                    const key = d.format('DD/MM');
+                    countParJour[key] = 0;
+                    caParJourMap[key] = 0;
+                }
+                for (const v of ventes) {
+                    const d = v.date ? dayjs(v.date as string) : null;
+                    if (d && d.isValid() && !d.isBefore(depuis, 'day')) {
+                        const key = d.format('DD/MM');
+                        if (key in countParJour) {
+                            countParJour[key]++;
+                            caParJourMap[key] += (v.prixVenteTTC as number) || 0;
+                        }
+                    }
+                }
+                setVentesParJour(
+                    Object.entries(countParJour).map(([date, ventes]) => ({ date, ventes }))
+                );
+                setCaParJour(
+                    Object.entries(caParJourMap).map(([date, ca]) => ({ date, ca: Math.round(ca * 100) / 100 }))
+                );
+
                 return caDuMois;
+            });
+
+        const clientsPromise = fetchWithAuth('/clients')
+            .then(res => res.json())
+            .then((clients: Array<Record<string, unknown>>) => {
+                const counts: Record<string, number> = {};
+                for (const c of clients) {
+                    const canal = (c.canalAcquisition as string) || 'NON_RENSEIGNE';
+                    counts[canal] = (counts[canal] || 0) + 1;
+                }
+                setCanalData(
+                    Object.entries(counts).map(([key, count]) => ({
+                        canal: canalAcquisitionLabels[key] || 'Non renseigné',
+                        count,
+                    }))
+                );
             });
 
         Promise.all([
             fetchWithAuth('/dashboard').then(res => res.json()),
             ventesPromise,
+            clientsPromise,
         ])
             .then(([d, caDuMois]: [DashboardData, number]) => {
                 setData({ ...d, caDuMois });
@@ -313,7 +371,55 @@ export default function Dashboard() {
                 </Col>
             </Row>
 
+            <Card title="Ventes par jour (30 derniers jours)">
+                {ventesParJour.length > 0 ? (
+                    <Column
+                        data={ventesParJour}
+                        xField="date"
+                        yField="ventes"
+                        height={300}
+                        axis={{ x: { labelAutoRotate: false } }}
+                        style={{ radiusEndMax: 4 }}
+                    />
+                ) : (
+                    <Empty description="Aucune donnée" />
+                )}
+            </Card>
+
+            <Card title="Chiffre d'affaires par jour (30 derniers jours)">
+                {caParJour.length > 0 ? (
+                    <Column
+                        data={caParJour}
+                        xField="date"
+                        yField="ca"
+                        height={300}
+                        axis={{ x: { labelAutoRotate: false }, y: { labelFormatter: (v: number) => `${v} €` } }}
+                        style={{ radiusEndMax: 4, fill: '#52c41a' }}
+                        tooltip={{ items: [{ channel: 'y', name: 'CA TTC', valueFormatter: (v: number) => `${v} €` }] }}
+                    />
+                ) : (
+                    <Empty description="Aucune donnée" />
+                )}
+            </Card>
+
             <Row gutter={[16, 16]}>
+                <Col xs={24} md={12}>
+                    <Card title="Canal d'acquisition clients">
+                        {canalData.length > 0 ? (
+                            <Pie
+                                data={canalData}
+                                angleField="count"
+                                colorField="canal"
+                                innerRadius={0.5}
+                                label={{ text: 'count', style: { fontWeight: 600 } }}
+                                legend={{ color: { title: false, position: 'right', rowPadding: 5 } }}
+                                height={300}
+                            />
+                        ) : (
+                            <Empty description="Aucune donnée" />
+                        )}
+                    </Card>
+                </Col>
                 <Col xs={24} md={12}>
                     <Card title="Objectifs mensuels">
                         <Space direction="vertical" style={{ width: '100%' }} size={12}>
@@ -332,6 +438,9 @@ export default function Dashboard() {
                         </Space>
                     </Card>
                 </Col>
+            </Row>
+
+            <Row gutter={[16, 16]}>
                 <Col xs={24} md={12}>
                     <Card title="Actions rapides">
                         <Space direction="vertical" style={{ width: '100%' }} size={10}>
