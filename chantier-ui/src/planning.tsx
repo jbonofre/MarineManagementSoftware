@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Badge, Button, Card, Col, DatePicker, Empty, Form, Input, Modal, Row, Select, Space, Table, Tag, Typography, message } from 'antd';
+import React, { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { Badge, Button, Calendar, Card, Col, DatePicker, Empty, Form, Input, Modal, Row, Select, Space, Table, Tag, Typography, message } from 'antd';
 import { CalendarOutlined, EditOutlined, EyeOutlined, WarningOutlined } from '@ant-design/icons';
 import api from './api.ts';
 import dayjs from 'dayjs';
@@ -265,7 +265,6 @@ export default function Planning() {
     const [saving, setSaving] = useState(false);
     const [currentRow, setCurrentRow] = useState<PlanningItemRow | null>(null);
     const [form] = Form.useForm<PlanningFormValues>();
-    const calendarRef = useRef<HTMLDivElement>(null);
     const draggedRowRef = useRef<PlanningItemRow | null>(null);
     const [dragOverDay, setDragOverDay] = useState<string | null>(null);
     const [prestationModalVisible, setPrestationModalVisible] = useState(false);
@@ -284,8 +283,6 @@ export default function Planning() {
             setPrestationLoading(false);
         }
     };
-    const [calendarWeekStart, setCalendarWeekStart] = useState<dayjs.Dayjs>(dayjs().startOf('week'));
-
     const fetchVentes = async () => {
         setLoading(true);
         try {
@@ -422,7 +419,7 @@ export default function Planning() {
         [allItems, selectedTechnicien]
     );
 
-    const weeklyEvents = useMemo<CalendarEvent[]>(
+    const calendarEvents = useMemo<CalendarEvent[]>(
         () =>
             allItems
                 .filter((row) => row.item.status === 'PLANIFIEE' || row.item.status === 'EN_COURS')
@@ -443,7 +440,7 @@ export default function Planning() {
                     return {
                         eventId: row.key,
                         startTime: startDate.toDate(),
-                        title: `#${vente.id} [${typeLabel}] ${item.nom || 'Sans nom'} (${getClientLabel(vente.client)})`,
+                        title: `[${typeLabel}] ${item.nom || 'Sans nom'} (${getClientLabel(vente.client)})`,
                         backgroundColor: getTechnicienColor(item.techniciens),
                         textColor: '#ffffff',
                         dureeEstimee: item.dureeEstimee,
@@ -729,32 +726,29 @@ export default function Planning() {
 
             <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
                 <Col span={24}>
-                    <Card size="small" title="Vue semaine">
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                            <Button size="small" onClick={() => setCalendarWeekStart(calendarWeekStart.subtract(7, 'day'))}>&lt; Semaine precedente</Button>
-                            <Button size="small" onClick={() => setCalendarWeekStart(dayjs().startOf('week'))}>Aujourd'hui</Button>
-                            <Button size="small" onClick={() => setCalendarWeekStart(calendarWeekStart.add(7, 'day'))}>Semaine suivante &gt;</Button>
-                        </div>
-                        <div
-                            ref={calendarRef}
-                            style={{
-                                display: 'grid',
-                                gridTemplateColumns: 'repeat(7, 1fr)',
-                                gap: 4,
-                                border: dragOverDay ? '2px dashed #1677ff' : '2px dashed transparent',
-                                borderRadius: 8,
-                                transition: 'border-color 0.2s'
-                            }}
-                        >
-                            {Array.from({ length: 7 }, (_, i) => {
-                                const day = calendarWeekStart.add(i, 'day');
-                                const dayStr = day.format('YYYY-MM-DD');
+                    <Card size="small" title="Calendrier">
+                        <Calendar
+                            value={dayjs(selectedDate)}
+                            onSelect={(date) => setSelectedDate(date.format('YYYY-MM-DD'))}
+                            fullCellRender={(date, info) => {
+                                if (info.type !== 'date') {
+                                    return <div className="ant-picker-cell-inner">{date.month() + 1}</div>;
+                                }
+                                const dayStr = date.format('YYYY-MM-DD');
                                 const isToday = dayStr === todayIso();
                                 const isSelected = dayStr === selectedDate;
-                                const dayEvents = weeklyEvents.filter((ev) => dayjs(ev.startTime).format('YYYY-MM-DD') === dayStr);
+                                const dayEvents = calendarEvents.filter((ev) => dayjs(ev.startTime).format('YYYY-MM-DD') === dayStr);
+                                const cellStyle: CSSProperties = {
+                                    minHeight: 80,
+                                    padding: 4,
+                                    borderRadius: 4,
+                                    border: dragOverDay === dayStr ? '2px dashed #1677ff' : isSelected ? '2px solid #1677ff' : '1px solid transparent',
+                                    background: isToday ? '#e6f4ff' : undefined,
+                                };
                                 return (
                                     <div
-                                        key={dayStr}
+                                        className="ant-picker-cell-inner"
+                                        style={cellStyle}
                                         onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; setDragOverDay(dayStr); }}
                                         onDragLeave={() => setDragOverDay(null)}
                                         onDrop={(e) => {
@@ -764,56 +758,39 @@ export default function Planning() {
                                             draggedRowRef.current = null;
                                             if (row) openPlanningModal(row, dayStr);
                                         }}
-                                        onClick={() => setSelectedDate(dayStr)}
-                                        style={{
-                                            minHeight: 320,
-                                            border: dragOverDay === dayStr ? '2px dashed #1677ff' : isSelected ? '2px solid #1677ff' : '1px solid #d9d9d9',
-                                            borderRadius: 6,
-                                            padding: 4,
-                                            cursor: 'pointer',
-                                            background: isToday ? '#e6f4ff' : '#fff',
-                                        }}
                                     >
-                                        <div style={{ fontWeight: isToday ? 700 : 500, fontSize: 12, marginBottom: 4, textAlign: 'center' }}>
-                                            {day.format('ddd DD/MM')}
+                                        <div style={{ fontWeight: isToday ? 700 : 400, marginBottom: 2 }}>
+                                            {date.date()}
                                         </div>
-                                        {dayEvents.map((ev) => {
-                                            const minH = 24;
-                                            const pxPerHour = 20;
-                                            const height = ev.dureeEstimee ? Math.max(minH, ev.dureeEstimee * pxPerHour) : minH;
-                                            return (
+                                        {dayEvents.map((ev) => (
                                             <div
                                                 key={ev.eventId}
                                                 onClick={(e) => {
                                                     e.stopPropagation();
-                                                    const matchedRow = allItems.find((row) => row.key === ev.eventId);
+                                                    const matchedRow = allItems.find((r) => r.key === ev.eventId);
                                                     if (matchedRow) openPlanningModal(matchedRow);
                                                 }}
                                                 style={{
                                                     background: ev.backgroundColor || '#1677ff',
                                                     color: ev.textColor || '#fff',
                                                     borderRadius: 4,
-                                                    padding: '2px 6px',
+                                                    padding: '1px 4px',
                                                     fontSize: 11,
                                                     marginBottom: 2,
                                                     cursor: 'pointer',
                                                     overflow: 'hidden',
                                                     textOverflow: 'ellipsis',
                                                     whiteSpace: 'nowrap',
-                                                    minHeight: height,
-                                                    display: 'flex',
-                                                    alignItems: 'center',
                                                 }}
                                                 title={ev.title}
                                             >
                                                 {ev.title}
                                             </div>
-                                            );
-                                        })}
+                                        ))}
                                     </div>
                                 );
-                            })}
-                        </div>
+                            }}
+                        />
                     </Card>
                 </Col>
             </Row>
