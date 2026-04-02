@@ -24,6 +24,13 @@ import {
   SearchOutlined,
   MailOutlined,
   KeyOutlined,
+  AudioOutlined,
+  FacebookOutlined,
+  InstagramOutlined,
+  LinkedinOutlined,
+  ShopOutlined,
+  GlobalOutlined,
+  PhoneOutlined,
 } from "@ant-design/icons";
 import api from "./api.ts";
 import BateauxClients from "./clients-bateaux.tsx";
@@ -51,6 +58,7 @@ interface Client {
   siret?: string;
   tva?: string;
   naf?: string;
+  canalAcquisition?: string;
   documents?: string[];
 }
 
@@ -70,6 +78,7 @@ const defaultClient = {
   siret: "",
   tva: "",
   naf: "",
+  canalAcquisition: "",
   documents: [],
 };
 
@@ -77,6 +86,16 @@ const typeOptions = [
   { value: "PARTICULIER", label: "Particulier" },
   { value: "PROFESSIONNEL", label: "Professionnel" },
   { value: "PROFESSIONNEL_MER", label: "Professionnel de la Mer" },
+];
+
+const canalAcquisitionOptions = [
+  { value: "BOUCHE_A_OREILLE", label: "Bouche à oreille", icon: <AudioOutlined /> },
+  { value: "FACEBOOK", label: "Facebook", icon: <FacebookOutlined /> },
+  { value: "INSTAGRAM", label: "Instagram", icon: <InstagramOutlined /> },
+  { value: "LINKEDIN", label: "LinkedIn", icon: <LinkedinOutlined /> },
+  { value: "PASSAGE", label: "Passage", icon: <ShopOutlined /> },
+  { value: "SITE_INTERNET", label: "Site Internet", icon: <GlobalOutlined /> },
+  { value: "PAGES_JAUNES", label: "Pages Jaunes", icon: <PhoneOutlined /> },
 ];
 
 function Clients() {
@@ -228,6 +247,17 @@ function Clients() {
       render: (type) => (type === "PROFESSIONNEL" ? "Professionnel" : "Particulier"),
     },
     { title: "Email", dataIndex: "email", key: "email" },
+    {
+      title: "Canal d'acquisition",
+      dataIndex: "canalAcquisition",
+      key: "canalAcquisition",
+      filters: canalAcquisitionOptions.map((opt) => ({ text: opt.label, value: opt.value })),
+      onFilter: (value, record) => record.canalAcquisition === value,
+      render: (val) => {
+        const opt = canalAcquisitionOptions.find((o) => o.value === val);
+        return opt ? <Space>{opt.icon} {opt.label}</Space> : null;
+      },
+    },
     { title: "Téléphone", dataIndex: "telephone", key: "telephone" },
     {
       title: "Évaluation",
@@ -316,6 +346,17 @@ function Clients() {
                   {typeOptions.map((opt) => (
                     <Option key={opt.value} value={opt.value}>
                       {opt.label}
+                    </Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="Canal d'acquisition" name="canalAcquisition">
+                <Select allowClear placeholder="Sélectionner un canal">
+                  {canalAcquisitionOptions.map((opt) => (
+                    <Option key={opt.value} value={opt.value}>
+                      <Space>{opt.icon} {opt.label}</Space>
                     </Option>
                   ))}
                 </Select>
