@@ -145,8 +145,28 @@ public class TechnicienPortalResource {
                     item.taches.add(ci);
                 }
             }
-            item.images = vf.images != null ? new ArrayList<>(vf.images) : new ArrayList<>();
-            item.documents = vf.documents != null ? new ArrayList<>(vf.documents) : new ArrayList<>();
+            item.images = new ArrayList<>();
+            if (vente.images != null) {
+                item.images.addAll(vente.images);
+            }
+            if (vf.images != null) {
+                for (String img : vf.images) {
+                    if (!item.images.contains(img)) {
+                        item.images.add(img);
+                    }
+                }
+            }
+            item.documents = new ArrayList<>();
+            if (vente.documents != null) {
+                item.documents.addAll(vente.documents);
+            }
+            if (vf.documents != null) {
+                for (String doc : vf.documents) {
+                    if (!item.documents.contains(doc)) {
+                        item.documents.add(doc);
+                    }
+                }
+            }
             return item;
         }
 
@@ -185,8 +205,28 @@ public class TechnicienPortalResource {
                     item.taches.add(ci);
                 }
             }
-            item.images = vs.images != null ? new ArrayList<>(vs.images) : new ArrayList<>();
-            item.documents = vs.documents != null ? new ArrayList<>(vs.documents) : new ArrayList<>();
+            item.images = new ArrayList<>();
+            if (vente.images != null) {
+                item.images.addAll(vente.images);
+            }
+            if (vs.images != null) {
+                for (String img : vs.images) {
+                    if (!item.images.contains(img)) {
+                        item.images.add(img);
+                    }
+                }
+            }
+            item.documents = new ArrayList<>();
+            if (vente.documents != null) {
+                item.documents.addAll(vente.documents);
+            }
+            if (vs.documents != null) {
+                for (String doc : vs.documents) {
+                    if (!item.documents.contains(doc)) {
+                        item.documents.add(doc);
+                    }
+                }
+            }
             return item;
         }
     }
