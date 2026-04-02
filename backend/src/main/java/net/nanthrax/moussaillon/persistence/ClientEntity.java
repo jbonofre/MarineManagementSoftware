@@ -45,6 +45,8 @@ public class ClientEntity extends PanacheEntity {
 
     public String naf;
 
+    public String canalAcquisition;
+
     public List<String> documents = new ArrayList<>();
 
 }
