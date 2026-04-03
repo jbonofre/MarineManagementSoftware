@@ -27,6 +27,7 @@ import net.nanthrax.moussaillon.persistence.EmailTemplateEntity;
 import net.nanthrax.moussaillon.persistence.ForfaitEntity;
 import net.nanthrax.moussaillon.persistence.ForfaitProduitEntity;
 import net.nanthrax.moussaillon.persistence.ProduitCatalogueEntity;
+import net.nanthrax.moussaillon.persistence.ServiceEntity;
 import net.nanthrax.moussaillon.persistence.SocieteEntity;
 import net.nanthrax.moussaillon.persistence.TaskEntity;
 import net.nanthrax.moussaillon.persistence.VenteEntity;
@@ -233,6 +234,24 @@ public class VenteResource {
                 }
             }
         }
+        // Copy template taches from catalogue service if none provided
+        if (vente.venteServices != null) {
+            for (VenteServiceEntity vs : vente.venteServices) {
+                if ((vs.taches == null || vs.taches.isEmpty()) && vs.service != null && vs.service.id != null) {
+                    ServiceEntity catalogueService = ServiceEntity.findById(vs.service.id);
+                    if (catalogueService != null && catalogueService.taches != null) {
+                        if (vs.taches == null) vs.taches = new java.util.ArrayList<>();
+                        for (TaskEntity t : catalogueService.taches) {
+                            TaskEntity ct = new TaskEntity();
+                            ct.nom = t.nom;
+                            ct.description = t.description;
+                            ct.done = false;
+                            vs.taches.add(ct);
+                        }
+                    }
+                }
+            }
+        }
         vente.persist();
         return Response.status(Response.Status.CREATED).entity(vente).build();
     }
@@ -341,13 +360,25 @@ public class VenteResource {
                 cloned.incidentDate = incoming.incidentDate;
                 cloned.incidentDetails = incoming.incidentDetails;
                 cloned.notes = incoming.notes;
-                if (incoming.taches != null) {
+                if (incoming.taches != null && !incoming.taches.isEmpty()) {
                     for (TaskEntity t : incoming.taches) {
                         TaskEntity ct = new TaskEntity();
                         ct.nom = t.nom;
                         ct.description = t.description;
                         ct.done = t.done;
                         cloned.taches.add(ct);
+                    }
+                } else {
+                    // Copy template taches from catalogue service if none provided
+                    ServiceEntity catalogueService = incoming.service != null && incoming.service.id != null ? ServiceEntity.findById(incoming.service.id) : null;
+                    if (catalogueService != null && catalogueService.taches != null) {
+                        for (TaskEntity t : catalogueService.taches) {
+                            TaskEntity ct = new TaskEntity();
+                            ct.nom = t.nom;
+                            ct.description = t.description;
+                            ct.done = false;
+                            cloned.taches.add(ct);
+                        }
                     }
                 }
                 cloned.images = incoming.images != null ? new java.util.ArrayList<>(incoming.images) : new java.util.ArrayList<>();
