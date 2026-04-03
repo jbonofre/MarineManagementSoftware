@@ -27,16 +27,10 @@ import {
   ShrinkOutlined,
 } from "@ant-design/icons";
 import api from "./api.ts";
+import { useReferenceValeurs } from './useReferenceValeurs.ts';
 import ImageUpload from './ImageUpload.tsx';
 
 const { Option } = Select;
-
-const moteurTypes = [
-  { text: 'Hors-bord', value: 'Hors-bord' },
-  { text: 'In-bord', value: 'In-bord' },
-  { text: 'Electrique', value: 'Electrique' },
-  { text: 'Diesel', value: 'Diesel' },
-];
 
 const defaultMoteurCatalogue = {
   modele: '',
@@ -112,6 +106,7 @@ const FournisseurMoteurs = ({
   fournisseurId?: number;
   moteurId?: number;
 }) => {
+  const moteurTypes = useReferenceValeurs('TYPE_MOTEUR');
   const [moteursAssocies, setMoteursAssocies] = useState<FournisseurMoteur[]>([]);
   const [moteursCatalogue, setMoteursCatalogue] = useState<Moteur[]>([]);
   const [fournisseurs, setFournisseurs] = useState<Fournisseur[]>([]);

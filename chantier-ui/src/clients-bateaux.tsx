@@ -29,6 +29,7 @@ import {
   TagsOutlined,
 } from "@ant-design/icons";
 import api from "./api.ts";
+import { useReferenceValeurs } from './useReferenceValeurs.ts';
 import ImageUpload from './ImageUpload.tsx';
 import DocumentUpload from './DocumentUpload.tsx';
 import dayjs from "dayjs";
@@ -83,6 +84,8 @@ interface BateauxClientsProps {
 }
 
 function BateauxClients({ clientId }: BateauxClientsProps) {
+  const bateauTypes = useReferenceValeurs('TYPE_BATEAU');
+  const moteurTypes = useReferenceValeurs('TYPE_MOTEUR');
   const [bateaux, setBateaux] = useState<BateauClient[]>([]);
   const [bateauxCatalogue, setBateauxCatalogue] = useState<any[]>([]);
   const [moteursCatalogue, setMoteursCatalogue] = useState<any[]>([]);
@@ -641,15 +644,7 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item name="type" label="Type" rules={[{ required: true, message: "Le type est requis" }]}>
-                <Select>
-                  <Select.Option value="Bateau à Moteur">Bateau à Moteur</Select.Option>
-                  <Select.Option value="Voilier">Voilier</Select.Option>
-                  <Select.Option value="Catamaran">Catamaran</Select.Option>
-                  <Select.Option value="Péniche">Péniche</Select.Option>
-                  <Select.Option value="Pêche">Pêche</Select.Option>
-                  <Select.Option value="Annexe">Annexe</Select.Option>
-                  <Select.Option value="Autre">Autre</Select.Option>
-                </Select>
+                <Select options={bateauTypes} />
               </Form.Item>
             </Col>
             <Col span={12}>
@@ -892,12 +887,7 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item name="type" label="Type" rules={[{ required: true, message: "Le type est requis" }]}>
-                <Select>
-                  <Select.Option value="Hors-bord">Hors-bord</Select.Option>
-                  <Select.Option value="In-bord">In-bord</Select.Option>
-                  <Select.Option value="Electrique">Electrique</Select.Option>
-                  <Select.Option value="Diesel">Diesel</Select.Option>
-                </Select>
+                <Select options={moteurTypes} />
               </Form.Item>
             </Col>
             <Col span={12}>

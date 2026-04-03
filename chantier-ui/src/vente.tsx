@@ -23,6 +23,7 @@ import {
 import { CalendarOutlined, CreditCardOutlined, DeleteOutlined, EditOutlined, MailOutlined, PlusCircleOutlined, PlusOutlined, PrinterOutlined, SendOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import api from './api.ts';
+import { useReferenceValeurs } from './useReferenceValeurs.ts';
 import { useHistory } from 'react-router-dom';
 import ImageUpload from './ImageUpload.tsx';
 import DocumentUpload from './DocumentUpload.tsx';
@@ -167,14 +168,6 @@ interface ProduitCatalogueEntity {
     prixVenteTTC?: number;
 }
 
-const PRODUIT_CATEGORIES = [
-    { text: 'Pièces Moteur', value: 'Pièces Moteur', label: 'Pièces Moteur' },
-    { text: 'Pièces Remorque', value: 'Pièces Remorque', label: 'Pièces Remorque' },
-    { text: 'Electronique', value: 'Electronique', label: 'Electronique' },
-    { text: 'Sécurité', value: 'Sécurité', label: 'Sécurité' },
-    { text: 'Equipement & Accessoires', value: 'Equipement & Accessoires', label: 'Equipement & Accessoires' },
-    { text: 'Loisirs', value: 'Loisirs', label: 'Loisirs' },
-];
 
 const defaultNewProduit = {
     nom: '',
@@ -437,6 +430,7 @@ const getClientLabel = (client?: ClientEntity) => {
 };
 
 export default function Vente() {
+    const PRODUIT_CATEGORIES = useReferenceValeurs('CATEGORIE_PRODUIT');
     const history = useHistory();
     const [ventes, setVentes] = useState<VenteEntity[]>([]);
     const [clients, setClients] = useState<ClientEntity[]>([]);

@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Image, Table, Rate, Row, Col, Card, Button, Modal, Form, AutoComplete, Input, InputNumber, Select, Space, Popconfirm, message } from 'antd';
 import { PlusCircleOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import api from './api.ts';
+import { useReferenceValeurs } from './useReferenceValeurs.ts';
 import FournisseurProduits from './fournisseur-produits.tsx';
 import ImageUpload from './ImageUpload.tsx';
 import DocumentUpload from './DocumentUpload.tsx';
@@ -55,18 +56,10 @@ const defaultProduit: ProduitCatalogueEntity = {
     prixVenteTTC: 0
 };
 
-const CATEGORIES = [
-    { text: 'Pièces Moteur', value: 'Pièces Moteur', label: 'Pièces Moteur' },
-    { text: 'Pièces Remorque', value: 'Pièces Remorque', label: 'Pièces Remorque' },
-    { text: 'Electronique', value: 'Electronique', label: 'Electronique' },
-    { text: 'Sécurité', value: 'Sécurité', label: 'Sécurité' },
-    { text: 'Equipement & Accessoires', value: 'Equipement & Accessoires', label: 'Equipement & Accessoires' },
-    { text: 'Loisirs', value: 'Loisirs', label: 'Loisirs' },
-];
-
 // --- Component ---
 
 const CatalogueProduits: React.FC = () => {
+    const CATEGORIES = useReferenceValeurs('CATEGORIE_PRODUIT');
     const [produits, setProduits] = useState<ProduitCatalogueEntity[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
     const [modalVisible, setModalVisible] = useState<boolean>(false);
