@@ -26,8 +26,7 @@ public class RappelSchedulerTest {
         ClientEntity client = ClientEntity.findById(100L);
 
         VenteEntity vente = new VenteEntity();
-        vente.status = VenteEntity.Status.EN_ATTENTE;
-        vente.type = VenteEntity.Type.DEVIS;
+        vente.status = VenteEntity.Status.DEVIS;
         vente.client = client;
         vente.date = Timestamp.valueOf(LocalDate.now().plusDays(5).atStartOfDay());
         vente.rappel1Jours = 10;
@@ -57,8 +56,7 @@ public class RappelSchedulerTest {
         ClientEntity client = ClientEntity.findById(100L);
 
         VenteEntity vente = new VenteEntity();
-        vente.status = VenteEntity.Status.EN_ATTENTE;
-        vente.type = VenteEntity.Type.COMMANDE;
+        vente.status = VenteEntity.Status.DEVIS;
         vente.client = client;
         vente.date = Timestamp.valueOf(LocalDate.now().plusDays(60).atStartOfDay());
         vente.rappel1Jours = 30;
@@ -81,8 +79,7 @@ public class RappelSchedulerTest {
         ClientEntity client = ClientEntity.findById(100L);
 
         VenteEntity vente = new VenteEntity();
-        vente.status = VenteEntity.Status.EN_ATTENTE;
-        vente.type = VenteEntity.Type.FACTURE;
+        vente.status = VenteEntity.Status.DEVIS;
         vente.client = client;
         vente.date = Timestamp.valueOf(LocalDate.now().plusDays(1).atStartOfDay());
         vente.prixVenteTTC = 200.0;
@@ -102,8 +99,7 @@ public class RappelSchedulerTest {
         ClientEntity client = ClientEntity.findById(100L);
 
         VenteEntity vente = new VenteEntity();
-        vente.status = VenteEntity.Status.EN_COURS;
-        vente.type = VenteEntity.Type.COMMANDE;
+        vente.status = VenteEntity.Status.FACTURE_EN_ATTENTE;
         vente.client = client;
         vente.date = Timestamp.valueOf(LocalDate.now().plusDays(2).atStartOfDay());
         vente.rappel1Jours = 10;
@@ -123,8 +119,7 @@ public class RappelSchedulerTest {
         ClientEntity client = ClientEntity.findById(100L);
 
         VenteEntity vente = new VenteEntity();
-        vente.status = VenteEntity.Status.PAYEE;
-        vente.type = VenteEntity.Type.FACTURE;
+        vente.status = VenteEntity.Status.FACTURE_PAYEE;
         vente.client = client;
         vente.date = Timestamp.valueOf(LocalDate.now().plusDays(1).atStartOfDay());
         vente.rappel1Jours = 10;
@@ -146,8 +141,7 @@ public class RappelSchedulerTest {
         clientSansEmail.persist();
 
         VenteEntity vente = new VenteEntity();
-        vente.status = VenteEntity.Status.EN_ATTENTE;
-        vente.type = VenteEntity.Type.DEVIS;
+        vente.status = VenteEntity.Status.DEVIS;
         vente.client = clientSansEmail;
         vente.date = Timestamp.valueOf(LocalDate.now().plusDays(1).atStartOfDay());
         vente.rappel1Jours = 10;
@@ -166,8 +160,7 @@ public class RappelSchedulerTest {
         ClientEntity client = ClientEntity.findById(100L);
 
         VenteEntity vente = new VenteEntity();
-        vente.status = VenteEntity.Status.EN_ATTENTE;
-        vente.type = VenteEntity.Type.DEVIS;
+        vente.status = VenteEntity.Status.DEVIS;
         vente.client = client;
         vente.date = Timestamp.valueOf(LocalDate.now().minusDays(1).atStartOfDay());
         vente.rappel1Jours = 30;
@@ -193,8 +186,7 @@ public class RappelSchedulerTest {
         ClientEntity client = ClientEntity.findById(100L);
 
         VenteEntity vente = new VenteEntity();
-        vente.status = VenteEntity.Status.EN_ATTENTE;
-        vente.type = VenteEntity.Type.DEVIS;
+        vente.status = VenteEntity.Status.DEVIS;
         vente.client = client;
         vente.date = Timestamp.valueOf(LocalDate.now().plusDays(60).atStartOfDay());
         vente.rappel1Jours = 30;

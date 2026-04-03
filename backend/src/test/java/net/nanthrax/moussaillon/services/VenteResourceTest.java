@@ -25,7 +25,7 @@ public class VenteResourceTest {
             .when().get("/ventes/100")
             .then()
             .statusCode(200)
-            .body("status", is("PAYEE"));
+            .body("status", is("FACTURE_PAYEE"));
     }
 
     @Test
@@ -40,12 +40,11 @@ public class VenteResourceTest {
     void testCreerVente() {
         given()
             .contentType("application/json")
-            .body("{\"status\":\"EN_ATTENTE\",\"type\":\"COMPTOIR\",\"prixVenteTTC\":100.0,\"montantTTC\":100.0}")
+            .body("{\"status\":\"DEVIS\",\"prixVenteTTC\":100.0,\"montantTTC\":100.0}")
             .when().post("/ventes")
             .then()
             .statusCode(201)
-            .body("status", is("EN_ATTENTE"))
-            .body("type", is("COMPTOIR"))
+            .body("status", is("DEVIS"))
             .body("id", notNullValue());
     }
 
@@ -53,37 +52,28 @@ public class VenteResourceTest {
     void testModifierVente() {
         int id = given()
             .contentType("application/json")
-            .body("{\"status\":\"EN_ATTENTE\",\"type\":\"DEVIS\",\"prixVenteTTC\":200.0}")
+            .body("{\"status\":\"DEVIS\",\"prixVenteTTC\":200.0}")
             .when().post("/ventes")
             .then().statusCode(201).extract().path("id");
 
         given()
             .contentType("application/json")
-            .body("{\"status\":\"EN_COURS\",\"type\":\"COMMANDE\",\"prixVenteTTC\":200.0,\"remise\":10.0}")
+            .body("{\"status\":\"FACTURE_EN_ATTENTE\",\"bonPourAccord\":true,\"prixVenteTTC\":200.0,\"remise\":10.0}")
             .when().put("/ventes/" + id)
             .then()
             .statusCode(200)
-            .body("status", is("EN_COURS"))
-            .body("type", is("COMMANDE"));
+            .body("status", is("FACTURE_EN_ATTENTE"))
+            .body("bonPourAccord", is(true));
     }
 
     @Test
     void testRechercherVentesParStatut() {
         given()
-            .queryParam("status", "PAYEE")
+            .queryParam("status", "FACTURE_PAYEE")
             .when().get("/ventes/search")
             .then()
             .statusCode(200)
             .body("size()", greaterThanOrEqualTo(1));
-    }
-
-    @Test
-    void testRechercherVentesParType() {
-        given()
-            .queryParam("type", "COMPTOIR")
-            .when().get("/ventes/search")
-            .then()
-            .statusCode(200);
     }
 
     @Test
@@ -108,7 +98,7 @@ public class VenteResourceTest {
     void testSupprimerVente() {
         int id = given()
             .contentType("application/json")
-            .body("{\"status\":\"EN_ATTENTE\",\"type\":\"DEVIS\",\"prixVenteTTC\":50.0}")
+            .body("{\"status\":\"DEVIS\",\"prixVenteTTC\":50.0}")
             .when().post("/ventes")
             .then().statusCode(201).extract().path("id");
 
@@ -135,7 +125,7 @@ public class VenteResourceTest {
     void testCreerVenteAvecRappels() {
         given()
             .contentType("application/json")
-            .body("{\"status\":\"EN_ATTENTE\",\"type\":\"DEVIS\",\"prixVenteTTC\":300.0,\"rappel1Jours\":30,\"rappel2Jours\":7,\"rappel3Jours\":1}")
+            .body("{\"status\":\"DEVIS\",\"prixVenteTTC\":300.0,\"rappel1Jours\":30,\"rappel2Jours\":7,\"rappel3Jours\":1}")
             .when().post("/ventes")
             .then()
             .statusCode(201)
@@ -151,7 +141,7 @@ public class VenteResourceTest {
     void testModifierRappelsVente() {
         int id = given()
             .contentType("application/json")
-            .body("{\"status\":\"EN_ATTENTE\",\"type\":\"DEVIS\",\"prixVenteTTC\":200.0}")
+            .body("{\"status\":\"DEVIS\",\"prixVenteTTC\":200.0}")
             .when().post("/ventes")
             .then().statusCode(201)
             .body("rappel1Jours", nullValue())
@@ -159,7 +149,7 @@ public class VenteResourceTest {
 
         given()
             .contentType("application/json")
-            .body("{\"status\":\"EN_ATTENTE\",\"type\":\"DEVIS\",\"prixVenteTTC\":200.0,\"rappel1Jours\":14,\"rappel2Jours\":3}")
+            .body("{\"status\":\"DEVIS\",\"prixVenteTTC\":200.0,\"rappel1Jours\":14,\"rappel2Jours\":3}")
             .when().put("/ventes/" + id)
             .then()
             .statusCode(200)
@@ -170,17 +160,15 @@ public class VenteResourceTest {
 
     @Test
     void testModifierRappelsResetDrapeauEnvoi() {
-        // Creer une vente avec rappels
         int id = given()
             .contentType("application/json")
-            .body("{\"status\":\"EN_ATTENTE\",\"type\":\"DEVIS\",\"prixVenteTTC\":200.0,\"rappel1Jours\":30}")
+            .body("{\"status\":\"DEVIS\",\"prixVenteTTC\":200.0,\"rappel1Jours\":30}")
             .when().post("/ventes")
             .then().statusCode(201).extract().path("id");
 
-        // Modifier l'intervalle du rappel 1 => le drapeau doit etre reinitialise
         given()
             .contentType("application/json")
-            .body("{\"status\":\"EN_ATTENTE\",\"type\":\"DEVIS\",\"prixVenteTTC\":200.0,\"rappel1Jours\":15}")
+            .body("{\"status\":\"DEVIS\",\"prixVenteTTC\":200.0,\"rappel1Jours\":15}")
             .when().put("/ventes/" + id)
             .then()
             .statusCode(200)
@@ -192,7 +180,7 @@ public class VenteResourceTest {
     void testCreerVenteSansRappels() {
         given()
             .contentType("application/json")
-            .body("{\"status\":\"EN_ATTENTE\",\"type\":\"COMPTOIR\",\"prixVenteTTC\":50.0}")
+            .body("{\"status\":\"DEVIS\",\"prixVenteTTC\":50.0}")
             .when().post("/ventes")
             .then()
             .statusCode(201)
@@ -205,7 +193,7 @@ public class VenteResourceTest {
     void testEnvoyerRappelManuel() {
         int id = given()
             .contentType("application/json")
-            .body("{\"status\":\"EN_ATTENTE\",\"type\":\"DEVIS\",\"prixVenteTTC\":100.0,\"client\":{\"id\":100}}")
+            .body("{\"status\":\"DEVIS\",\"prixVenteTTC\":100.0,\"client\":{\"id\":100}}")
             .when().post("/ventes")
             .then().statusCode(201).extract().path("id");
 
@@ -236,16 +224,32 @@ public class VenteResourceTest {
 
     @Test
     void testEnvoyerRappelManuelSansEmailClient() {
-        // Creer une vente sans client
         int id = given()
             .contentType("application/json")
-            .body("{\"status\":\"EN_ATTENTE\",\"type\":\"DEVIS\",\"prixVenteTTC\":100.0}")
+            .body("{\"status\":\"DEVIS\",\"prixVenteTTC\":100.0}")
             .when().post("/ventes")
             .then().statusCode(201).extract().path("id");
 
         given()
             .contentType("application/json")
             .when().post("/ventes/" + id + "/rappel")
+            .then()
+            .statusCode(400);
+    }
+
+    @Test
+    void testBonPourAccordRequisPourPlanification() {
+        int id = given()
+            .contentType("application/json")
+            .body("{\"status\":\"DEVIS\",\"prixVenteTTC\":200.0,\"bonPourAccord\":false}")
+            .when().post("/ventes")
+            .then().statusCode(201).extract().path("id");
+
+        // Trying to set a forfait to PLANIFIEE without bonPourAccord should fail
+        given()
+            .contentType("application/json")
+            .body("{\"status\":\"DEVIS\",\"bonPourAccord\":false,\"prixVenteTTC\":200.0,\"venteForfaits\":[{\"forfait\":{\"id\":100},\"quantite\":1,\"status\":\"PLANIFIEE\"}]}")
+            .when().put("/ventes/" + id)
             .then()
             .statusCode(400);
     }

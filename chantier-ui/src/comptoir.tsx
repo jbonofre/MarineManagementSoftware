@@ -117,13 +117,11 @@ interface TaskEntity {
     nom?: string;
 }
 
-type VenteStatus = 'PAYEE';
-type VenteType = 'DEVIS' | 'FACTURE' | 'COMMANDE' | 'LIVRAISON' | 'COMPTOIR';
+type VenteStatus = 'FACTURE_PAYEE';
 type ModePaiement = 'CHEQUE' | 'VIREMENT' | 'CARTE' | 'ESPÈCES';
 
 interface VenteEntity {
     id?: number;
-    type: VenteType;
     status: VenteStatus;
     client?: ClientEntity;
     bateau?: BateauClientEntity;
@@ -201,7 +199,7 @@ const toBackendDateValue = (value?: dayjs.Dayjs | string) => {
         return undefined;
     }
     const d = dayjs.isDayjs(value) ? value : dayjs(value);
-    return d.isValid() ? d.format('YYYY-MM-DD') : undefined;
+    return d.isValid() ? d.format('YYYY-MM-DDTHH:mm:ss') : undefined;
 };
 
 const formatEuro = (value?: number) => `${(value || 0).toFixed(2)} EUR`;
@@ -213,7 +211,7 @@ const formatDate = (value?: string) => {
     if (Number.isNaN(parsed.getTime())) {
         return value;
     }
-    return parsed.toLocaleDateString('fr-FR');
+    return parsed.toLocaleDateString('fr-FR') + ' ' + parsed.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 };
 const escapeHtml = (value: string) =>
     value
@@ -298,13 +296,11 @@ export default function Comptoir() {
             const activeFilters = nextFilters || {};
             const response = await api.get('/ventes/search', {
                 params: {
-                    type: 'COMPTOIR',
-                    status: 'PAYEE',
+                    status: 'FACTURE_PAYEE',
                     ...(activeFilters.clientId !== undefined ? { clientId: activeFilters.clientId } : {})
                 }
             });
-            const data = (response.data || []).filter((vente: VenteEntity) => vente.type === 'COMPTOIR');
-            setVentes(data);
+            setVentes(response.data || []);
         } catch {
             message.error('Erreur lors du chargement des ventes comptoir.');
         } finally {
@@ -475,8 +471,7 @@ export default function Comptoir() {
         Array.from({ length: Math.max(1, Math.floor(quantite || 1)) }, () => items).flat();
 
     const toPayload = (values: VenteFormValues): VenteEntity => ({
-        status: 'PAYEE',
-        type: 'COMPTOIR',
+        status: 'FACTURE_PAYEE',
         client: clients.find((client) => client.id === values.clientId),
         bateau: bateaux.find((bateau) => bateau.id === values.bateauId),
         moteur: moteurs.find((moteur) => moteur.id === values.moteurId),
@@ -514,7 +509,7 @@ export default function Comptoir() {
             const values = await form.validateFields();
             const payload = toPayload(values);
             if (isEdit && currentVente?.id) {
-                const res = await api.put(`/ventes/${currentVente.id}`, { ...currentVente, ...payload, type: 'COMPTOIR' });
+                const res = await api.put(`/ventes/${currentVente.id}`, { ...currentVente, ...payload });
                 message.success('Vente comptoir modifiee avec succes');
                 setCurrentVente(res.data);
                 form.setFieldsValue(values);
@@ -984,7 +979,7 @@ export default function Comptoir() {
                     <Row gutter={16}>
                         <Col span={8}>
                             <Form.Item name="date" label="Date">
-                                <DatePicker style={{ width: '100%' }} />
+                                <DatePicker showTime format="DD/MM/YYYY HH:mm" style={{ width: '100%' }} />
                             </Form.Item>
                         </Col>
                         <Col span={8}>

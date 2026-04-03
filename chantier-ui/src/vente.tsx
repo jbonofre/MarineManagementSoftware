@@ -3,6 +3,7 @@ import {
     AutoComplete,
     Button,
     Card,
+    Checkbox,
     Col,
     Form,
     Input,
@@ -237,14 +238,13 @@ const defaultNewService = {
     prixHT: 0, tva: 20, montantTVA: 0, prixTTC: 0,
 };
 
-type VenteStatus = 'EN_ATTENTE' | 'EN_COURS' | 'PAYEE' | 'ANNULEE';
-type VenteType = 'DEVIS' | 'FACTURE' | 'COMMANDE' | 'LIVRAISON' | 'COMPTOIR';
+type VenteStatus = 'DEVIS' | 'FACTURE_EN_ATTENTE' | 'FACTURE_PRETE' | 'FACTURE_PAYEE';
 type ModePaiement = 'CHEQUE' | 'VIREMENT' | 'CARTE' | 'ESPÈCES';
 
 interface VenteEntity {
     id?: number;
     status: VenteStatus;
-    type: VenteType;
+    bonPourAccord?: boolean;
     client?: ClientEntity;
     bateau?: BateauClientEntity;
     moteur?: MoteurClientEntity;
@@ -278,7 +278,7 @@ interface RappelHistoriqueEntity {
 
 interface VenteFormValues {
     status: VenteStatus;
-    type: VenteType;
+    bonPourAccord?: boolean;
     clientId?: number;
     bateauId?: number;
     moteurId?: number;
@@ -334,23 +334,14 @@ interface VenteFormValues {
 
 interface SearchFilters {
     status?: VenteStatus;
-    type?: VenteType;
     clientId?: number;
 }
 
 const statusOptions: Array<{ value: VenteStatus; label: string }> = [
-    { value: 'EN_ATTENTE', label: 'En attente' },
-    { value: 'EN_COURS', label: 'En cours' },
-    { value: 'PAYEE', label: 'Payee' },
-    { value: 'ANNULEE', label: 'Annulee' }
-];
-
-const typeOptions: Array<{ value: VenteType; label: string }> = [
     { value: 'DEVIS', label: 'Devis' },
-    { value: 'FACTURE', label: 'Facture' },
-    { value: 'COMMANDE', label: 'Commande' },
-    { value: 'LIVRAISON', label: 'Livraison' },
-    { value: 'COMPTOIR', label: 'Comptoir' }
+    { value: 'FACTURE_EN_ATTENTE', label: 'Facture en attente' },
+    { value: 'FACTURE_PRETE', label: 'Facture prête' },
+    { value: 'FACTURE_PAYEE', label: 'Facture payée' }
 ];
 
 const modePaiementOptions: Array<{ value: ModePaiement; label: string }> = [
@@ -370,10 +361,10 @@ const planningStatusOptions: Array<{ value: PlanningStatus; label: string }> = [
 ];
 
 const statusColor: Record<VenteStatus, string> = {
-    EN_ATTENTE: 'default',
-    EN_COURS: 'blue',
-    PAYEE: 'green',
-    ANNULEE: 'red'
+    DEVIS: 'default',
+    FACTURE_EN_ATTENTE: 'orange',
+    FACTURE_PRETE: 'blue',
+    FACTURE_PAYEE: 'green'
 };
 
 const getTodayDayjs = () => dayjs();
@@ -391,12 +382,12 @@ const toBackendDateValue = (value?: dayjs.Dayjs | string) => {
         return undefined;
     }
     const d = dayjs.isDayjs(value) ? value : dayjs(value);
-    return d.isValid() ? d.format('YYYY-MM-DD') : undefined;
+    return d.isValid() ? d.format('YYYY-MM-DDTHH:mm:ss') : undefined;
 };
 
 const defaultVente: VenteFormValues = {
-    status: 'EN_ATTENTE',
-    type: 'DEVIS',
+    status: 'DEVIS',
+    bonPourAccord: false,
     venteForfaits: [{ status: 'EN_ATTENTE', quantite: 1 }],
     venteServices: [{ status: 'EN_ATTENTE', quantite: 1 }],
     produits: [{ quantite: 1 }],
@@ -412,7 +403,12 @@ const defaultVente: VenteFormValues = {
 };
 
 const formatEuro = (value?: number) => `${(value || 0).toFixed(2)} EUR`;
-const formatDate = (value?: string) => value ? value.split('T')[0] : '-';
+const formatDate = (value?: string) => {
+    if (!value) return '-';
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return value.split('T')[0];
+    return parsed.toLocaleDateString('fr-FR') + ' ' + parsed.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+};
 const escapeHtml = (value: string) =>
     value
         .replace(/&/g, '&amp;')
@@ -551,13 +547,11 @@ export default function Vente() {
         try {
             const activeFilters = nextFilters || {};
             const hasStatus = !!activeFilters.status;
-            const hasType = !!activeFilters.type;
             const hasClient = activeFilters.clientId !== undefined;
-            const endpoint = hasStatus || hasType || hasClient ? '/ventes/search' : '/ventes';
+            const endpoint = hasStatus || hasClient ? '/ventes/search' : '/ventes';
             const response = await api.get(endpoint, {
                 params: {
                     ...(hasStatus ? { status: activeFilters.status } : {}),
-                    ...(hasType ? { type: activeFilters.type } : {}),
                     ...(hasClient ? { clientId: activeFilters.clientId } : {})
                 }
             });
@@ -1119,8 +1113,8 @@ export default function Vente() {
         const produitLines = Array.from(produitLinesMap.entries()).map(([produitId, quantite]) => ({ produitId, quantite }));
         form.resetFields();
         form.setFieldsValue({
-            status: vente.status || 'EN_ATTENTE',
-            type: vente.type || 'DEVIS',
+            status: vente.status || 'DEVIS',
+            bonPourAccord: vente.bonPourAccord || false,
             clientId: vente.client?.id,
             bateauId: vente.bateau?.id,
             moteurId: vente.moteur?.id,
@@ -1217,7 +1211,7 @@ export default function Vente() {
 
     const toPayload = (values: VenteFormValues): VenteEntity => ({
         status: values.status,
-        type: values.type,
+        bonPourAccord: values.bonPourAccord,
         client: clients.find((client) => client.id === values.clientId),
         bateau: bateaux.find((bateau) => bateau.id === values.bateauId),
         moteur: moteurs.find((moteur) => moteur.id === values.moteurId),
@@ -1445,8 +1439,8 @@ export default function Vente() {
             <body>
                 <h1>${escapeHtml(title)}</h1>
                 <div class="meta">Date: ${escapeHtml(formatDate(vente.date))}</div>
-                <div class="row"><strong>Type:</strong> ${escapeHtml(vente.type || '-')}</div>
-                <div class="row"><strong>Statut:</strong> ${escapeHtml(vente.status || '-')}</div>
+                <div class="row"><strong>Statut:</strong> ${escapeHtml(statusOptions.find(s => s.value === vente.status)?.label || vente.status || '-')}</div>
+                <div class="row"><strong>Bon pour accord:</strong> ${vente.bonPourAccord ? 'Oui' : 'Non'}</div>
                 <div class="row"><strong>Client:</strong> ${escapeHtml(getClientLabel(vente.client))}</div>
                 <div class="row"><strong>Montant TTC:</strong> ${escapeHtml(formatEuro(vente.montantTTC))}</div>
                 <div class="row"><strong>Remise:</strong> ${escapeHtml(formatEuro(vente.remise))}</div>
@@ -1486,6 +1480,10 @@ export default function Vente() {
     const handlePayment = async (vente: VenteEntity, provider: 'stripe' | 'payplug') => {
         if (!vente.id) {
             message.warning('La vente doit etre enregistree avant de generer un lien de paiement.');
+            return;
+        }
+        if (vente.status !== 'FACTURE_PRETE') {
+            message.warning('Le paiement n\'est possible que lorsque la facture est prête.');
             return;
         }
         try {
@@ -1673,11 +1671,6 @@ export default function Vente() {
             render: (value: string) => formatDate(value)
         },
         {
-            title: 'Type',
-            dataIndex: 'type',
-            render: (value: VenteType) => typeOptions.find((item) => item.value === value)?.label || value
-        },
-        {
             title: 'Statut',
             dataIndex: 'status',
             render: (value: VenteStatus) => {
@@ -1723,8 +1716,8 @@ export default function Vente() {
                 <Space>
                     <Button title="Imprimer" icon={<PrinterOutlined />} onClick={() => handlePrint(record)} />
                     <Button title="Envoyer par email" icon={<MailOutlined />} onClick={() => handleEmail(record)} />
-                    <Dropdown menu={{ items: paymentMenuItems(record) }} placement="bottomRight">
-                        <Button title="Lien de paiement" icon={<CreditCardOutlined />} />
+                    <Dropdown menu={{ items: paymentMenuItems(record) }} placement="bottomRight" disabled={record.status !== 'FACTURE_PRETE'}>
+                        <Button title="Lien de paiement" icon={<CreditCardOutlined />} disabled={record.status !== 'FACTURE_PRETE'} />
                     </Dropdown>
                     <Button icon={<EditOutlined />} onClick={() => openModal(record)} />
                     <Popconfirm
@@ -1745,11 +1738,10 @@ export default function Vente() {
             <Form
                 form={searchForm}
                 layout="vertical"
-                initialValues={{ status: undefined, type: undefined, clientId: undefined }}
+                initialValues={{ status: undefined, clientId: undefined }}
                 onFinish={(values) => {
                     const nextFilters: SearchFilters = {
                         status: values.status,
-                        type: values.type,
                         clientId: values.clientId
                     };
                     setFilters(nextFilters);
@@ -1757,22 +1749,17 @@ export default function Vente() {
                 }}
             >
                 <Row gutter={16}>
-                    <Col span={6}>
+                    <Col span={8}>
                         <Form.Item name="status" label="Statut">
                             <Select allowClear options={statusOptions} placeholder="Tous les statuts" />
                         </Form.Item>
                     </Col>
-                    <Col span={6}>
-                        <Form.Item name="type" label="Type">
-                            <Select allowClear options={typeOptions} placeholder="Tous les types" />
-                        </Form.Item>
-                    </Col>
-                    <Col span={8}>
+                    <Col span={10}>
                         <Form.Item name="clientId" label="Client">
                             <Select allowClear showSearch options={clientOptions} placeholder="Tous les clients" />
                         </Form.Item>
                     </Col>
-                    <Col span={4} style={{ display: 'flex', alignItems: 'end' }}>
+                    <Col span={6} style={{ display: 'flex', alignItems: 'end' }}>
                         <Space>
                             <Button type="primary" htmlType="submit">Rechercher</Button>
                             <Button
@@ -1828,9 +1815,9 @@ export default function Vente() {
                         key="payment"
                         menu={{ items: currentVente ? paymentMenuItems(currentVente) : [] }}
                         placement="topRight"
-                        disabled={!currentVente}
+                        disabled={!currentVente || currentVente.status !== 'FACTURE_PRETE'}
                     >
-                        <Button icon={<CreditCardOutlined />}>
+                        <Button icon={<CreditCardOutlined />} disabled={!currentVente || currentVente.status !== 'FACTURE_PRETE'}>
                             Lien de paiement
                         </Button>
                     </Dropdown>,
@@ -1849,15 +1836,6 @@ export default function Vente() {
                     <Row gutter={16}>
                         <Col span={6}>
                             <Form.Item
-                                name="type"
-                                label="Type"
-                                rules={[{ required: true, message: 'Le type est requis' }]}
-                            >
-                                <Select options={typeOptions} />
-                            </Form.Item>
-                        </Col>
-                        <Col span={6}>
-                            <Form.Item
                                 name="status"
                                 label="Statut"
                                 rules={[{ required: true, message: 'Le statut est requis' }]}
@@ -1865,12 +1843,17 @@ export default function Vente() {
                                 <Select options={statusOptions} />
                             </Form.Item>
                         </Col>
-                        <Col span={6}>
-                            <Form.Item name="date" label="Date">
-                                <DatePicker style={{ width: '100%' }} />
+                        <Col span={4}>
+                            <Form.Item name="bonPourAccord" label="Bon pour accord" valuePropName="checked">
+                                <Checkbox />
                             </Form.Item>
                         </Col>
                         <Col span={6}>
+                            <Form.Item name="date" label="Date">
+                                <DatePicker showTime format="DD/MM/YYYY HH:mm" style={{ width: '100%' }} />
+                            </Form.Item>
+                        </Col>
+                        <Col span={8}>
                             <Form.Item name="modePaiement" label="Mode de paiement">
                                 <Select allowClear options={modePaiementOptions} />
                             </Form.Item>

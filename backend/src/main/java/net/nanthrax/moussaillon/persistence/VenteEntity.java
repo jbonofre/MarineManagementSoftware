@@ -17,23 +17,15 @@ import jakarta.persistence.OneToMany;
 public class VenteEntity extends PanacheEntity {
 
     public enum Status {
-        EN_ATTENTE,
-        EN_COURS,
-        PAYEE,
-        ANNULEE
+        DEVIS,
+        FACTURE_EN_ATTENTE,
+        FACTURE_PRETE,
+        FACTURE_PAYEE
     }
 
     public Status status;
 
-    public enum Type {
-        DEVIS,
-        COMMANDE,
-        FACTURE,
-        LIVRAISON,
-        COMPTOIR,
-    }
-
-    public Type type;
+    public boolean bonPourAccord;
 
     @ManyToOne
     public ClientEntity client;

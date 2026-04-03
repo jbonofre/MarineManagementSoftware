@@ -29,7 +29,7 @@ public class RappelScheduler {
 
         List<VenteEntity> ventes = VenteEntity.list(
                 "status in (?1, ?2) and date is not null and client is not null",
-                VenteEntity.Status.EN_ATTENTE, VenteEntity.Status.EN_COURS);
+                VenteEntity.Status.DEVIS, VenteEntity.Status.FACTURE_EN_ATTENTE);
 
         for (VenteEntity vente : ventes) {
             if (vente.client == null || !vente.client.consentement || vente.client.email == null || vente.client.email.isBlank()) {
@@ -61,13 +61,7 @@ public class RappelScheduler {
         String societeNom = societe != null ? societe.nom : "moussAIllon";
         String clientName = vente.client.prenom != null ? vente.client.prenom : vente.client.nom;
 
-        String typeLabel = switch (vente.type) {
-            case DEVIS -> "devis";
-            case COMMANDE -> "commande";
-            case FACTURE -> "facture";
-            case LIVRAISON -> "livraison";
-            case COMPTOIR -> "vente comptoir";
-        };
+        String typeLabel = "prestation";
 
         String datePrevue = vente.date != null
                 ? new Timestamp(vente.date.getTime()).toLocalDateTime().toLocalDate().toString()
