@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
-import { Badge, Button, Calendar, Card, Col, DatePicker, Empty, Form, Input, Modal, Row, Select, Space, Table, Tag, Typography, message } from 'antd';
-import { CalendarOutlined, EditOutlined, EyeOutlined, WarningOutlined } from '@ant-design/icons';
+import { Badge, Button, Card, Col, DatePicker, Empty, Form, Input, Modal, Row, Select, Space, Table, Tag, Tooltip, Typography, message } from 'antd';
+import { CalendarOutlined, EditOutlined, EyeOutlined, LeftOutlined, RightOutlined, WarningOutlined } from '@ant-design/icons';
 import api from './api.ts';
 import dayjs from 'dayjs';
 
@@ -257,6 +257,7 @@ export default function Planning() {
     const [ventes, setVentes] = useState<VenteEntity[]>([]);
     const [techniciens, setTechniciens] = useState<TechnicienEntity[]>([]);
     const [loading, setLoading] = useState(false);
+    const [selectedWeekStart, setSelectedWeekStart] = useState(() => dayjs().startOf('week'));
     const [selectedDate, setSelectedDate] = useState(todayIso());
     const [selectedStatus, setSelectedStatus] = useState<PlanningStatus | undefined>(undefined);
     const [selectedTechnicien, setSelectedTechnicien] = useState<number | undefined>(undefined);
@@ -449,6 +450,33 @@ export default function Planning() {
                 .filter(Boolean) as CalendarEvent[],
         [allItems, selectedTechnicien]
     );
+
+    const HOUR_START = 7;
+    const HOUR_END = 19;
+    const TOTAL_HOURS = HOUR_END - HOUR_START;
+
+    const weekDays = useMemo(() => {
+        const days: dayjs.Dayjs[] = [];
+        for (let i = 0; i < 7; i++) {
+            days.push(selectedWeekStart.add(i, 'day'));
+        }
+        return days;
+    }, [selectedWeekStart]);
+
+    const weekLabel = useMemo(() => {
+        const end = selectedWeekStart.add(6, 'day');
+        return `${selectedWeekStart.format('DD MMM')} – ${end.format('DD MMM YYYY')}`;
+    }, [selectedWeekStart]);
+
+    const weekEvents = useMemo(() => {
+        const weekEnd = selectedWeekStart.add(7, 'day');
+        return calendarEvents.filter((ev) => {
+            const d = dayjs(ev.startTime);
+            return d.isAfter(selectedWeekStart.subtract(1, 'day')) && d.isBefore(weekEnd);
+        });
+    }, [calendarEvents, selectedWeekStart]);
+
+    const dayNames = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
 
     const handleSavePlanning = async () => {
         if (!currentRow?.vente?.id) {
@@ -680,7 +708,6 @@ export default function Planning() {
                 <Col flex="auto">
                     <Card size="small" title="Filtres">
                         <Space direction="vertical" style={{ width: '100%' }}>
-                            <DatePicker value={dayjs(selectedDate)} onChange={(date) => setSelectedDate(date ? date.format('YYYY-MM-DD') : todayIso())} style={{ width: '100%' }} />
                             <Select
                                 allowClear
                                 options={statusOptions}
@@ -708,10 +735,10 @@ export default function Planning() {
                     <Card size="small" title="Synthese">
                         <Space direction="vertical" style={{ width: '100%' }}>
                             <div>
-                                <Badge status="processing" /> Date: <strong>{selectedDate}</strong>
+                                <Badge status="processing" /> Semaine: <strong>{weekLabel}</strong>
                             </div>
                             <div>
-                                <Badge status="success" /> Planifiees (jour): <strong>{plannedItems.length}</strong>
+                                <Badge status="success" /> Planifiées (semaine): <strong>{weekEvents.length}</strong>
                             </div>
                             <div>
                                 <Badge status="warning" /> En attente (jour): <strong>{pendingItemsForDay.length}</strong>
@@ -726,71 +753,148 @@ export default function Planning() {
 
             <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
                 <Col span={24}>
-                    <Card size="small" title="Calendrier">
-                        <Calendar
-                            value={dayjs(selectedDate)}
-                            onSelect={(date) => setSelectedDate(date.format('YYYY-MM-DD'))}
-                            fullCellRender={(date, info) => {
-                                if (info.type !== 'date') {
-                                    return <div className="ant-picker-cell-inner">{date.month() + 1}</div>;
-                                }
-                                const dayStr = date.format('YYYY-MM-DD');
-                                const isToday = dayStr === todayIso();
-                                const isSelected = dayStr === selectedDate;
-                                const dayEvents = calendarEvents.filter((ev) => dayjs(ev.startTime).format('YYYY-MM-DD') === dayStr);
-                                const cellStyle: CSSProperties = {
-                                    minHeight: 80,
-                                    padding: 4,
-                                    borderRadius: 4,
-                                    border: dragOverDay === dayStr ? '2px dashed #1677ff' : isSelected ? '2px solid #1677ff' : '1px solid transparent',
-                                    background: isToday ? '#e6f4ff' : undefined,
-                                };
-                                return (
+                    <Card
+                        size="small"
+                        title={
+                            <Space>
+                                <Button icon={<LeftOutlined />} size="small" onClick={() => setSelectedWeekStart(selectedWeekStart.subtract(1, 'week'))} />
+                                <Button size="small" onClick={() => { setSelectedWeekStart(dayjs().startOf('week')); setSelectedDate(todayIso()); }}>
+                                    Aujourd'hui
+                                </Button>
+                                <Button icon={<RightOutlined />} size="small" onClick={() => setSelectedWeekStart(selectedWeekStart.add(1, 'week'))} />
+                                <span style={{ marginLeft: 8, fontWeight: 600 }}>{weekLabel}</span>
+                            </Space>
+                        }
+                    >
+                        <div style={{ overflowX: 'auto' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: `80px repeat(${TOTAL_HOURS}, 1fr)`, minWidth: TOTAL_HOURS * 80 + 80 }}>
+                                {/* Header row: hours */}
+                                <div style={{ borderBottom: '2px solid #d9d9d9', padding: '4px 8px', fontWeight: 600, background: '#fafafa' }} />
+                                {Array.from({ length: TOTAL_HOURS }, (_, i) => (
                                     <div
-                                        className="ant-picker-cell-inner"
-                                        style={cellStyle}
-                                        onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; setDragOverDay(dayStr); }}
-                                        onDragLeave={() => setDragOverDay(null)}
-                                        onDrop={(e) => {
-                                            e.preventDefault();
-                                            setDragOverDay(null);
-                                            const row = draggedRowRef.current;
-                                            draggedRowRef.current = null;
-                                            if (row) openPlanningModal(row, dayStr);
+                                        key={`h-${i}`}
+                                        style={{
+                                            borderBottom: '2px solid #d9d9d9',
+                                            borderLeft: '1px solid #f0f0f0',
+                                            padding: '4px 4px',
+                                            fontSize: 12,
+                                            fontWeight: 600,
+                                            textAlign: 'center',
+                                            background: '#fafafa',
                                         }}
                                     >
-                                        <div style={{ fontWeight: isToday ? 700 : 400, marginBottom: 2 }}>
-                                            {date.date()}
-                                        </div>
-                                        {dayEvents.map((ev) => (
-                                            <div
-                                                key={ev.eventId}
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    const matchedRow = allItems.find((r) => r.key === ev.eventId);
-                                                    if (matchedRow) openPlanningModal(matchedRow);
-                                                }}
-                                                style={{
-                                                    background: ev.backgroundColor || '#1677ff',
-                                                    color: ev.textColor || '#fff',
-                                                    borderRadius: 4,
-                                                    padding: '1px 4px',
-                                                    fontSize: 11,
-                                                    marginBottom: 2,
-                                                    cursor: 'pointer',
-                                                    overflow: 'hidden',
-                                                    textOverflow: 'ellipsis',
-                                                    whiteSpace: 'nowrap',
-                                                }}
-                                                title={ev.title}
-                                            >
-                                                {ev.title}
-                                            </div>
-                                        ))}
+                                        {HOUR_START + i}h
                                     </div>
-                                );
-                            }}
-                        />
+                                ))}
+
+                                {/* Day rows */}
+                                {weekDays.map((day) => {
+                                    const dayStr = day.format('YYYY-MM-DD');
+                                    const isToday = dayStr === todayIso();
+                                    const isSelected = dayStr === selectedDate;
+                                    const dayEvts = weekEvents.filter((ev) => dayjs(ev.startTime).format('YYYY-MM-DD') === dayStr);
+
+                                    return (
+                                        <React.Fragment key={dayStr}>
+                                            {/* Day label */}
+                                            <div
+                                                style={{
+                                                    borderBottom: '1px solid #f0f0f0',
+                                                    padding: '8px 8px',
+                                                    fontWeight: isToday ? 700 : 400,
+                                                    background: isToday ? '#e6f4ff' : isSelected ? '#f0f5ff' : undefined,
+                                                    cursor: 'pointer',
+                                                    fontSize: 12,
+                                                }}
+                                                onClick={() => setSelectedDate(dayStr)}
+                                            >
+                                                <div>{dayNames[day.day()]}</div>
+                                                <div style={{ fontSize: 13, fontWeight: 600 }}>{day.format('DD/MM')}</div>
+                                            </div>
+                                            {/* Timeline cells */}
+                                            <div
+                                                style={{
+                                                    gridColumn: `2 / -1`,
+                                                    borderBottom: '1px solid #f0f0f0',
+                                                    position: 'relative',
+                                                    minHeight: Math.max(80, dayEvts.length * 28 + 16),
+                                                    background: isToday ? '#e6f4ff' : isSelected ? '#f0f5ff' : undefined,
+                                                }}
+                                                onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; setDragOverDay(dayStr); }}
+                                                onDragLeave={() => setDragOverDay(null)}
+                                                onDrop={(e) => {
+                                                    e.preventDefault();
+                                                    setDragOverDay(null);
+                                                    const row = draggedRowRef.current;
+                                                    draggedRowRef.current = null;
+                                                    if (row) openPlanningModal(row, dayStr);
+                                                }}
+                                            >
+                                                {/* Vertical grid lines */}
+                                                {Array.from({ length: TOTAL_HOURS }, (_, i) => (
+                                                    <div
+                                                        key={`g-${i}`}
+                                                        style={{
+                                                            position: 'absolute',
+                                                            left: `${(i / TOTAL_HOURS) * 100}%`,
+                                                            top: 0,
+                                                            bottom: 0,
+                                                            width: 1,
+                                                            background: '#f0f0f0',
+                                                        }}
+                                                    />
+                                                ))}
+                                                {/* Drop highlight */}
+                                                {dragOverDay === dayStr && (
+                                                    <div style={{ position: 'absolute', inset: 0, border: '2px dashed #1677ff', borderRadius: 4, pointerEvents: 'none', zIndex: 5 }} />
+                                                )}
+                                                {/* Events */}
+                                                {dayEvts.map((ev, idx) => {
+                                                    const start = dayjs(ev.startTime);
+                                                    const startHour = start.hour() + start.minute() / 60;
+                                                    const duration = ev.dureeEstimee || 1;
+                                                    const leftPct = Math.max(0, ((startHour - HOUR_START) / TOTAL_HOURS) * 100);
+                                                    const widthPct = Math.min((duration / TOTAL_HOURS) * 100, 100 - leftPct);
+
+                                                    return (
+                                                        <Tooltip key={ev.eventId} title={`${ev.title} (${start.format('HH:mm')} - ${duration}h)`}>
+                                                            <div
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    const matchedRow = allItems.find((r) => r.key === ev.eventId);
+                                                                    if (matchedRow) openPlanningModal(matchedRow);
+                                                                }}
+                                                                style={{
+                                                                    position: 'absolute',
+                                                                    top: 4 + idx * 28,
+                                                                    left: `${leftPct}%`,
+                                                                    width: `${Math.max(widthPct, 2)}%`,
+                                                                    height: 24,
+                                                                    background: ev.backgroundColor || '#1677ff',
+                                                                    color: ev.textColor || '#fff',
+                                                                    borderRadius: 4,
+                                                                    padding: '2px 6px',
+                                                                    fontSize: 11,
+                                                                    lineHeight: '20px',
+                                                                    cursor: 'pointer',
+                                                                    overflow: 'hidden',
+                                                                    textOverflow: 'ellipsis',
+                                                                    whiteSpace: 'nowrap',
+                                                                    zIndex: 2,
+                                                                    boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
+                                                                }}
+                                                            >
+                                                                {ev.title}
+                                                            </div>
+                                                        </Tooltip>
+                                                    );
+                                                })}
+                                            </div>
+                                        </React.Fragment>
+                                    );
+                                })}
+                            </div>
+                        </div>
                     </Card>
                 </Col>
             </Row>
