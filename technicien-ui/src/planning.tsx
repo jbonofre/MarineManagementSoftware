@@ -18,7 +18,7 @@ import {
     Tag,
     message,
 } from 'antd';
-import { CheckCircleOutlined, ClockCircleOutlined, EditOutlined, ExclamationCircleOutlined, FileOutlined, PictureOutlined, ReloadOutlined } from '@ant-design/icons';
+import { CheckCircleOutlined, ClockCircleOutlined, EditOutlined, ExclamationCircleOutlined, FileOutlined, PictureOutlined, ReloadOutlined, ShoppingOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import api from './api.ts';
 import ImageUpload from './ImageUpload.tsx';
@@ -31,6 +31,16 @@ interface ChecklistItem {
     nom?: string;
     description?: string;
     done?: boolean;
+}
+
+interface ProduitItem {
+    id?: number;
+    nom?: string;
+    marque?: string;
+    categorie?: string;
+    ref?: string;
+    emplacement?: string;
+    quantite?: number;
 }
 
 interface PlanningItem {
@@ -53,6 +63,7 @@ interface PlanningItem {
     bateauNom?: string;
     quantite?: number;
     taches?: ChecklistItem[];
+    produits?: ProduitItem[];
     images?: string[];
     documents?: string[];
 }
@@ -507,7 +518,7 @@ export default function Planning({ technicienId }: PlanningProps) {
                     form.resetFields();
                 }}
                 destroyOnHidden
-                width={600}
+                width={1000}
                 footer={
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <div>
@@ -573,6 +584,32 @@ export default function Planning({ technicienId }: PlanningProps) {
                                     )}
                                 </div>
                             ))}
+                        </Card>
+                    )}
+                    {currentItem?.produits && currentItem.produits.length > 0 && (
+                        <Card size="small" title={<><ShoppingOutlined /> Produits</>} style={{ marginBottom: 12 }}>
+                            <table style={{ width: '100%', fontSize: 13, borderCollapse: 'collapse' }}>
+                                <thead>
+                                    <tr style={{ borderBottom: '1px solid #f0f0f0', textAlign: 'left' }}>
+                                        <th style={{ padding: '4px 8px' }}>Produit</th>
+                                        <th style={{ padding: '4px 8px' }}>Ref</th>
+                                        <th style={{ padding: '4px 8px' }}>Marque</th>
+                                        <th style={{ padding: '4px 8px' }}>Emplacement</th>
+                                        <th style={{ padding: '4px 8px', textAlign: 'right' }}>Qte</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {currentItem.produits.map((p) => (
+                                        <tr key={p.id} style={{ borderBottom: '1px solid #f0f0f0' }}>
+                                            <td style={{ padding: '4px 8px' }}>{p.nom || '-'}</td>
+                                            <td style={{ padding: '4px 8px', color: '#888' }}>{p.ref || '-'}</td>
+                                            <td style={{ padding: '4px 8px', color: '#888' }}>{p.marque || '-'}</td>
+                                            <td style={{ padding: '4px 8px', color: '#888' }}>{p.emplacement || '-'}</td>
+                                            <td style={{ padding: '4px 8px', textAlign: 'right', fontWeight: 500 }}>{p.quantite ?? 0}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
                         </Card>
                     )}
                     <Card size="small" title={<><PictureOutlined /> Images</>} style={{ marginBottom: 12 }}>

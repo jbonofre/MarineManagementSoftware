@@ -27,6 +27,7 @@ import {
     PictureOutlined,
     ReloadOutlined,
     ScheduleOutlined,
+    ShoppingOutlined,
     UnorderedListOutlined,
     UserOutlined,
     WarningOutlined,
@@ -51,6 +52,16 @@ interface ChecklistItem {
     done?: boolean;
 }
 
+interface ProduitItem {
+    id?: number;
+    nom?: string;
+    marque?: string;
+    categorie?: string;
+    ref?: string;
+    emplacement?: string;
+    quantite?: number;
+}
+
 interface PlanningItem {
     itemId?: number;
     venteId?: number;
@@ -71,6 +82,7 @@ interface PlanningItem {
     bateauNom?: string;
     quantite?: number;
     taches?: ChecklistItem[];
+    produits?: ProduitItem[];
     images?: string[];
     documents?: string[];
 }
@@ -382,6 +394,24 @@ export default function MobileApp({ user, onLogout, onChangePassword }: MobileAp
                                     {item.description && (
                                         <p style={{ margin: '0 0 0 24px', fontSize: 12, color: '#999' }}>{item.description}</p>
                                     )}
+                                </div>
+                            ))}
+                        </Card>
+                    )}
+                    {currentItem?.produits && currentItem.produits.length > 0 && (
+                        <Card size="small" title={<><ShoppingOutlined /> Produits</>} style={{ marginBottom: 12 }}>
+                            {currentItem.produits.map((p) => (
+                                <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid #f0f0f0', fontSize: 13 }}>
+                                    <div>
+                                        <div style={{ fontWeight: 500 }}>{p.nom || '-'}</div>
+                                        <div style={{ fontSize: 11, color: '#888' }}>
+                                            {p.ref && <span>Ref: {p.ref}</span>}
+                                            {p.ref && p.marque && <span> - </span>}
+                                            {p.marque && <span>{p.marque}</span>}
+                                        </div>
+                                        {p.emplacement && <div style={{ fontSize: 11, color: '#888' }}>Emplacement: {p.emplacement}</div>}
+                                    </div>
+                                    <div style={{ fontWeight: 500, whiteSpace: 'nowrap' }}>x{p.quantite ?? 0}</div>
                                 </div>
                             ))}
                         </Card>
