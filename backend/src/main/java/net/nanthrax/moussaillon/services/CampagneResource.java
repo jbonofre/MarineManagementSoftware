@@ -227,6 +227,7 @@ public class CampagneResource {
         } else if (cible == CampagneEntity.Cible.TOUS_LES_CLIENTS) {
             List<ClientEntity> clients = ClientEntity.listAll();
             for (ClientEntity client : clients) {
+                if (!client.consentement) continue;
                 String contact = canal == CampagneEntity.Canal.EMAIL ? client.email : client.telephone;
                 if (contact != null && !contact.isBlank()) {
                     String nom = ((client.prenom != null ? client.prenom + " " : "") + client.nom).trim();
@@ -307,7 +308,7 @@ public class CampagneResource {
 
             for (Long clientId : clientIds) {
                 ClientEntity client = ClientEntity.findById(clientId);
-                if (client != null) {
+                if (client != null && client.consentement) {
                     String contact = canal == CampagneEntity.Canal.EMAIL ? client.email : client.telephone;
                     if (contact != null && !contact.isBlank()) {
                         String nom = ((client.prenom != null ? client.prenom + " " : "") + client.nom).trim();

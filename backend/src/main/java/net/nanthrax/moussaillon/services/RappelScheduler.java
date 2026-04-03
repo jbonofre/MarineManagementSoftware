@@ -32,7 +32,7 @@ public class RappelScheduler {
                 VenteEntity.Status.EN_ATTENTE, VenteEntity.Status.EN_COURS);
 
         for (VenteEntity vente : ventes) {
-            if (vente.client == null || vente.client.email == null || vente.client.email.isBlank()) {
+            if (vente.client == null || !vente.client.consentement || vente.client.email == null || vente.client.email.isBlank()) {
                 continue;
             }
 

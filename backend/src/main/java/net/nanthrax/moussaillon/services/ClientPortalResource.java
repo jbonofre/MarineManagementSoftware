@@ -121,6 +121,22 @@ public class ClientPortalResource {
         return Response.noContent().build();
     }
 
+    public static class ConsentementRequest {
+        public boolean consentement;
+    }
+
+    @jakarta.ws.rs.PUT
+    @Path("/clients/{id}/consentement")
+    @Transactional
+    public Response updateConsentement(@PathParam("id") long id, ConsentementRequest request) {
+        ClientEntity client = ClientEntity.findById(id);
+        if (client == null) {
+            return Response.status(Response.Status.NOT_FOUND).entity("Client non trouve.").build();
+        }
+        client.consentement = request.consentement;
+        return Response.ok(client).build();
+    }
+
     @GET
     @Path("/clients/{id}")
     public ClientEntity getClient(@PathParam("id") long id) {
