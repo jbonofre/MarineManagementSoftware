@@ -7,6 +7,7 @@ import {
   Input,
   InputNumber,
   Select,
+  Image,
   Space,
   message,
   Popconfirm,
@@ -24,11 +25,13 @@ import {
   DeleteOutlined,
   SearchOutlined,
   DeleteOutlined as DeleteIcon,
+  TagsOutlined,
 } from "@ant-design/icons";
 import api from "./api.ts";
 import ImageUpload from './ImageUpload.tsx';
 import DocumentUpload from './DocumentUpload.tsx';
 import dayjs from "dayjs";
+import { useHistory } from "react-router-dom";
 
 const { Option } = Select;
 const { Search } = Input;
@@ -73,6 +76,37 @@ function RemorquesClients({ clientId }: RemorquesClientsProps) {
   const [catalogueForm] = Form.useForm();
   const [clientModalVisible, setClientModalVisible] = useState(false);
   const [clientForm] = Form.useForm();
+  const [annonceImageModalVisible, setAnnonceImageModalVisible] = useState(false);
+  const [annonceImageRemorque, setAnnonceImageRemorque] = useState<RemorqueClient | null>(null);
+  const [annonceSelectedImages, setAnnonceSelectedImages] = useState<Set<string>>(new Set());
+  const history = useHistory();
+
+  const openAnnonceImageModal = (remorque: RemorqueClient) => {
+    setAnnonceImageRemorque(remorque);
+    setAnnonceSelectedImages(new Set(remorque.images || []));
+    setAnnonceImageModalVisible(true);
+  };
+
+  const toggleAnnonceImage = (url: string) => {
+    setAnnonceSelectedImages((prev) => {
+      const next = new Set(prev);
+      if (next.has(url)) next.delete(url);
+      else next.add(url);
+      return next;
+    });
+  };
+
+  const handleCreateAnnonceFromImages = () => {
+    if (annonceSelectedImages.size === 0) {
+      message.warning("Veuillez selectionner au moins une image");
+      return;
+    }
+    setAnnonceImageModalVisible(false);
+    history.push("/annonces", {
+      photos: Array.from(annonceSelectedImages),
+      clientId: annonceImageRemorque?.proprietaire?.id,
+    });
+  };
 
   const fetchRemorques = async (q = "") => {
     setLoading(true);
@@ -287,12 +321,15 @@ function RemorquesClients({ clientId }: RemorquesClientsProps) {
       render: (_: any, record: RemorqueClient) => (
         <Space>
           <Button icon={<EditOutlined />} size="small" onClick={() => handleEdit(record)} />
+          {(record.images || []).length > 0 && (
+            <Button icon={<TagsOutlined />} size="small" onClick={() => openAnnonceImageModal(record)} title="Creer une annonce" />
+          )}
           <Popconfirm title="Supprimer cette remorque ?" onConfirm={() => handleDelete(record.id)}>
             <Button icon={<DeleteIcon />} danger size="small" />
           </Popconfirm>
         </Space>
       ),
-      width: 120,
+      width: 160,
     },
   ];
 
@@ -715,6 +752,71 @@ function RemorquesClients({ clientId }: RemorquesClientsProps) {
             <Input.TextArea rows={3} />
           </Form.Item>
         </Form>
+      </Modal>
+
+      {/* Image selection for annonce */}
+      <Modal
+        title={`Selectionner des photos pour l'annonce - Remorque ${annonceImageRemorque?.immatriculation || ''}`}
+        open={annonceImageModalVisible}
+        onCancel={() => setAnnonceImageModalVisible(false)}
+        onOk={handleCreateAnnonceFromImages}
+        okText={`Creer une annonce (${annonceSelectedImages.size} photo(s))`}
+        okButtonProps={{ disabled: annonceSelectedImages.size === 0 }}
+        cancelText="Annuler"
+        width={700}
+      >
+        {annonceImageRemorque && (
+          <div>
+            <div style={{ marginBottom: 12 }}>
+              <Checkbox
+                checked={(annonceImageRemorque.images || []).length > 0 && annonceSelectedImages.size === (annonceImageRemorque.images || []).length}
+                indeterminate={annonceSelectedImages.size > 0 && annonceSelectedImages.size < (annonceImageRemorque.images || []).length}
+                onChange={() => {
+                  const imgs = annonceImageRemorque.images || [];
+                  const allSelected = imgs.every((img) => annonceSelectedImages.has(img));
+                  setAnnonceSelectedImages(allSelected ? new Set() : new Set(imgs));
+                }}
+              >
+                Tout selectionner ({annonceSelectedImages.size}/{(annonceImageRemorque.images || []).length})
+              </Checkbox>
+            </div>
+            <Image.PreviewGroup>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {(annonceImageRemorque.images || []).map((url, i) => (
+                  <div
+                    key={i}
+                    onClick={(e) => {
+                      if (!(e.target as HTMLElement).closest('.ant-image-mask')) {
+                        toggleAnnonceImage(url);
+                      }
+                    }}
+                    style={{
+                      position: 'relative',
+                      cursor: 'pointer',
+                      border: annonceSelectedImages.has(url) ? '3px solid #1890ff' : '3px solid transparent',
+                      borderRadius: 8,
+                      overflow: 'hidden',
+                    }}
+                  >
+                    <Image
+                      width={120}
+                      height={120}
+                      src={url}
+                      style={{ objectFit: 'cover', display: 'block' }}
+                      preview={{ mask: 'Agrandir' }}
+                    />
+                    <Checkbox
+                      checked={annonceSelectedImages.has(url)}
+                      onChange={() => toggleAnnonceImage(url)}
+                      onClick={(e) => e.stopPropagation()}
+                      style={{ position: 'absolute', top: 4, left: 4, zIndex: 1 }}
+                    />
+                  </div>
+                ))}
+              </div>
+            </Image.PreviewGroup>
+          </div>
+        )}
       </Modal>
     </Card>
   );

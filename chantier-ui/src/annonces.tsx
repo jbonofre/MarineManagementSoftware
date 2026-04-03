@@ -16,6 +16,7 @@ import {
 import { DeleteOutlined, EditOutlined, EyeOutlined, PlusCircleOutlined, SendOutlined, StopOutlined } from '@ant-design/icons';
 import api from './api.ts';
 import ImageUpload from './ImageUpload.tsx';
+import { useLocation, useHistory } from 'react-router-dom';
 
 interface ClientEntity {
     id: number;
@@ -80,6 +81,8 @@ export default function Annonces() {
     const [publishAnnonce, setPublishAnnonce] = useState<Annonce | null>(null);
     const [form] = Form.useForm();
     const [formDirty, setFormDirty] = useState(false);
+    const location = useLocation<{ photos?: string[]; bateauId?: number; clientId?: number }>();
+    const history = useHistory();
 
     const fetchAnnonces = () => {
         setLoading(true);
@@ -106,6 +109,24 @@ export default function Annonces() {
         fetchClients();
         fetchBateaux();
     }, []);
+
+    useEffect(() => {
+        const state = location.state;
+        if (state?.photos && state.photos.length > 0) {
+            setEditing(null);
+            form.resetFields();
+            form.setFieldsValue({
+                status: 'ACTIVE',
+                photos: state.photos,
+                bateauId: state.bateauId,
+                clientId: state.clientId,
+            });
+            setFormDirty(false);
+            setModalOpen(true);
+            // Clear location state to prevent re-opening on re-render
+            history.replace('/annonces');
+        }
+    }, [location.state]);
 
     const openCreate = () => {
         setEditing(null);

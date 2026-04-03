@@ -25,11 +25,13 @@ import {
   EditOutlined,
   DeleteOutlined,
   SearchOutlined,
+  TagsOutlined,
 } from "@ant-design/icons";
 import api from "./api.ts";
 import ImageUpload from './ImageUpload.tsx';
 import DocumentUpload from './DocumentUpload.tsx';
 import dayjs from "dayjs";
+import { useHistory } from "react-router-dom";
 
 const { Option } = Select;
 const { Search } = Input;
@@ -76,6 +78,37 @@ const ClientsMoteurs: React.FC<ClientsMoteursProps> = ({ clientId }) => {
   const [catalogueForm] = Form.useForm();
   const [clientModalVisible, setClientModalVisible] = useState(false);
   const [clientForm] = Form.useForm();
+  const [annonceImageModalVisible, setAnnonceImageModalVisible] = useState(false);
+  const [annonceImageMoteur, setAnnonceImageMoteur] = useState<MoteurClient | null>(null);
+  const [annonceSelectedImages, setAnnonceSelectedImages] = useState<Set<string>>(new Set());
+  const history = useHistory();
+
+  const openAnnonceImageModal = (moteur: MoteurClient) => {
+    setAnnonceImageMoteur(moteur);
+    setAnnonceSelectedImages(new Set(moteur.images || []));
+    setAnnonceImageModalVisible(true);
+  };
+
+  const toggleAnnonceImage = (url: string) => {
+    setAnnonceSelectedImages((prev) => {
+      const next = new Set(prev);
+      if (next.has(url)) next.delete(url);
+      else next.add(url);
+      return next;
+    });
+  };
+
+  const handleCreateAnnonceFromImages = () => {
+    if (annonceSelectedImages.size === 0) {
+      message.warning("Veuillez selectionner au moins une image");
+      return;
+    }
+    setAnnonceImageModalVisible(false);
+    history.push("/annonces", {
+      photos: Array.from(annonceSelectedImages),
+      clientId: annonceImageMoteur?.proprietaire?.id,
+    });
+  };
 
   const fetchMoteurs = async (q = "") => {
     setLoading(true);
@@ -310,12 +343,15 @@ const ClientsMoteurs: React.FC<ClientsMoteursProps> = ({ clientId }) => {
       render: (_: any, record: MoteurClient) => (
         <Space>
           <Button icon={<EditOutlined />} size="small" onClick={() => handleEdit(record)} />
+          {(record.images || []).length > 0 && (
+            <Button icon={<TagsOutlined />} size="small" onClick={() => openAnnonceImageModal(record)} title="Creer une annonce" />
+          )}
           <Popconfirm title="Supprimer ce moteur ?" onConfirm={() => handleDelete(record.id)}>
             <Button icon={<DeleteOutlined />} danger size="small" />
           </Popconfirm>
         </Space>
       ),
-      width: 120,
+      width: 160,
     },
   ];
 
@@ -764,6 +800,71 @@ const ClientsMoteurs: React.FC<ClientsMoteursProps> = ({ clientId }) => {
             <Input.TextArea rows={3} />
           </Form.Item>
         </Form>
+      </Modal>
+
+      {/* Image selection for annonce */}
+      <Modal
+        title={`Selectionner des photos pour l'annonce - Moteur ${annonceImageMoteur?.numeroSerie || ''}`}
+        open={annonceImageModalVisible}
+        onCancel={() => setAnnonceImageModalVisible(false)}
+        onOk={handleCreateAnnonceFromImages}
+        okText={`Creer une annonce (${annonceSelectedImages.size} photo(s))`}
+        okButtonProps={{ disabled: annonceSelectedImages.size === 0 }}
+        cancelText="Annuler"
+        width={700}
+      >
+        {annonceImageMoteur && (
+          <div>
+            <div style={{ marginBottom: 12 }}>
+              <Checkbox
+                checked={(annonceImageMoteur.images || []).length > 0 && annonceSelectedImages.size === (annonceImageMoteur.images || []).length}
+                indeterminate={annonceSelectedImages.size > 0 && annonceSelectedImages.size < (annonceImageMoteur.images || []).length}
+                onChange={() => {
+                  const imgs = annonceImageMoteur.images || [];
+                  const allSelected = imgs.every((img) => annonceSelectedImages.has(img));
+                  setAnnonceSelectedImages(allSelected ? new Set() : new Set(imgs));
+                }}
+              >
+                Tout selectionner ({annonceSelectedImages.size}/{(annonceImageMoteur.images || []).length})
+              </Checkbox>
+            </div>
+            <Image.PreviewGroup>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {(annonceImageMoteur.images || []).map((url, i) => (
+                  <div
+                    key={i}
+                    onClick={(e) => {
+                      if (!(e.target as HTMLElement).closest('.ant-image-mask')) {
+                        toggleAnnonceImage(url);
+                      }
+                    }}
+                    style={{
+                      position: 'relative',
+                      cursor: 'pointer',
+                      border: annonceSelectedImages.has(url) ? '3px solid #1890ff' : '3px solid transparent',
+                      borderRadius: 8,
+                      overflow: 'hidden',
+                    }}
+                  >
+                    <Image
+                      width={120}
+                      height={120}
+                      src={url}
+                      style={{ objectFit: 'cover', display: 'block' }}
+                      preview={{ mask: 'Agrandir' }}
+                    />
+                    <Checkbox
+                      checked={annonceSelectedImages.has(url)}
+                      onChange={() => toggleAnnonceImage(url)}
+                      onClick={(e) => e.stopPropagation()}
+                      style={{ position: 'absolute', top: 4, left: 4, zIndex: 1 }}
+                    />
+                  </div>
+                ))}
+              </div>
+            </Image.PreviewGroup>
+          </div>
+        )}
       </Modal>
     </Card>
   );
