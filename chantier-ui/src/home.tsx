@@ -1,7 +1,14 @@
 import { fetchWithAuth } from './api.ts';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Typography, Row, Col, Card, Input, Button, Space, Divider, Tag, Modal, theme } from 'antd';
-import { SmileOutlined, RobotOutlined, SendOutlined, QuestionCircleOutlined, AudioOutlined, AudioMutedOutlined } from '@ant-design/icons';
+import {
+    SmileOutlined, RobotOutlined, SendOutlined, QuestionCircleOutlined,
+    AudioOutlined, AudioMutedOutlined, TeamOutlined, ToolOutlined,
+    ShoppingCartOutlined, CalendarOutlined, DashboardOutlined, ReadOutlined
+} from '@ant-design/icons';
+import Icon from '@ant-design/icons';
+import { ReactComponent as BoatOutlined } from './boat.svg';
+import { ReactComponent as ParcOutlined } from './parc.svg';
 import { useHistory } from 'react-router-dom';
 
 const { Title, Paragraph } = Typography;
@@ -736,32 +743,120 @@ export default function Home() {
         }
     };
 
+    const quickAccessItems = [
+        { title: 'Clients', description: 'Gérer vos clients et contacts', icon: <TeamOutlined style={{ fontSize: 28 }} />, route: '/clients', color: '#1677ff' },
+        { title: 'Parc', description: 'Bateaux, moteurs et remorques', icon: <Icon component={ParcOutlined} style={{ fontSize: 28 }} />, route: '/clients/bateaux', color: '#52c41a' },
+        { title: 'Catalogue', description: 'Produits et fournisseurs', icon: <ReadOutlined style={{ fontSize: 28 }} />, route: '/catalogue/produits', color: '#fa8c16' },
+        { title: 'Ventes', description: 'Comptoir et prestations', icon: <ShoppingCartOutlined style={{ fontSize: 28 }} />, route: '/prestations', color: '#eb2f96' },
+        { title: 'Atelier', description: 'Planning et équipe technique', icon: <ToolOutlined style={{ fontSize: 28 }} />, route: '/planning', color: '#722ed1' },
+        { title: 'Tableau de bord', description: 'Statistiques et indicateurs', icon: <DashboardOutlined style={{ fontSize: 28 }} />, route: '/dashboard', color: '#13c2c2' },
+    ];
+
     return (
         <>
-            <Card bordered={false} style={{ marginBottom: 24, background: token.colorFillTertiary }}>
-                <Row align="middle">
-                    <Col flex="40px">
-                        <SmileOutlined style={{ fontSize: 40, color: token.colorPrimary }} />
-                    </Col>
-                    <Col flex="auto" style={{ paddingLeft: 16 }}>
-                        <Title level={2} style={{ marginBottom: 0 }}>Bienvenue moussAIllon</Title>
-                        <Paragraph type="secondary" style={{ marginBottom: 0 }}>
-                            Gérez vos clients, bateaux, moteurs, remorques et plus encore en toute simplicité.<br />
-                            Utilisez le menu latéral pour naviguer entre les différentes fonctionnalités.<br />
-                            Nous vous souhaitons une excellente expérience sur notre plateforme.
+            {/* Hero Section */}
+            <div
+                style={{
+                    position: 'relative',
+                    borderRadius: 16,
+                    overflow: 'hidden',
+                    marginBottom: 24,
+                    background: `linear-gradient(135deg, #0958d9 0%, #1677ff 40%, #4096ff 100%)`,
+                    padding: '40px 36px',
+                    boxShadow: '0 8px 24px rgba(22, 119, 255, 0.25)',
+                }}
+            >
+                <div style={{
+                    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.08,
+                    backgroundImage: 'url(/logo.png)',
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: 'right -40px bottom -40px',
+                    backgroundSize: '320px',
+                    pointerEvents: 'none',
+                }} />
+                <Row align="middle" gutter={24}>
+                    <Col flex="auto">
+                        <Title level={2} style={{ color: '#fff', marginBottom: 4, fontWeight: 700, letterSpacing: -0.5 }}>
+                            Bienvenue sur moussAIllon
+                        </Title>
+                        <Paragraph style={{ color: 'rgba(255,255,255,0.85)', fontSize: 16, marginBottom: 0, maxWidth: 600 }}>
+                            Votre plateforme de gestion de chantier naval.
+                            Gérez vos clients, bateaux, moteurs, remorques et prestations en toute simplicité.
                         </Paragraph>
                     </Col>
+                    <Col>
+                        <Icon component={BoatOutlined} style={{ fontSize: 80, color: 'rgba(255,255,255,0.35)' }} />
+                    </Col>
                 </Row>
-            </Card>
+            </div>
 
+            {/* Quick Access Cards */}
+            <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+                {quickAccessItems.map((item) => (
+                    <Col xs={24} sm={12} md={8} key={item.title}>
+                        <Card
+                            hoverable
+                            onClick={() => history.push(item.route)}
+                            style={{
+                                borderRadius: 12,
+                                border: `1px solid ${token.colorBorderSecondary}`,
+                                cursor: 'pointer',
+                                height: '100%',
+                                transition: 'all 0.3s ease',
+                            }}
+                            styles={{ body: { padding: '20px 24px' } }}
+                        >
+                            <Row align="middle" gutter={16}>
+                                <Col>
+                                    <div style={{
+                                        width: 52, height: 52, borderRadius: 12,
+                                        background: item.color + '15',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        color: item.color,
+                                    }}>
+                                        {item.icon}
+                                    </div>
+                                </Col>
+                                <Col flex="auto">
+                                    <div style={{ fontWeight: 600, fontSize: 15, color: token.colorText }}>{item.title}</div>
+                                    <div style={{ fontSize: 13, color: token.colorTextSecondary, marginTop: 2 }}>{item.description}</div>
+                                </Col>
+                            </Row>
+                        </Card>
+                    </Col>
+                ))}
+            </Row>
+
+            {/* AI Assistant Chat */}
             <Card
-                style={{ background: token.colorBgContainer }}
+                style={{
+                    borderRadius: 12,
+                    border: `1px solid ${token.colorBorderSecondary}`,
+                    overflow: 'hidden',
+                }}
+                styles={{ header: { borderBottom: `1px solid ${token.colorBorderSecondary}` } }}
                 title={
-                    <Space>
-                        <RobotOutlined />
-                        Assistant IA
-                        <Tag color={mcpStatusColor}>{mcpReady ? 'Connecté' : 'En attente'}</Tag>
-                    </Space>
+                    <Row align="middle" justify="space-between">
+                        <Space>
+                            <div style={{
+                                width: 36, height: 36, borderRadius: 10,
+                                background: 'linear-gradient(135deg, #722ed1, #9254de)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            }}>
+                                <RobotOutlined style={{ color: '#fff', fontSize: 18 }} />
+                            </div>
+                            <div>
+                                <span style={{ fontWeight: 600, fontSize: 15 }}>Assistant IA</span>
+                                <Tag
+                                    color={mcpStatusColor}
+                                    style={{ marginLeft: 8, borderRadius: 10, fontSize: 11 }}
+                                >
+                                    {mcpReady ? 'Connecté' : 'En attente'}
+                                </Tag>
+                            </div>
+                        </Space>
+                        <Tag color="purple" style={{ borderRadius: 10 }}>Claude (Anthropic)</Tag>
+                    </Row>
                 }
             >
 
@@ -771,46 +866,53 @@ export default function Home() {
                         height: 350,
                         maxHeight: 350,
                         overflowY: 'auto',
-                        border: `1px solid ${token.colorBorderSecondary}`,
-                        borderRadius: 8,
-                        padding: 12,
-                        background: token.colorBgElevated
+                        borderRadius: 10,
+                        padding: 16,
+                        background: token.colorFillQuaternary,
                     }}
                 >
                     {messages.map((message, index) => (
                         <div
                             key={index}
                             style={{
-                                marginBottom: 12,
-                                textAlign: message.role === 'user' ? 'right' : 'left'
+                                marginBottom: 14,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: message.role === 'user' ? 'flex-end' : 'flex-start',
                             }}
                         >
-                            <Tag color={message.role === 'user' ? 'blue' : 'purple'}>
-                                {message.role === 'user' ? 'Vous' : 'Assistant'}
-                            </Tag>
+                            <span style={{ fontSize: 11, color: token.colorTextTertiary, marginBottom: 4, fontWeight: 500 }}>
+                                {message.role === 'user' ? 'Vous' : 'moussAIllon'}
+                            </span>
                             {(() => {
                                 const parsedJson = message.role === 'assistant'
                                     ? tryParseJsonForDisplay(message.content)
                                     : null;
+                                const bubbleBase: React.CSSProperties = {
+                                    maxWidth: '85%',
+                                    padding: '10px 14px',
+                                    borderRadius: message.role === 'user' ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
+                                    lineHeight: 1.6,
+                                    fontSize: 14,
+                                };
                                 if (parsedJson) {
                                     return (
-                                        <div
-                                            style={{
-                                                marginTop: 6,
-                                                marginBottom: 0,
-                                                padding: 10,
-                                                borderRadius: 8,
-                                                background: token.colorFillTertiary,
-                                                border: `1px solid ${token.colorBorderSecondary}`,
-                                                lineHeight: 1.5
-                                            }}
-                                        >
+                                        <div style={{
+                                            ...bubbleBase,
+                                            background: token.colorFillTertiary,
+                                            border: `1px solid ${token.colorBorderSecondary}`,
+                                        }}>
                                             {renderJsonNode(parsedJson, 0, jsonColors)}
                                         </div>
                                     );
                                 }
                                 return (
-                                    <div style={{ whiteSpace: 'pre-wrap', marginTop: 4 }}>
+                                    <div style={{
+                                        ...bubbleBase,
+                                        whiteSpace: 'pre-wrap',
+                                        background: message.role === 'user' ? token.colorPrimary : token.colorFillTertiary,
+                                        color: message.role === 'user' ? '#fff' : token.colorText,
+                                    }}>
                                         {message.content}
                                     </div>
                                 );
@@ -819,19 +921,19 @@ export default function Home() {
                     ))}
                 </div>
 
-                <Divider style={{ margin: '16px 0' }} />
+                <Divider style={{ margin: '16px 0 12px' }} />
 
                 <Space direction="vertical" style={{ width: '100%' }}>
-                    <Space>
-                        <Tag>Provider IA</Tag>
-                        <Tag color="purple">Claude (Anthropic)</Tag>
-                    </Space>
                     <TextArea
                         value={prompt}
                         onChange={(e) => setPrompt(e.target.value)}
-                        placeholder={"Posez une question."}
+                        placeholder={"Posez une question ou tapez une commande..."}
                         autoSize={{ minRows: 2, maxRows: 6 }}
-                        style={{ background: token.colorBgContainer, color: token.colorText }}
+                        style={{
+                            background: token.colorBgContainer,
+                            color: token.colorText,
+                            borderRadius: 10,
+                        }}
                         onPressEnter={(e) => {
                             if (!e.shiftKey) {
                                 e.preventDefault();
@@ -839,23 +941,32 @@ export default function Home() {
                             }
                         }}
                     />
-                    <Space>
-                        <Button icon={<QuestionCircleOutlined />} onClick={() => setIsHelpOpen(true)}>
-                            Help
-                        </Button>
-                        <Button onClick={() => setPrompt('resources')}>Resources</Button>
+                    <Row justify="space-between" align="middle">
+                        <Space>
+                            <Button icon={<QuestionCircleOutlined />} onClick={() => setIsHelpOpen(true)} style={{ borderRadius: 8 }}>
+                                Aide
+                            </Button>
+                            <Button onClick={() => setPrompt('resources')} style={{ borderRadius: 8 }}>Resources</Button>
+                            <Button
+                                icon={listening ? <AudioMutedOutlined /> : <AudioOutlined />}
+                                danger={listening}
+                                onClick={onToggleVoice}
+                                title={listening ? 'Arrêter l\'écoute' : 'Dicter un message'}
+                                style={{ borderRadius: 8 }}
+                            >
+                                {listening ? 'Écoute...' : 'Voix'}
+                            </Button>
+                        </Space>
                         <Button
-                            icon={listening ? <AudioMutedOutlined /> : <AudioOutlined />}
-                            danger={listening}
-                            onClick={onToggleVoice}
-                            title={listening ? 'Arrêter l\'écoute' : 'Dicter un message'}
+                            type="primary"
+                            icon={<SendOutlined />}
+                            loading={loading}
+                            onClick={onSend}
+                            style={{ borderRadius: 8, paddingInline: 24 }}
                         >
-                            {listening ? 'Écoute...' : 'Voix'}
-                        </Button>
-                        <Button type="primary" icon={<SendOutlined />} loading={loading} onClick={onSend}>
                             Envoyer
                         </Button>
-                    </Space>
+                    </Row>
                 </Space>
             </Card>
 
