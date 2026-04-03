@@ -35,6 +35,7 @@ import Annonces from './annonces.tsx';
 import Campagnes from './campagnes.tsx';
 import CommandesFournisseur from './commandes-fournisseur.tsx';
 import Emails from './emails.tsx';
+import SequenceEmails from './sequence-emails.tsx';
 
 export function demo() {
     message.warning("Vous êtes sur une version de démonstration de moussAIllon. Il n'est pas possible d'ajouter ou supprimer des éléments.")
@@ -88,7 +89,8 @@ function SideMenu(props) {
       { key: 'parametrage', label: 'Paramétrage', icon: <SettingOutlined/>, requiredRole: 'admin', children: [
         { key: 'societe', label: <Link to="/societe">Société</Link>, icon: <DeploymentUnitOutlined/> },
         { key: 'utilisateurs', label: <Link to="/utilisateurs">Utilisateurs</Link>, icon: <UserOutlined/> },
-        { key: 'emails', label: <Link to="/emails">Emails</Link>, icon: <MailOutlined/> }
+        { key: 'emails', label: <Link to="/emails">Emails</Link>, icon: <MailOutlined/> },
+        { key: 'sequence-emails', label: <Link to="/sequence-emails">Séquence emails</Link>, icon: <SendOutlined/> }
       ] }
     ];
 
@@ -448,6 +450,9 @@ export default function Workspace(props) {
                         </Route>
                         <Route path="/emails" key="emails">
                             <ProtectedRoute roles={props.roles} requiredRole="admin"><Emails /></ProtectedRoute>
+                        </Route>
+                        <Route path="/sequence-emails" key="sequence-emails">
+                            <ProtectedRoute roles={props.roles} requiredRole="admin"><SequenceEmails /></ProtectedRoute>
                         </Route>
                         <Route path="/prestations" key="prestations">
                             <ProtectedRoute roles={props.roles} requiredRole="vendeur"><Vente /></ProtectedRoute>

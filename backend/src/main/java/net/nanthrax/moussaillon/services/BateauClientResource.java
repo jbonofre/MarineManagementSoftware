@@ -10,6 +10,7 @@ import net.nanthrax.moussaillon.persistence.ClientEntity;
 import net.nanthrax.moussaillon.persistence.MoteurCatalogueEntity;
 import net.nanthrax.moussaillon.persistence.ProduitCatalogueEntity;
 
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -95,6 +96,9 @@ public class BateauClientResource {
             entity.equipements = equipementsEntities;
         }
         
+        if (entity.dateCreation == null) {
+            entity.dateCreation = new Timestamp(System.currentTimeMillis());
+        }
         entity.persist();
         return Response.status(Response.Status.CREATED).entity(entity).build();
     }

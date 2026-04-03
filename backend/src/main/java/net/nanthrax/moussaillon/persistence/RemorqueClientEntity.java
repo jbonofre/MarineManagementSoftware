@@ -4,6 +4,7 @@ import io.quarkus.hibernate.orm.panache.PanacheEntity;
 import jakarta.persistence.Entity;
 import jakarta.persistence.ManyToOne;
 
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,5 +28,7 @@ public class RemorqueClientEntity extends PanacheEntity {
 
     @ManyToOne
     public RemorqueCatalogueEntity modele;
+
+    public Timestamp dateCreation;
 
 }
