@@ -7,6 +7,7 @@ import net.nanthrax.moussaillon.persistence.ClientEntity;
 import net.nanthrax.moussaillon.persistence.MoteurCatalogueEntity;
 import net.nanthrax.moussaillon.persistence.MoteurClientEntity;
 
+import java.sql.Timestamp;
 import java.util.List;
 
 @Path("/moteurs")
@@ -45,6 +46,9 @@ public class MoteurClientResource {
             moteur.modele = MoteurCatalogueEntity.findById(moteur.modele.id);
         }
         moteur.id = null;
+        if (moteur.dateCreation == null) {
+            moteur.dateCreation = new Timestamp(System.currentTimeMillis());
+        }
         moteur.persist();
         return moteur;
     }

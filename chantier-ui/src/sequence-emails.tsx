@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Card, Space, Button, Form, Input, InputNumber, Table, Modal, Tag, Spin, Switch, message, Popconfirm } from 'antd';
+import { Card, Space, Button, Form, Input, InputNumber, Table, Modal, Tag, Spin, Switch, Tabs, message, Popconfirm } from 'antd';
 import { SendOutlined, PlusCircleOutlined, EditOutlined, DeleteOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 
 interface Etape {
     id?: number;
+    cible: string;
     ordre: number;
     delaiJours: number;
     sujet: string;
@@ -14,7 +15,14 @@ interface Etape {
     actif: boolean;
 }
 
-export default function SequenceEmails() {
+const CIBLE_OPTIONS = [
+    { key: 'CLIENT', label: 'Clients', variables: '{client}, {societe}, {email}, {telephone}' },
+    { key: 'BATEAU', label: 'Bateaux', variables: '{client}, {societe}, {equipement}, {email}, {telephone}' },
+    { key: 'MOTEUR', label: 'Moteurs', variables: '{client}, {societe}, {equipement}, {email}, {telephone}' },
+    { key: 'REMORQUE', label: 'Remorques', variables: '{client}, {societe}, {equipement}, {email}, {telephone}' },
+];
+
+function SequenceTable({ cible, variables }: { cible: string; variables: string }) {
 
     const [etapes, setEtapes] = useState<Etape[]>([]);
     const [loading, setLoading] = useState(true);
@@ -24,8 +32,7 @@ export default function SequenceEmails() {
 
     const loadEtapes = () => {
         setLoading(true);
-        fetch('./email-sequences/init', { method: 'POST' })
-            .then(() => fetch('./email-sequences'))
+        fetch('./email-sequences?cible=' + cible)
             .then((response) => {
                 if (!response.ok) {
                     throw new Error('Erreur (code ' + response.status + ')');
@@ -45,7 +52,7 @@ export default function SequenceEmails() {
 
     useEffect(() => {
         loadEtapes();
-    }, []);
+    }, [cible]);
 
     const handleAdd = () => {
         setEditing(null);
@@ -91,6 +98,7 @@ export default function SequenceEmails() {
     const handleSave = (values: any) => {
         const payload = {
             ...(editing || {}),
+            cible,
             ordre: values.ordre,
             delaiJours: values.delaiJours,
             sujet: values.sujet,
@@ -196,32 +204,27 @@ export default function SequenceEmails() {
         }
     ];
 
-    if (loading) {
-        return <Spin />;
-    }
-
     return (
         <>
-            <Card title={<Space><SendOutlined /> Séquence d'emails - Nouveaux clients</Space>}
-                  extra={<Button type="primary" icon={<PlusCircleOutlined />} onClick={handleAdd}>Ajouter une étape</Button>}
-            >
-                <Space direction="vertical" style={{ width: '100%' }} size="middle">
+            <Space direction="vertical" style={{ width: '100%' }} size="middle">
+                <Space style={{ justifyContent: 'space-between', width: '100%' }}>
                     <Space>
                         <InfoCircleOutlined />
                         <span style={{ opacity: 0.7 }}>
-                            Configurez la séquence d'emails envoyés automatiquement aux nouveaux clients.
-                            Chaque étape est envoyée après le délai indiqué (en jours) à partir de la date de création du client.
-                            Variables disponibles : {'{client}'}, {'{societe}'}, {'{email}'}, {'{telephone}'}.
+                            Variables disponibles : {variables}
                         </span>
                     </Space>
+                    <Button type="primary" icon={<PlusCircleOutlined />} onClick={handleAdd}>Ajouter une étape</Button>
+                </Space>
+                <Spin spinning={loading}>
                     <Table
                         dataSource={etapes}
                         columns={columns}
                         rowKey="id"
                         pagination={false}
                     />
-                </Space>
-            </Card>
+                </Spin>
+            </Space>
 
             <Modal
                 open={editVisible}
@@ -268,7 +271,7 @@ export default function SequenceEmails() {
                         name="description"
                         label="Description (usage interne)"
                     >
-                        <Input placeholder="Ex: Email de bienvenue, Présentation entreprise..." />
+                        <Input placeholder="Ex: Email de bienvenue, Confirmation d'enregistrement..." />
                     </Form.Item>
                     <Form.Item
                         name="sujet"
@@ -287,6 +290,39 @@ export default function SequenceEmails() {
                 </Form>
             </Modal>
         </>
+    );
+}
+
+export default function SequenceEmails() {
+
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        fetch('./email-sequences/init', { method: 'POST' })
+            .then(() => setLoading(false))
+            .catch(() => setLoading(false));
+    }, []);
+
+    if (loading) {
+        return <Spin />;
+    }
+
+    const tabItems = CIBLE_OPTIONS.map((opt) => ({
+        key: opt.key,
+        label: opt.label,
+        children: <SequenceTable cible={opt.key} variables={opt.variables} />
+    }));
+
+    return (
+        <Card title={<Space><SendOutlined /> Séquences d'emails automatiques</Space>}>
+            <Space direction="vertical" style={{ width: '100%' }} size="small">
+                <span style={{ opacity: 0.7 }}>
+                    <InfoCircleOutlined /> Configurez les séquences d'emails envoyés automatiquement lors de la création d'un nouveau client, bateau, moteur ou remorque.
+                    Chaque étape est envoyée après le délai indiqué (en jours) à partir de la date de création.
+                </span>
+                <Tabs items={tabItems} />
+            </Space>
+        </Card>
     );
 
 }

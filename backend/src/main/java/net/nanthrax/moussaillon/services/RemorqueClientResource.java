@@ -7,6 +7,7 @@ import net.nanthrax.moussaillon.persistence.ClientEntity;
 import net.nanthrax.moussaillon.persistence.RemorqueCatalogueEntity;
 import net.nanthrax.moussaillon.persistence.RemorqueClientEntity;
 
+import java.sql.Timestamp;
 import java.util.List;
 
 @Path("/remorques")
@@ -45,6 +46,9 @@ public class RemorqueClientResource {
             remorque.modele = RemorqueCatalogueEntity.findById(remorque.modele.id);
         }
         remorque.id = null;
+        if (remorque.dateCreation == null) {
+            remorque.dateCreation = new Timestamp(System.currentTimeMillis());
+        }
         remorque.persist();
         return remorque;
     }

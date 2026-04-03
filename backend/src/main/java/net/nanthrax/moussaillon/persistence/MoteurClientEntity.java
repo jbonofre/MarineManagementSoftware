@@ -1,5 +1,6 @@
 package net.nanthrax.moussaillon.persistence;
 
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,5 +30,7 @@ public class MoteurClientEntity extends PanacheEntity {
 
     @ManyToOne
     public MoteurCatalogueEntity modele;
-    
+
+    public Timestamp dateCreation;
+
 }

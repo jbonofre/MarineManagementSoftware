@@ -5,6 +5,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -44,5 +45,7 @@ public class BateauClientEntity extends PanacheEntity {
 
     @ManyToMany
     public List<ProduitCatalogueEntity> equipements = new ArrayList<>();
+
+    public Timestamp dateCreation;
 
 }
