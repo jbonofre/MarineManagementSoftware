@@ -20,14 +20,22 @@ public class CampagneEntity extends PanacheEntity {
     }
 
     public enum Cible {
+        TOUS_LES_CLIENTS,
         PROPRIETAIRE_BATEAU,
+        PROPRIETAIRE_BATEAU_MARQUE,
+        PROPRIETAIRE_BATEAU_MODELE,
         PROPRIETAIRE_MOTEUR,
+        PROPRIETAIRE_MOTEUR_MARQUE,
+        PROPRIETAIRE_MOTEUR_MODELE,
         PROPRIETAIRE_REMORQUE,
+        PROPRIETAIRE_REMORQUE_MARQUE,
+        PROPRIETAIRE_REMORQUE_MODELE,
         FOURNISSEUR
     }
 
     public enum Statut {
         BROUILLON,
+        PROGRAMMEE,
         ENVOYEE
     }
 
@@ -47,6 +55,8 @@ public class CampagneEntity extends PanacheEntity {
 
     public String sujet;
 
+    public String cibleFiltre;
+
     @Column(length = 10000)
     public String contenu;
 
@@ -57,5 +67,8 @@ public class CampagneEntity extends PanacheEntity {
 
     @JsonbTypeAdapter(TimestampJsonbAdapter.class)
     public Timestamp dateEnvoi;
+
+    @JsonbTypeAdapter(TimestampJsonbAdapter.class)
+    public Timestamp dateProgrammee;
 
 }
