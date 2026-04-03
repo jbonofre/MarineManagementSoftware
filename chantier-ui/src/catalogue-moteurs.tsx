@@ -2,18 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { Row, Col, AutoComplete, Table, Button, Modal, Form, Input, InputNumber, Rate, Space, Popconfirm, message, Select, Image, Card } from 'antd';
 import { EditOutlined, DeleteOutlined, PlusCircleOutlined } from '@ant-design/icons';
 import api from './api.ts';
+import { useReferenceValeurs } from './useReferenceValeurs.ts';
 import FournisseurMoteurs from './fournisseur-moteurs.tsx';
 import ImageUpload from './ImageUpload.tsx';
 import DocumentUpload from './DocumentUpload.tsx';
 
 const style: React.CSSProperties = { padding: '8px 0' };
 const { Search } = Input;
-const moteurTypes = [
-  { text: 'Hors-bord', value: 'Hors-bord' },
-  { text: 'In-bord', value: 'In-bord' },
-  { text: 'Electrique', value: 'Electrique' },
-  { text: 'Diesel', value: 'Diesel' },
-];
 
 type CatalogueImage = string;
 
@@ -110,6 +105,7 @@ const attachMoteursToHelices = (helicesList: Helice[], moteursList: Moteur[]) =>
   });
 
 const MoteurCatalogue = () => {
+  const moteurTypes = useReferenceValeurs('TYPE_MOTEUR');
   const CV_TO_KW_FACTOR = 0.735499;
 
   const roundPower = (value: number) => Math.round((value + Number.EPSILON) * 100) / 100;

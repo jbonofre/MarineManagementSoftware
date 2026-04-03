@@ -19,6 +19,7 @@ import {
 } from 'antd';
 import { DeleteOutlined, EditOutlined, PlusCircleOutlined, PlusOutlined } from '@ant-design/icons';
 import api from './api.ts';
+import { useReferenceValeurs } from './useReferenceValeurs.ts';
 import ImageUpload from './ImageUpload.tsx';
 
 interface MoteurCatalogueEntity {
@@ -66,14 +67,6 @@ interface MainOeuvreEntity {
     prixTTC?: number;
 }
 
-const PRODUIT_CATEGORIES = [
-    { text: 'Pièces Moteur', value: 'Pièces Moteur', label: 'Pièces Moteur' },
-    { text: 'Pièces Remorque', value: 'Pièces Remorque', label: 'Pièces Remorque' },
-    { text: 'Electronique', value: 'Electronique', label: 'Electronique' },
-    { text: 'Sécurité', value: 'Sécurité', label: 'Sécurité' },
-    { text: 'Equipement & Accessoires', value: 'Equipement & Accessoires', label: 'Equipement & Accessoires' },
-    { text: 'Loisirs', value: 'Loisirs', label: 'Loisirs' },
-];
 
 const defaultNewProduit = {
     nom: '', marque: '', categorie: '', ref: '', refs: [], images: [], description: '',
@@ -168,6 +161,7 @@ const defaultForfait: ForfaitFormValues = {
 const formatEuro = (value?: number) => `${(value || 0).toFixed(2)} €`;
 
 export default function Forfaits() {
+    const PRODUIT_CATEGORIES = useReferenceValeurs('CATEGORIE_PRODUIT');
     const [forfaits, setForfaits] = useState<ForfaitEntity[]>([]);
     const [moteurs, setMoteurs] = useState<MoteurCatalogueEntity[]>([]);
     const [bateaux, setBateaux] = useState<BateauCatalogueEntity[]>([]);

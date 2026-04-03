@@ -36,6 +36,7 @@ import Campagnes from './campagnes.tsx';
 import CommandesFournisseur from './commandes-fournisseur.tsx';
 import Emails from './emails.tsx';
 import SequenceEmails from './sequence-emails.tsx';
+import ReferenceValeurs from './reference-valeurs.tsx';
 
 export function demo() {
     message.warning("Vous êtes sur une version de démonstration de moussAIllon. Il n'est pas possible d'ajouter ou supprimer des éléments.")
@@ -90,7 +91,8 @@ function SideMenu(props) {
         { key: 'societe', label: <Link to="/societe">Société</Link>, icon: <DeploymentUnitOutlined/> },
         { key: 'utilisateurs', label: <Link to="/utilisateurs">Utilisateurs</Link>, icon: <UserOutlined/> },
         { key: 'emails', label: <Link to="/emails">Emails</Link>, icon: <MailOutlined/> },
-        { key: 'sequence-emails', label: <Link to="/sequence-emails">Séquence emails</Link>, icon: <SendOutlined/> }
+        { key: 'sequence-emails', label: <Link to="/sequence-emails">Séquence emails</Link>, icon: <SendOutlined/> },
+        { key: 'reference-valeurs', label: <Link to="/reference-valeurs">Valeurs de Référence</Link>, icon: <SettingOutlined/> }
       ] }
     ];
 
@@ -477,6 +479,9 @@ export default function Workspace(props) {
                         </Route>
                         <Route path="/campagnes" key="campagnes">
                             <ProtectedRoute roles={props.roles} requiredRole="admin"><Campagnes /></ProtectedRoute>
+                        </Route>
+                        <Route path="/reference-valeurs" key="reference-valeurs">
+                            <ProtectedRoute roles={props.roles} requiredRole="admin"><ReferenceValeurs /></ProtectedRoute>
                         </Route>
                     </Switch>
                 </Layout.Content>

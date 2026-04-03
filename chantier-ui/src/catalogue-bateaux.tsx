@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Image, Table, Rate, Row, Col, Card, Button, Modal, Form, AutoComplete, Input, InputNumber, Select, Space, Popconfirm, message } from 'antd';
 import { PlusCircleOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import api from './api.ts';
+import { useReferenceValeurs } from './useReferenceValeurs.ts';
 import FournisseurBateaux from './fournisseur-bateaux.tsx';
 import ImageUpload from './ImageUpload.tsx';
 import DocumentUpload from './DocumentUpload.tsx';
@@ -11,15 +12,6 @@ const { Option } = Select;
 const { Search } = Input;
 const { TextArea } = Input;
 
-const bateauTypes = [
-    { text: 'Bateau à Moteur', value: 'Bateau à Moteur', label: 'Bateau à Moteur' },
-    { text: 'Voilier', value: 'Voilier', label: 'Voilier' },
-    { text: 'Catamaran', value: 'Catamaran', label: 'Catamaran' },
-    { text: 'Péniche', value: 'Péniche', label: 'Péniche' },
-    { text: 'Pêche', value: 'Pêche', label: 'Pêche' },
-    { text: 'Annexe', value: 'Annexe', label: 'Annexe' },
-    { text: 'Autre', value: 'Autre', label: 'Autre' },
-];
 
 interface BateauCatalogueEntity {
     id?: number;
@@ -83,6 +75,7 @@ const defaultBateau: BateauCatalogueEntity = {
 };
 
 const CatalogueBateaux: React.FC = () => {
+    const bateauTypes = useReferenceValeurs('TYPE_BATEAU');
     const [bateaux, setBateaux] = useState<BateauCatalogueEntity[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
     const [modalVisible, setModalVisible] = useState<boolean>(false);

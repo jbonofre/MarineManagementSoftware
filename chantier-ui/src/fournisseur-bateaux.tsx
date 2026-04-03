@@ -29,19 +29,10 @@ import {
 
 const { TextArea } = Input;
 import api from "./api.ts";
+import { useReferenceValeurs } from './useReferenceValeurs.ts';
 import ImageUpload from './ImageUpload.tsx';
 
 const { Option } = Select;
-
-const bateauTypes = [
-  { text: 'Bateau à Moteur', value: 'Bateau à Moteur', label: 'Bateau à Moteur' },
-  { text: 'Voilier', value: 'Voilier', label: 'Voilier' },
-  { text: 'Catamaran', value: 'Catamaran', label: 'Catamaran' },
-  { text: 'Péniche', value: 'Péniche', label: 'Péniche' },
-  { text: 'Pêche', value: 'Pêche', label: 'Pêche' },
-  { text: 'Annexe', value: 'Annexe', label: 'Annexe' },
-  { text: 'Autre', value: 'Autre', label: 'Autre' },
-];
 
 const defaultBateauCatalogue = {
   modele: '',
@@ -116,6 +107,7 @@ const defaultFournisseurBateau: Partial<FournisseurBateau> = {
 };
 
 const FournisseurBateaux = ({ fournisseurId, bateauId }: { fournisseurId?: number; bateauId?: number }) => {
+  const bateauTypes = useReferenceValeurs('TYPE_BATEAU');
   const [bateauxAssocies, setBateauxAssocies] = useState<FournisseurBateau[]>([]);
   const [bateauxCatalogue, setBateauxCatalogue] = useState<Bateau[]>([]);
   const [fournisseurs, setFournisseurs] = useState<Fournisseur[]>([]);

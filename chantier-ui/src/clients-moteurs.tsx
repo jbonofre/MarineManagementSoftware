@@ -28,6 +28,7 @@ import {
   TagsOutlined,
 } from "@ant-design/icons";
 import api from "./api.ts";
+import { useReferenceValeurs } from './useReferenceValeurs.ts';
 import ImageUpload from './ImageUpload.tsx';
 import DocumentUpload from './DocumentUpload.tsx';
 import dayjs from "dayjs";
@@ -66,6 +67,7 @@ interface ClientsMoteursProps {
 }
 
 const ClientsMoteurs: React.FC<ClientsMoteursProps> = ({ clientId }) => {
+  const moteurTypes = useReferenceValeurs('TYPE_MOTEUR');
   const [moteurs, setMoteurs] = useState<MoteurClient[]>([]);
   const [catalogueMoteurs, setCatalogueMoteurs] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
@@ -544,12 +546,7 @@ const ClientsMoteurs: React.FC<ClientsMoteursProps> = ({ clientId }) => {
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item name="type" label="Type" rules={[{ required: true, message: "Le type est requis" }]}>
-                <Select>
-                  <Select.Option value="Hors-bord">Hors-bord</Select.Option>
-                  <Select.Option value="In-bord">In-bord</Select.Option>
-                  <Select.Option value="Electrique">Electrique</Select.Option>
-                  <Select.Option value="Diesel">Diesel</Select.Option>
-                </Select>
+                <Select options={moteurTypes} />
               </Form.Item>
             </Col>
             <Col span={12}>

@@ -30,18 +30,10 @@ import {
   ShoppingCartOutlined,
 } from "@ant-design/icons";
 import api from "./api.ts";
+import { useReferenceValeurs } from './useReferenceValeurs.ts';
 import ImageUpload from './ImageUpload.tsx';
 
 const { Option } = Select;
-
-const CATEGORIES = [
-  { text: 'Pièces Moteur', value: 'Pièces Moteur', label: 'Pièces Moteur' },
-  { text: 'Pièces Remorque', value: 'Pièces Remorque', label: 'Pièces Remorque' },
-  { text: 'Electronique', value: 'Electronique', label: 'Electronique' },
-  { text: 'Sécurité', value: 'Sécurité', label: 'Sécurité' },
-  { text: 'Equipement & Accessoires', value: 'Equipement & Accessoires', label: 'Equipement & Accessoires' },
-  { text: 'Loisirs', value: 'Loisirs', label: 'Loisirs' },
-];
 
 const defaultProduitCatalogue = {
   nom: '',
@@ -113,6 +105,7 @@ const FournisseurProduits = ({
   fournisseurId?: number;
   produitId?: number;
 }) => {
+  const CATEGORIES = useReferenceValeurs('CATEGORIE_PRODUIT');
   const [associes, setAssocies] = useState<FournisseurProduit[]>([]);
   const [produits, setProduits] = useState<Produit[]>([]);
   const [fournisseurs, setFournisseurs] = useState<Fournisseur[]>([]);
