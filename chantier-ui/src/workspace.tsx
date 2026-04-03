@@ -4,7 +4,7 @@ import { Layout, Input, Col, Row, Image, Menu, Form, Modal, message, ConfigProvi
 import { Route, Switch } from 'react-router';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { Link } from 'react-router-dom';
-import { UserOutlined, TeamOutlined, HomeOutlined, AmazonOutlined, SettingOutlined, ToolOutlined, StockOutlined, FileOutlined, FileProtectOutlined, ReadOutlined, DesktopOutlined, DeploymentUnitOutlined, DisconnectOutlined, DashboardOutlined, CalendarOutlined, FileDoneOutlined, CheckSquareOutlined, RedoOutlined, ShoppingCartOutlined, MailOutlined } from '@ant-design/icons';
+import { UserOutlined, TeamOutlined, HomeOutlined, AmazonOutlined, SettingOutlined, ToolOutlined, StockOutlined, FileOutlined, FileProtectOutlined, ReadOutlined, DesktopOutlined, DeploymentUnitOutlined, DisconnectOutlined, DashboardOutlined, CalendarOutlined, FileDoneOutlined, CheckSquareOutlined, RedoOutlined, ShoppingCartOutlined, MailOutlined, SendOutlined } from '@ant-design/icons';
 import Icon from '@ant-design/icons';
 import { ReactComponent as BoatOutlined } from './boat.svg';
 import { ReactComponent as EngineOutlined } from './moteur.svg';
@@ -32,6 +32,7 @@ import Planning from './planning.tsx';
 import Comptoir from './comptoir.tsx';
 import Dashboard from './dashboard.tsx';
 import Annonces from './annonces.tsx';
+import Campagnes from './campagnes.tsx';
 import CommandesFournisseur from './commandes-fournisseur.tsx';
 import Emails from './emails.tsx';
 
@@ -80,8 +81,9 @@ function SideMenu(props) {
         { key: 'equipe', label: <Link to="/techniciens">Equipe</Link>, icon: <TeamOutlined/> },
         { key: 'planning', label: <Link to="/planning">Planning</Link>, icon: <CalendarOutlined/> },
       ] },
-      { key: 'market', label: 'Market', icon: <AmazonOutlined/>, requiredRole: 'admin', children: [
-        { key: 'annonces', label: <Link to="/annonces">Petites annonces</Link>, icon: <FileOutlined/> }
+      { key: 'market', label: 'Marketing', icon: <AmazonOutlined/>, requiredRole: 'admin', children: [
+        { key: 'annonces', label: <Link to="/annonces">Petites annonces</Link>, icon: <FileOutlined/> },
+        { key: 'campagnes', label: <Link to="/campagnes">Campagnes</Link>, icon: <SendOutlined/> }
       ] },
       { key: 'parametrage', label: 'Paramétrage', icon: <SettingOutlined/>, requiredRole: 'admin', children: [
         { key: 'societe', label: <Link to="/societe">Société</Link>, icon: <DeploymentUnitOutlined/> },
@@ -467,6 +469,9 @@ export default function Workspace(props) {
                         </Route>
                         <Route path="/annonces" key="annonces">
                             <ProtectedRoute roles={props.roles} requiredRole="admin"><Annonces /></ProtectedRoute>
+                        </Route>
+                        <Route path="/campagnes" key="campagnes">
+                            <ProtectedRoute roles={props.roles} requiredRole="admin"><Campagnes /></ProtectedRoute>
                         </Route>
                     </Switch>
                 </Layout.Content>
