@@ -37,12 +37,18 @@ interface Client {
     adresse?: string;
 }
 
+export interface AnnoncePreSelection {
+    photos: string[];
+    bateauId?: number;
+}
+
 export default function App() {
     const [user, setUser] = useState<Client | null>(() => {
         const stored = localStorage.getItem('moussaillon-client-user');
         return stored ? JSON.parse(stored) : null;
     });
     const [currentPage, setCurrentPage] = useState('dashboard');
+    const [annoncePreSelection, setAnnoncePreSelection] = useState<AnnoncePreSelection | null>(null);
     const isMobile = useIsMobile();
 
     const handleLogout = () => {
@@ -73,20 +79,28 @@ export default function App() {
         { key: 'profil', icon: <UserOutlined />, label: 'Mon profil' },
     ];
 
+    const handleCreateAnnonceWithImages = (photos: string[], bateauId?: number) => {
+        setAnnoncePreSelection({ photos, bateauId });
+        setCurrentPage('annonces');
+    };
+
     const renderPage = () => {
         switch (currentPage) {
             case 'bateaux':
-                return <MesBateaux clientId={user.id} />;
+                return <MesBateaux clientId={user.id} onCreateAnnonce={handleCreateAnnonceWithImages} />;
             case 'moteurs':
-                return <MesMoteurs clientId={user.id} />;
+                return <MesMoteurs clientId={user.id} onCreateAnnonce={handleCreateAnnonceWithImages} />;
             case 'remorques':
-                return <MesRemorques clientId={user.id} />;
+                return <MesRemorques clientId={user.id} onCreateAnnonce={handleCreateAnnonceWithImages} />;
             case 'factures':
                 return <MesFactures clientId={user.id} />;
             case 'prestations':
                 return <MesPrestations clientId={user.id} />;
-            case 'annonces':
-                return <PetitesAnnonces clientId={user.id} />;
+            case 'annonces': {
+                const preSelection = annoncePreSelection;
+                if (preSelection) setAnnoncePreSelection(null);
+                return <PetitesAnnonces clientId={user.id} initialPhotos={preSelection?.photos} initialBateauId={preSelection?.bateauId} />;
+            }
             case 'profil':
                 return <MonProfil clientId={user.id} />;
             default:

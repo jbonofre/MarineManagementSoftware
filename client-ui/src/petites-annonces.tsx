@@ -62,6 +62,8 @@ const plateformesColor: Record<string, string> = {
 
 interface PetitesAnnoncesProps {
     clientId: number;
+    initialPhotos?: string[];
+    initialBateauId?: number;
 }
 
 const statusColor: Record<string, string> = { ACTIVE: 'green', VENDU: 'blue', EXPIRE: 'red' };
@@ -76,7 +78,7 @@ const formatDate = (value?: string) => {
 
 const formatEuro = (value?: number) => value != null ? `${value.toFixed(2)} EUR` : '-';
 
-export default function PetitesAnnonces({ clientId }: PetitesAnnoncesProps) {
+export default function PetitesAnnonces({ clientId, initialPhotos, initialBateauId }: PetitesAnnoncesProps) {
     const [annonces, setAnnonces] = useState<Annonce[]>([]);
     const [allAnnonces, setAllAnnonces] = useState<Annonce[]>([]);
     const [bateaux, setBateaux] = useState<BateauClientEntity[]>([]);
@@ -107,6 +109,19 @@ export default function PetitesAnnonces({ clientId }: PetitesAnnoncesProps) {
     useEffect(() => {
         fetchData();
     }, [clientId]);
+
+    useEffect(() => {
+        if (initialPhotos && initialPhotos.length > 0) {
+            setEditing(null);
+            form.resetFields();
+            form.setFieldsValue({
+                status: 'ACTIVE',
+                photos: initialPhotos,
+                bateauId: initialBateauId,
+            });
+            setModalOpen(true);
+        }
+    }, [initialPhotos, initialBateauId]);
 
     const openCreate = () => {
         setEditing(null);

@@ -25,6 +25,8 @@ import {
   EditOutlined,
   DeleteOutlined,
   SearchOutlined,
+  PictureOutlined,
+  TagsOutlined,
 } from "@ant-design/icons";
 import api from "./api.ts";
 import ImageUpload from './ImageUpload.tsx';
@@ -32,6 +34,7 @@ import DocumentUpload from './DocumentUpload.tsx';
 import dayjs from "dayjs";
 import clients from "./clients";
 import LocationPicker from "./LocationPicker.tsx";
+import { useHistory } from "react-router-dom";
 
 const { Option } = Select;
 const { Search } = Input;
@@ -96,6 +99,38 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
   const [moteurForm] = Form.useForm();
   const [clientModalVisible, setClientModalVisible] = useState(false);
   const [clientForm] = Form.useForm();
+  const [annonceImageModalVisible, setAnnonceImageModalVisible] = useState(false);
+  const [annonceImageBateau, setAnnonceImageBateau] = useState<BateauClient | null>(null);
+  const [annonceSelectedImages, setAnnonceSelectedImages] = useState<Set<string>>(new Set());
+  const history = useHistory();
+
+  const openAnnonceImageModal = (bateau: BateauClient) => {
+    setAnnonceImageBateau(bateau);
+    setAnnonceSelectedImages(new Set(bateau.images || []));
+    setAnnonceImageModalVisible(true);
+  };
+
+  const toggleAnnonceImage = (url: string) => {
+    setAnnonceSelectedImages((prev) => {
+      const next = new Set(prev);
+      if (next.has(url)) next.delete(url);
+      else next.add(url);
+      return next;
+    });
+  };
+
+  const handleCreateAnnonceFromImages = () => {
+    if (annonceSelectedImages.size === 0) {
+      message.warning("Veuillez selectionner au moins une image");
+      return;
+    }
+    setAnnonceImageModalVisible(false);
+    history.push("/annonces", {
+      photos: Array.from(annonceSelectedImages),
+      bateauId: annonceImageBateau?.id,
+      clientId: annonceImageBateau?.proprietaires?.[0]?.id,
+    });
+  };
 
   const fetchBateaux = async (q = "") => {
     setLoading(true);
@@ -337,12 +372,15 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
       render: (_: any, record: BateauClient) => (
         <Space>
           <Button icon={<EditOutlined />} size="small" onClick={() => handleEdit(record)} />
+          {(record.images || []).length > 0 && (
+            <Button icon={<TagsOutlined />} size="small" onClick={() => openAnnonceImageModal(record)} title="Creer une annonce" />
+          )}
           <Popconfirm title="Supprimer ce bateau ?" onConfirm={() => handleDelete(record.id)}>
             <Button icon={<DeleteOutlined />} danger size="small" />
           </Popconfirm>
         </Space>
       ),
-      width: 120,
+      width: 160,
     },
   ];
 
@@ -369,7 +407,25 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
       </Spin>
       <Modal
         open={modalVisible}
-        title={editing ? "Modifier le bateau" : "Ajouter un bateau"}
+        title={
+          editing ? (
+            <Space>
+              <span>Modifier le bateau</span>
+              {(editing.images || []).length > 0 && (
+                <Button
+                  size="small"
+                  icon={<TagsOutlined />}
+                  onClick={() => {
+                    setModalVisible(false);
+                    openAnnonceImageModal(editing);
+                  }}
+                >
+                  Petites annonces
+                </Button>
+              )}
+            </Space>
+          ) : "Ajouter un bateau"
+        }
         onCancel={handleModalCancel}
         onOk={handleModalOk}
         okText="Enregistrer"
@@ -1089,6 +1145,71 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
             <Input.TextArea rows={3} />
           </Form.Item>
         </Form>
+      </Modal>
+
+      {/* Image selection for annonce */}
+      <Modal
+        title={`Selectionner des photos pour l'annonce - ${annonceImageBateau?.name || ''}`}
+        open={annonceImageModalVisible}
+        onCancel={() => setAnnonceImageModalVisible(false)}
+        onOk={handleCreateAnnonceFromImages}
+        okText={`Creer une annonce (${annonceSelectedImages.size} photo(s))`}
+        okButtonProps={{ disabled: annonceSelectedImages.size === 0 }}
+        cancelText="Annuler"
+        width={700}
+      >
+        {annonceImageBateau && (
+          <div>
+            <div style={{ marginBottom: 12 }}>
+              <Checkbox
+                checked={(annonceImageBateau.images || []).length > 0 && annonceSelectedImages.size === (annonceImageBateau.images || []).length}
+                indeterminate={annonceSelectedImages.size > 0 && annonceSelectedImages.size < (annonceImageBateau.images || []).length}
+                onChange={() => {
+                  const imgs = annonceImageBateau.images || [];
+                  const allSelected = imgs.every((img) => annonceSelectedImages.has(img));
+                  setAnnonceSelectedImages(allSelected ? new Set() : new Set(imgs));
+                }}
+              >
+                Tout selectionner ({annonceSelectedImages.size}/{(annonceImageBateau.images || []).length})
+              </Checkbox>
+            </div>
+            <Image.PreviewGroup>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {(annonceImageBateau.images || []).map((url, i) => (
+                  <div
+                    key={i}
+                    onClick={(e) => {
+                      if (!(e.target as HTMLElement).closest('.ant-image-mask')) {
+                        toggleAnnonceImage(url);
+                      }
+                    }}
+                    style={{
+                      position: 'relative',
+                      cursor: 'pointer',
+                      border: annonceSelectedImages.has(url) ? '3px solid #1890ff' : '3px solid transparent',
+                      borderRadius: 8,
+                      overflow: 'hidden',
+                    }}
+                  >
+                    <Image
+                      width={120}
+                      height={120}
+                      src={url}
+                      style={{ objectFit: 'cover', display: 'block' }}
+                      preview={{ mask: 'Agrandir' }}
+                    />
+                    <Checkbox
+                      checked={annonceSelectedImages.has(url)}
+                      onChange={() => toggleAnnonceImage(url)}
+                      onClick={(e) => e.stopPropagation()}
+                      style={{ position: 'absolute', top: 4, left: 4, zIndex: 1 }}
+                    />
+                  </div>
+                ))}
+              </div>
+            </Image.PreviewGroup>
+          </div>
+        )}
       </Modal>
     </Card>
   );
