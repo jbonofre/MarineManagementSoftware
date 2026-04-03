@@ -28,6 +28,17 @@
 .ant-layout-sider {
     background: #fff;
 }
+.sider-resize-handle {
+    width: 4px;
+    cursor: col-resize;
+    background: transparent;
+    transition: background 0.2s;
+    flex-shrink: 0;
+}
+.sider-resize-handle:hover,
+.sider-resize-handle:active {
+    background: #1890ff;
+}
 .ant-layout-sider-children > svg {
     margin: auto;
 }

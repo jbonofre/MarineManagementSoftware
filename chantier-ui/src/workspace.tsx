@@ -1,5 +1,5 @@
 import { fetchWithAuth } from './api.ts';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Layout, Input, Col, Row, Image, Menu, Form, Modal, message, ConfigProvider, theme as antdTheme, Switch as AntSwitch } from 'antd';
 import { Route, Switch } from 'react-router';
 import { BrowserRouter as Router } from 'react-router-dom';
@@ -53,6 +53,37 @@ function hasRole(roles: string, role: string): boolean {
 function SideMenu(props) {
 
     const [ collapsed, setCollapsed ] = useState(false);
+    const [ siderWidth, setSiderWidth ] = useState(() => {
+        const saved = localStorage.getItem('siderWidth');
+        return saved ? parseInt(saved, 10) : 200;
+    });
+    const isResizing = useRef(false);
+
+    const handleMouseDown = useCallback((e: React.MouseEvent) => {
+        e.preventDefault();
+        isResizing.current = true;
+        const onMouseMove = (e: MouseEvent) => {
+            if (!isResizing.current) return;
+            const newWidth = Math.min(Math.max(e.clientX, 120), 400);
+            setSiderWidth(newWidth);
+        };
+        const onMouseUp = () => {
+            isResizing.current = false;
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+            document.body.style.cursor = '';
+            document.body.style.userSelect = '';
+        };
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+    }, []);
+
+    useEffect(() => {
+        localStorage.setItem('siderWidth', String(siderWidth));
+    }, [siderWidth]);
+
     const roles = props.roles || '';
 
     const allMenuItems = [
@@ -99,19 +130,28 @@ function SideMenu(props) {
     const menuItems = allMenuItems.filter(item => !item.requiredRole || hasRole(roles, item.requiredRole));
 
     return(
-        <Layout.Sider
-            theme={props.theme === 'DARK' ? 'dark' : 'light'}
-            style={props.theme === 'DARK' ? { background: '#141414' } : { background: '#fff' }}
-            collapsible={true}
-            collapsed={collapsed}
-            onCollapse={newValue => setCollapsed(newValue)}
-        >
-            <Menu
+        <div style={{ display: 'flex', position: 'relative' }}>
+            <Layout.Sider
                 theme={props.theme === 'DARK' ? 'dark' : 'light'}
-                items={menuItems}
-                mode="inline"
-            />
-        </Layout.Sider>
+                style={props.theme === 'DARK' ? { background: '#141414' } : { background: '#fff' }}
+                collapsible={true}
+                collapsed={collapsed}
+                onCollapse={newValue => setCollapsed(newValue)}
+                width={siderWidth}
+            >
+                <Menu
+                    theme={props.theme === 'DARK' ? 'dark' : 'light'}
+                    items={menuItems}
+                    mode="inline"
+                />
+            </Layout.Sider>
+            {!collapsed && (
+                <div
+                    className="sider-resize-handle"
+                    onMouseDown={handleMouseDown}
+                />
+            )}
+        </div>
     );
 
 }
