@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Button, Card, Descriptions, Form, Input, Spin, Tag, message } from 'antd';
-import { LockOutlined, ReloadOutlined } from '@ant-design/icons';
+import { Button, Card, Descriptions, Form, Input, Spin, Switch, Tag, message } from 'antd';
+import { LockOutlined, MailOutlined, ReloadOutlined } from '@ant-design/icons';
 import api from './api.ts';
 
 interface Client {
@@ -79,6 +79,21 @@ export default function MonProfil({ clientId }: MonProfilProps) {
                         <Descriptions.Item label="Email">{client.email || '-'}</Descriptions.Item>
                         <Descriptions.Item label="Telephone">{client.telephone || '-'}</Descriptions.Item>
                         <Descriptions.Item label="Adresse">{client.adresse || '-'}</Descriptions.Item>
+                        <Descriptions.Item label="Consentement emails">
+                            <Switch
+                                checkedChildren={<MailOutlined />}
+                                unCheckedChildren={<MailOutlined />}
+                                checked={client.consentement}
+                                onChange={(checked) => {
+                                    api.put(`/portal/clients/${clientId}/consentement`, { consentement: checked })
+                                        .then(() => {
+                                            setClient({ ...client, consentement: checked });
+                                            message.success(checked ? 'Consentement active' : 'Consentement desactive');
+                                        })
+                                        .catch(() => message.error('Erreur lors de la mise a jour du consentement'));
+                                }}
+                            />
+                        </Descriptions.Item>
                         {client.type !== 'PARTICULIER' && (
                             <>
                                 <Descriptions.Item label="SIREN">{client.siren || '-'}</Descriptions.Item>
