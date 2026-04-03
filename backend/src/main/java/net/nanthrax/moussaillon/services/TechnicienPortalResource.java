@@ -71,6 +71,8 @@ public class TechnicienPortalResource {
         public String incidentDetails;
         public String notes;
         public List<ChecklistUpdate> taches;
+        public List<String> images;
+        public List<String> documents;
     }
 
     public static class ChecklistUpdate {
@@ -105,6 +107,8 @@ public class TechnicienPortalResource {
         public String bateauNom;
         public int quantite;
         public List<ChecklistItem> taches;
+        public List<String> images;
+        public List<String> documents;
 
         public static PlanningItemWithVente fromForfait(VenteForfaitEntity vf, VenteEntity vente) {
             PlanningItemWithVente item = new PlanningItemWithVente();
@@ -139,6 +143,28 @@ public class TechnicienPortalResource {
                     ci.description = t.description;
                     ci.done = t.done;
                     item.taches.add(ci);
+                }
+            }
+            item.images = new ArrayList<>();
+            if (vente.images != null) {
+                item.images.addAll(vente.images);
+            }
+            if (vf.images != null) {
+                for (String img : vf.images) {
+                    if (!item.images.contains(img)) {
+                        item.images.add(img);
+                    }
+                }
+            }
+            item.documents = new ArrayList<>();
+            if (vente.documents != null) {
+                item.documents.addAll(vente.documents);
+            }
+            if (vf.documents != null) {
+                for (String doc : vf.documents) {
+                    if (!item.documents.contains(doc)) {
+                        item.documents.add(doc);
+                    }
                 }
             }
             return item;
@@ -177,6 +203,28 @@ public class TechnicienPortalResource {
                     ci.description = t.description;
                     ci.done = t.done;
                     item.taches.add(ci);
+                }
+            }
+            item.images = new ArrayList<>();
+            if (vente.images != null) {
+                item.images.addAll(vente.images);
+            }
+            if (vs.images != null) {
+                for (String img : vs.images) {
+                    if (!item.images.contains(img)) {
+                        item.images.add(img);
+                    }
+                }
+            }
+            item.documents = new ArrayList<>();
+            if (vente.documents != null) {
+                item.documents.addAll(vente.documents);
+            }
+            if (vs.documents != null) {
+                for (String doc : vs.documents) {
+                    if (!item.documents.contains(doc)) {
+                        item.documents.add(doc);
+                    }
                 }
             }
             return item;
@@ -298,6 +346,14 @@ public class TechnicienPortalResource {
             vf.incidentDetails = request.incidentDetails;
         }
 
+        // Update images and documents (append only)
+        if (request.images != null) {
+            vf.images = request.images;
+        }
+        if (request.documents != null) {
+            vf.documents = request.documents;
+        }
+
         // Update checklist items
         if (request.taches != null) {
             for (ChecklistUpdate cu : request.taches) {
@@ -360,6 +416,14 @@ public class TechnicienPortalResource {
                 vs.incidentDate = Date.valueOf(request.incidentDate);
             }
             vs.incidentDetails = request.incidentDetails;
+        }
+
+        // Update images and documents (append only)
+        if (request.images != null) {
+            vs.images = request.images;
+        }
+        if (request.documents != null) {
+            vs.documents = request.documents;
         }
 
         // Update checklist items

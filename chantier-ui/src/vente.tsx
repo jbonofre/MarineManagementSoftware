@@ -80,6 +80,8 @@ interface VenteForfaitEntity {
     incidentDetails?: string;
     notes?: string;
     taches?: TaskEntity[];
+    images?: string[];
+    documents?: string[];
 }
 
 interface VenteServiceEntity {
@@ -97,6 +99,8 @@ interface VenteServiceEntity {
     incidentDetails?: string;
     notes?: string;
     taches?: TaskEntity[];
+    images?: string[];
+    documents?: string[];
 }
 
 interface ForfaitProduitEntity {
@@ -264,6 +268,7 @@ interface VenteEntity {
     prixVenteTTC?: number;
     modePaiement?: ModePaiement;
     images?: string[];
+    documents?: string[];
     rappel1Jours?: number;
     rappel2Jours?: number;
     rappel3Jours?: number;
@@ -298,6 +303,8 @@ interface VenteFormValues {
         incidentDate?: string;
         incidentDetails?: string;
         taches?: Array<{ nom?: string; description?: string; done?: boolean }>;
+        images?: string[];
+        documents?: string[];
     }>;
     venteServices: Array<{
         serviceId?: number;
@@ -312,6 +319,8 @@ interface VenteFormValues {
         incidentDate?: string;
         incidentDetails?: string;
         taches?: Array<{ nom?: string; description?: string; done?: boolean }>;
+        images?: string[];
+        documents?: string[];
     }>;
     produits: Array<{ produitId?: number; quantite?: number }>;
     date?: string;
@@ -324,6 +333,7 @@ interface VenteFormValues {
     prixVenteTTC: number;
     modePaiement?: ModePaiement;
     images?: string[];
+    documents?: string[];
     rappel1Jours?: number;
     rappel2Jours?: number;
     rappel3Jours?: number;
@@ -1086,6 +1096,8 @@ export default function Vente() {
             incidentDate: toDateDayjs(vf.incidentDate),
             incidentDetails: vf.incidentDetails || '',
             taches: (vf.taches || []).map(t => ({ nom: t.nom || '', description: t.description || '', done: t.done || false })),
+            images: vf.images || [],
+            documents: vf.documents || [],
         }));
         const venteServiceLines = (vente.venteServices || []).map(vs => ({
             serviceId: vs.service?.id,
@@ -1100,6 +1112,8 @@ export default function Vente() {
             incidentDate: toDateDayjs(vs.incidentDate),
             incidentDetails: vs.incidentDetails || '',
             taches: (vs.taches || []).map(t => ({ nom: t.nom || '', description: t.description || '', done: t.done || false })),
+            images: vs.images || [],
+            documents: vs.documents || [],
         }));
         const produitLinesMap = (vente.produits || []).reduce((acc, item) => {
             if (!item?.id) {
@@ -1130,6 +1144,7 @@ export default function Vente() {
             prixVenteTTC: vente.prixVenteTTC || 0,
             modePaiement: vente.modePaiement,
             images: vente.images || [],
+            documents: vente.documents || [],
             rappel1Jours: vente.rappel1Jours,
             rappel2Jours: vente.rappel2Jours,
             rappel3Jours: vente.rappel3Jours
@@ -1237,6 +1252,8 @@ export default function Vente() {
                     incidentDate: toBackendDateValue(line.incidentDate),
                     incidentDetails: line.incidentDetails || '',
                     taches,
+                    images: line.images || existingVf?.images || [],
+                    documents: line.documents || existingVf?.documents || [],
                 };
             }),
         venteServices: (values.venteServices || [])
@@ -1261,6 +1278,8 @@ export default function Vente() {
                     incidentDate: toBackendDateValue(line.incidentDate),
                     incidentDetails: line.incidentDetails || '',
                     taches,
+                    images: line.images || existingVs?.images || [],
+                    documents: line.documents || existingVs?.documents || [],
                 };
             }),
         produits: (values.produits || [])
@@ -1279,6 +1298,7 @@ export default function Vente() {
         prixVenteTTC: values.prixVenteTTC || 0,
         modePaiement: values.modePaiement,
         images: values.images || [],
+        documents: values.documents || [],
         rappel1Jours: values.rappel1Jours,
         rappel2Jours: values.rappel2Jours,
         rappel3Jours: values.rappel3Jours
@@ -2288,6 +2308,84 @@ export default function Vente() {
                                         </Form.Item>
                                         <Form.Item name="documents" label="Documents">
                                             <DocumentUpload />
+                                        </Form.Item>
+                                        <Form.Item noStyle shouldUpdate>
+                                            {({ getFieldValue }) => {
+                                                const vfLines = (getFieldValue('venteForfaits') || []).filter((l: { forfaitId?: number; images?: string[]; documents?: string[] }) => l.forfaitId && ((l.images && l.images.length > 0) || (l.documents && l.documents.length > 0)));
+                                                const vsLines = (getFieldValue('venteServices') || []).filter((l: { serviceId?: number; images?: string[]; documents?: string[] }) => l.serviceId && ((l.images && l.images.length > 0) || (l.documents && l.documents.length > 0)));
+                                                if (vfLines.length === 0 && vsLines.length === 0) return null;
+                                                return (
+                                                    <>
+                                                        <div style={{ borderTop: '1px solid #f0f0f0', marginTop: 16, paddingTop: 16 }}>
+                                                            <strong>Images & documents des prestations</strong>
+                                                        </div>
+                                                        {vfLines.map((line: { forfaitId: number; images?: string[]; documents?: string[] }, idx: number) => {
+                                                            const f = forfaits.find((ff) => ff.id === line.forfaitId);
+                                                            return (
+                                                                <div key={`vf-img-${idx}`} style={{ marginTop: 12 }}>
+                                                                    <div style={{ fontWeight: 500, marginBottom: 4 }}>Forfait : {f?.nom || `#${line.forfaitId}`}</div>
+                                                                    {line.images && line.images.length > 0 && (
+                                                                        <Form.Item label="Images" style={{ marginBottom: 8 }}>
+                                                                            <ImageUpload value={line.images} onChange={(urls) => {
+                                                                                const allLines = getFieldValue('venteForfaits');
+                                                                                const realIdx = allLines.findIndex((l: { forfaitId?: number }) => l.forfaitId === line.forfaitId);
+                                                                                if (realIdx >= 0) {
+                                                                                    allLines[realIdx] = { ...allLines[realIdx], images: urls };
+                                                                                    form.setFieldsValue({ venteForfaits: [...allLines] });
+                                                                                }
+                                                                            }} />
+                                                                        </Form.Item>
+                                                                    )}
+                                                                    {line.documents && line.documents.length > 0 && (
+                                                                        <Form.Item label="Documents" style={{ marginBottom: 8 }}>
+                                                                            <DocumentUpload value={line.documents} onChange={(urls) => {
+                                                                                const allLines = getFieldValue('venteForfaits');
+                                                                                const realIdx = allLines.findIndex((l: { forfaitId?: number }) => l.forfaitId === line.forfaitId);
+                                                                                if (realIdx >= 0) {
+                                                                                    allLines[realIdx] = { ...allLines[realIdx], documents: urls };
+                                                                                    form.setFieldsValue({ venteForfaits: [...allLines] });
+                                                                                }
+                                                                            }} />
+                                                                        </Form.Item>
+                                                                    )}
+                                                                </div>
+                                                            );
+                                                        })}
+                                                        {vsLines.map((line: { serviceId: number; images?: string[]; documents?: string[] }, idx: number) => {
+                                                            const s = services.find((ss) => ss.id === line.serviceId);
+                                                            return (
+                                                                <div key={`vs-img-${idx}`} style={{ marginTop: 12 }}>
+                                                                    <div style={{ fontWeight: 500, marginBottom: 4 }}>Service : {s?.nom || `#${line.serviceId}`}</div>
+                                                                    {line.images && line.images.length > 0 && (
+                                                                        <Form.Item label="Images" style={{ marginBottom: 8 }}>
+                                                                            <ImageUpload value={line.images} onChange={(urls) => {
+                                                                                const allLines = getFieldValue('venteServices');
+                                                                                const realIdx = allLines.findIndex((l: { serviceId?: number }) => l.serviceId === line.serviceId);
+                                                                                if (realIdx >= 0) {
+                                                                                    allLines[realIdx] = { ...allLines[realIdx], images: urls };
+                                                                                    form.setFieldsValue({ venteServices: [...allLines] });
+                                                                                }
+                                                                            }} />
+                                                                        </Form.Item>
+                                                                    )}
+                                                                    {line.documents && line.documents.length > 0 && (
+                                                                        <Form.Item label="Documents" style={{ marginBottom: 8 }}>
+                                                                            <DocumentUpload value={line.documents} onChange={(urls) => {
+                                                                                const allLines = getFieldValue('venteServices');
+                                                                                const realIdx = allLines.findIndex((l: { serviceId?: number }) => l.serviceId === line.serviceId);
+                                                                                if (realIdx >= 0) {
+                                                                                    allLines[realIdx] = { ...allLines[realIdx], documents: urls };
+                                                                                    form.setFieldsValue({ venteServices: [...allLines] });
+                                                                                }
+                                                                            }} />
+                                                                        </Form.Item>
+                                                                    )}
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </>
+                                                );
+                                            }}
                                         </Form.Item>
                                     </>
                                 )

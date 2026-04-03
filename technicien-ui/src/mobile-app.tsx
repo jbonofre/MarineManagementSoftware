@@ -21,8 +21,10 @@ import {
     CheckCircleOutlined,
     ClockCircleOutlined,
     ExclamationCircleOutlined,
+    FileOutlined,
     KeyOutlined,
     LogoutOutlined,
+    PictureOutlined,
     ReloadOutlined,
     ScheduleOutlined,
     UnorderedListOutlined,
@@ -31,6 +33,8 @@ import {
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import api from './api.ts';
+import ImageUpload from './ImageUpload.tsx';
+import DocumentUpload from './DocumentUpload.tsx';
 
 interface Technicien {
     id: number;
@@ -67,6 +71,8 @@ interface PlanningItem {
     bateauNom?: string;
     quantite?: number;
     taches?: ChecklistItem[];
+    images?: string[];
+    documents?: string[];
 }
 
 interface MobileAppProps {
@@ -113,6 +119,8 @@ export default function MobileApp({ user, onLogout, onChangePassword }: MobileAp
     const [modalVisible, setModalVisible] = useState(false);
     const [currentItem, setCurrentItem] = useState<PlanningItem | null>(null);
     const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
+    const [images, setImages] = useState<string[]>([]);
+    const [documents, setDocuments] = useState<string[]>([]);
     const [form] = Form.useForm();
     const [saving, setSaving] = useState(false);
 
@@ -141,6 +149,8 @@ export default function MobileApp({ user, onLogout, onChangePassword }: MobileAp
     const openModal = (item: PlanningItem, presetStatus?: TaskStatus) => {
         setCurrentItem(item);
         setChecklist((item.taches || []).map((t) => ({ ...t })));
+        setImages(item.images || []);
+        setDocuments(item.documents || []);
         form.setFieldsValue({
             status: presetStatus || item.itemStatus || 'EN_COURS',
             dureeReelle: item.dureeReelle || 0,
@@ -170,12 +180,20 @@ export default function MobileApp({ user, onLogout, onChangePassword }: MobileAp
                 incidentDate: values.status === 'INCIDENT' ? (dayjs.isDayjs(values.incidentDate) ? values.incidentDate.format('YYYY-MM-DDTHH:mm:ss') : values.incidentDate) : null,
                 incidentDetails: values.status === 'INCIDENT' ? values.incidentDetails : null,
                 taches: checklist.map((c) => ({ taskId: c.id, done: c.done })),
+                images,
+                documents,
             });
             message.success('Tache mise a jour');
             const updated = res.data;
             setCurrentItem({ ...currentItem, ...updated, itemStatus: updated.itemStatus || values.status });
             if (updated.taches) {
                 setChecklist(updated.taches.map((t: ChecklistItem) => ({ ...t })));
+            }
+            if (updated.images) {
+                setImages(updated.images);
+            }
+            if (updated.documents) {
+                setDocuments(updated.documents);
             }
             form.setFieldsValue({
                 status: updated.itemStatus || values.status,
@@ -304,7 +322,7 @@ export default function MobileApp({ user, onLogout, onChangePassword }: MobileAp
                 okText="Enregistrer"
                 cancelText="Annuler"
                 confirmLoading={saving}
-                onCancel={() => { setModalVisible(false); setCurrentItem(null); setChecklist([]); form.resetFields(); }}
+                onCancel={() => { setModalVisible(false); setCurrentItem(null); setChecklist([]); setImages([]); setDocuments([]); form.resetFields(); }}
                 destroyOnHidden
                 width="95vw"
                 style={{ top: 20 }}
@@ -318,7 +336,7 @@ export default function MobileApp({ user, onLogout, onChangePassword }: MobileAp
                             )}
                         </div>
                         <Space>
-                            <Button onClick={() => { setModalVisible(false); setCurrentItem(null); setChecklist([]); form.resetFields(); }}>
+                            <Button onClick={() => { setModalVisible(false); setCurrentItem(null); setChecklist([]); setImages([]); setDocuments([]); form.resetFields(); }}>
                                 Annuler
                             </Button>
                             <Button type="primary" loading={saving} onClick={handleSave}>
@@ -368,6 +386,12 @@ export default function MobileApp({ user, onLogout, onChangePassword }: MobileAp
                             ))}
                         </Card>
                     )}
+                    <Card size="small" title={<><PictureOutlined /> Images</>} style={{ marginBottom: 12 }}>
+                        <ImageUpload value={images} onChange={setImages} />
+                    </Card>
+                    <Card size="small" title={<><FileOutlined /> Documents</>} style={{ marginBottom: 12 }}>
+                        <DocumentUpload value={documents} onChange={setDocuments} />
+                    </Card>
                     <Form.Item noStyle shouldUpdate={(prev, cur) => prev?.status !== cur?.status}>
                         {({ getFieldValue }) => {
                             if (getFieldValue('status') !== 'INCIDENT') return null;

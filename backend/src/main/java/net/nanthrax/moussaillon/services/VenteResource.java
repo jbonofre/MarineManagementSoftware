@@ -316,6 +316,8 @@ public class VenteResource {
                         }
                     }
                 }
+                cloned.images = incoming.images != null ? new java.util.ArrayList<>(incoming.images) : new java.util.ArrayList<>();
+                cloned.documents = incoming.documents != null ? new java.util.ArrayList<>(incoming.documents) : new java.util.ArrayList<>();
                 entity.venteForfaits.add(cloned);
             }
         }
@@ -348,6 +350,8 @@ public class VenteResource {
                         cloned.taches.add(ct);
                     }
                 }
+                cloned.images = incoming.images != null ? new java.util.ArrayList<>(incoming.images) : new java.util.ArrayList<>();
+                cloned.documents = incoming.documents != null ? new java.util.ArrayList<>(incoming.documents) : new java.util.ArrayList<>();
                 entity.venteServices.add(cloned);
             }
         }
