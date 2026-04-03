@@ -4,6 +4,7 @@ import io.quarkus.hibernate.orm.panache.PanacheEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -48,5 +49,7 @@ public class ClientEntity extends PanacheEntity {
     public String canalAcquisition;
 
     public List<String> documents = new ArrayList<>();
+
+    public Timestamp dateCreation;
 
 }

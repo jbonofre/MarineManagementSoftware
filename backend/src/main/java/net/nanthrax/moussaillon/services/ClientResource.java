@@ -11,6 +11,7 @@ import jakarta.ws.rs.core.Response;
 import net.nanthrax.moussaillon.persistence.ClientEntity;
 import net.nanthrax.moussaillon.persistence.SocieteEntity;
 
+import java.sql.Timestamp;
 import java.util.List;
 
 @Path("/clients")
@@ -46,6 +47,9 @@ public class ClientResource {
     public ClientEntity create(ClientEntity client) {
         if (client.motDePasse != null && !client.motDePasse.isBlank()) {
             client.motDePasse = PasswordUtil.hash(client.motDePasse);
+        }
+        if (client.dateCreation == null) {
+            client.dateCreation = new Timestamp(System.currentTimeMillis());
         }
         client.persist();
         client.flush();
