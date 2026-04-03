@@ -106,6 +106,9 @@ public class ClientResource {
         entity.tva = client.tva;
         entity.naf = client.naf;
         entity.documents = client.documents != null ? client.documents : new java.util.ArrayList<>();
+        if (client.motDePasse != null && !client.motDePasse.isBlank()) {
+            entity.motDePasse = PasswordUtil.hash(client.motDePasse);
+        }
 
         entity.flush();
         ClientEntity.getEntityManager().detach(entity);
