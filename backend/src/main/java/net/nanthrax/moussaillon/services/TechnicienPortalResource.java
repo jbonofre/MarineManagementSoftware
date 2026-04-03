@@ -22,6 +22,7 @@ import jakarta.ws.rs.core.Response;
 import net.nanthrax.moussaillon.persistence.ForfaitEntity;
 import net.nanthrax.moussaillon.persistence.ForfaitProduitEntity;
 import net.nanthrax.moussaillon.persistence.ProduitCatalogueEntity;
+import net.nanthrax.moussaillon.persistence.ServiceProduitEntity;
 import net.nanthrax.moussaillon.persistence.SocieteEntity;
 import net.nanthrax.moussaillon.persistence.TaskEntity;
 import net.nanthrax.moussaillon.persistence.TechnicienEntity;
@@ -87,6 +88,16 @@ public class TechnicienPortalResource {
         public boolean done;
     }
 
+    public static class ProduitItem {
+        public Long id;
+        public String nom;
+        public String marque;
+        public String categorie;
+        public String ref;
+        public String emplacement;
+        public int quantite;
+    }
+
     public static class PlanningItemWithVente {
         public Long itemId;
         public Long venteId;
@@ -107,6 +118,7 @@ public class TechnicienPortalResource {
         public String bateauNom;
         public int quantite;
         public List<ChecklistItem> taches;
+        public List<ProduitItem> produits;
         public List<String> images;
         public List<String> documents;
 
@@ -143,6 +155,22 @@ public class TechnicienPortalResource {
                     ci.description = t.description;
                     ci.done = t.done;
                     item.taches.add(ci);
+                }
+            }
+            item.produits = new ArrayList<>();
+            if (vf.forfait != null && vf.forfait.produits != null) {
+                for (ForfaitProduitEntity fp : vf.forfait.produits) {
+                    if (fp.produit != null) {
+                        ProduitItem pi = new ProduitItem();
+                        pi.id = fp.produit.id;
+                        pi.nom = fp.produit.nom;
+                        pi.marque = fp.produit.marque;
+                        pi.categorie = fp.produit.categorie;
+                        pi.ref = fp.produit.ref;
+                        pi.emplacement = fp.produit.emplacement;
+                        pi.quantite = fp.quantite;
+                        item.produits.add(pi);
+                    }
                 }
             }
             item.images = new ArrayList<>();
@@ -203,6 +231,22 @@ public class TechnicienPortalResource {
                     ci.description = t.description;
                     ci.done = t.done;
                     item.taches.add(ci);
+                }
+            }
+            item.produits = new ArrayList<>();
+            if (vs.service != null && vs.service.produits != null) {
+                for (ServiceProduitEntity sp : vs.service.produits) {
+                    if (sp.produit != null) {
+                        ProduitItem pi = new ProduitItem();
+                        pi.id = sp.produit.id;
+                        pi.nom = sp.produit.nom;
+                        pi.marque = sp.produit.marque;
+                        pi.categorie = sp.produit.categorie;
+                        pi.ref = sp.produit.ref;
+                        pi.emplacement = sp.produit.emplacement;
+                        pi.quantite = sp.quantite;
+                        item.produits.add(pi);
+                    }
                 }
             }
             item.images = new ArrayList<>();
