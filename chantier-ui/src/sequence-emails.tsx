@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { fetchWithAuth } from './api.ts';
 import { Card, Space, Button, Form, Input, InputNumber, Table, Modal, Tag, Spin, Switch, Tabs, message, Popconfirm } from 'antd';
 import { SendOutlined, PlusCircleOutlined, EditOutlined, DeleteOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import ReactQuill from 'react-quill-new';
@@ -32,7 +33,7 @@ function SequenceTable({ cible, variables }: { cible: string; variables: string 
 
     const loadEtapes = () => {
         setLoading(true);
-        fetch('./email-sequences?cible=' + cible)
+        fetchWithAuth('./email-sequences?cible=' + cible)
             .then((response) => {
                 if (!response.ok) {
                     throw new Error('Erreur (code ' + response.status + ')');
@@ -82,7 +83,7 @@ function SequenceTable({ cible, variables }: { cible: string; variables: string 
     };
 
     const handleDelete = (id: number) => {
-        fetch('./email-sequences/' + id, { method: 'DELETE' })
+        fetchWithAuth('./email-sequences/' + id, { method: 'DELETE' })
             .then((response) => {
                 if (!response.ok) {
                     throw new Error('Erreur (code ' + response.status + ')');
@@ -112,7 +113,7 @@ function SequenceTable({ cible, variables }: { cible: string; variables: string 
             : './email-sequences';
         const method = editing && editing.id ? 'PUT' : 'POST';
 
-        fetch(url, {
+        fetchWithAuth(url, {
             method,
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
@@ -134,7 +135,7 @@ function SequenceTable({ cible, variables }: { cible: string; variables: string 
     };
 
     const handleToggleActif = (etape: Etape) => {
-        fetch('./email-sequences/' + etape.id, {
+        fetchWithAuth('./email-sequences/' + etape.id, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ ...etape, actif: !etape.actif })
@@ -298,7 +299,7 @@ export default function SequenceEmails() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetch('./email-sequences/init', { method: 'POST' })
+        fetchWithAuth('./email-sequences/init', { method: 'POST' })
             .then(() => setLoading(false))
             .catch(() => setLoading(false));
     }, []);

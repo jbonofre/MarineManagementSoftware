@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { fetchWithAuth } from './api.ts';
 import { Card, Space, Button, Form, Input, Table, Modal, Tag, Spin, message } from 'antd';
 import { MailOutlined, EditOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import ReactQuill from 'react-quill-new';
@@ -26,8 +27,8 @@ export default function Emails() {
 
     const loadTemplates = () => {
         setLoading(true);
-        fetch('./email-templates/init', { method: 'POST' })
-            .then(() => fetch('./email-templates'))
+        fetchWithAuth('./email-templates/init', { method: 'POST' })
+            .then(() => fetchWithAuth('./email-templates'))
             .then((response) => {
                 if (!response.ok) {
                     throw new Error('Erreur (code ' + response.status + ')');
@@ -59,7 +60,7 @@ export default function Emails() {
     };
 
     const handleSave = (values) => {
-        fetch('./email-templates/' + editingTemplate.id, {
+        fetchWithAuth('./email-templates/' + editingTemplate.id, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
