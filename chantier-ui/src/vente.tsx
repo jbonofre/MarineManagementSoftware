@@ -1281,28 +1281,6 @@ export default function Vente() {
         signatureDrawingRef.current = false;
     };
 
-    const goToStep = (step: number) => {
-        const steps: Array<{ status: VenteStatus; bonPourAccord: boolean }> = [
-            { status: 'DEVIS', bonPourAccord: false },
-            { status: 'DEVIS', bonPourAccord: true },
-            { status: 'FACTURE_EN_ATTENTE', bonPourAccord: true },
-            { status: 'FACTURE_PRETE', bonPourAccord: true },
-            { status: 'FACTURE_PAYEE', bonPourAccord: true },
-        ];
-        const currentStep = venteStepIndex(watchedStatus || 'DEVIS', watchedBonPourAccord);
-        if (step === currentStep) return;
-        // Transitioning to "Bon pour accord" (step 1) from "Devis" (step 0)
-        if (step >= 1 && currentStep === 0) {
-            requestBonPourAccord(() => {
-                form.setFieldsValue(steps[step]);
-                setFormDirty(true);
-            });
-            return;
-        }
-        form.setFieldsValue(steps[step]);
-        setFormDirty(true);
-    };
-
     const handleModalCancel = () => {
         const venteForfaits = form.getFieldValue('venteForfaits') || [];
         const venteServices = form.getFieldValue('venteServices') || [];
@@ -1482,6 +1460,30 @@ export default function Vente() {
         } catch {
             // Les erreurs de validation sont affichees par le formulaire.
         }
+    };
+
+    const goToStep = (step: number) => {
+        const steps: Array<{ status: VenteStatus; bonPourAccord: boolean }> = [
+            { status: 'DEVIS', bonPourAccord: false },
+            { status: 'DEVIS', bonPourAccord: true },
+            { status: 'FACTURE_EN_ATTENTE', bonPourAccord: true },
+            { status: 'FACTURE_PRETE', bonPourAccord: true },
+            { status: 'FACTURE_PAYEE', bonPourAccord: true },
+        ];
+        const currentStep = venteStepIndex(watchedStatus || 'DEVIS', watchedBonPourAccord);
+        if (step === currentStep) return;
+        // Transitioning to "Bon pour accord" (step 1) from "Devis" (step 0)
+        if (step >= 1 && currentStep === 0) {
+            requestBonPourAccord(() => {
+                form.setFieldsValue(steps[step]);
+                setFormDirty(true);
+                handleSave();
+            });
+            return;
+        }
+        form.setFieldsValue(steps[step]);
+        setFormDirty(true);
+        handleSave();
     };
 
     const handleDelete = async (id?: number) => {
