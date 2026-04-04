@@ -1,3 +1,4 @@
+/* ── Logo ────────────────────────────────────────── */
 .logo {
     height: 48px;
     margin: 16px;
@@ -13,21 +14,37 @@
     color: white;
 }
 
-.site-layout .site-layout-background {
-    background: #fff;
-}
+/* ── Layout ──────────────────────────────────────── */
 .layout {
     min-height: 100vh !important;
 }
+
+.site-layout .site-layout-background {
+    background: #fff;
+}
+
 .site-layout {
     padding: 0 50px !important;
 }
+
 .ant-layout-header {
     padding: 10px;
 }
-.ant-layout-sider {
-    background: #fff;
+
+.ant-layout-footer {
+    text-align: center !important;
 }
+
+.ant-breadcrumb {
+    margin: 16px 0px !important;
+}
+
+.site-layout-background {
+    padding: 24px !important;
+    min-height: 360px !important;
+}
+
+/* ── Sidebar Resize Handle ───────────────────────── */
 .sider-resize-handle {
     width: 4px;
     cursor: col-resize;
@@ -35,20 +52,110 @@
     transition: background 0.2s;
     flex-shrink: 0;
 }
+
 .sider-resize-handle:hover,
 .sider-resize-handle:active {
-    background: #1890ff;
+    background: #4096ff;
 }
+
+/* ── Sidebar (Light Theme) ───────────────────────── */
+.sidebar-light {
+    background: linear-gradient(180deg, #ffffff 0%, #f0f5ff 100%) !important;
+    border-right: 1px solid #e8ecf3;
+    box-shadow: 2px 0 12px rgba(0, 0, 0, 0.04);
+}
+
+.sidebar-light .ant-menu {
+    background: transparent !important;
+    padding: 8px 10px !important;
+    border-inline-end: none !important;
+}
+
+.sidebar-light .ant-menu .ant-menu-item {
+    border-radius: 10px !important;
+    margin: 2px 0 !important;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.sidebar-light .ant-menu .ant-menu-item:hover {
+    background: rgba(22, 104, 220, 0.06) !important;
+    color: #1668dc !important;
+}
+
+.sidebar-light .ant-menu .ant-menu-item-selected {
+    background: linear-gradient(135deg, #e6f0ff 0%, #d6e8ff 100%) !important;
+    color: #1668dc !important;
+    font-weight: 500;
+    box-shadow: 0 2px 8px rgba(22, 104, 220, 0.1);
+}
+
+.sidebar-light .ant-menu-submenu > .ant-menu-submenu-title {
+    border-radius: 10px !important;
+    margin: 2px 0 !important;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.sidebar-light .ant-menu-submenu > .ant-menu-submenu-title:hover {
+    background: rgba(22, 104, 220, 0.06) !important;
+    color: #1668dc !important;
+}
+
+.sidebar-light .ant-menu .ant-menu-sub {
+    background: transparent !important;
+}
+
+/* ── Sidebar (Dark Theme) ────────────────────────── */
+.sidebar-dark {
+    background: linear-gradient(180deg, #0c1829 0%, #152a4a 50%, #1a3358 100%) !important;
+    box-shadow: 2px 0 16px rgba(0, 0, 0, 0.25);
+}
+
+.sidebar-dark .ant-menu {
+    background: transparent !important;
+    padding: 8px 10px !important;
+    border-inline-end: none !important;
+}
+
+.sidebar-dark .ant-menu .ant-menu-item {
+    border-radius: 10px !important;
+    margin: 2px 0 !important;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    color: rgba(255, 255, 255, 0.65) !important;
+}
+
+.sidebar-dark .ant-menu .ant-menu-item:hover {
+    background: rgba(255, 255, 255, 0.07) !important;
+    color: #fff !important;
+}
+
+.sidebar-dark .ant-menu .ant-menu-item-selected {
+    background: linear-gradient(135deg, #1668dc 0%, #4096ff 100%) !important;
+    color: #fff !important;
+    box-shadow: 0 4px 12px rgba(22, 104, 220, 0.4);
+    font-weight: 500;
+}
+
+.sidebar-dark .ant-menu-submenu > .ant-menu-submenu-title {
+    border-radius: 10px !important;
+    margin: 2px 0 !important;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    color: rgba(255, 255, 255, 0.65) !important;
+}
+
+.sidebar-dark .ant-menu-submenu > .ant-menu-submenu-title:hover {
+    background: rgba(255, 255, 255, 0.07) !important;
+    color: #fff !important;
+}
+
+.sidebar-dark .ant-menu .ant-menu-sub {
+    background: transparent !important;
+}
+
+.sidebar-dark .ant-menu-submenu-open > .ant-menu-submenu-title {
+    color: #fff !important;
+}
+
+/* ── Sidebar shared ──────────────────────────────── */
 .ant-layout-sider-children > svg {
     margin: auto;
-}
-.ant-breadcrumb {
-    margin: 16px 0px !important;
-}
-.site-layout-background {
-    padding: 24px !important;
-    min-height: 360px !important;
-}
-.ant-layout-footer {
-    text-align: center !important;
 }

@@ -1,11 +1,17 @@
+/* ── Logo ────────────────────────────────────────── */
 .logo {
-    height: 48px;
-    margin: 16px;
+    height: 64px;
+    margin: 20px 16px 8px;
+    padding-bottom: 16px;
     display: flex;
     align-items: center;
-    justify-content: space-evenly;
-    color: white;
-    font-size: large;
+    justify-content: center;
+    gap: 12px;
+    color: #fff;
+    font-size: 1.35em;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .logo > a {
@@ -13,10 +19,54 @@
     color: white;
 }
 
+/* ── Layout ──────────────────────────────────────── */
 .layout {
     min-height: 100vh !important;
 }
 
 .ant-layout-footer {
     text-align: center !important;
+}
+
+/* ── Sidebar ─────────────────────────────────────── */
+.ant-layout-sider {
+    background: linear-gradient(180deg, #0c1829 0%, #152a4a 50%, #1a3358 100%) !important;
+    box-shadow: 2px 0 16px rgba(0, 0, 0, 0.18);
+}
+
+.ant-layout-sider-children {
+    display: flex;
+    flex-direction: column;
+}
+
+/* ── Menu ────────────────────────────────────────── */
+.ant-layout-sider .ant-menu {
+    background: transparent !important;
+    padding: 8px 12px !important;
+    border-inline-end: none !important;
+}
+
+.ant-layout-sider .ant-menu .ant-menu-item {
+    border-radius: 10px !important;
+    margin: 3px 0 !important;
+    height: 42px !important;
+    line-height: 42px !important;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    color: rgba(255, 255, 255, 0.65) !important;
+}
+
+.ant-layout-sider .ant-menu .ant-menu-item:hover {
+    background: rgba(255, 255, 255, 0.07) !important;
+    color: #fff !important;
+}
+
+.ant-layout-sider .ant-menu .ant-menu-item-selected {
+    background: linear-gradient(135deg, #1668dc 0%, #4096ff 100%) !important;
+    color: #fff !important;
+    box-shadow: 0 4px 12px rgba(22, 104, 220, 0.4);
+    font-weight: 500;
+}
+
+.ant-layout-sider .ant-menu .ant-menu-item-selected .anticon {
+    color: #fff !important;
 }
