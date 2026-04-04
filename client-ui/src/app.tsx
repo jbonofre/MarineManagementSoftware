@@ -73,8 +73,8 @@ export default function App() {
         { key: 'bateaux', icon: <ShopOutlined />, label: 'Mes bateaux' },
         { key: 'moteurs', icon: <ToolOutlined />, label: 'Mes moteurs' },
         { key: 'remorques', icon: <CarOutlined />, label: 'Mes remorques' },
-        { key: 'factures', icon: <FileTextOutlined />, label: 'Mes factures' },
-        { key: 'prestations', icon: <ScheduleOutlined />, label: 'Mes prestations' },
+        { key: 'factures', icon: <FileTextOutlined />, label: 'Mes ventes & prestations' },
+        { key: 'prestations', icon: <ScheduleOutlined />, label: 'Interventions' },
         { key: 'annonces', icon: <TagsOutlined />, label: 'Petites annonces' },
         { key: 'profil', icon: <UserOutlined />, label: 'Mon profil' },
     ];

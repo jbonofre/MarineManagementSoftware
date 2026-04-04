@@ -373,7 +373,7 @@ export default function MesFactures({ clientId }: MesFacturesProps) {
     ];
 
     return (
-        <Card title="Mes factures et devis">
+        <Card title="Mes ventes & prestations">
             <Spin spinning={loading}>
                 <Table
                     rowKey="id"

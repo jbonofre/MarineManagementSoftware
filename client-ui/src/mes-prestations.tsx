@@ -212,7 +212,7 @@ export default function MesPrestations({ clientId }: MesPrestationsProps) {
     ];
 
     return (
-        <Card title="Suivi de mes prestations">
+        <Card title="Suivi des interventions">
             <Spin spinning={loading}>
                 {/* Summary cards */}
                 <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
