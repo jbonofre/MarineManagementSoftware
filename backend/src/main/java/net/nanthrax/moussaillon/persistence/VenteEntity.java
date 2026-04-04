@@ -27,6 +27,8 @@ public class VenteEntity extends PanacheEntity {
 
     public boolean bonPourAccord;
 
+    public boolean ordreDeReparation;
+
     @jakarta.persistence.Column(columnDefinition = "TEXT")
     public String signatureBonPourAccord;
 

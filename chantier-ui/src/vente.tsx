@@ -3,7 +3,6 @@ import {
     AutoComplete,
     Button,
     Card,
-    Checkbox,
     Col,
     Divider,
     Form,
@@ -247,6 +246,7 @@ interface VenteEntity {
     id?: number;
     status: VenteStatus;
     bonPourAccord?: boolean;
+    ordreDeReparation?: boolean;
     signatureBonPourAccord?: string;
     client?: ClientEntity;
     bateau?: BateauClientEntity;
@@ -287,6 +287,7 @@ interface RappelHistoriqueEntity {
 interface VenteFormValues {
     status: VenteStatus;
     bonPourAccord?: boolean;
+    ordreDeReparation?: boolean;
     signatureBonPourAccord?: string;
     clientId?: number;
     bateauId?: number;
@@ -347,7 +348,7 @@ interface SearchFilters {
 }
 
 const statusOptions: Array<{ value: VenteStatus; label: string }> = [
-    { value: 'DEVIS', label: 'Devis' },
+    { value: 'DEVIS', label: 'Devis/Ordre de Réparation' },
     { value: 'FACTURE_EN_ATTENTE', label: 'Facture en attente' },
     { value: 'FACTURE_PRETE', label: 'Facture prête' },
     { value: 'FACTURE_PAYEE', label: 'Facture payée' }
@@ -398,7 +399,7 @@ const formatStepDate = (date?: string) => {
 };
 
 const venteStepItems = (vente?: VenteEntity | null) => [
-    { title: 'Devis', icon: <FileTextOutlined />, description: formatStepDate(vente?.dateDevis) },
+    { title: 'Devis/OR', icon: <FileTextOutlined />, description: formatStepDate(vente?.dateDevis) },
     { title: 'Bon pour accord', icon: <SolutionOutlined />, description: formatStepDate(vente?.dateBonPourAccord) },
     { title: 'Facture en attente', icon: <FileDoneOutlined />, description: formatStepDate(vente?.dateFactureEnAttente) },
     { title: 'Facture complète', icon: <WalletOutlined />, description: formatStepDate(vente?.dateFacturePrete) },
@@ -426,6 +427,7 @@ const toBackendDateValue = (value?: dayjs.Dayjs | string) => {
 const defaultVente: VenteFormValues = {
     status: 'DEVIS',
     bonPourAccord: false,
+    ordreDeReparation: false,
     venteForfaits: [{ status: 'EN_ATTENTE', quantite: 1 }],
     venteServices: [{ status: 'EN_ATTENTE', quantite: 1 }],
     produits: [{ quantite: 1 }],
@@ -1160,6 +1162,7 @@ export default function Vente() {
         form.setFieldsValue({
             status: vente.status || 'DEVIS',
             bonPourAccord: vente.bonPourAccord || false,
+            ordreDeReparation: vente.ordreDeReparation || false,
             signatureBonPourAccord: vente.signatureBonPourAccord,
             clientId: vente.client?.id,
             bateauId: vente.bateau?.id,
@@ -1355,6 +1358,7 @@ export default function Vente() {
     const toPayload = (values: VenteFormValues): VenteEntity => ({
         status: values.status,
         bonPourAccord: values.bonPourAccord,
+        ordreDeReparation: values.ordreDeReparation,
         signatureBonPourAccord: values.signatureBonPourAccord,
         client: clients.find((client) => client.id === values.clientId),
         bateau: bateaux.find((bateau) => bateau.id === values.bateauId),
@@ -2061,12 +2065,22 @@ export default function Vente() {
                         onChange={isReadOnly ? undefined : (step) => goToStep(step)}
                     />
                     <Row gutter={16}>
+                        {watchedStatus === 'DEVIS' && !watchedBonPourAccord && (
+                            <Col span={8}>
+                                <Form.Item name="ordreDeReparation" label="Affichage client">
+                                    <Select options={[
+                                        { value: false, label: 'Devis chiffré' },
+                                        { value: true, label: 'Ordre de Réparation' },
+                                    ]} />
+                                </Form.Item>
+                            </Col>
+                        )}
                         <Col span={8}>
                             <Form.Item name="date" label="Date">
                                 <DatePicker showTime format="DD/MM/YYYY HH:mm" style={{ width: '100%' }} />
                             </Form.Item>
                         </Col>
-                        {watchedStatus === 'FACTURE_PRETE' || watchedStatus === 'FACTURE_PAYEE' && (
+                        {(watchedStatus === 'FACTURE_PRETE' || watchedStatus === 'FACTURE_PAYEE') && (
                             <Col span={8}>
                                 <Form.Item name="modePaiement" label="Mode de paiement">
                                     <Select allowClear options={modePaiementOptions} />

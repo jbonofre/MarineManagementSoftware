@@ -310,6 +310,7 @@ public class VenteResource {
         }
         entity.status = vente.status;
         entity.bonPourAccord = vente.bonPourAccord;
+        entity.ordreDeReparation = vente.ordreDeReparation;
         if (vente.signatureBonPourAccord != null) {
             entity.signatureBonPourAccord = vente.signatureBonPourAccord;
         }
