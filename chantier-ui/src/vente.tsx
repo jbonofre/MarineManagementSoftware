@@ -3546,9 +3546,11 @@ export default function Vente() {
                             { title: 'Type', dataIndex: 'type', width: 100 },
                             { title: 'Désignation', dataIndex: 'nom' },
                             { title: 'Qté', dataIndex: 'quantite', width: 60, align: 'center' as const },
-                            { title: 'Prix TTC', dataIndex: 'prixTTC', width: 120, align: 'right' as const, render: (v: number) => formatEuro(v) },
+                            ...(!form.getFieldValue('ordreDeReparation') ? [
+                                { title: 'Prix TTC', dataIndex: 'prixTTC', width: 120, align: 'right' as const, render: (v: number) => formatEuro(v) },
+                            ] : []),
                         ]}
-                        summary={(data) => {
+                        summary={!form.getFieldValue('ordreDeReparation') ? (data) => {
                             const total = data.reduce((sum, row) => sum + row.prixTTC, 0);
                             const remise = form.getFieldValue('remise') || 0;
                             const prixVente = Math.round(((total - remise) + Number.EPSILON) * 100) / 100;
@@ -3570,7 +3572,7 @@ export default function Vente() {
                                     </Table.Summary.Row>
                                 </>
                             );
-                        }}
+                        } : undefined}
                     />
                 </div>
                 <Divider />
