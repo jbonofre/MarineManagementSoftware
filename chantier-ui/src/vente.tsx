@@ -1481,6 +1481,20 @@ export default function Vente() {
             });
             return;
         }
+        // Block transition to "Facture complète" (step 3+) if not all tasks are done
+        if (step >= 3 && currentStep < 3) {
+            const forfaitLines = (form.getFieldValue('venteForfaits') || []).filter((l: { forfaitId?: number }) => l.forfaitId);
+            const serviceLines = (form.getFieldValue('venteServices') || []).filter((l: { serviceId?: number }) => l.serviceId);
+            const allLines = [...forfaitLines, ...serviceLines];
+            const allDone = allLines.length > 0 && allLines.every((l: { status?: PlanningStatus }) =>
+                l.status === 'TERMINEE' || l.status === 'ANNULEE'
+            );
+            const hasTerminee = allLines.some((l: { status?: PlanningStatus }) => l.status === 'TERMINEE');
+            if (!allDone || !hasTerminee) {
+                message.warning('Toutes les prestations doivent être terminées avant de passer en facture complète');
+                return;
+            }
+        }
         form.setFieldsValue(steps[step]);
         setFormDirty(true);
         handleSave();

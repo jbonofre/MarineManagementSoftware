@@ -451,8 +451,27 @@ public class VenteResource {
             }
         }
 
-        // Auto-compute status: FACTURE_PRETE when all forfaits/services are TERMINEE
+        // Validate manual transition to FACTURE_PRETE: all tasks must be TERMINEE/ANNULEE
         boolean hasForfaitsOrServices = !entity.venteForfaits.isEmpty() || !entity.venteServices.isEmpty();
+        if (entity.status == VenteEntity.Status.FACTURE_PRETE && hasForfaitsOrServices) {
+            boolean allDone = entity.venteForfaits.stream()
+                    .allMatch(vf -> vf.status == VenteForfaitEntity.Status.TERMINEE || vf.status == VenteForfaitEntity.Status.ANNULEE)
+                    && entity.venteServices.stream()
+                    .allMatch(vs -> vs.status == VenteServiceEntity.Status.TERMINEE || vs.status == VenteServiceEntity.Status.ANNULEE);
+            boolean hasAtLeastOne = entity.venteForfaits.stream()
+                    .anyMatch(vf -> vf.status == VenteForfaitEntity.Status.TERMINEE)
+                    || entity.venteServices.stream()
+                    .anyMatch(vs -> vs.status == VenteServiceEntity.Status.TERMINEE);
+            if (!allDone || !hasAtLeastOne) {
+                throw new WebApplicationException(
+                    "Toutes les prestations doivent être terminées avant de passer en facture complète",
+                    Response.status(Response.Status.BAD_REQUEST)
+                        .entity(java.util.Map.of("error", "Toutes les prestations doivent être terminées avant de passer en facture complète"))
+                        .build());
+            }
+        }
+
+        // Auto-compute status: FACTURE_PRETE when all forfaits/services are TERMINEE
         if (hasForfaitsOrServices && entity.bonPourAccord
                 && entity.status != VenteEntity.Status.FACTURE_PAYEE) {
             boolean allTerminee = entity.venteForfaits.stream()
