@@ -64,7 +64,10 @@ public class VenteResource {
         String dateStr = entity.date != null
                 ? new Timestamp(entity.date.getTime()).toLocalDateTime().toLocalDate().toString()
                 : "-";
-        String typeLabel = "Prestation";
+        boolean isDevis = entity.status == VenteEntity.Status.DEVIS;
+        boolean isOrdreReparation = isDevis && entity.ordreDeReparation;
+        boolean showPrices = !isOrdreReparation;
+        String typeLabel = isOrdreReparation ? "Ordre de Réparation" : (isDevis ? "Devis" : "Facture");
         String statutLabel = entity.status != null ? entity.status.name() : "-";
         String prixVenteTTC = String.format("%.2f EUR", entity.prixVenteTTC);
         String modePaiement = entity.modePaiement != null ? entity.modePaiement.name() : "-";
@@ -74,10 +77,12 @@ public class VenteResource {
         if (entity.venteForfaits != null) {
             for (VenteForfaitEntity vf : entity.venteForfaits) {
                 String nom = vf.forfait != null ? vf.forfait.nom : "Forfait";
-                double total = vf.forfait != null ? vf.forfait.prixTTC * vf.quantite : 0;
-                lignes.append("- Forfait : ").append(nom)
-                        .append(" x").append(vf.quantite)
-                        .append(" = ").append(String.format("%.2f EUR", total)).append("\n");
+                lignes.append("- Forfait : ").append(nom).append(" x").append(vf.quantite);
+                if (showPrices) {
+                    double total = vf.forfait != null ? vf.forfait.prixTTC * vf.quantite : 0;
+                    lignes.append(" = ").append(String.format("%.2f EUR", total));
+                }
+                lignes.append("\n");
             }
         }
         if (entity.produits != null) {
@@ -95,19 +100,23 @@ public class VenteResource {
                 ProduitCatalogueEntity p = produitMap.get(entry.getKey());
                 String nom = p.nom + (p.marque != null ? " (" + p.marque + ")" : "");
                 int qty = entry.getValue()[0];
-                double total = entry.getValue()[1] / 100.0;
-                lignes.append("- Produit : ").append(nom)
-                        .append(" x").append(qty)
-                        .append(" = ").append(String.format("%.2f EUR", total)).append("\n");
+                lignes.append("- Produit : ").append(nom).append(" x").append(qty);
+                if (showPrices) {
+                    double total = entry.getValue()[1] / 100.0;
+                    lignes.append(" = ").append(String.format("%.2f EUR", total));
+                }
+                lignes.append("\n");
             }
         }
         if (entity.venteServices != null) {
             for (VenteServiceEntity vs : entity.venteServices) {
                 String nom = vs.service != null ? vs.service.nom : "Service";
-                double total = vs.service != null ? vs.service.prixTTC * vs.quantite : 0;
-                lignes.append("- Service : ").append(nom)
-                        .append(" x").append(vs.quantite)
-                        .append(" = ").append(String.format("%.2f EUR", total)).append("\n");
+                lignes.append("- Service : ").append(nom).append(" x").append(vs.quantite);
+                if (showPrices) {
+                    double total = vs.service != null ? vs.service.prixTTC * vs.quantite : 0;
+                    lignes.append(" = ").append(String.format("%.2f EUR", total));
+                }
+                lignes.append("\n");
             }
         }
         if (lignes.length() == 0) {
@@ -140,15 +149,17 @@ public class VenteResource {
                     .replace("{societe}", societeNom);
         } else {
             subject = "Votre " + typeLabel + " #" + entity.id + " - " + societeNom;
-            body = "Bonjour " + clientName + ",\n\n"
-                    + "Veuillez trouver les informations de votre " + typeLabel + " #" + entity.id + ".\n\n"
-                    + "Date             : " + dateStr + "\n"
-                    + "Type             : " + typeLabel + "\n"
-                    + "Statut           : " + statutLabel + "\n"
-                    + "Prix vente TTC   : " + prixVenteTTC + "\n"
-                    + "Mode de paiement : " + modePaiement + "\n\n"
-                    + "Lignes :\n" + lignes + "\n"
-                    + "Cordialement,\n" + societeNom;
+            StringBuilder bodyBuilder = new StringBuilder();
+            bodyBuilder.append("Bonjour ").append(clientName).append(",\n\n")
+                    .append("Veuillez trouver les informations de votre ").append(typeLabel).append(" #").append(entity.id).append(".\n\n")
+                    .append("Date             : ").append(dateStr).append("\n");
+            if (showPrices) {
+                bodyBuilder.append("Prix vente TTC   : ").append(prixVenteTTC).append("\n")
+                        .append("Mode de paiement : ").append(modePaiement).append("\n");
+            }
+            bodyBuilder.append("\nDétails :\n").append(lignes).append("\n")
+                    .append("Cordialement,\n").append(societeNom);
+            body = bodyBuilder.toString();
         }
 
         mailer.send(Mail.withHtml(entity.client.email, subject, body));

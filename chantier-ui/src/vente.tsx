@@ -1551,12 +1551,9 @@ export default function Vente() {
         setTimeout(cleanup, 1000);
     };
 
-    const handlePrint = (vente: VenteEntity) => {
-        const title = `Vente #${vente.id || '-'}`;
+    const buildDocumentLines = (vente: VenteEntity) => {
         const forfaitLines = (vente.venteForfaits || []).map(vf => ({
-            type: 'Forfait',
-            label: vf.forfait?.nom || '',
-            quantite: vf.quantite || 1,
+            type: 'Forfait', label: vf.forfait?.nom || '', quantite: vf.quantite || 1,
             totalPrixTTC: (vf.forfait?.prixTTC || 0) * (vf.quantite || 1)
         }));
         const produitLines = Array.from(
@@ -1568,47 +1565,61 @@ export default function Vente() {
                 current.totalPrixTTC += item.prixVenteTTC || 0;
                 acc.set(key, current);
                 return acc;
-            }, new Map<string, { type: string; label: string; quantite: number; totalPrixTTC: number }>())
-                .values()
+            }, new Map<string, { type: string; label: string; quantite: number; totalPrixTTC: number }>()).values()
         );
         const serviceLines = (vente.venteServices || []).map(vs => ({
-            type: 'Service',
-            label: vs.service?.nom || '',
-            quantite: vs.quantite || 1,
+            type: 'Service', label: vs.service?.nom || '', quantite: vs.quantite || 1,
             totalPrixTTC: (vs.service?.prixTTC || 0) * (vs.quantite || 1)
         }));
-        const invoiceLines = [...forfaitLines, ...produitLines, ...serviceLines];
-        const invoiceRowsHtml = invoiceLines.length > 0
-            ? `
-                <table class="invoice-table">
-                    <thead>
-                        <tr>
-                            <th>Type</th>
-                            <th>Designation</th>
-                            <th>Qte</th>
-                            <th>Prix total</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${invoiceLines
-                            .map((line) => `
-                                <tr>
-                                    <td>${escapeHtml(line.type)}</td>
-                                    <td>${escapeHtml(line.label)}</td>
-                                    <td>${line.quantite}</td>
-                                    <td>${escapeHtml(formatEuro(line.totalPrixTTC))}</td>
-                                </tr>
-                            `)
-                            .join('')}
-                    </tbody>
-                </table>
-            `
-            : '<p>Aucun element</p>';
+        return [...forfaitLines, ...produitLines, ...serviceLines];
+    };
 
-        openPrintDocument(
-            title,
-            `
-            <html>
+    const getDocumentType = (vente: VenteEntity): 'devis' | 'ordre_reparation' | 'facture' => {
+        if (vente.status === 'DEVIS') {
+            return vente.ordreDeReparation ? 'ordre_reparation' : 'devis';
+        }
+        return 'facture';
+    };
+
+    const buildDocumentHtml = (vente: VenteEntity) => {
+        const docType = getDocumentType(vente);
+        const showPrices = docType !== 'ordre_reparation';
+        const lines = buildDocumentLines(vente);
+
+        const docTitle = docType === 'devis' ? 'Devis'
+            : docType === 'ordre_reparation' ? 'Ordre de Réparation'
+            : 'Facture';
+        const title = `${docTitle} #${vente.id || '-'}`;
+
+        const priceColumn = showPrices ? '<th>Prix total TTC</th>' : '';
+        const tableHtml = lines.length > 0
+            ? `<table class="invoice-table">
+                <thead><tr><th>Type</th><th>Désignation</th><th>Qté</th>${priceColumn}</tr></thead>
+                <tbody>${lines.map((line) => `
+                    <tr>
+                        <td>${escapeHtml(line.type)}</td>
+                        <td>${escapeHtml(line.label)}</td>
+                        <td>${line.quantite}</td>
+                        ${showPrices ? `<td>${escapeHtml(formatEuro(line.totalPrixTTC))}</td>` : ''}
+                    </tr>`).join('')}
+                </tbody>
+              </table>`
+            : '<p>Aucun élément</p>';
+
+        const totalsHtml = showPrices ? `
+            <div class="section">
+                <div class="row"><strong>Montant TTC:</strong> ${escapeHtml(formatEuro(vente.montantTTC))}</div>
+                ${(vente.remise || 0) > 0 ? `<div class="row"><strong>Remise:</strong> ${escapeHtml(formatEuro(vente.remise))}</div>` : ''}
+                <div class="row"><strong>Prix vente TTC:</strong> ${escapeHtml(formatEuro(vente.prixVenteTTC))}</div>
+            </div>` : '';
+
+        const paymentHtml = docType === 'facture' && vente.modePaiement
+            ? `<div class="row"><strong>Mode de paiement:</strong> ${escapeHtml(vente.modePaiement)}</div>` : '';
+
+        const signatureHtml = docType !== 'facture' && vente.signatureBonPourAccord
+            ? `<div class="section"><h3>Signature client</h3><img src="${vente.signatureBonPourAccord}" style="max-width:300px;border:1px solid #d9d9d9;border-radius:4px;" /></div>` : '';
+
+        return `<html>
             <head>
                 <title>${escapeHtml(title)}</title>
                 <style>
@@ -1625,22 +1636,24 @@ export default function Vente() {
             <body>
                 <h1>${escapeHtml(title)}</h1>
                 <div class="meta">Date: ${escapeHtml(formatDate(vente.date))}</div>
-                <div class="row"><strong>Statut:</strong> ${escapeHtml(statusOptions.find(s => s.value === vente.status)?.label || vente.status || '-')}</div>
-                <div class="row"><strong>Bon pour accord:</strong> ${vente.bonPourAccord ? 'Oui' : 'Non'}</div>
                 <div class="row"><strong>Client:</strong> ${escapeHtml(getClientLabel(vente.client))}</div>
-                <div class="row"><strong>Montant TTC:</strong> ${escapeHtml(formatEuro(vente.montantTTC))}</div>
-                <div class="row"><strong>Remise:</strong> ${escapeHtml(formatEuro(vente.remise))}</div>
-                <div class="row"><strong>Prix vente TTC:</strong> ${escapeHtml(formatEuro(vente.prixVenteTTC))}</div>
-                <div class="row"><strong>Mode de paiement:</strong> ${escapeHtml(vente.modePaiement || '-')}</div>
-
+                ${paymentHtml}
                 <div class="section">
-                    <h3>Lignes</h3>
-                    ${invoiceRowsHtml}
+                    <h3>Détails</h3>
+                    ${tableHtml}
                 </div>
+                ${totalsHtml}
+                ${signatureHtml}
             </body>
-            </html>
-        `
-        );
+        </html>`;
+    };
+
+    const handlePrint = (vente: VenteEntity) => {
+        const docType = getDocumentType(vente);
+        const docTitle = docType === 'devis' ? 'Devis'
+            : docType === 'ordre_reparation' ? 'Ordre de Réparation'
+            : 'Facture';
+        openPrintDocument(`${docTitle} #${vente.id || '-'}`, buildDocumentHtml(vente));
     };
 
     const handleEmail = async (vente: VenteEntity) => {
