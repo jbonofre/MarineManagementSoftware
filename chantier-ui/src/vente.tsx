@@ -1,10 +1,11 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     AutoComplete,
     Button,
     Card,
     Checkbox,
     Col,
+    Divider,
     Form,
     Input,
     InputNumber,
@@ -22,7 +23,7 @@ import {
     Dropdown,
     message
 } from 'antd';
-import { CalendarOutlined, CheckCircleOutlined, CreditCardOutlined, DeleteOutlined, EditOutlined, FileDoneOutlined, FileTextOutlined, MailOutlined, PlusCircleOutlined, PlusOutlined, PrinterOutlined, SendOutlined, SolutionOutlined, WalletOutlined } from '@ant-design/icons';
+import { CalendarOutlined, CheckCircleOutlined, CreditCardOutlined, DeleteOutlined, EditOutlined, FileDoneOutlined, FileTextOutlined, LeftOutlined, MailOutlined, PlusCircleOutlined, PlusOutlined, PrinterOutlined, RightOutlined, SendOutlined, SolutionOutlined, WalletOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import api from './api.ts';
 import { useReferenceValeurs } from './useReferenceValeurs.ts';
@@ -246,6 +247,7 @@ interface VenteEntity {
     id?: number;
     status: VenteStatus;
     bonPourAccord?: boolean;
+    signatureBonPourAccord?: string;
     client?: ClientEntity;
     bateau?: BateauClientEntity;
     moteur?: MoteurClientEntity;
@@ -285,6 +287,7 @@ interface RappelHistoriqueEntity {
 interface VenteFormValues {
     status: VenteStatus;
     bonPourAccord?: boolean;
+    signatureBonPourAccord?: string;
     clientId?: number;
     bateauId?: number;
     moteurId?: number;
@@ -514,6 +517,10 @@ export default function Vente() {
     const [newRemorqueModalVisible, setNewRemorqueModalVisible] = useState(false);
     const [newRemorqueForm] = Form.useForm();
     const [newRemorqueFormDirty, setNewRemorqueFormDirty] = useState(false);
+    const [bpaModalVisible, setBpaModalVisible] = useState(false);
+    const [bpaPendingCallback, setBpaPendingCallback] = useState<(() => void) | null>(null);
+    const signatureCanvasRef = useRef<HTMLCanvasElement | null>(null);
+    const signatureDrawingRef = useRef(false);
 
     const marqueOptions = useMemo(() => {
         const unique = Array.from(new Set(produits.map((p) => p.marque).filter(Boolean))) as string[];
@@ -1152,6 +1159,7 @@ export default function Vente() {
         form.setFieldsValue({
             status: vente.status || 'DEVIS',
             bonPourAccord: vente.bonPourAccord || false,
+            signatureBonPourAccord: vente.signatureBonPourAccord,
             clientId: vente.client?.id,
             bateauId: vente.bateau?.id,
             moteurId: vente.moteur?.id,
@@ -1174,6 +1182,125 @@ export default function Vente() {
             rappel2Jours: vente.rappel2Jours,
             rappel3Jours: vente.rappel3Jours
         });
+    };
+
+    const getBpaSummaryLines = useCallback(() => {
+        const venteForfaitLines = form.getFieldValue('venteForfaits') || [];
+        const venteServiceLines = form.getFieldValue('venteServices') || [];
+        const produitLines = form.getFieldValue('produits') || [];
+        const lines: Array<{ type: string; nom: string; quantite: number; prixTTC: number }> = [];
+        venteForfaitLines.forEach((line: { forfaitId?: number; quantite?: number }) => {
+            if (!line.forfaitId) return;
+            const f = forfaits.find((item) => item.id === line.forfaitId);
+            if (f) lines.push({ type: 'Forfait', nom: f.nom, quantite: line.quantite || 1, prixTTC: (f.prixTTC || 0) * (line.quantite || 1) });
+        });
+        venteServiceLines.forEach((line: { serviceId?: number; quantite?: number }) => {
+            if (!line.serviceId) return;
+            const s = services.find((item) => item.id === line.serviceId);
+            if (s) lines.push({ type: 'Service', nom: s.nom, quantite: line.quantite || 1, prixTTC: (s.prixTTC || 0) * (line.quantite || 1) });
+        });
+        produitLines.forEach((line: { produitId?: number; quantite?: number }) => {
+            if (!line.produitId) return;
+            const p = produits.find((item) => item.id === line.produitId);
+            if (p) lines.push({ type: 'Produit', nom: p.nom, quantite: line.quantite || 1, prixTTC: (p.prixVenteTTC || 0) * (line.quantite || 1) });
+        });
+        return lines;
+    }, [form, forfaits, services, produits]);
+
+    const initSignatureCanvas = useCallback(() => {
+        setTimeout(() => {
+            const canvas = signatureCanvasRef.current;
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return;
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 2;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+
+            let drawing = false;
+            const getPos = (e: MouseEvent | TouchEvent) => {
+                const rect = canvas.getBoundingClientRect();
+                if ('touches' in e) {
+                    return { x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top };
+                }
+                return { x: (e as MouseEvent).clientX - rect.left, y: (e as MouseEvent).clientY - rect.top };
+            };
+            const onStart = (e: MouseEvent | TouchEvent) => { e.preventDefault(); drawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); signatureDrawingRef.current = true; };
+            const onMove = (e: MouseEvent | TouchEvent) => { if (!drawing) return; e.preventDefault(); const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); };
+            const onEnd = () => { drawing = false; };
+
+            canvas.addEventListener('mousedown', onStart);
+            canvas.addEventListener('mousemove', onMove);
+            canvas.addEventListener('mouseup', onEnd);
+            canvas.addEventListener('mouseleave', onEnd);
+            canvas.addEventListener('touchstart', onStart, { passive: false });
+            canvas.addEventListener('touchmove', onMove, { passive: false });
+            canvas.addEventListener('touchend', onEnd);
+        }, 100);
+    }, []);
+
+    const requestBonPourAccord = (onConfirm: () => void) => {
+        signatureDrawingRef.current = false;
+        setBpaPendingCallback(() => onConfirm);
+        setBpaModalVisible(true);
+        initSignatureCanvas();
+    };
+
+    const handleBpaConfirm = () => {
+        if (!signatureDrawingRef.current) {
+            message.warning('La signature est requise pour valider le bon pour accord');
+            return;
+        }
+        const canvas = signatureCanvasRef.current;
+        const signatureData = canvas ? canvas.toDataURL('image/png') : undefined;
+        if (bpaPendingCallback) {
+            form.setFieldsValue({ signatureBonPourAccord: signatureData });
+            bpaPendingCallback();
+        }
+        setBpaModalVisible(false);
+        setBpaPendingCallback(null);
+    };
+
+    const handleBpaCancel = () => {
+        setBpaModalVisible(false);
+        setBpaPendingCallback(null);
+    };
+
+    const clearSignatureCanvas = () => {
+        const canvas = signatureCanvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        signatureDrawingRef.current = false;
+    };
+
+    const goToStep = (step: number) => {
+        const steps: Array<{ status: VenteStatus; bonPourAccord: boolean }> = [
+            { status: 'DEVIS', bonPourAccord: false },
+            { status: 'DEVIS', bonPourAccord: true },
+            { status: 'FACTURE_EN_ATTENTE', bonPourAccord: true },
+            { status: 'FACTURE_PRETE', bonPourAccord: true },
+            { status: 'FACTURE_PAYEE', bonPourAccord: true },
+        ];
+        const currentStep = venteStepIndex(watchedStatus || 'DEVIS', watchedBonPourAccord);
+        if (step === currentStep) return;
+        // Transitioning to "Bon pour accord" (step 1) from "Devis" (step 0)
+        if (step >= 1 && currentStep === 0) {
+            requestBonPourAccord(() => {
+                form.setFieldsValue(steps[step]);
+                setFormDirty(true);
+            });
+            return;
+        }
+        form.setFieldsValue(steps[step]);
+        setFormDirty(true);
     };
 
     const handleModalCancel = () => {
@@ -1249,6 +1376,7 @@ export default function Vente() {
     const toPayload = (values: VenteFormValues): VenteEntity => ({
         status: values.status,
         bonPourAccord: values.bonPourAccord,
+        signatureBonPourAccord: values.signatureBonPourAccord,
         client: clients.find((client) => client.id === values.clientId),
         bateau: bateaux.find((bateau) => bateau.id === values.bateauId),
         moteur: moteurs.find((moteur) => moteur.id === values.moteurId),
@@ -1858,7 +1986,7 @@ export default function Vente() {
                     >
                         Envoyer par email
                     </Button>,
-                    ...(watchedStatus === 'FACTURE_PAYEE' ? [<Dropdown
+                    ...(watchedStatus === 'FACTURE_PRETE' || watchedStatus === 'FACTURE_PAYEE' ? [<Dropdown
                         key="payment"
                         menu={{ items: currentVente ? paymentMenuItems(currentVente) : [] }}
                         placement="topRight"
@@ -1867,8 +1995,31 @@ export default function Vente() {
                             Lien de paiement
                         </Button>
                     </Dropdown>] : []),
+                    <div key="step-nav" style={{ flex: 1, textAlign: 'left' }}>
+                        <Button
+                            icon={<LeftOutlined />}
+                            disabled={venteStepIndex(watchedStatus || 'DEVIS', watchedBonPourAccord) <= 0}
+                            onClick={() => {
+                                const current = venteStepIndex(watchedStatus || 'DEVIS', watchedBonPourAccord);
+                                if (current > 0) goToStep(current - 1);
+                            }}
+                        >
+                            Précédent
+                        </Button>
+                        <Button
+                            style={{ marginLeft: 8 }}
+                            disabled={venteStepIndex(watchedStatus || 'DEVIS', watchedBonPourAccord) >= 4}
+                            onClick={() => {
+                                const current = venteStepIndex(watchedStatus || 'DEVIS', watchedBonPourAccord);
+                                if (current < 4) goToStep(current + 1);
+                            }}
+                        >
+                            Suivant
+                            <RightOutlined />
+                        </Button>
+                    </div>,
                     <Button key="cancel" onClick={handleModalCancel}>
-                        Annuler
+                        Fermer
                     </Button>,
                     <Button key="save" type="primary" onClick={handleSave}>
                         Enregistrer
@@ -1889,26 +2040,7 @@ export default function Vente() {
                         size="small"
                         style={{ marginBottom: 24 }}
                         items={venteStepItems(currentVente)}
-                        onChange={(step) => {
-                            switch (step) {
-                                case 0:
-                                    form.setFieldsValue({ status: 'DEVIS', bonPourAccord: false });
-                                    break;
-                                case 1:
-                                    form.setFieldsValue({ status: 'DEVIS', bonPourAccord: true });
-                                    break;
-                                case 2:
-                                    form.setFieldsValue({ status: 'FACTURE_EN_ATTENTE', bonPourAccord: true });
-                                    break;
-                                case 3:
-                                    form.setFieldsValue({ status: 'FACTURE_PRETE', bonPourAccord: true });
-                                    break;
-                                case 4:
-                                    form.setFieldsValue({ status: 'FACTURE_PAYEE', bonPourAccord: true });
-                                    break;
-                            }
-                            setFormDirty(true);
-                        }}
+                        onChange={(step) => goToStep(step)}
                     />
                     <Row gutter={16}>
                         <Col span={8}>
@@ -1916,7 +2048,7 @@ export default function Vente() {
                                 <DatePicker showTime format="DD/MM/YYYY HH:mm" style={{ width: '100%' }} />
                             </Form.Item>
                         </Col>
-                        {watchedStatus === 'FACTURE_PAYEE' && (
+                        {watchedStatus === 'FACTURE_PRETE' || watchedStatus === 'FACTURE_PAYEE' && (
                             <Col span={8}>
                                 <Form.Item name="modePaiement" label="Mode de paiement">
                                     <Select allowClear options={modePaiementOptions} />
@@ -2064,12 +2196,12 @@ export default function Vente() {
                                                                     name={[field.name, 'technicienIds']}
                                                                     style={{ width: 220 }}
                                                                 >
-                                                                    <Select mode="multiple" allowClear showSearch options={technicienOptions} placeholder="Techniciens" />
+                                                                    <Select mode="multiple" allowClear showSearch options={technicienOptions} placeholder="Techniciens" disabled={!watchedBonPourAccord} />
                                                                 </Form.Item>
                                                                 {isEmptyLine ? (
                                                                     <Button icon={<PlusOutlined />} title="Créer un forfait" onClick={() => openNewForfaitModal(field.name)} />
                                                                 ) : (
-                                                                    <Button icon={<CalendarOutlined />} title="Planifier" onClick={() => { setModalVisible(false); history.push('/planning'); }} />
+                                                                    <Button icon={<CalendarOutlined />} title="Planifier" disabled={!watchedBonPourAccord} onClick={() => { setModalVisible(false); history.push('/planning'); }} />
                                                                 )}
                                                                 <Button danger icon={<DeleteOutlined />} onClick={() => remove(field.name)} />
                                                             </Space>
@@ -2157,14 +2289,14 @@ export default function Vente() {
                                                                     name={[field.name, 'technicienIds']}
                                                                     style={{ width: 220 }}
                                                                 >
-                                                                    <Select mode="multiple" allowClear showSearch options={technicienOptions} placeholder="Techniciens" />
+                                                                    <Select mode="multiple" allowClear showSearch options={technicienOptions} placeholder="Techniciens" disabled={!watchedBonPourAccord} />
                                                                 </Form.Item>
                                                                 {isEmptyLine ? (
                                                                     <Button icon={<PlusOutlined />} title="Créer un service" onClick={() => openNewServiceModal(field.name)} />
                                                                 ) : (
                                                                     <>
                                                                         <Button icon={<EditOutlined />} title="Modifier le service" onClick={() => openEditServiceModal(serviceId)} />
-                                                                        <Button icon={<CalendarOutlined />} title="Planifier" onClick={() => { setModalVisible(false); history.push('/planning'); }} />
+                                                                        <Button icon={<CalendarOutlined />} title="Planifier" disabled={!watchedBonPourAccord} onClick={() => { setModalVisible(false); history.push('/planning'); }} />
                                                                     </>
                                                                 )}
                                                                 <Button danger icon={<DeleteOutlined />} onClick={() => remove(field.name)} />
@@ -3339,6 +3471,76 @@ export default function Vente() {
                         <DocumentUpload />
                     </Form.Item>
                 </Form>
+            </Modal>
+            <Modal
+                title="Bon pour accord — Signature client"
+                open={bpaModalVisible}
+                onCancel={handleBpaCancel}
+                width={700}
+                maskClosable={false}
+                destroyOnHidden
+                footer={[
+                    <Button key="clear" onClick={clearSignatureCanvas}>
+                        Effacer la signature
+                    </Button>,
+                    <Button key="cancel" onClick={handleBpaCancel}>
+                        Annuler
+                    </Button>,
+                    <Button key="confirm" type="primary" onClick={handleBpaConfirm}>
+                        Valider le bon pour accord
+                    </Button>
+                ]}
+            >
+                <div style={{ marginBottom: 16 }}>
+                    <Table
+                        size="small"
+                        pagination={false}
+                        dataSource={getBpaSummaryLines()}
+                        rowKey={(_, idx) => `bpa-${idx}`}
+                        columns={[
+                            { title: 'Type', dataIndex: 'type', width: 100 },
+                            { title: 'Désignation', dataIndex: 'nom' },
+                            { title: 'Qté', dataIndex: 'quantite', width: 60, align: 'center' as const },
+                            { title: 'Prix TTC', dataIndex: 'prixTTC', width: 120, align: 'right' as const, render: (v: number) => formatEuro(v) },
+                        ]}
+                        summary={(data) => {
+                            const total = data.reduce((sum, row) => sum + row.prixTTC, 0);
+                            const remise = form.getFieldValue('remise') || 0;
+                            const prixVente = Math.round(((total - remise) + Number.EPSILON) * 100) / 100;
+                            return (
+                                <>
+                                    <Table.Summary.Row>
+                                        <Table.Summary.Cell index={0} colSpan={3} align="right"><strong>Total TTC</strong></Table.Summary.Cell>
+                                        <Table.Summary.Cell index={1} align="right"><strong>{formatEuro(total)}</strong></Table.Summary.Cell>
+                                    </Table.Summary.Row>
+                                    {remise > 0 && (
+                                        <Table.Summary.Row>
+                                            <Table.Summary.Cell index={0} colSpan={3} align="right">Remise</Table.Summary.Cell>
+                                            <Table.Summary.Cell index={1} align="right">-{formatEuro(remise)}</Table.Summary.Cell>
+                                        </Table.Summary.Row>
+                                    )}
+                                    <Table.Summary.Row>
+                                        <Table.Summary.Cell index={0} colSpan={3} align="right"><strong>Prix vente TTC</strong></Table.Summary.Cell>
+                                        <Table.Summary.Cell index={1} align="right"><strong>{formatEuro(prixVente)}</strong></Table.Summary.Cell>
+                                    </Table.Summary.Row>
+                                </>
+                            );
+                        }}
+                    />
+                </div>
+                <Divider />
+                <div style={{ marginBottom: 8, fontWeight: 500 }}>Signature du client :</div>
+                <canvas
+                    ref={signatureCanvasRef}
+                    style={{
+                        width: '100%',
+                        height: 200,
+                        border: '1px solid #d9d9d9',
+                        borderRadius: 6,
+                        cursor: 'crosshair',
+                        touchAction: 'none',
+                    }}
+                />
             </Modal>
         </Card>
     );

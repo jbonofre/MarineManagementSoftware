@@ -314,6 +314,10 @@ export default function Planning() {
     );
 
     const openPlanningModal = (row: PlanningItemRow, forcedDate?: string) => {
+        if (!row.vente.bonPourAccord) {
+            message.warning('Le bon pour accord est requis avant de planifier les interventions');
+            return;
+        }
         setCurrentRow(row);
         form.setFieldsValue({
             date:
@@ -656,9 +660,11 @@ export default function Planning() {
             key: 'actions',
             render: (_: unknown, record: PlanningItemRow) => (
                 <Space>
-                    <Button type="primary" icon={<CalendarOutlined />} onClick={() => openPlanningModal(record, selectedDate)}>
-                        Planifier
-                    </Button>
+                    <Tooltip title={!record.vente.bonPourAccord ? 'Le bon pour accord est requis' : undefined}>
+                        <Button type="primary" icon={<CalendarOutlined />} disabled={!record.vente.bonPourAccord} onClick={() => openPlanningModal(record, selectedDate)}>
+                            Planifier
+                        </Button>
+                    </Tooltip>
                     {record.vente.id ? (
                         <Button icon={<EyeOutlined />} onClick={() => openPrestationModal(record.vente.id!)}>
                             Voir prestation
@@ -683,9 +689,11 @@ export default function Planning() {
             key: 'actions',
             render: (_: unknown, record: PlanningItemRow) => (
                 <Space>
-                    <Button icon={<EditOutlined />} onClick={() => openPlanningModal(record)}>
-                        Replanifier
-                    </Button>
+                    <Tooltip title={!record.vente.bonPourAccord ? 'Le bon pour accord est requis' : undefined}>
+                        <Button icon={<EditOutlined />} disabled={!record.vente.bonPourAccord} onClick={() => openPlanningModal(record)}>
+                            Replanifier
+                        </Button>
+                    </Tooltip>
                     {record.vente.id && (
                         <Button icon={<EyeOutlined />} onClick={() => openPrestationModal(record.vente.id!)}>
                             Voir prestation

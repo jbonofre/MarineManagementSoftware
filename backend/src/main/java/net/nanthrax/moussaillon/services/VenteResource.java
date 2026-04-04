@@ -297,6 +297,9 @@ public class VenteResource {
         }
         entity.status = vente.status;
         entity.bonPourAccord = vente.bonPourAccord;
+        if (vente.signatureBonPourAccord != null) {
+            entity.signatureBonPourAccord = vente.signatureBonPourAccord;
+        }
         entity.client = vente.client;
         entity.bateau = vente.bateau;
         entity.moteur = vente.moteur;
