@@ -124,6 +124,7 @@ interface VenteEntity {
     id?: number;
     status: VenteStatus;
     bonPourAccord?: boolean;
+    comptoir?: boolean;
     signatureBonPourAccord?: string;
     client?: ClientEntity;
     bateau?: BateauClientEntity;
@@ -505,6 +506,7 @@ export default function Comptoir() {
         status: values.status,
         bonPourAccord: values.bonPourAccord,
         signatureBonPourAccord: values.signatureBonPourAccord,
+        comptoir: true,
         client: clients.find((client) => client.id === values.clientId),
         bateau: bateaux.find((bateau) => bateau.id === values.bateauId),
         moteur: moteurs.find((moteur) => moteur.id === values.moteurId),

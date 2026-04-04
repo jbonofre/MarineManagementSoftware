@@ -247,6 +247,7 @@ interface VenteEntity {
     status: VenteStatus;
     bonPourAccord?: boolean;
     ordreDeReparation?: boolean;
+    comptoir?: boolean;
     signatureBonPourAccord?: string;
     client?: ClientEntity;
     bateau?: BateauClientEntity;
@@ -1875,6 +1876,11 @@ export default function Vente() {
             title: 'Date',
             dataIndex: 'date',
             render: (value: string) => formatDate(value)
+        },
+        {
+            title: 'Origine',
+            dataIndex: 'comptoir',
+            render: (value: boolean) => <Tag color={value ? 'purple' : 'geekblue'}>{value ? 'Comptoir' : 'Prestation'}</Tag>
         },
         {
             title: 'Statut',
