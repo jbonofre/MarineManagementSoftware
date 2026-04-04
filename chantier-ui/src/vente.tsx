@@ -492,6 +492,7 @@ export default function Vente() {
     const [form] = Form.useForm<VenteFormValues>();
     const watchedStatus = Form.useWatch('status', form) as VenteStatus | undefined;
     const watchedBonPourAccord = Form.useWatch('bonPourAccord', form) as boolean | undefined;
+    const isReadOnly = watchedStatus === 'FACTURE_PAYEE';
     const [newProduitModalVisible, setNewProduitModalVisible] = useState(false);
     const [newProduitTargetLine, setNewProduitTargetLine] = useState<number | null>(null);
     const [newProduitForm] = Form.useForm();
@@ -1916,8 +1917,9 @@ export default function Vente() {
                         onConfirm={() => handleDelete(record.id)}
                         okText="Oui"
                         cancelText="Non"
+                        disabled={record.status === 'FACTURE_PAYEE'}
                     >
-                        <Button danger icon={<DeleteOutlined />} />
+                        <Button danger icon={<DeleteOutlined />} disabled={record.status === 'FACTURE_PAYEE'} />
                     </Popconfirm>
                 </Space>
             )
@@ -2011,7 +2013,7 @@ export default function Vente() {
                             Lien de paiement
                         </Button>
                     </Dropdown>] : []),
-                    <div key="step-nav" style={{ flex: 1, textAlign: 'left' }}>
+                    ...(!isReadOnly ? [<div key="step-nav" style={{ flex: 1, textAlign: 'left' }}>
                         <Button
                             icon={<LeftOutlined />}
                             disabled={venteStepIndex(watchedStatus || 'DEVIS', watchedBonPourAccord) <= 0}
@@ -2033,19 +2035,19 @@ export default function Vente() {
                             Suivant
                             <RightOutlined />
                         </Button>
-                    </div>,
+                    </div>] : []),
                     <Button key="cancel" onClick={handleModalCancel}>
                         Fermer
                     </Button>,
-                    <Button key="save" type="primary" onClick={handleSave}>
+                    ...(!isReadOnly ? [<Button key="save" type="primary" onClick={handleSave}>
                         Enregistrer
-                    </Button>
+                    </Button>] : [])
                 ]}
                 maskClosable={false}
                 destroyOnHidden
                 width={1400}
             >
-                <Form form={form} layout="vertical" initialValues={defaultVente} onValuesChange={onValuesChange}>
+                <Form form={form} layout="vertical" initialValues={defaultVente} onValuesChange={onValuesChange} disabled={isReadOnly}>
                     <Form.Item noStyle name="status"><input type="hidden" /></Form.Item>
                     <Form.Item noStyle name="bonPourAccord"><input type="hidden" /></Form.Item>
                     <Steps
@@ -2056,7 +2058,7 @@ export default function Vente() {
                         size="small"
                         style={{ marginBottom: 24 }}
                         items={venteStepItems(currentVente)}
-                        onChange={(step) => goToStep(step)}
+                        onChange={isReadOnly ? undefined : (step) => goToStep(step)}
                     />
                     <Row gutter={16}>
                         <Col span={8}>

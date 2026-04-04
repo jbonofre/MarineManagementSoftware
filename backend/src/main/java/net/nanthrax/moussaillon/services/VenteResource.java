@@ -263,6 +263,12 @@ public class VenteResource {
             throw new WebApplicationException("La vente (" + id + ") n'est pas trouvee", 404);
         }
 
+        if (entity.status == VenteEntity.Status.FACTURE_PAYEE) {
+            throw new WebApplicationException(
+                Response.status(Response.Status.BAD_REQUEST)
+                    .entity(java.util.Map.of("error", "Une vente payée ne peut pas être supprimée"))
+                    .build());
+        }
         entity.delete();
         return Response.status(204).build();
     }
@@ -274,6 +280,13 @@ public class VenteResource {
         VenteEntity entity = VenteEntity.findById(id);
         if (entity == null) {
             throw new WebApplicationException("La vente (" + id + ") n'est pas trouvee", 404);
+        }
+
+        if (entity.status == VenteEntity.Status.FACTURE_PAYEE) {
+            throw new WebApplicationException(
+                Response.status(Response.Status.BAD_REQUEST)
+                    .entity(java.util.Map.of("error", "Une vente payée ne peut pas être modifiée"))
+                    .build());
         }
 
         // Track step date history on transitions
