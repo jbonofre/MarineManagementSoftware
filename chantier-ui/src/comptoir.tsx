@@ -117,12 +117,14 @@ interface TaskEntity {
     nom?: string;
 }
 
-type VenteStatus = 'FACTURE_PAYEE';
+type VenteStatus = 'DEVIS' | 'FACTURE_EN_ATTENTE' | 'FACTURE_PRETE' | 'FACTURE_PAYEE';
 type ModePaiement = 'CHEQUE' | 'VIREMENT' | 'CARTE' | 'ESPÈCES';
 
 interface VenteEntity {
     id?: number;
     status: VenteStatus;
+    bonPourAccord?: boolean;
+    signatureBonPourAccord?: string;
     client?: ClientEntity;
     bateau?: BateauClientEntity;
     moteur?: MoteurClientEntity;
@@ -132,6 +134,11 @@ interface VenteEntity {
     services?: ServiceEntity[];
     taches?: TaskEntity[];
     date?: string;
+    dateDevis?: string;
+    dateBonPourAccord?: string;
+    dateFactureEnAttente?: string;
+    dateFacturePrete?: string;
+    dateFacturePayee?: string;
     montantHT?: number;
     remise?: number;
     montantTTC?: number;
@@ -142,6 +149,9 @@ interface VenteEntity {
 }
 
 interface VenteFormValues {
+    status: VenteStatus;
+    bonPourAccord?: boolean;
+    signatureBonPourAccord?: string;
     clientId?: number;
     bateauId?: number;
     moteurId?: number;
@@ -171,7 +181,23 @@ const modePaiementOptions: Array<{ value: ModePaiement; label: string }> = [
     { value: 'ESPÈCES', label: 'Especes' }
 ];
 
+const statusColor: Record<VenteStatus, string> = {
+    DEVIS: 'default',
+    FACTURE_EN_ATTENTE: 'orange',
+    FACTURE_PRETE: 'blue',
+    FACTURE_PAYEE: 'green'
+};
+
+const statusLabel: Record<VenteStatus, string> = {
+    DEVIS: 'Devis',
+    FACTURE_EN_ATTENTE: 'Facture en attente',
+    FACTURE_PRETE: 'Facture complète',
+    FACTURE_PAYEE: 'Facture payée',
+};
+
 const defaultVente: VenteFormValues = {
+    status: 'FACTURE_PRETE',
+    bonPourAccord: true,
     forfaits: [],
     produits: [{}],
     services: [],
@@ -246,6 +272,8 @@ export default function Comptoir() {
     const [filters, setFilters] = useState<SearchFilters>({});
     const [searchForm] = Form.useForm<SearchFilters>();
     const [form] = Form.useForm<VenteFormValues>();
+    const watchedStatus = Form.useWatch('status', form) as VenteStatus | undefined;
+    const isReadOnly = watchedStatus === 'FACTURE_PAYEE';
     const [formDirty, setFormDirty] = useState(false);
     const [newProduitModalVisible, setNewProduitModalVisible] = useState(false);
     const [newProduitTargetLine, setNewProduitTargetLine] = useState<number | null>(null);
@@ -406,6 +434,9 @@ export default function Comptoir() {
             }, new Map<number, number>());
             const produitLines = Array.from(produitLinesMap.entries()).map(([produitId, quantite]) => ({ produitId, quantite }));
             form.setFieldsValue({
+                status: vente.status || 'DEVIS',
+                bonPourAccord: vente.bonPourAccord || false,
+                signatureBonPourAccord: vente.signatureBonPourAccord,
                 clientId: vente.client?.id,
                 bateauId: vente.bateau?.id,
                 moteurId: vente.moteur?.id,
@@ -471,7 +502,9 @@ export default function Comptoir() {
         Array.from({ length: Math.max(1, Math.floor(quantite || 1)) }, () => items).flat();
 
     const toPayload = (values: VenteFormValues): VenteEntity => ({
-        status: 'FACTURE_PAYEE',
+        status: values.status,
+        bonPourAccord: values.bonPourAccord,
+        signatureBonPourAccord: values.signatureBonPourAccord,
         client: clients.find((client) => client.id === values.clientId),
         bateau: bateaux.find((bateau) => bateau.id === values.bateauId),
         moteur: moteurs.find((moteur) => moteur.id === values.moteurId),
@@ -546,6 +579,28 @@ export default function Comptoir() {
             fetchVentes(filters);
         } catch {
             message.error('Erreur lors de la suppression de la vente comptoir.');
+        }
+    };
+
+    const handleMarkPaid = async () => {
+        if (!currentVente?.id) return;
+        const values = await form.validateFields();
+        if (!values.modePaiement) {
+            message.warning('Veuillez sélectionner un mode de paiement');
+            return;
+        }
+        form.setFieldsValue({ status: 'FACTURE_PAYEE' });
+        const payload = toPayload({ ...values, status: 'FACTURE_PAYEE' });
+        try {
+            const res = await api.put(`/ventes/${currentVente.id}`, { ...currentVente, ...payload });
+            message.success('Vente marquée comme payée');
+            setCurrentVente(res.data);
+            form.setFieldsValue({ status: res.data.status });
+            setFormDirty(false);
+            fetchVentes(filters);
+        } catch {
+            message.error('Erreur lors du marquage comme payée');
+            form.setFieldsValue({ status: 'FACTURE_PRETE' });
         }
     };
 
@@ -849,6 +904,11 @@ export default function Comptoir() {
             render: (value: string) => value || '-'
         },
         {
+            title: 'Statut',
+            dataIndex: 'status',
+            render: (value: VenteStatus) => <Tag color={statusColor[value] || 'default'}>{statusLabel[value] || value}</Tag>
+        },
+        {
             title: 'Client',
             dataIndex: 'client',
             render: (value: ClientEntity) => getClientLabel(value)
@@ -880,8 +940,9 @@ export default function Comptoir() {
                         onConfirm={() => handleDelete(record.id)}
                         okText="Oui"
                         cancelText="Non"
+                        disabled={record.status === 'FACTURE_PAYEE'}
                     >
-                        <Button danger icon={<DeleteOutlined />} />
+                        <Button danger icon={<DeleteOutlined />} disabled={record.status === 'FACTURE_PAYEE'} />
                     </Popconfirm>
                 </Space>
             )
@@ -954,28 +1015,41 @@ export default function Comptoir() {
                     >
                         Imprimer ticket
                     </Button>,
-                    <Dropdown
+                    ...(!isReadOnly && currentVente ? [<Dropdown
                         key="payment"
                         menu={{ items: currentVente ? paymentMenuItems(currentVente) : [] }}
                         placement="topRight"
-                        disabled={!currentVente}
                     >
                         <Button icon={<CreditCardOutlined />}>
                             Lien de paiement
                         </Button>
-                    </Dropdown>,
+                    </Dropdown>] : []),
+                    ...(!isReadOnly && isEdit ? [<Button
+                        key="mark-paid"
+                        type="primary"
+                        danger
+                        icon={<CreditCardOutlined />}
+                        onClick={handleMarkPaid}
+                    >
+                        Marquer comme payée
+                    </Button>] : []),
                     <Button key="cancel" onClick={handleModalCancel}>
-                        Annuler
+                        Fermer
                     </Button>,
-                    <Button key="save" type="primary" onClick={handleSave}>
+                    ...(!isReadOnly ? [<Button key="save" type="primary" onClick={handleSave}>
                         Enregistrer
-                    </Button>
+                    </Button>] : [])
                 ]}
                 maskClosable={false}
                 destroyOnHidden
                 width={1100}
             >
-                <Form form={form} layout="vertical" initialValues={defaultVente} onValuesChange={(...args) => { setFormDirty(true); onValuesChange(...args); }}>
+                <Form form={form} layout="vertical" initialValues={defaultVente} onValuesChange={(...args) => { setFormDirty(true); onValuesChange(...args); }} disabled={isReadOnly}>
+                    <Form.Item noStyle name="status"><input type="hidden" /></Form.Item>
+                    <Form.Item noStyle name="bonPourAccord"><input type="hidden" /></Form.Item>
+                    {isReadOnly && (
+                        <Tag color="green" style={{ marginBottom: 16, fontSize: 14, padding: '4px 12px' }}>Facture payée — consultation uniquement</Tag>
+                    )}
                     <Row gutter={16}>
                         <Col span={8}>
                             <Form.Item name="date" label="Date">
