@@ -317,7 +317,11 @@ export default function MesFactures({ clientId }: MesFacturesProps) {
         {
             title: 'Statut',
             dataIndex: 'status',
-            render: (val: string) => <Tag color={statusColor[val] || 'default'}>{statusLabel[val] || val}</Tag>,
+            render: (val: string, record: VenteEntity) => {
+                const label = val === 'DEVIS' && record.bonPourAccord ? 'Bon pour accord' : statusLabel[val] || val;
+                const color = val === 'DEVIS' && record.bonPourAccord ? 'cyan' : statusColor[val] || 'default';
+                return <Tag color={color}>{label}</Tag>;
+            },
         },
         {
             title: 'Total TTC',
@@ -412,7 +416,9 @@ export default function MesFactures({ clientId }: MesFacturesProps) {
                 {detailVente && (
                     <div>
                         <p><strong>Date :</strong> {formatDate(detailVente.date)}</p>
-                        <p><strong>Statut :</strong> <Tag color={statusColor[detailVente.status]}>{statusLabel[detailVente.status] || detailVente.status}</Tag></p>
+                        <p><strong>Statut :</strong> <Tag color={detailVente.status === 'DEVIS' && detailVente.bonPourAccord ? 'cyan' : statusColor[detailVente.status]}>
+                            {detailVente.status === 'DEVIS' && detailVente.bonPourAccord ? 'Bon pour accord' : statusLabel[detailVente.status] || detailVente.status}
+                        </Tag></p>
                         {detailDocType === 'facture' && detailVente.modePaiement && (
                             <p><strong>Mode de paiement :</strong> {detailVente.modePaiement}</p>
                         )}
