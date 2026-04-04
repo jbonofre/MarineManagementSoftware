@@ -169,7 +169,7 @@ export default function Campagnes() {
                 title: "Modifications non enregistrées",
                 content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
                 okText: "Fermer",
-                cancelText: "Annuler",
+                cancelText: "Fermer",
                 onOk: () => {
                     setFormDirty(false);
                     setModalOpen(false);
@@ -396,7 +396,7 @@ export default function Campagnes() {
                 onCancel={handleModalCancel}
                 onOk={handleSave}
                 okText={editing ? 'Mettre à jour' : 'Créer'}
-                cancelText="Annuler"
+                cancelText="Fermer"
                 width={750}
                 destroyOnHidden
             >
@@ -506,7 +506,7 @@ export default function Campagnes() {
                 onCancel={() => setProgrammerOpen(false)}
                 onOk={handleProgrammer}
                 okText="Programmer"
-                cancelText="Annuler"
+                cancelText="Fermer"
                 okButtonProps={{ disabled: !dateProgrammee }}
             >
                 <p>Choisissez la date et l'heure d'envoi de la campagne <strong>{programmerCampagne?.nom}</strong> :</p>

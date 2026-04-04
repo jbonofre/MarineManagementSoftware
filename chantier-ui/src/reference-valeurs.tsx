@@ -31,7 +31,7 @@ const ValeurFormModal = ({ visible, onCancel, onSubmit, initialValues, loading, 
                 title: "Modifications non enregistrées",
                 content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
                 okText: "Fermer",
-                cancelText: "Annuler",
+                cancelText: "Fermer",
                 onOk: () => { setFormDirty(false); onCancel(); },
             });
         } else {
@@ -50,7 +50,7 @@ const ValeurFormModal = ({ visible, onCancel, onSubmit, initialValues, loading, 
             confirmLoading={loading}
             destroyOnHidden
             okText="Enregistrer"
-            cancelText="Annuler"
+            cancelText="Fermer"
         >
             <Form form={form} layout="vertical" onValuesChange={() => setFormDirty(true)}>
                 <Form.Item label="Type" name="type" rules={[{ required: true, message: "Champ requis" }]}>
@@ -176,7 +176,7 @@ export default function ReferenceValeurs() {
                         onConfirm={() => handleDelete(record)}
                         okButtonProps={{ danger: true }}
                         okText="Supprimer"
-                        cancelText="Annuler"
+                        cancelText="Fermer"
                     >
                         <Button icon={<DeleteOutlined />} size="small" danger />
                     </Popconfirm>

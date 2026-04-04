@@ -664,7 +664,7 @@ export default function Vente() {
                 title: "Modifications non enregistrées",
                 content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
                 okText: "Fermer",
-                cancelText: "Annuler",
+                cancelText: "Fermer",
                 onOk: () => {
                     setDirty(false);
                     setVisible(false);
@@ -1304,7 +1304,7 @@ export default function Vente() {
                 title: "Modifications non enregistrées",
                 content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
                 okText: "Fermer",
-                cancelText: "Annuler",
+                cancelText: "Fermer",
                 onOk: () => {
                     setFormDirty(false);
                     setModalVisible(false);
@@ -2633,7 +2633,7 @@ export default function Vente() {
                     maskClosable={false}
                     width={1024}
                     okText="Enregistrer"
-                    cancelText="Annuler"
+                    cancelText="Fermer"
                     destroyOnHidden
                 >
                     <Form
@@ -2775,7 +2775,7 @@ export default function Vente() {
                     maskClosable={false}
                     width={1000}
                     okText="Enregistrer"
-                    cancelText="Annuler"
+                    cancelText="Fermer"
                     destroyOnHidden
                 >
                     <Form form={newServiceForm} layout="vertical" initialValues={defaultNewService} onValuesChange={onNewServiceValuesChange}>
@@ -2935,7 +2935,7 @@ export default function Vente() {
                     maskClosable={false}
                     width={1024}
                     okText="Enregistrer"
-                    cancelText="Annuler"
+                    cancelText="Fermer"
                     destroyOnHidden
                 >
                     <Form form={newForfaitForm} layout="vertical" initialValues={defaultNewForfait} onValuesChange={onNewForfaitValuesChange}>
@@ -3122,7 +3122,7 @@ export default function Vente() {
                 maskClosable={false}
                 width={800}
                 okText="Enregistrer"
-                cancelText="Annuler"
+                cancelText="Fermer"
                 destroyOnHidden
             >
                 <Form form={newClientForm} layout="vertical" onValuesChange={() => setNewClientFormDirty(true)}>
@@ -3228,7 +3228,7 @@ export default function Vente() {
                 maskClosable={false}
                 width={800}
                 okText="Enregistrer"
-                cancelText="Annuler"
+                cancelText="Fermer"
                 destroyOnHidden
             >
                 <Form form={newBateauForm} layout="vertical" onValuesChange={() => setNewBateauFormDirty(true)}>
@@ -3346,7 +3346,7 @@ export default function Vente() {
                 maskClosable={false}
                 width={800}
                 okText="Enregistrer"
-                cancelText="Annuler"
+                cancelText="Fermer"
                 destroyOnHidden
             >
                 <Form form={newMoteurForm} layout="vertical" onValuesChange={() => setNewMoteurFormDirty(true)}>
@@ -3424,7 +3424,7 @@ export default function Vente() {
                 maskClosable={false}
                 width={800}
                 okText="Enregistrer"
-                cancelText="Annuler"
+                cancelText="Fermer"
                 destroyOnHidden
             >
                 <Form form={newRemorqueForm} layout="vertical" onValuesChange={() => setNewRemorqueFormDirty(true)}>
@@ -3500,7 +3500,7 @@ export default function Vente() {
                         Effacer la signature
                     </Button>,
                     <Button key="cancel" onClick={handleBpaCancel}>
-                        Annuler
+                        Fermer
                     </Button>,
                     <Button key="confirm" type="primary" onClick={handleBpaConfirm}>
                         Valider le bon pour accord

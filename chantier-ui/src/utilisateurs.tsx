@@ -45,7 +45,7 @@ const UserFormModal = ({ visible, onCancel, onSubmit, initialValues, loading }) 
                 title: "Modifications non enregistrées",
                 content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
                 okText: "Fermer",
-                cancelText: "Annuler",
+                cancelText: "Fermer",
                 onOk: () => {
                     setFormDirty(false);
                     onCancel();
@@ -72,7 +72,7 @@ const UserFormModal = ({ visible, onCancel, onSubmit, initialValues, loading }) 
             confirmLoading={loading}
             destroyOnHidden
             okText="Enregistrer"
-            cancelText="Annuler"
+            cancelText="Fermer"
         >
             <Form form={form} layout="vertical" initialValues={initialValues} onValuesChange={() => setFormDirty(true)}>
                 <Form.Item
@@ -267,7 +267,7 @@ export default function Utilisateurs() {
                         onConfirm={() => handleDelete(record)}
                         okButtonProps={{ danger: true }}
                         okText="Supprimer"
-                        cancelText="Annuler"
+                        cancelText="Fermer"
                     >
                         <Button
                             icon={<DeleteOutlined />}

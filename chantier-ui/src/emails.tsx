@@ -141,7 +141,7 @@ export default function Emails() {
                 open={editVisible}
                 title={editingTemplate ? 'Modifier le modèle - ' + (TYPE_LABELS[editingTemplate.type] || editingTemplate.type) : 'Modifier le modèle'}
                 okText="Enregistrer"
-                cancelText="Annuler"
+                cancelText="Fermer"
                 width={900}
                 onOk={() => editForm.submit()}
                 onCancel={() => {

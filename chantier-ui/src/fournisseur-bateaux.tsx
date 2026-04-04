@@ -216,7 +216,7 @@ const FournisseurBateaux = ({ fournisseurId, bateauId }: { fournisseurId?: numbe
         title: "Modifications non enregistrées",
         content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
         okText: "Fermer",
-        cancelText: "Annuler",
+        cancelText: "Fermer",
         onOk: () => {
           setFormDirty(false);
           setModalVisible(false);
@@ -380,7 +380,7 @@ const FournisseurBateaux = ({ fournisseurId, bateauId }: { fournisseurId?: numbe
         destroyOnHidden
         title={editing && editing.id ? "Modifier l'association" : (isBateauMode ? "Associer un Fournisseur" : "Associer un Bateau")}
         okText="Enregistrer"
-        cancelText="Annuler"
+        cancelText="Fermer"
         width={640}
       >
         <Form
@@ -532,7 +532,7 @@ const FournisseurBateaux = ({ fournisseurId, bateauId }: { fournisseurId?: numbe
         onCancel={() => setFournisseurModalVisible(false)}
         onOk={handleFournisseurAdd}
         okText="Ajouter"
-        cancelText="Annuler"
+        cancelText="Fermer"
         destroyOnHidden
         width={1024}
       >
@@ -609,7 +609,7 @@ const FournisseurBateaux = ({ fournisseurId, bateauId }: { fournisseurId?: numbe
         onCancel={() => setBateauModalVisible(false)}
         onOk={handleBateauAdd}
         okText="Ajouter"
-        cancelText="Annuler"
+        cancelText="Fermer"
         destroyOnHidden
         width={1024}
         maskClosable={false}

@@ -340,7 +340,7 @@ export default function Planning() {
                 title: "Modifications non enregistrées",
                 content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
                 okText: "Fermer",
-                cancelText: "Annuler",
+                cancelText: "Fermer",
                 onOk: () => {
                     setFormDirty(false);
                     setModalVisible(false);
@@ -1055,7 +1055,7 @@ export default function Planning() {
                 onOk={handleSavePlanning}
                 okText="Enregistrer"
                 confirmLoading={saving}
-                cancelText="Annuler"
+                cancelText="Fermer"
                 width={720}
                 onCancel={handleModalCancel}
                 destroyOnHidden

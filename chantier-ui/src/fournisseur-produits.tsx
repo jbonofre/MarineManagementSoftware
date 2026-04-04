@@ -214,7 +214,7 @@ const FournisseurProduits = ({
         title: "Modifications non enregistrées",
         content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
         okText: "Fermer",
-        cancelText: "Annuler",
+        cancelText: "Fermer",
         onOk: () => {
           setFormDirty(false);
           setModalVisible(false);
@@ -432,7 +432,7 @@ const FournisseurProduits = ({
             : "Associer un Produit"
         }
         okText="Enregistrer"
-        cancelText="Annuler"
+        cancelText="Fermer"
         width={640}
       >
         <Form
@@ -593,7 +593,7 @@ const FournisseurProduits = ({
         onCancel={() => setFournisseurModalVisible(false)}
         onOk={handleFournisseurAdd}
         okText="Ajouter"
-        cancelText="Annuler"
+        cancelText="Fermer"
         destroyOnHidden
         width={1024}
       >
@@ -670,7 +670,7 @@ const FournisseurProduits = ({
         onCancel={() => setProduitModalVisible(false)}
         onOk={handleProduitAdd}
         okText="Ajouter"
-        cancelText="Annuler"
+        cancelText="Fermer"
         destroyOnHidden
         width={1024}
         maskClosable={false}

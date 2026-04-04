@@ -220,7 +220,7 @@ const HeliceCatalogueView: React.FC = () => {
                 title: "Modifications non enregistrées",
                 content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
                 okText: "Fermer",
-                cancelText: "Annuler",
+                cancelText: "Fermer",
                 onOk: () => {
                     setFormDirty(false);
                     setModalOpen(false);
@@ -392,7 +392,7 @@ const HeliceCatalogueView: React.FC = () => {
                         onCancel={handleModalCancel}
                         onOk={handleModalOk}
                         okText="Enregistrer"
-                        cancelText="Annuler"
+                        cancelText="Fermer"
                         destroyOnHidden
                         width={1024}
                     >

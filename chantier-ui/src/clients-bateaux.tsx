@@ -195,7 +195,7 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
         title: "Modifications non enregistrées",
         content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
         okText: "Fermer",
-        cancelText: "Annuler",
+        cancelText: "Fermer",
         onOk: () => {
           setFormDirty(false);
           setModalVisible(false);
@@ -432,7 +432,7 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
         onCancel={handleModalCancel}
         onOk={handleModalOk}
         okText="Enregistrer"
-        cancelText="Annuler"
+        cancelText="Fermer"
         destroyOnHidden
         width={1024}
       >
@@ -598,7 +598,7 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
         onCancel={() => setCatalogueModalVisible(false)}
         onOk={handleCatalogueAdd}
         okText="Ajouter"
-        cancelText="Annuler"
+        cancelText="Fermer"
         destroyOnHidden
         width={1024}
       >
@@ -829,7 +829,7 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
         onCancel={() => setMoteurModalVisible(false)}
         onOk={handleMoteurAdd}
         okText="Ajouter"
-        cancelText="Annuler"
+        cancelText="Fermer"
         destroyOnHidden
         width={1024}
       >
@@ -1033,7 +1033,7 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
         onCancel={() => setClientModalVisible(false)}
         onOk={handleClientAdd}
         okText="Ajouter"
-        cancelText="Annuler"
+        cancelText="Fermer"
         destroyOnHidden
         width={1024}
       >
@@ -1145,7 +1145,7 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
         onOk={handleCreateAnnonceFromImages}
         okText={`Creer une annonce (${annonceSelectedImages.size} photo(s))`}
         okButtonProps={{ disabled: annonceSelectedImages.size === 0 }}
-        cancelText="Annuler"
+        cancelText="Fermer"
         width={700}
       >
         {annonceImageBateau && (

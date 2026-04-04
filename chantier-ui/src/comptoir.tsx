@@ -439,7 +439,7 @@ export default function Comptoir() {
                 title: "Modifications non enregistrées",
                 content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
                 okText: "Fermer",
-                cancelText: "Annuler",
+                cancelText: "Fermer",
                 onOk: () => {
                     setFormDirty(false);
                     setModalVisible(false);
@@ -456,7 +456,7 @@ export default function Comptoir() {
                 title: "Modifications non enregistrées",
                 content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
                 okText: "Fermer",
-                cancelText: "Annuler",
+                cancelText: "Fermer",
                 onOk: () => {
                     setNewProduitFormDirty(false);
                     setNewProduitModalVisible(false);
@@ -1131,7 +1131,7 @@ export default function Comptoir() {
                     maskClosable={false}
                     width={1024}
                     okText="Enregistrer"
-                    cancelText="Annuler"
+                    cancelText="Fermer"
                     destroyOnHidden
                 >
                     <Form
