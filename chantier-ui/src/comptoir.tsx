@@ -652,12 +652,17 @@ export default function Comptoir() {
     const handlePrintInvoice = (vente: VenteEntity) => {
         const title = `Facture #${vente.id || '-'}`;
         const produitRows = getProduitLines(vente)
-            .map((produit) => `
+            .map((produit) => {
+                const pu = produit.prixVenteTTC || 0;
+                const total = pu * produit.quantite;
+                return `
                 <tr>
                     <td>${escapeHtml(`${produit.nom}${produit.marque ? ` (${produit.marque})` : ''}`)}</td>
+                    <td style="text-align:right;">${escapeHtml(formatEuro(pu))}</td>
                     <td style="text-align:right;">${produit.quantite}</td>
-                </tr>
-            `)
+                    <td style="text-align:right;">${escapeHtml(formatEuro(total))}</td>
+                </tr>`;
+            })
             .join('');
 
         openPrintDocument(
@@ -690,11 +695,13 @@ export default function Comptoir() {
                         <thead>
                             <tr>
                                 <th>Produit</th>
-                                <th style="text-align:right;">Quantite</th>
+                                <th style="text-align:right;">P.U. TTC</th>
+                                <th style="text-align:right;">Qté</th>
+                                <th style="text-align:right;">Total TTC</th>
                             </tr>
                         </thead>
                         <tbody>
-                            ${produitRows || '<tr><td colspan="2">Aucun produit</td></tr>'}
+                            ${produitRows || '<tr><td colspan="4">Aucun produit</td></tr>'}
                         </tbody>
                     </table>
                 </body>
@@ -706,12 +713,19 @@ export default function Comptoir() {
     const handlePrintReceipt = (vente: VenteEntity) => {
         const title = `Ticket #${vente.id || '-'}`;
         const produitRows = getProduitLines(vente)
-            .map((produit) => `
+            .map((produit) => {
+                const pu = produit.prixVenteTTC || 0;
+                const total = pu * produit.quantite;
+                return `
                 <div class="line">
                     <span>${escapeHtml(`${produit.nom}${produit.marque ? ` (${produit.marque})` : ''}`)}</span>
                     <span>x${produit.quantite}</span>
                 </div>
-            `)
+                <div class="line sub">
+                    <span>${escapeHtml(formatEuro(pu))} /u</span>
+                    <span>${escapeHtml(formatEuro(total))}</span>
+                </div>`;
+            })
             .join('');
 
         openPrintDocument(
@@ -724,6 +738,7 @@ export default function Comptoir() {
                         body { font-family: "Courier New", monospace; width: 320px; margin: 16px auto; color: #000; }
                         h2 { text-align: center; margin: 0 0 8px; }
                         .line { display: flex; justify-content: space-between; margin: 4px 0; }
+                        .line.sub { font-size: 0.85em; color: #555; margin-top: -2px; }
                         .separator { border-top: 1px dashed #000; margin: 10px 0; }
                         .center { text-align: center; }
                     </style>
@@ -929,8 +944,8 @@ export default function Comptoir() {
             key: 'actions',
             render: (_: unknown, record: VenteEntity) => (
                 <Space>
-                    <Button title="Imprimer facture" icon={<FileTextOutlined />} onClick={() => handlePrintInvoice(record)} />
-                    <Button title="Imprimer ticket de caisse" icon={<PrinterOutlined />} onClick={() => handlePrintReceipt(record)} />
+                    <Button title="Imprimer facture" icon={<FileTextOutlined />} disabled={record.status !== 'FACTURE_PAYEE'} onClick={() => handlePrintInvoice(record)} />
+                    <Button title="Imprimer ticket de caisse" icon={<PrinterOutlined />} disabled={record.status !== 'FACTURE_PAYEE'} onClick={() => handlePrintReceipt(record)} />
                     <Dropdown menu={{ items: paymentMenuItems(record) }} placement="bottomRight">
                         <Button title="Lien de paiement" icon={<CreditCardOutlined />} />
                     </Dropdown>
@@ -1002,7 +1017,7 @@ export default function Comptoir() {
                     <Button
                         key="print-invoice"
                         icon={<FileTextOutlined />}
-                        disabled={!currentVente}
+                        disabled={!currentVente || watchedStatus !== 'FACTURE_PAYEE'}
                         onClick={() => currentVente && handlePrintInvoice(currentVente)}
                     >
                         Imprimer facture
@@ -1010,7 +1025,7 @@ export default function Comptoir() {
                     <Button
                         key="print-receipt"
                         icon={<PrinterOutlined />}
-                        disabled={!currentVente}
+                        disabled={!currentVente || watchedStatus !== 'FACTURE_PAYEE'}
                         onClick={() => currentVente && handlePrintReceipt(currentVente)}
                     >
                         Imprimer ticket
