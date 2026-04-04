@@ -47,7 +47,7 @@ export default function Dashboard({ clientId }: DashboardProps) {
                 </Col>
                 <Col xs={24} sm={12} lg={6}>
                     <Card>
-                        <Statistic title="Mes factures" value={ventesCount} prefix={<FileTextOutlined />} />
+                        <Statistic title="Mes ventes & prestations" value={ventesCount} prefix={<FileTextOutlined />} />
                     </Card>
                 </Col>
             </Row>

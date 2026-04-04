@@ -166,7 +166,7 @@ const ClientsMoteurs: React.FC<ClientsMoteursProps> = ({ clientId }) => {
         title: "Modifications non enregistrées",
         content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
         okText: "Fermer",
-        cancelText: "Annuler",
+        cancelText: "Fermer",
         onOk: () => {
           setFormDirty(false);
           setModalVisible(false);
@@ -384,7 +384,7 @@ const ClientsMoteurs: React.FC<ClientsMoteursProps> = ({ clientId }) => {
         onCancel={handleModalCancel}
         onOk={handleModalOk}
         okText="Enregistrer"
-        cancelText="Annuler"
+        cancelText="Fermer"
         destroyOnHidden
         width={1024}
       >
@@ -488,7 +488,7 @@ const ClientsMoteurs: React.FC<ClientsMoteursProps> = ({ clientId }) => {
         onCancel={() => setCatalogueModalVisible(false)}
         onOk={handleCatalogueAdd}
         okText="Ajouter"
-        cancelText="Annuler"
+        cancelText="Fermer"
         destroyOnHidden
         width={1024}
       >
@@ -695,7 +695,7 @@ const ClientsMoteurs: React.FC<ClientsMoteursProps> = ({ clientId }) => {
         onCancel={() => setClientModalVisible(false)}
         onOk={handleClientAdd}
         okText="Ajouter"
-        cancelText="Annuler"
+        cancelText="Fermer"
         destroyOnHidden
         width={1024}
       >
@@ -807,7 +807,7 @@ const ClientsMoteurs: React.FC<ClientsMoteursProps> = ({ clientId }) => {
         onOk={handleCreateAnnonceFromImages}
         okText={`Creer une annonce (${annonceSelectedImages.size} photo(s))`}
         okButtonProps={{ disabled: annonceSelectedImages.size === 0 }}
-        cancelText="Annuler"
+        cancelText="Fermer"
         width={700}
       >
         {annonceImageMoteur && (

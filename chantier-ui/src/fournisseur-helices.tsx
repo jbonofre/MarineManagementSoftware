@@ -205,7 +205,7 @@ const FournisseurHelices = ({
         title: "Modifications non enregistrées",
         content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
         okText: "Fermer",
-        cancelText: "Annuler",
+        cancelText: "Fermer",
         onOk: () => {
           setFormDirty(false);
           setModalVisible(false);
@@ -400,7 +400,7 @@ const FournisseurHelices = ({
             : "Associer une Hélice"
         }
         okText="Enregistrer"
-        cancelText="Annuler"
+        cancelText="Fermer"
         width={640}
       >
         <Form
@@ -561,7 +561,7 @@ const FournisseurHelices = ({
         onCancel={() => setFournisseurModalVisible(false)}
         onOk={handleFournisseurAdd}
         okText="Ajouter"
-        cancelText="Annuler"
+        cancelText="Fermer"
         destroyOnHidden
         width={1024}
       >
@@ -638,7 +638,7 @@ const FournisseurHelices = ({
         onCancel={() => setHeliceModalVisible(false)}
         onOk={handleHeliceAdd}
         okText="Ajouter"
-        cancelText="Annuler"
+        cancelText="Fermer"
         destroyOnHidden
         width={1024}
         maskClosable={false}

@@ -359,7 +359,7 @@ const CommandesFournisseur = ({ fournisseurId }: { fournisseurId?: number }) => 
         title: "Modifications non enregistrées",
         content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
         okText: "Fermer",
-        cancelText: "Annuler",
+        cancelText: "Fermer",
         onOk: () => {
           setFormDirty(false);
           setModalVisible(false);
@@ -376,7 +376,7 @@ const CommandesFournisseur = ({ fournisseurId }: { fournisseurId?: number }) => 
         title: "Modifications non enregistrées",
         content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
         okText: "Fermer",
-        cancelText: "Annuler",
+        cancelText: "Fermer",
         onOk: () => {
           setFournisseurFormDirty(false);
           setFournisseurModalVisible(false);
@@ -587,7 +587,7 @@ const CommandesFournisseur = ({ fournisseurId }: { fournisseurId?: number }) => 
         width={1024}
         title={editing ? "Modifier la commande" : "Nouvelle commande fournisseur"}
         okText="Enregistrer"
-        cancelText="Annuler"
+        cancelText="Fermer"
         maskClosable={false}
         confirmLoading={loading}
       >
@@ -778,7 +778,7 @@ const CommandesFournisseur = ({ fournisseurId }: { fournisseurId?: number }) => 
         onCancel={handleFournisseurModalCancel}
         onOk={handleFournisseurAdd}
         okText="Ajouter"
-        cancelText="Annuler"
+        cancelText="Fermer"
         destroyOnHidden
         width={1024}
       >

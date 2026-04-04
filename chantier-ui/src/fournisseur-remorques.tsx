@@ -217,7 +217,7 @@ const FournisseurRemorques = ({
         title: "Modifications non enregistrées",
         content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
         okText: "Fermer",
-        cancelText: "Annuler",
+        cancelText: "Fermer",
         onOk: () => {
           setFormDirty(false);
           setModalVisible(false);
@@ -402,7 +402,7 @@ const FournisseurRemorques = ({
             : "Associer une Remorque"
         }
         okText="Enregistrer"
-        cancelText="Annuler"
+        cancelText="Fermer"
         width={640}
       >
         <Form
@@ -553,7 +553,7 @@ const FournisseurRemorques = ({
         onCancel={() => setFournisseurModalVisible(false)}
         onOk={handleFournisseurAdd}
         okText="Ajouter"
-        cancelText="Annuler"
+        cancelText="Fermer"
         destroyOnHidden
         width={1024}
       >
@@ -630,7 +630,7 @@ const FournisseurRemorques = ({
         onCancel={() => setRemorqueModalVisible(false)}
         onOk={handleRemorqueAdd}
         okText="Ajouter"
-        cancelText="Annuler"
+        cancelText="Fermer"
         destroyOnHidden
         width={1024}
         maskClosable={false}

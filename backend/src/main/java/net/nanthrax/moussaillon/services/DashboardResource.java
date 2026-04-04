@@ -30,7 +30,7 @@ public class DashboardResource {
         Timestamp monthStartTimestamp = Timestamp.valueOf(startOfMonth.atStartOfDay());
 
         // CA du mois: sum of prixVenteTTC for PAYEE ventes this month
-        List<VenteEntity> ventesDuMois = VenteEntity.list("status = ?1 and date >= ?2", VenteEntity.Status.PAYEE, monthStart);
+        List<VenteEntity> ventesDuMois = VenteEntity.list("status = ?1 and date >= ?2", VenteEntity.Status.FACTURE_PAYEE, monthStart);
         data.caDuMois = ventesDuMois.stream().mapToDouble(v -> v.prixVenteTTC).sum();
 
         // Interventions ouvertes (forfaits + services EN_ATTENTE or EN_COURS)
@@ -132,10 +132,10 @@ public class DashboardResource {
                 .filter(vs -> vs.status == VenteServiceEntity.Status.TERMINEE).mapToDouble(vs -> vs.dureeReelle).sum();
         data.heuresAtelierPct = totalReelle > 0 ? (int) Math.min(100, Math.round(totalReelle)) : 0;
 
-        // Ventes comptoir
-        long comptoirTotal = VenteEntity.count("type = ?1 and date >= ?2", VenteEntity.Type.COMPTOIR, monthStart);
-        long comptoirPayees = VenteEntity.count("type = ?1 and status = ?2 and date >= ?3", VenteEntity.Type.COMPTOIR, VenteEntity.Status.PAYEE, monthStart);
-        data.ventesComptoirPct = comptoirTotal > 0 ? (int) Math.round((double) comptoirPayees / comptoirTotal * 100) : 0;
+        // Ventes payees
+        long ventesTotal = VenteEntity.count("date >= ?1", monthStart);
+        long ventesPayees = VenteEntity.count("status = ?1 and date >= ?2", VenteEntity.Status.FACTURE_PAYEE, monthStart);
+        data.ventesComptoirPct = ventesTotal > 0 ? (int) Math.round((double) ventesPayees / ventesTotal * 100) : 0;
 
         // Contrats de maintenance
         long itemsTotal = forfaitsDuMois.size() + servicesDuMois.size();

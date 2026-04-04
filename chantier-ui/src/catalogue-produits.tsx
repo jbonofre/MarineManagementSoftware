@@ -96,7 +96,7 @@ const CatalogueProduits: React.FC = () => {
                 title: "Modifications non enregistrées",
                 content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
                 okText: "Fermer",
-                cancelText: "Annuler",
+                cancelText: "Fermer",
                 onOk: () => {
                     setFormDirty(false);
                     setModalVisible(false);
@@ -299,7 +299,7 @@ const CatalogueProduits: React.FC = () => {
                             maskClosable={false}
                             width={1024}
                             okText="Enregistrer"
-                            cancelText="Annuler"
+                            cancelText="Fermer"
                             destroyOnHidden
                         >
                             <Form

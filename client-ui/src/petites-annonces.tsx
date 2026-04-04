@@ -298,7 +298,7 @@ export default function PetitesAnnonces({ clientId, initialPhotos, initialBateau
                 onCancel={() => setModalOpen(false)}
                 onOk={handleSave}
                 okText={editing ? 'Mettre a jour' : 'Publier'}
-                cancelText="Annuler"
+                cancelText="Fermer"
                 width={600}
             >
                 <Form form={form} layout="vertical">

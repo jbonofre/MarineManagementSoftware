@@ -1,9 +1,10 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     AutoComplete,
     Button,
     Card,
     Col,
+    Divider,
     Form,
     Input,
     InputNumber,
@@ -13,6 +14,7 @@ import {
     Row,
     Select,
     Space,
+    Steps,
     Tabs,
     Table,
     Tag,
@@ -20,7 +22,7 @@ import {
     Dropdown,
     message
 } from 'antd';
-import { CalendarOutlined, CreditCardOutlined, DeleteOutlined, EditOutlined, MailOutlined, PlusCircleOutlined, PlusOutlined, PrinterOutlined, SendOutlined } from '@ant-design/icons';
+import { CalendarOutlined, CheckCircleOutlined, CreditCardOutlined, DeleteOutlined, EditOutlined, FileDoneOutlined, FileTextOutlined, LeftOutlined, MailOutlined, PlusCircleOutlined, PlusOutlined, PrinterOutlined, RightOutlined, SendOutlined, SolutionOutlined, WalletOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import api from './api.ts';
 import { useReferenceValeurs } from './useReferenceValeurs.ts';
@@ -237,14 +239,16 @@ const defaultNewService = {
     prixHT: 0, tva: 20, montantTVA: 0, prixTTC: 0,
 };
 
-type VenteStatus = 'EN_ATTENTE' | 'EN_COURS' | 'PAYEE' | 'ANNULEE';
-type VenteType = 'DEVIS' | 'FACTURE' | 'COMMANDE' | 'LIVRAISON' | 'COMPTOIR';
+type VenteStatus = 'DEVIS' | 'FACTURE_EN_ATTENTE' | 'FACTURE_PRETE' | 'FACTURE_PAYEE';
 type ModePaiement = 'CHEQUE' | 'VIREMENT' | 'CARTE' | 'ESPÈCES';
 
 interface VenteEntity {
     id?: number;
     status: VenteStatus;
-    type: VenteType;
+    bonPourAccord?: boolean;
+    ordreDeReparation?: boolean;
+    comptoir?: boolean;
+    signatureBonPourAccord?: string;
     client?: ClientEntity;
     bateau?: BateauClientEntity;
     moteur?: MoteurClientEntity;
@@ -253,6 +257,11 @@ interface VenteEntity {
     venteServices?: VenteServiceEntity[];
     produits?: ProduitCatalogueEntity[];
     date?: string;
+    dateDevis?: string;
+    dateBonPourAccord?: string;
+    dateFactureEnAttente?: string;
+    dateFacturePrete?: string;
+    dateFacturePayee?: string;
     montantHT?: number;
     remise?: number;
     montantTTC?: number;
@@ -278,7 +287,9 @@ interface RappelHistoriqueEntity {
 
 interface VenteFormValues {
     status: VenteStatus;
-    type: VenteType;
+    bonPourAccord?: boolean;
+    ordreDeReparation?: boolean;
+    signatureBonPourAccord?: string;
     clientId?: number;
     bateauId?: number;
     moteurId?: number;
@@ -334,23 +345,14 @@ interface VenteFormValues {
 
 interface SearchFilters {
     status?: VenteStatus;
-    type?: VenteType;
     clientId?: number;
 }
 
 const statusOptions: Array<{ value: VenteStatus; label: string }> = [
-    { value: 'EN_ATTENTE', label: 'En attente' },
-    { value: 'EN_COURS', label: 'En cours' },
-    { value: 'PAYEE', label: 'Payee' },
-    { value: 'ANNULEE', label: 'Annulee' }
-];
-
-const typeOptions: Array<{ value: VenteType; label: string }> = [
-    { value: 'DEVIS', label: 'Devis' },
-    { value: 'FACTURE', label: 'Facture' },
-    { value: 'COMMANDE', label: 'Commande' },
-    { value: 'LIVRAISON', label: 'Livraison' },
-    { value: 'COMPTOIR', label: 'Comptoir' }
+    { value: 'DEVIS', label: 'Devis/Ordre de Réparation' },
+    { value: 'FACTURE_EN_ATTENTE', label: 'Facture en attente' },
+    { value: 'FACTURE_PRETE', label: 'Facture prête' },
+    { value: 'FACTURE_PAYEE', label: 'Facture payée' }
 ];
 
 const modePaiementOptions: Array<{ value: ModePaiement; label: string }> = [
@@ -370,11 +372,40 @@ const planningStatusOptions: Array<{ value: PlanningStatus; label: string }> = [
 ];
 
 const statusColor: Record<VenteStatus, string> = {
-    EN_ATTENTE: 'default',
-    EN_COURS: 'blue',
-    PAYEE: 'green',
-    ANNULEE: 'red'
+    DEVIS: 'default',
+    FACTURE_EN_ATTENTE: 'orange',
+    FACTURE_PRETE: 'blue',
+    FACTURE_PAYEE: 'green'
 };
+
+const venteStepIndex = (status: VenteStatus, bonPourAccord?: boolean): number => {
+    switch (status) {
+        case 'DEVIS':
+            return bonPourAccord ? 1 : 0;
+        case 'FACTURE_EN_ATTENTE':
+            return 2;
+        case 'FACTURE_PRETE':
+            return 3;
+        case 'FACTURE_PAYEE':
+            return 4;
+        default:
+            return 0;
+    }
+};
+
+const formatStepDate = (date?: string) => {
+    if (!date) return undefined;
+    const d = dayjs(date);
+    return d.isValid() ? d.format('DD/MM/YYYY HH:mm') : undefined;
+};
+
+const venteStepItems = (vente?: VenteEntity | null) => [
+    { title: 'Devis/OR', icon: <FileTextOutlined />, description: formatStepDate(vente?.dateDevis) },
+    { title: 'Bon pour accord', icon: <SolutionOutlined />, description: formatStepDate(vente?.dateBonPourAccord) },
+    { title: 'Facture en attente', icon: <FileDoneOutlined />, description: formatStepDate(vente?.dateFactureEnAttente) },
+    { title: 'Facture complète', icon: <WalletOutlined />, description: formatStepDate(vente?.dateFacturePrete) },
+    { title: 'Facture payée', icon: <CheckCircleOutlined />, description: formatStepDate(vente?.dateFacturePayee) },
+];
 
 const getTodayDayjs = () => dayjs();
 
@@ -391,12 +422,13 @@ const toBackendDateValue = (value?: dayjs.Dayjs | string) => {
         return undefined;
     }
     const d = dayjs.isDayjs(value) ? value : dayjs(value);
-    return d.isValid() ? d.format('YYYY-MM-DD') : undefined;
+    return d.isValid() ? d.format('YYYY-MM-DDTHH:mm:ss') : undefined;
 };
 
 const defaultVente: VenteFormValues = {
-    status: 'EN_ATTENTE',
-    type: 'DEVIS',
+    status: 'DEVIS',
+    bonPourAccord: false,
+    ordreDeReparation: false,
     venteForfaits: [{ status: 'EN_ATTENTE', quantite: 1 }],
     venteServices: [{ status: 'EN_ATTENTE', quantite: 1 }],
     produits: [{ quantite: 1 }],
@@ -412,7 +444,12 @@ const defaultVente: VenteFormValues = {
 };
 
 const formatEuro = (value?: number) => `${(value || 0).toFixed(2)} EUR`;
-const formatDate = (value?: string) => value ? value.split('T')[0] : '-';
+const formatDate = (value?: string) => {
+    if (!value) return '-';
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return value.split('T')[0];
+    return parsed.toLocaleDateString('fr-FR') + ' ' + parsed.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+};
 const escapeHtml = (value: string) =>
     value
         .replace(/&/g, '&amp;')
@@ -456,6 +493,9 @@ export default function Vente() {
     const [filters, setFilters] = useState<SearchFilters>({});
     const [searchForm] = Form.useForm<SearchFilters>();
     const [form] = Form.useForm<VenteFormValues>();
+    const watchedStatus = Form.useWatch('status', form) as VenteStatus | undefined;
+    const watchedBonPourAccord = Form.useWatch('bonPourAccord', form) as boolean | undefined;
+    const isReadOnly = watchedStatus === 'FACTURE_PAYEE';
     const [newProduitModalVisible, setNewProduitModalVisible] = useState(false);
     const [newProduitTargetLine, setNewProduitTargetLine] = useState<number | null>(null);
     const [newProduitForm] = Form.useForm();
@@ -481,6 +521,10 @@ export default function Vente() {
     const [newRemorqueModalVisible, setNewRemorqueModalVisible] = useState(false);
     const [newRemorqueForm] = Form.useForm();
     const [newRemorqueFormDirty, setNewRemorqueFormDirty] = useState(false);
+    const [bpaModalVisible, setBpaModalVisible] = useState(false);
+    const [bpaPendingCallback, setBpaPendingCallback] = useState<(() => void) | null>(null);
+    const signatureCanvasRef = useRef<HTMLCanvasElement | null>(null);
+    const signatureDrawingRef = useRef(false);
 
     const marqueOptions = useMemo(() => {
         const unique = Array.from(new Set(produits.map((p) => p.marque).filter(Boolean))) as string[];
@@ -551,13 +595,11 @@ export default function Vente() {
         try {
             const activeFilters = nextFilters || {};
             const hasStatus = !!activeFilters.status;
-            const hasType = !!activeFilters.type;
             const hasClient = activeFilters.clientId !== undefined;
-            const endpoint = hasStatus || hasType || hasClient ? '/ventes/search' : '/ventes';
+            const endpoint = hasStatus || hasClient ? '/ventes/search' : '/ventes';
             const response = await api.get(endpoint, {
                 params: {
                     ...(hasStatus ? { status: activeFilters.status } : {}),
-                    ...(hasType ? { type: activeFilters.type } : {}),
                     ...(hasClient ? { clientId: activeFilters.clientId } : {})
                 }
             });
@@ -626,7 +668,7 @@ export default function Vente() {
                 title: "Modifications non enregistrées",
                 content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
                 okText: "Fermer",
-                cancelText: "Annuler",
+                cancelText: "Fermer",
                 onOk: () => {
                     setDirty(false);
                     setVisible(false);
@@ -658,7 +700,7 @@ export default function Vente() {
                 const updated = [...currentLines];
                 updated[newProduitTargetLine] = { ...updated[newProduitTargetLine], produitId: created.id };
                 form.setFieldValue('produits', updated);
-                recalculateFromLines('auto');
+                recalculateFromLines('auto', { produits: [...produits, created] });
             }
             setNewProduitModalVisible(false);
         } catch {
@@ -759,7 +801,7 @@ export default function Vente() {
                 const updated = res.data as ServiceEntity;
                 message.success('Service modifié avec succès');
                 setServices((prev) => prev.map((s) => s.id === editServiceId ? updated : s));
-                recalculateFromLines('auto');
+                recalculateFromLines('auto', { services: services.map((s) => s.id === editServiceId ? updated : s) });
             } else {
                 const res = await api.post('/services', payload);
                 const created = res.data as ServiceEntity;
@@ -770,7 +812,7 @@ export default function Vente() {
                     const updatedLines = [...currentLines];
                     updatedLines[newServiceTargetLine] = { ...updatedLines[newServiceTargetLine], serviceId: created.id };
                     form.setFieldValue('venteServices', updatedLines);
-                    recalculateFromLines('auto');
+                    recalculateFromLines('auto', { services: [...services, created] });
                 }
             }
             setNewServiceModalVisible(false);
@@ -910,7 +952,7 @@ export default function Vente() {
                 const updated = [...currentLines];
                 updated[newForfaitTargetLine] = { ...updated[newForfaitTargetLine], forfaitId: created.id };
                 form.setFieldValue('venteForfaits', updated);
-                recalculateFromLines('auto');
+                recalculateFromLines('auto', { forfaits: [...forfaits, created] });
             }
             setNewForfaitModalVisible(false);
         } catch {
@@ -1119,8 +1161,10 @@ export default function Vente() {
         const produitLines = Array.from(produitLinesMap.entries()).map(([produitId, quantite]) => ({ produitId, quantite }));
         form.resetFields();
         form.setFieldsValue({
-            status: vente.status || 'EN_ATTENTE',
-            type: vente.type || 'DEVIS',
+            status: vente.status || 'DEVIS',
+            bonPourAccord: vente.bonPourAccord || false,
+            ordreDeReparation: vente.ordreDeReparation || false,
+            signatureBonPourAccord: vente.signatureBonPourAccord,
             clientId: vente.client?.id,
             bateauId: vente.bateau?.id,
             moteurId: vente.moteur?.id,
@@ -1143,6 +1187,103 @@ export default function Vente() {
             rappel2Jours: vente.rappel2Jours,
             rappel3Jours: vente.rappel3Jours
         });
+    };
+
+    const getBpaSummaryLines = useCallback(() => {
+        const venteForfaitLines = form.getFieldValue('venteForfaits') || [];
+        const venteServiceLines = form.getFieldValue('venteServices') || [];
+        const produitLines = form.getFieldValue('produits') || [];
+        const lines: Array<{ type: string; nom: string; quantite: number; prixTTC: number }> = [];
+        venteForfaitLines.forEach((line: { forfaitId?: number; quantite?: number }) => {
+            if (!line.forfaitId) return;
+            const f = forfaits.find((item) => item.id === line.forfaitId);
+            if (f) lines.push({ type: 'Forfait', nom: f.nom, quantite: line.quantite || 1, prixTTC: (f.prixTTC || 0) * (line.quantite || 1) });
+        });
+        venteServiceLines.forEach((line: { serviceId?: number; quantite?: number }) => {
+            if (!line.serviceId) return;
+            const s = services.find((item) => item.id === line.serviceId);
+            if (s) lines.push({ type: 'Service', nom: s.nom, quantite: line.quantite || 1, prixTTC: (s.prixTTC || 0) * (line.quantite || 1) });
+        });
+        produitLines.forEach((line: { produitId?: number; quantite?: number }) => {
+            if (!line.produitId) return;
+            const p = produits.find((item) => item.id === line.produitId);
+            if (p) lines.push({ type: 'Produit', nom: p.nom, quantite: line.quantite || 1, prixTTC: (p.prixVenteTTC || 0) * (line.quantite || 1) });
+        });
+        return lines;
+    }, [form, forfaits, services, produits]);
+
+    const initSignatureCanvas = useCallback(() => {
+        setTimeout(() => {
+            const canvas = signatureCanvasRef.current;
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return;
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 2;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+
+            let drawing = false;
+            const getPos = (e: MouseEvent | TouchEvent) => {
+                const rect = canvas.getBoundingClientRect();
+                if ('touches' in e) {
+                    return { x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top };
+                }
+                return { x: (e as MouseEvent).clientX - rect.left, y: (e as MouseEvent).clientY - rect.top };
+            };
+            const onStart = (e: MouseEvent | TouchEvent) => { e.preventDefault(); drawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); signatureDrawingRef.current = true; };
+            const onMove = (e: MouseEvent | TouchEvent) => { if (!drawing) return; e.preventDefault(); const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); };
+            const onEnd = () => { drawing = false; };
+
+            canvas.addEventListener('mousedown', onStart);
+            canvas.addEventListener('mousemove', onMove);
+            canvas.addEventListener('mouseup', onEnd);
+            canvas.addEventListener('mouseleave', onEnd);
+            canvas.addEventListener('touchstart', onStart, { passive: false });
+            canvas.addEventListener('touchmove', onMove, { passive: false });
+            canvas.addEventListener('touchend', onEnd);
+        }, 100);
+    }, []);
+
+    const requestBonPourAccord = (onConfirm: () => void) => {
+        signatureDrawingRef.current = false;
+        setBpaPendingCallback(() => onConfirm);
+        setBpaModalVisible(true);
+        initSignatureCanvas();
+    };
+
+    const handleBpaConfirm = () => {
+        if (!signatureDrawingRef.current) {
+            message.warning('La signature est requise pour valider le bon pour accord');
+            return;
+        }
+        const canvas = signatureCanvasRef.current;
+        const signatureData = canvas ? canvas.toDataURL('image/png') : undefined;
+        if (bpaPendingCallback) {
+            form.setFieldsValue({ signatureBonPourAccord: signatureData });
+            bpaPendingCallback();
+        }
+        setBpaModalVisible(false);
+        setBpaPendingCallback(null);
+    };
+
+    const handleBpaCancel = () => {
+        setBpaModalVisible(false);
+        setBpaPendingCallback(null);
+    };
+
+    const clearSignatureCanvas = () => {
+        const canvas = signatureCanvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        signatureDrawingRef.current = false;
     };
 
     const handleModalCancel = () => {
@@ -1168,7 +1309,7 @@ export default function Vente() {
                 title: "Modifications non enregistrées",
                 content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
                 okText: "Fermer",
-                cancelText: "Annuler",
+                cancelText: "Fermer",
                 onOk: () => {
                     setFormDirty(false);
                     setModalVisible(false);
@@ -1217,7 +1358,9 @@ export default function Vente() {
 
     const toPayload = (values: VenteFormValues): VenteEntity => ({
         status: values.status,
-        type: values.type,
+        bonPourAccord: values.bonPourAccord,
+        ordreDeReparation: values.ordreDeReparation,
+        signatureBonPourAccord: values.signatureBonPourAccord,
         client: clients.find((client) => client.id === values.clientId),
         bateau: bateaux.find((bateau) => bateau.id === values.bateauId),
         moteur: moteurs.find((moteur) => moteur.id === values.moteurId),
@@ -1325,6 +1468,44 @@ export default function Vente() {
         }
     };
 
+    const goToStep = (step: number) => {
+        const steps: Array<{ status: VenteStatus; bonPourAccord: boolean }> = [
+            { status: 'DEVIS', bonPourAccord: false },
+            { status: 'DEVIS', bonPourAccord: true },
+            { status: 'FACTURE_EN_ATTENTE', bonPourAccord: true },
+            { status: 'FACTURE_PRETE', bonPourAccord: true },
+            { status: 'FACTURE_PAYEE', bonPourAccord: true },
+        ];
+        const currentStep = venteStepIndex(watchedStatus || 'DEVIS', watchedBonPourAccord);
+        if (step === currentStep) return;
+        // Transitioning to "Bon pour accord" (step 1) from "Devis" (step 0)
+        if (step >= 1 && currentStep === 0) {
+            requestBonPourAccord(() => {
+                form.setFieldsValue(steps[step]);
+                setFormDirty(true);
+                handleSave();
+            });
+            return;
+        }
+        // Block transition to "Facture complète" (step 3+) if not all tasks are done
+        if (step >= 3 && currentStep < 3) {
+            const forfaitLines = (form.getFieldValue('venteForfaits') || []).filter((l: { forfaitId?: number }) => l.forfaitId);
+            const serviceLines = (form.getFieldValue('venteServices') || []).filter((l: { serviceId?: number }) => l.serviceId);
+            const allLines = [...forfaitLines, ...serviceLines];
+            const allDone = allLines.length > 0 && allLines.every((l: { status?: PlanningStatus }) =>
+                l.status === 'TERMINEE' || l.status === 'ANNULEE'
+            );
+            const hasTerminee = allLines.some((l: { status?: PlanningStatus }) => l.status === 'TERMINEE');
+            if (!allDone || !hasTerminee) {
+                message.warning('Toutes les prestations doivent être terminées avant de passer en facture complète');
+                return;
+            }
+        }
+        form.setFieldsValue(steps[step]);
+        setFormDirty(true);
+        handleSave();
+    };
+
     const handleDelete = async (id?: number) => {
         if (!id) {
             return;
@@ -1371,12 +1552,9 @@ export default function Vente() {
         setTimeout(cleanup, 1000);
     };
 
-    const handlePrint = (vente: VenteEntity) => {
-        const title = `Vente #${vente.id || '-'}`;
+    const buildDocumentLines = (vente: VenteEntity) => {
         const forfaitLines = (vente.venteForfaits || []).map(vf => ({
-            type: 'Forfait',
-            label: vf.forfait?.nom || '',
-            quantite: vf.quantite || 1,
+            type: 'Forfait', label: vf.forfait?.nom || '', quantite: vf.quantite || 1,
             totalPrixTTC: (vf.forfait?.prixTTC || 0) * (vf.quantite || 1)
         }));
         const produitLines = Array.from(
@@ -1388,47 +1566,61 @@ export default function Vente() {
                 current.totalPrixTTC += item.prixVenteTTC || 0;
                 acc.set(key, current);
                 return acc;
-            }, new Map<string, { type: string; label: string; quantite: number; totalPrixTTC: number }>())
-                .values()
+            }, new Map<string, { type: string; label: string; quantite: number; totalPrixTTC: number }>()).values()
         );
         const serviceLines = (vente.venteServices || []).map(vs => ({
-            type: 'Service',
-            label: vs.service?.nom || '',
-            quantite: vs.quantite || 1,
+            type: 'Service', label: vs.service?.nom || '', quantite: vs.quantite || 1,
             totalPrixTTC: (vs.service?.prixTTC || 0) * (vs.quantite || 1)
         }));
-        const invoiceLines = [...forfaitLines, ...produitLines, ...serviceLines];
-        const invoiceRowsHtml = invoiceLines.length > 0
-            ? `
-                <table class="invoice-table">
-                    <thead>
-                        <tr>
-                            <th>Type</th>
-                            <th>Designation</th>
-                            <th>Qte</th>
-                            <th>Prix total</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${invoiceLines
-                            .map((line) => `
-                                <tr>
-                                    <td>${escapeHtml(line.type)}</td>
-                                    <td>${escapeHtml(line.label)}</td>
-                                    <td>${line.quantite}</td>
-                                    <td>${escapeHtml(formatEuro(line.totalPrixTTC))}</td>
-                                </tr>
-                            `)
-                            .join('')}
-                    </tbody>
-                </table>
-            `
-            : '<p>Aucun element</p>';
+        return [...forfaitLines, ...produitLines, ...serviceLines];
+    };
 
-        openPrintDocument(
-            title,
-            `
-            <html>
+    const getDocumentType = (vente: VenteEntity): 'devis' | 'ordre_reparation' | 'facture' => {
+        if (vente.status === 'DEVIS') {
+            return vente.ordreDeReparation ? 'ordre_reparation' : 'devis';
+        }
+        return 'facture';
+    };
+
+    const buildDocumentHtml = (vente: VenteEntity) => {
+        const docType = getDocumentType(vente);
+        const showPrices = docType !== 'ordre_reparation';
+        const lines = buildDocumentLines(vente);
+
+        const docTitle = docType === 'devis' ? 'Devis'
+            : docType === 'ordre_reparation' ? 'Ordre de Réparation'
+            : 'Facture';
+        const title = `${docTitle} #${vente.id || '-'}`;
+
+        const priceColumn = showPrices ? '<th>Prix total TTC</th>' : '';
+        const tableHtml = lines.length > 0
+            ? `<table class="invoice-table">
+                <thead><tr><th>Type</th><th>Désignation</th><th>Qté</th>${priceColumn}</tr></thead>
+                <tbody>${lines.map((line) => `
+                    <tr>
+                        <td>${escapeHtml(line.type)}</td>
+                        <td>${escapeHtml(line.label)}</td>
+                        <td>${line.quantite}</td>
+                        ${showPrices ? `<td>${escapeHtml(formatEuro(line.totalPrixTTC))}</td>` : ''}
+                    </tr>`).join('')}
+                </tbody>
+              </table>`
+            : '<p>Aucun élément</p>';
+
+        const totalsHtml = showPrices ? `
+            <div class="section">
+                <div class="row"><strong>Montant TTC:</strong> ${escapeHtml(formatEuro(vente.montantTTC))}</div>
+                ${(vente.remise || 0) > 0 ? `<div class="row"><strong>Remise:</strong> ${escapeHtml(formatEuro(vente.remise))}</div>` : ''}
+                <div class="row"><strong>Prix vente TTC:</strong> ${escapeHtml(formatEuro(vente.prixVenteTTC))}</div>
+            </div>` : '';
+
+        const paymentHtml = docType === 'facture' && vente.modePaiement
+            ? `<div class="row"><strong>Mode de paiement:</strong> ${escapeHtml(vente.modePaiement)}</div>` : '';
+
+        const signatureHtml = docType !== 'facture' && vente.signatureBonPourAccord
+            ? `<div class="section"><h3>Signature client</h3><img src="${vente.signatureBonPourAccord}" style="max-width:300px;border:1px solid #d9d9d9;border-radius:4px;" /></div>` : '';
+
+        return `<html>
             <head>
                 <title>${escapeHtml(title)}</title>
                 <style>
@@ -1445,22 +1637,24 @@ export default function Vente() {
             <body>
                 <h1>${escapeHtml(title)}</h1>
                 <div class="meta">Date: ${escapeHtml(formatDate(vente.date))}</div>
-                <div class="row"><strong>Type:</strong> ${escapeHtml(vente.type || '-')}</div>
-                <div class="row"><strong>Statut:</strong> ${escapeHtml(vente.status || '-')}</div>
                 <div class="row"><strong>Client:</strong> ${escapeHtml(getClientLabel(vente.client))}</div>
-                <div class="row"><strong>Montant TTC:</strong> ${escapeHtml(formatEuro(vente.montantTTC))}</div>
-                <div class="row"><strong>Remise:</strong> ${escapeHtml(formatEuro(vente.remise))}</div>
-                <div class="row"><strong>Prix vente TTC:</strong> ${escapeHtml(formatEuro(vente.prixVenteTTC))}</div>
-                <div class="row"><strong>Mode de paiement:</strong> ${escapeHtml(vente.modePaiement || '-')}</div>
-
+                ${paymentHtml}
                 <div class="section">
-                    <h3>Lignes</h3>
-                    ${invoiceRowsHtml}
+                    <h3>Détails</h3>
+                    ${tableHtml}
                 </div>
+                ${totalsHtml}
+                ${signatureHtml}
             </body>
-            </html>
-        `
-        );
+        </html>`;
+    };
+
+    const handlePrint = (vente: VenteEntity) => {
+        const docType = getDocumentType(vente);
+        const docTitle = docType === 'devis' ? 'Devis'
+            : docType === 'ordre_reparation' ? 'Ordre de Réparation'
+            : 'Facture';
+        openPrintDocument(`${docTitle} #${vente.id || '-'}`, buildDocumentHtml(vente));
     };
 
     const handleEmail = async (vente: VenteEntity) => {
@@ -1488,6 +1682,10 @@ export default function Vente() {
             message.warning('La vente doit etre enregistree avant de generer un lien de paiement.');
             return;
         }
+        if (vente.status !== 'FACTURE_PRETE') {
+            message.warning('Le paiement n\'est possible que lorsque la facture est prête.');
+            return;
+        }
         try {
             const res = await api.post(`/ventes/${vente.id}/payment-link/${provider}`);
             window.open(res.data.url, '_blank', 'noopener,noreferrer');
@@ -1501,7 +1699,10 @@ export default function Vente() {
         { key: 'payplug', label: 'Payer via PayPlug', onClick: () => handlePayment(vente, 'payplug') },
     ]);
 
-    const recalculateFromLines = (remiseSource: 'amount' | 'percentage' | 'auto' = 'auto') => {
+    const recalculateFromLines = (
+        remiseSource: 'amount' | 'percentage' | 'auto' = 'auto',
+        overrides?: { forfaits?: ForfaitEntity[]; produits?: ProduitCatalogueEntity[]; services?: ServiceEntity[] }
+    ) => {
         const venteForfaitLines = form.getFieldValue('venteForfaits') || [];
         const produitLines = form.getFieldValue('produits') || [];
         const venteServiceLines = form.getFieldValue('venteServices') || [];
@@ -1509,18 +1710,22 @@ export default function Vente() {
         let remisePourcentage = form.getFieldValue('remisePourcentage') || 0;
         const tva = form.getFieldValue('tva') || 0;
 
+        const allForfaits = overrides?.forfaits ?? forfaits;
+        const allProduits = overrides?.produits ?? produits;
+        const allServices = overrides?.services ?? services;
+
         const forfaitsTTC = venteForfaitLines.reduce((sum: number, line: { forfaitId?: number; quantite?: number }) => {
-            const prixUnitaire = forfaits.find((item) => item.id === line.forfaitId)?.prixTTC || 0;
+            const prixUnitaire = allForfaits.find((item) => item.id === line.forfaitId)?.prixTTC || 0;
             const quantite = Math.max(1, Math.floor(line.quantite || 1));
             return sum + (prixUnitaire * quantite);
         }, 0);
         const produitsTTC = produitLines.reduce((sum: number, line: { produitId?: number; quantite?: number }) => {
-            const prixUnitaire = produits.find((item) => item.id === line.produitId)?.prixVenteTTC || 0;
+            const prixUnitaire = allProduits.find((item) => item.id === line.produitId)?.prixVenteTTC || 0;
             const quantite = Math.max(1, Math.floor(line.quantite || 1));
             return sum + (prixUnitaire * quantite);
         }, 0);
         const servicesTTC = venteServiceLines.reduce((sum: number, line: { serviceId?: number; quantite?: number }) => {
-            const prixUnitaire = services.find((item) => item.id === line.serviceId)?.prixTTC || 0;
+            const prixUnitaire = allServices.find((item) => item.id === line.serviceId)?.prixTTC || 0;
             const quantite = Math.max(1, Math.floor(line.quantite || 1));
             return sum + (prixUnitaire * quantite);
         }, 0);
@@ -1673,16 +1878,19 @@ export default function Vente() {
             render: (value: string) => formatDate(value)
         },
         {
-            title: 'Type',
-            dataIndex: 'type',
-            render: (value: VenteType) => typeOptions.find((item) => item.value === value)?.label || value
+            title: 'Origine',
+            dataIndex: 'comptoir',
+            render: (value: boolean) => <Tag color={value ? 'purple' : 'geekblue'}>{value ? 'Comptoir' : 'Prestation'}</Tag>
         },
         {
             title: 'Statut',
             dataIndex: 'status',
-            render: (value: VenteStatus) => {
-                const label = statusOptions.find((item) => item.value === value)?.label || value;
-                return <Tag color={statusColor[value] || 'default'}>{label}</Tag>;
+            render: (value: VenteStatus, record: VenteEntity) => {
+                const label = value === 'DEVIS' && record.bonPourAccord
+                    ? 'Bon pour accord'
+                    : statusOptions.find((item) => item.value === value)?.label || value;
+                const color = value === 'DEVIS' && record.bonPourAccord ? 'cyan' : statusColor[value] || 'default';
+                return <Tag color={color}>{label}</Tag>;
             }
         },
         {
@@ -1723,8 +1931,8 @@ export default function Vente() {
                 <Space>
                     <Button title="Imprimer" icon={<PrinterOutlined />} onClick={() => handlePrint(record)} />
                     <Button title="Envoyer par email" icon={<MailOutlined />} onClick={() => handleEmail(record)} />
-                    <Dropdown menu={{ items: paymentMenuItems(record) }} placement="bottomRight">
-                        <Button title="Lien de paiement" icon={<CreditCardOutlined />} />
+                    <Dropdown menu={{ items: paymentMenuItems(record) }} placement="bottomRight" disabled={record.status !== 'FACTURE_PRETE'}>
+                        <Button title="Lien de paiement" icon={<CreditCardOutlined />} disabled={record.status !== 'FACTURE_PRETE'} />
                     </Dropdown>
                     <Button icon={<EditOutlined />} onClick={() => openModal(record)} />
                     <Popconfirm
@@ -1732,8 +1940,9 @@ export default function Vente() {
                         onConfirm={() => handleDelete(record.id)}
                         okText="Oui"
                         cancelText="Non"
+                        disabled={record.status === 'FACTURE_PAYEE'}
                     >
-                        <Button danger icon={<DeleteOutlined />} />
+                        <Button danger icon={<DeleteOutlined />} disabled={record.status === 'FACTURE_PAYEE'} />
                     </Popconfirm>
                 </Space>
             )
@@ -1745,11 +1954,10 @@ export default function Vente() {
             <Form
                 form={searchForm}
                 layout="vertical"
-                initialValues={{ status: undefined, type: undefined, clientId: undefined }}
+                initialValues={{ status: undefined, clientId: undefined }}
                 onFinish={(values) => {
                     const nextFilters: SearchFilters = {
                         status: values.status,
-                        type: values.type,
                         clientId: values.clientId
                     };
                     setFilters(nextFilters);
@@ -1757,22 +1965,17 @@ export default function Vente() {
                 }}
             >
                 <Row gutter={16}>
-                    <Col span={6}>
+                    <Col span={8}>
                         <Form.Item name="status" label="Statut">
                             <Select allowClear options={statusOptions} placeholder="Tous les statuts" />
                         </Form.Item>
                     </Col>
-                    <Col span={6}>
-                        <Form.Item name="type" label="Type">
-                            <Select allowClear options={typeOptions} placeholder="Tous les types" />
-                        </Form.Item>
-                    </Col>
-                    <Col span={8}>
+                    <Col span={10}>
                         <Form.Item name="clientId" label="Client">
                             <Select allowClear showSearch options={clientOptions} placeholder="Tous les clients" />
                         </Form.Item>
                     </Col>
-                    <Col span={4} style={{ display: 'flex', alignItems: 'end' }}>
+                    <Col span={6} style={{ display: 'flex', alignItems: 'end' }}>
                         <Space>
                             <Button type="primary" htmlType="submit">Rechercher</Button>
                             <Button
@@ -1824,57 +2027,85 @@ export default function Vente() {
                     >
                         Envoyer par email
                     </Button>,
-                    <Dropdown
+                    ...(watchedStatus === 'FACTURE_PRETE' || watchedStatus === 'FACTURE_PAYEE' ? [<Dropdown
                         key="payment"
                         menu={{ items: currentVente ? paymentMenuItems(currentVente) : [] }}
                         placement="topRight"
-                        disabled={!currentVente}
                     >
                         <Button icon={<CreditCardOutlined />}>
                             Lien de paiement
                         </Button>
-                    </Dropdown>,
+                    </Dropdown>] : []),
+                    ...(!isReadOnly ? [<div key="step-nav" style={{ flex: 1, textAlign: 'left' }}>
+                        <Button
+                            icon={<LeftOutlined />}
+                            disabled={venteStepIndex(watchedStatus || 'DEVIS', watchedBonPourAccord) <= 0}
+                            onClick={() => {
+                                const current = venteStepIndex(watchedStatus || 'DEVIS', watchedBonPourAccord);
+                                if (current > 0) goToStep(current - 1);
+                            }}
+                        >
+                            Précédent
+                        </Button>
+                        <Button
+                            style={{ marginLeft: 8 }}
+                            disabled={venteStepIndex(watchedStatus || 'DEVIS', watchedBonPourAccord) >= 4}
+                            onClick={() => {
+                                const current = venteStepIndex(watchedStatus || 'DEVIS', watchedBonPourAccord);
+                                if (current < 4) goToStep(current + 1);
+                            }}
+                        >
+                            Suivant
+                            <RightOutlined />
+                        </Button>
+                    </div>] : []),
                     <Button key="cancel" onClick={handleModalCancel}>
-                        Annuler
+                        Fermer
                     </Button>,
-                    <Button key="save" type="primary" onClick={handleSave}>
+                    ...(!isReadOnly ? [<Button key="save" type="primary" onClick={handleSave}>
                         Enregistrer
-                    </Button>
+                    </Button>] : [])
                 ]}
                 maskClosable={false}
                 destroyOnHidden
                 width={1400}
             >
-                <Form form={form} layout="vertical" initialValues={defaultVente} onValuesChange={onValuesChange}>
+                <Form form={form} layout="vertical" initialValues={defaultVente} onValuesChange={onValuesChange} disabled={isReadOnly}>
+                    <Form.Item noStyle name="status"><input type="hidden" /></Form.Item>
+                    <Form.Item noStyle name="bonPourAccord"><input type="hidden" /></Form.Item>
+                    <Steps
+                        current={venteStepIndex(
+                            watchedStatus || 'DEVIS',
+                            watchedBonPourAccord
+                        )}
+                        size="small"
+                        style={{ marginBottom: 24 }}
+                        items={venteStepItems(currentVente)}
+                        onChange={isReadOnly ? undefined : (step) => goToStep(step)}
+                    />
                     <Row gutter={16}>
-                        <Col span={6}>
-                            <Form.Item
-                                name="type"
-                                label="Type"
-                                rules={[{ required: true, message: 'Le type est requis' }]}
-                            >
-                                <Select options={typeOptions} />
-                            </Form.Item>
-                        </Col>
-                        <Col span={6}>
-                            <Form.Item
-                                name="status"
-                                label="Statut"
-                                rules={[{ required: true, message: 'Le statut est requis' }]}
-                            >
-                                <Select options={statusOptions} />
-                            </Form.Item>
-                        </Col>
-                        <Col span={6}>
+                        {watchedStatus === 'DEVIS' && !watchedBonPourAccord && (
+                            <Col span={8}>
+                                <Form.Item name="ordreDeReparation" label="Affichage client">
+                                    <Select options={[
+                                        { value: false, label: 'Devis chiffré' },
+                                        { value: true, label: 'Ordre de Réparation' },
+                                    ]} />
+                                </Form.Item>
+                            </Col>
+                        )}
+                        <Col span={8}>
                             <Form.Item name="date" label="Date">
-                                <DatePicker style={{ width: '100%' }} />
+                                <DatePicker showTime format="DD/MM/YYYY HH:mm" style={{ width: '100%' }} />
                             </Form.Item>
                         </Col>
-                        <Col span={6}>
-                            <Form.Item name="modePaiement" label="Mode de paiement">
-                                <Select allowClear options={modePaiementOptions} />
-                            </Form.Item>
-                        </Col>
+                        {(watchedStatus === 'FACTURE_PRETE' || watchedStatus === 'FACTURE_PAYEE') && (
+                            <Col span={8}>
+                                <Form.Item name="modePaiement" label="Mode de paiement">
+                                    <Select allowClear options={modePaiementOptions} />
+                                </Form.Item>
+                            </Col>
+                        )}
                     </Row>
 
                     <Row gutter={16}>
@@ -2016,12 +2247,12 @@ export default function Vente() {
                                                                     name={[field.name, 'technicienIds']}
                                                                     style={{ width: 220 }}
                                                                 >
-                                                                    <Select mode="multiple" allowClear showSearch options={technicienOptions} placeholder="Techniciens" />
+                                                                    <Select mode="multiple" allowClear showSearch options={technicienOptions} placeholder="Techniciens" disabled={!watchedBonPourAccord} />
                                                                 </Form.Item>
                                                                 {isEmptyLine ? (
                                                                     <Button icon={<PlusOutlined />} title="Créer un forfait" onClick={() => openNewForfaitModal(field.name)} />
                                                                 ) : (
-                                                                    <Button icon={<CalendarOutlined />} title="Planifier" onClick={() => { setModalVisible(false); history.push('/planning'); }} />
+                                                                    <Button icon={<CalendarOutlined />} title="Planifier" disabled={!watchedBonPourAccord} onClick={() => { setModalVisible(false); history.push('/planning'); }} />
                                                                 )}
                                                                 <Button danger icon={<DeleteOutlined />} onClick={() => remove(field.name)} />
                                                             </Space>
@@ -2109,14 +2340,14 @@ export default function Vente() {
                                                                     name={[field.name, 'technicienIds']}
                                                                     style={{ width: 220 }}
                                                                 >
-                                                                    <Select mode="multiple" allowClear showSearch options={technicienOptions} placeholder="Techniciens" />
+                                                                    <Select mode="multiple" allowClear showSearch options={technicienOptions} placeholder="Techniciens" disabled={!watchedBonPourAccord} />
                                                                 </Form.Item>
                                                                 {isEmptyLine ? (
                                                                     <Button icon={<PlusOutlined />} title="Créer un service" onClick={() => openNewServiceModal(field.name)} />
                                                                 ) : (
                                                                     <>
                                                                         <Button icon={<EditOutlined />} title="Modifier le service" onClick={() => openEditServiceModal(serviceId)} />
-                                                                        <Button icon={<CalendarOutlined />} title="Planifier" onClick={() => { setModalVisible(false); history.push('/planning'); }} />
+                                                                        <Button icon={<CalendarOutlined />} title="Planifier" disabled={!watchedBonPourAccord} onClick={() => { setModalVisible(false); history.push('/planning'); }} />
                                                                     </>
                                                                 )}
                                                                 <Button danger icon={<DeleteOutlined />} onClick={() => remove(field.name)} />
@@ -2437,7 +2668,7 @@ export default function Vente() {
                     maskClosable={false}
                     width={1024}
                     okText="Enregistrer"
-                    cancelText="Annuler"
+                    cancelText="Fermer"
                     destroyOnHidden
                 >
                     <Form
@@ -2579,7 +2810,7 @@ export default function Vente() {
                     maskClosable={false}
                     width={1000}
                     okText="Enregistrer"
-                    cancelText="Annuler"
+                    cancelText="Fermer"
                     destroyOnHidden
                 >
                     <Form form={newServiceForm} layout="vertical" initialValues={defaultNewService} onValuesChange={onNewServiceValuesChange}>
@@ -2739,7 +2970,7 @@ export default function Vente() {
                     maskClosable={false}
                     width={1024}
                     okText="Enregistrer"
-                    cancelText="Annuler"
+                    cancelText="Fermer"
                     destroyOnHidden
                 >
                     <Form form={newForfaitForm} layout="vertical" initialValues={defaultNewForfait} onValuesChange={onNewForfaitValuesChange}>
@@ -2926,7 +3157,7 @@ export default function Vente() {
                 maskClosable={false}
                 width={800}
                 okText="Enregistrer"
-                cancelText="Annuler"
+                cancelText="Fermer"
                 destroyOnHidden
             >
                 <Form form={newClientForm} layout="vertical" onValuesChange={() => setNewClientFormDirty(true)}>
@@ -3032,7 +3263,7 @@ export default function Vente() {
                 maskClosable={false}
                 width={800}
                 okText="Enregistrer"
-                cancelText="Annuler"
+                cancelText="Fermer"
                 destroyOnHidden
             >
                 <Form form={newBateauForm} layout="vertical" onValuesChange={() => setNewBateauFormDirty(true)}>
@@ -3150,7 +3381,7 @@ export default function Vente() {
                 maskClosable={false}
                 width={800}
                 okText="Enregistrer"
-                cancelText="Annuler"
+                cancelText="Fermer"
                 destroyOnHidden
             >
                 <Form form={newMoteurForm} layout="vertical" onValuesChange={() => setNewMoteurFormDirty(true)}>
@@ -3228,7 +3459,7 @@ export default function Vente() {
                 maskClosable={false}
                 width={800}
                 okText="Enregistrer"
-                cancelText="Annuler"
+                cancelText="Fermer"
                 destroyOnHidden
             >
                 <Form form={newRemorqueForm} layout="vertical" onValuesChange={() => setNewRemorqueFormDirty(true)}>
@@ -3291,6 +3522,78 @@ export default function Vente() {
                         <DocumentUpload />
                     </Form.Item>
                 </Form>
+            </Modal>
+            <Modal
+                title="Bon pour accord — Signature client"
+                open={bpaModalVisible}
+                onCancel={handleBpaCancel}
+                width={700}
+                maskClosable={false}
+                destroyOnHidden
+                footer={[
+                    <Button key="clear" onClick={clearSignatureCanvas}>
+                        Effacer la signature
+                    </Button>,
+                    <Button key="cancel" onClick={handleBpaCancel}>
+                        Fermer
+                    </Button>,
+                    <Button key="confirm" type="primary" onClick={handleBpaConfirm}>
+                        Valider le bon pour accord
+                    </Button>
+                ]}
+            >
+                <div style={{ marginBottom: 16 }}>
+                    <Table
+                        size="small"
+                        pagination={false}
+                        dataSource={getBpaSummaryLines()}
+                        rowKey={(_, idx) => `bpa-${idx}`}
+                        columns={[
+                            { title: 'Type', dataIndex: 'type', width: 100 },
+                            { title: 'Désignation', dataIndex: 'nom' },
+                            { title: 'Qté', dataIndex: 'quantite', width: 60, align: 'center' as const },
+                            ...(!form.getFieldValue('ordreDeReparation') ? [
+                                { title: 'Prix TTC', dataIndex: 'prixTTC', width: 120, align: 'right' as const, render: (v: number) => formatEuro(v) },
+                            ] : []),
+                        ]}
+                        summary={!form.getFieldValue('ordreDeReparation') ? (data) => {
+                            const total = data.reduce((sum, row) => sum + row.prixTTC, 0);
+                            const remise = form.getFieldValue('remise') || 0;
+                            const prixVente = Math.round(((total - remise) + Number.EPSILON) * 100) / 100;
+                            return (
+                                <>
+                                    <Table.Summary.Row>
+                                        <Table.Summary.Cell index={0} colSpan={3} align="right"><strong>Total TTC</strong></Table.Summary.Cell>
+                                        <Table.Summary.Cell index={1} align="right"><strong>{formatEuro(total)}</strong></Table.Summary.Cell>
+                                    </Table.Summary.Row>
+                                    {remise > 0 && (
+                                        <Table.Summary.Row>
+                                            <Table.Summary.Cell index={0} colSpan={3} align="right">Remise</Table.Summary.Cell>
+                                            <Table.Summary.Cell index={1} align="right">-{formatEuro(remise)}</Table.Summary.Cell>
+                                        </Table.Summary.Row>
+                                    )}
+                                    <Table.Summary.Row>
+                                        <Table.Summary.Cell index={0} colSpan={3} align="right"><strong>Prix vente TTC</strong></Table.Summary.Cell>
+                                        <Table.Summary.Cell index={1} align="right"><strong>{formatEuro(prixVente)}</strong></Table.Summary.Cell>
+                                    </Table.Summary.Row>
+                                </>
+                            );
+                        } : undefined}
+                    />
+                </div>
+                <Divider />
+                <div style={{ marginBottom: 8, fontWeight: 500 }}>Signature du client :</div>
+                <canvas
+                    ref={signatureCanvasRef}
+                    style={{
+                        width: '100%',
+                        height: 200,
+                        border: '1px solid #d9d9d9',
+                        borderRadius: 6,
+                        cursor: 'crosshair',
+                        touchAction: 'none',
+                    }}
+                />
             </Modal>
         </Card>
     );

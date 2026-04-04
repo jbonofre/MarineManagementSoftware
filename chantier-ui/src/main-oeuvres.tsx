@@ -84,7 +84,7 @@ export default function MainOeuvres() {
                 title: "Modifications non enregistrées",
                 content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
                 okText: "Fermer",
-                cancelText: "Annuler",
+                cancelText: "Fermer",
                 onOk: () => {
                     setFormDirty(false);
                     setModalVisible(false);
@@ -230,7 +230,7 @@ export default function MainOeuvres() {
                 onOk={handleModalOk}
                 onCancel={handleModalCancel}
                 okText="Enregistrer"
-                cancelText="Annuler"
+                cancelText="Fermer"
                 maskClosable={false}
                 destroyOnHidden
                 width={900}

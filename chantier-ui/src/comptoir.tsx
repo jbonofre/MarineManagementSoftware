@@ -117,14 +117,15 @@ interface TaskEntity {
     nom?: string;
 }
 
-type VenteStatus = 'PAYEE';
-type VenteType = 'DEVIS' | 'FACTURE' | 'COMMANDE' | 'LIVRAISON' | 'COMPTOIR';
+type VenteStatus = 'DEVIS' | 'FACTURE_EN_ATTENTE' | 'FACTURE_PRETE' | 'FACTURE_PAYEE';
 type ModePaiement = 'CHEQUE' | 'VIREMENT' | 'CARTE' | 'ESPÈCES';
 
 interface VenteEntity {
     id?: number;
-    type: VenteType;
     status: VenteStatus;
+    bonPourAccord?: boolean;
+    comptoir?: boolean;
+    signatureBonPourAccord?: string;
     client?: ClientEntity;
     bateau?: BateauClientEntity;
     moteur?: MoteurClientEntity;
@@ -134,6 +135,11 @@ interface VenteEntity {
     services?: ServiceEntity[];
     taches?: TaskEntity[];
     date?: string;
+    dateDevis?: string;
+    dateBonPourAccord?: string;
+    dateFactureEnAttente?: string;
+    dateFacturePrete?: string;
+    dateFacturePayee?: string;
     montantHT?: number;
     remise?: number;
     montantTTC?: number;
@@ -144,6 +150,9 @@ interface VenteEntity {
 }
 
 interface VenteFormValues {
+    status: VenteStatus;
+    bonPourAccord?: boolean;
+    signatureBonPourAccord?: string;
     clientId?: number;
     bateauId?: number;
     moteurId?: number;
@@ -173,7 +182,23 @@ const modePaiementOptions: Array<{ value: ModePaiement; label: string }> = [
     { value: 'ESPÈCES', label: 'Especes' }
 ];
 
+const statusColor: Record<VenteStatus, string> = {
+    DEVIS: 'default',
+    FACTURE_EN_ATTENTE: 'orange',
+    FACTURE_PRETE: 'blue',
+    FACTURE_PAYEE: 'green'
+};
+
+const statusLabel: Record<VenteStatus, string> = {
+    DEVIS: 'Devis',
+    FACTURE_EN_ATTENTE: 'Facture en attente',
+    FACTURE_PRETE: 'Facture complète',
+    FACTURE_PAYEE: 'Facture payée',
+};
+
 const defaultVente: VenteFormValues = {
+    status: 'FACTURE_PRETE',
+    bonPourAccord: true,
     forfaits: [],
     produits: [{}],
     services: [],
@@ -201,7 +226,7 @@ const toBackendDateValue = (value?: dayjs.Dayjs | string) => {
         return undefined;
     }
     const d = dayjs.isDayjs(value) ? value : dayjs(value);
-    return d.isValid() ? d.format('YYYY-MM-DD') : undefined;
+    return d.isValid() ? d.format('YYYY-MM-DDTHH:mm:ss') : undefined;
 };
 
 const formatEuro = (value?: number) => `${(value || 0).toFixed(2)} EUR`;
@@ -213,7 +238,7 @@ const formatDate = (value?: string) => {
     if (Number.isNaN(parsed.getTime())) {
         return value;
     }
-    return parsed.toLocaleDateString('fr-FR');
+    return parsed.toLocaleDateString('fr-FR') + ' ' + parsed.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 };
 const escapeHtml = (value: string) =>
     value
@@ -248,6 +273,8 @@ export default function Comptoir() {
     const [filters, setFilters] = useState<SearchFilters>({});
     const [searchForm] = Form.useForm<SearchFilters>();
     const [form] = Form.useForm<VenteFormValues>();
+    const watchedStatus = Form.useWatch('status', form) as VenteStatus | undefined;
+    const isReadOnly = watchedStatus === 'FACTURE_PAYEE';
     const [formDirty, setFormDirty] = useState(false);
     const [newProduitModalVisible, setNewProduitModalVisible] = useState(false);
     const [newProduitTargetLine, setNewProduitTargetLine] = useState<number | null>(null);
@@ -298,13 +325,11 @@ export default function Comptoir() {
             const activeFilters = nextFilters || {};
             const response = await api.get('/ventes/search', {
                 params: {
-                    type: 'COMPTOIR',
-                    status: 'PAYEE',
+                    status: 'FACTURE_PAYEE',
                     ...(activeFilters.clientId !== undefined ? { clientId: activeFilters.clientId } : {})
                 }
             });
-            const data = (response.data || []).filter((vente: VenteEntity) => vente.type === 'COMPTOIR');
-            setVentes(data);
+            setVentes(response.data || []);
         } catch {
             message.error('Erreur lors du chargement des ventes comptoir.');
         } finally {
@@ -410,6 +435,9 @@ export default function Comptoir() {
             }, new Map<number, number>());
             const produitLines = Array.from(produitLinesMap.entries()).map(([produitId, quantite]) => ({ produitId, quantite }));
             form.setFieldsValue({
+                status: vente.status || 'DEVIS',
+                bonPourAccord: vente.bonPourAccord || false,
+                signatureBonPourAccord: vente.signatureBonPourAccord,
                 clientId: vente.client?.id,
                 bateauId: vente.bateau?.id,
                 moteurId: vente.moteur?.id,
@@ -443,7 +471,7 @@ export default function Comptoir() {
                 title: "Modifications non enregistrées",
                 content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
                 okText: "Fermer",
-                cancelText: "Annuler",
+                cancelText: "Fermer",
                 onOk: () => {
                     setFormDirty(false);
                     setModalVisible(false);
@@ -460,7 +488,7 @@ export default function Comptoir() {
                 title: "Modifications non enregistrées",
                 content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
                 okText: "Fermer",
-                cancelText: "Annuler",
+                cancelText: "Fermer",
                 onOk: () => {
                     setNewProduitFormDirty(false);
                     setNewProduitModalVisible(false);
@@ -475,8 +503,10 @@ export default function Comptoir() {
         Array.from({ length: Math.max(1, Math.floor(quantite || 1)) }, () => items).flat();
 
     const toPayload = (values: VenteFormValues): VenteEntity => ({
-        status: 'PAYEE',
-        type: 'COMPTOIR',
+        status: values.status,
+        bonPourAccord: values.bonPourAccord,
+        signatureBonPourAccord: values.signatureBonPourAccord,
+        comptoir: true,
         client: clients.find((client) => client.id === values.clientId),
         bateau: bateaux.find((bateau) => bateau.id === values.bateauId),
         moteur: moteurs.find((moteur) => moteur.id === values.moteurId),
@@ -514,7 +544,7 @@ export default function Comptoir() {
             const values = await form.validateFields();
             const payload = toPayload(values);
             if (isEdit && currentVente?.id) {
-                const res = await api.put(`/ventes/${currentVente.id}`, { ...currentVente, ...payload, type: 'COMPTOIR' });
+                const res = await api.put(`/ventes/${currentVente.id}`, { ...currentVente, ...payload });
                 message.success('Vente comptoir modifiee avec succes');
                 setCurrentVente(res.data);
                 form.setFieldsValue(values);
@@ -551,6 +581,28 @@ export default function Comptoir() {
             fetchVentes(filters);
         } catch {
             message.error('Erreur lors de la suppression de la vente comptoir.');
+        }
+    };
+
+    const handleMarkPaid = async () => {
+        if (!currentVente?.id) return;
+        const values = await form.validateFields();
+        if (!values.modePaiement) {
+            message.warning('Veuillez sélectionner un mode de paiement');
+            return;
+        }
+        form.setFieldsValue({ status: 'FACTURE_PAYEE' });
+        const payload = toPayload({ ...values, status: 'FACTURE_PAYEE' });
+        try {
+            const res = await api.put(`/ventes/${currentVente.id}`, { ...currentVente, ...payload });
+            message.success('Vente marquée comme payée');
+            setCurrentVente(res.data);
+            form.setFieldsValue({ status: res.data.status });
+            setFormDirty(false);
+            fetchVentes(filters);
+        } catch {
+            message.error('Erreur lors du marquage comme payée');
+            form.setFieldsValue({ status: 'FACTURE_PRETE' });
         }
     };
 
@@ -602,12 +654,17 @@ export default function Comptoir() {
     const handlePrintInvoice = (vente: VenteEntity) => {
         const title = `Facture #${vente.id || '-'}`;
         const produitRows = getProduitLines(vente)
-            .map((produit) => `
+            .map((produit) => {
+                const pu = produit.prixVenteTTC || 0;
+                const total = pu * produit.quantite;
+                return `
                 <tr>
                     <td>${escapeHtml(`${produit.nom}${produit.marque ? ` (${produit.marque})` : ''}`)}</td>
+                    <td style="text-align:right;">${escapeHtml(formatEuro(pu))}</td>
                     <td style="text-align:right;">${produit.quantite}</td>
-                </tr>
-            `)
+                    <td style="text-align:right;">${escapeHtml(formatEuro(total))}</td>
+                </tr>`;
+            })
             .join('');
 
         openPrintDocument(
@@ -640,11 +697,13 @@ export default function Comptoir() {
                         <thead>
                             <tr>
                                 <th>Produit</th>
-                                <th style="text-align:right;">Quantite</th>
+                                <th style="text-align:right;">P.U. TTC</th>
+                                <th style="text-align:right;">Qté</th>
+                                <th style="text-align:right;">Total TTC</th>
                             </tr>
                         </thead>
                         <tbody>
-                            ${produitRows || '<tr><td colspan="2">Aucun produit</td></tr>'}
+                            ${produitRows || '<tr><td colspan="4">Aucun produit</td></tr>'}
                         </tbody>
                     </table>
                 </body>
@@ -656,12 +715,19 @@ export default function Comptoir() {
     const handlePrintReceipt = (vente: VenteEntity) => {
         const title = `Ticket #${vente.id || '-'}`;
         const produitRows = getProduitLines(vente)
-            .map((produit) => `
+            .map((produit) => {
+                const pu = produit.prixVenteTTC || 0;
+                const total = pu * produit.quantite;
+                return `
                 <div class="line">
                     <span>${escapeHtml(`${produit.nom}${produit.marque ? ` (${produit.marque})` : ''}`)}</span>
                     <span>x${produit.quantite}</span>
                 </div>
-            `)
+                <div class="line sub">
+                    <span>${escapeHtml(formatEuro(pu))} /u</span>
+                    <span>${escapeHtml(formatEuro(total))}</span>
+                </div>`;
+            })
             .join('');
 
         openPrintDocument(
@@ -674,6 +740,7 @@ export default function Comptoir() {
                         body { font-family: "Courier New", monospace; width: 320px; margin: 16px auto; color: #000; }
                         h2 { text-align: center; margin: 0 0 8px; }
                         .line { display: flex; justify-content: space-between; margin: 4px 0; }
+                        .line.sub { font-size: 0.85em; color: #555; margin-top: -2px; }
                         .separator { border-top: 1px dashed #000; margin: 10px 0; }
                         .center { text-align: center; }
                     </style>
@@ -854,6 +921,11 @@ export default function Comptoir() {
             render: (value: string) => value || '-'
         },
         {
+            title: 'Statut',
+            dataIndex: 'status',
+            render: (value: VenteStatus) => <Tag color={statusColor[value] || 'default'}>{statusLabel[value] || value}</Tag>
+        },
+        {
             title: 'Client',
             dataIndex: 'client',
             render: (value: ClientEntity) => getClientLabel(value)
@@ -874,8 +946,8 @@ export default function Comptoir() {
             key: 'actions',
             render: (_: unknown, record: VenteEntity) => (
                 <Space>
-                    <Button title="Imprimer facture" icon={<FileTextOutlined />} onClick={() => handlePrintInvoice(record)} />
-                    <Button title="Imprimer ticket de caisse" icon={<PrinterOutlined />} onClick={() => handlePrintReceipt(record)} />
+                    <Button title="Imprimer facture" icon={<FileTextOutlined />} disabled={record.status !== 'FACTURE_PAYEE'} onClick={() => handlePrintInvoice(record)} />
+                    <Button title="Imprimer ticket de caisse" icon={<PrinterOutlined />} disabled={record.status !== 'FACTURE_PAYEE'} onClick={() => handlePrintReceipt(record)} />
                     <Dropdown menu={{ items: paymentMenuItems(record) }} placement="bottomRight">
                         <Button title="Lien de paiement" icon={<CreditCardOutlined />} />
                     </Dropdown>
@@ -885,8 +957,9 @@ export default function Comptoir() {
                         onConfirm={() => handleDelete(record.id)}
                         okText="Oui"
                         cancelText="Non"
+                        disabled={record.status === 'FACTURE_PAYEE'}
                     >
-                        <Button danger icon={<DeleteOutlined />} />
+                        <Button danger icon={<DeleteOutlined />} disabled={record.status === 'FACTURE_PAYEE'} />
                     </Popconfirm>
                 </Space>
             )
@@ -946,7 +1019,7 @@ export default function Comptoir() {
                     <Button
                         key="print-invoice"
                         icon={<FileTextOutlined />}
-                        disabled={!currentVente}
+                        disabled={!currentVente || watchedStatus !== 'FACTURE_PAYEE'}
                         onClick={() => currentVente && handlePrintInvoice(currentVente)}
                     >
                         Imprimer facture
@@ -954,37 +1027,50 @@ export default function Comptoir() {
                     <Button
                         key="print-receipt"
                         icon={<PrinterOutlined />}
-                        disabled={!currentVente}
+                        disabled={!currentVente || watchedStatus !== 'FACTURE_PAYEE'}
                         onClick={() => currentVente && handlePrintReceipt(currentVente)}
                     >
                         Imprimer ticket
                     </Button>,
-                    <Dropdown
+                    ...(!isReadOnly && currentVente ? [<Dropdown
                         key="payment"
                         menu={{ items: currentVente ? paymentMenuItems(currentVente) : [] }}
                         placement="topRight"
-                        disabled={!currentVente}
                     >
                         <Button icon={<CreditCardOutlined />}>
                             Lien de paiement
                         </Button>
-                    </Dropdown>,
+                    </Dropdown>] : []),
+                    ...(!isReadOnly && isEdit ? [<Button
+                        key="mark-paid"
+                        type="primary"
+                        danger
+                        icon={<CreditCardOutlined />}
+                        onClick={handleMarkPaid}
+                    >
+                        Marquer comme payée
+                    </Button>] : []),
                     <Button key="cancel" onClick={handleModalCancel}>
-                        Annuler
+                        Fermer
                     </Button>,
-                    <Button key="save" type="primary" onClick={handleSave}>
+                    ...(!isReadOnly ? [<Button key="save" type="primary" onClick={handleSave}>
                         Enregistrer
-                    </Button>
+                    </Button>] : [])
                 ]}
                 maskClosable={false}
                 destroyOnHidden
                 width={1100}
             >
-                <Form form={form} layout="vertical" initialValues={defaultVente} onValuesChange={(...args) => { setFormDirty(true); onValuesChange(...args); }}>
+                <Form form={form} layout="vertical" initialValues={defaultVente} onValuesChange={(...args) => { setFormDirty(true); onValuesChange(...args); }} disabled={isReadOnly}>
+                    <Form.Item noStyle name="status"><input type="hidden" /></Form.Item>
+                    <Form.Item noStyle name="bonPourAccord"><input type="hidden" /></Form.Item>
+                    {isReadOnly && (
+                        <Tag color="green" style={{ marginBottom: 16, fontSize: 14, padding: '4px 12px' }}>Facture payée — consultation uniquement</Tag>
+                    )}
                     <Row gutter={16}>
                         <Col span={8}>
                             <Form.Item name="date" label="Date">
-                                <DatePicker style={{ width: '100%' }} />
+                                <DatePicker showTime format="DD/MM/YYYY HH:mm" style={{ width: '100%' }} />
                             </Form.Item>
                         </Col>
                         <Col span={8}>
@@ -1136,7 +1222,7 @@ export default function Comptoir() {
                     maskClosable={false}
                     width={1024}
                     okText="Enregistrer"
-                    cancelText="Annuler"
+                    cancelText="Fermer"
                     destroyOnHidden
                 >
                     <Form

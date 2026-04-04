@@ -17,23 +17,22 @@ import jakarta.persistence.OneToMany;
 public class VenteEntity extends PanacheEntity {
 
     public enum Status {
-        EN_ATTENTE,
-        EN_COURS,
-        PAYEE,
-        ANNULEE
+        DEVIS,
+        FACTURE_EN_ATTENTE,
+        FACTURE_PRETE,
+        FACTURE_PAYEE
     }
 
     public Status status;
 
-    public enum Type {
-        DEVIS,
-        COMMANDE,
-        FACTURE,
-        LIVRAISON,
-        COMPTOIR,
-    }
+    public boolean bonPourAccord;
 
-    public Type type;
+    public boolean ordreDeReparation;
+
+    public boolean comptoir;
+
+    @jakarta.persistence.Column(columnDefinition = "TEXT")
+    public String signatureBonPourAccord;
 
     @ManyToOne
     public ClientEntity client;
@@ -60,6 +59,21 @@ public class VenteEntity extends PanacheEntity {
 
     @JsonbTypeAdapter(TimestampJsonbAdapter.class)
     public Timestamp date;
+
+    @JsonbTypeAdapter(TimestampJsonbAdapter.class)
+    public Timestamp dateDevis;
+
+    @JsonbTypeAdapter(TimestampJsonbAdapter.class)
+    public Timestamp dateBonPourAccord;
+
+    @JsonbTypeAdapter(TimestampJsonbAdapter.class)
+    public Timestamp dateFactureEnAttente;
+
+    @JsonbTypeAdapter(TimestampJsonbAdapter.class)
+    public Timestamp dateFacturePrete;
+
+    @JsonbTypeAdapter(TimestampJsonbAdapter.class)
+    public Timestamp dateFacturePayee;
 
     public double montantHT;
 

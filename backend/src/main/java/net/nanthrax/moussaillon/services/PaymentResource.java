@@ -23,6 +23,7 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.transaction.Transactional;
 import net.nanthrax.moussaillon.persistence.VenteEntity;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -53,10 +54,14 @@ public class PaymentResource {
 
     @POST
     @Path("/stripe")
+    @Transactional
     public Map<String, String> createStripePaymentLink(@PathParam("id") long id) {
         VenteEntity vente = VenteEntity.findById(id);
         if (vente == null) {
             throw new WebApplicationException("La vente (" + id + ") n'est pas trouvee", 404);
+        }
+        if (vente.status != VenteEntity.Status.FACTURE_PRETE) {
+            throw new WebApplicationException("Le paiement n'est possible que lorsque la facture est prete", 400);
         }
         if (stripeApiKey == null || stripeApiKey.isBlank()) {
             throw new WebApplicationException("La cle API Stripe n'est pas configuree", 500);
@@ -101,10 +106,14 @@ public class PaymentResource {
 
     @POST
     @Path("/payplug")
+    @Transactional
     public Map<String, String> createPayplugPaymentLink(@PathParam("id") long id) {
         VenteEntity vente = VenteEntity.findById(id);
         if (vente == null) {
             throw new WebApplicationException("La vente (" + id + ") n'est pas trouvee", 404);
+        }
+        if (vente.status != VenteEntity.Status.FACTURE_PRETE) {
+            throw new WebApplicationException("Le paiement n'est possible que lorsque la facture est prete", 400);
         }
         if (payplugApiKey == null || payplugApiKey.isBlank()) {
             throw new WebApplicationException("La cle API PayPlug n'est pas configuree", 500);

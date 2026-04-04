@@ -187,7 +187,7 @@ export default function Services() {
                 title: "Modifications non enregistrées",
                 content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
                 okText: "Fermer",
-                cancelText: "Annuler",
+                cancelText: "Fermer",
                 onOk: () => {
                     setFormDirty(false);
                     setModalVisible(false);
@@ -204,7 +204,7 @@ export default function Services() {
                 title: "Modifications non enregistrées",
                 content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
                 okText: "Fermer",
-                cancelText: "Annuler",
+                cancelText: "Fermer",
                 onOk: () => {
                     setNewMainOeuvreFormDirty(false);
                     setNewMainOeuvreModalVisible(false);
@@ -221,7 +221,7 @@ export default function Services() {
                 title: "Modifications non enregistrées",
                 content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
                 okText: "Fermer",
-                cancelText: "Annuler",
+                cancelText: "Fermer",
                 onOk: () => {
                     setNewProduitFormDirty(false);
                     setNewProduitModalVisible(false);
@@ -539,7 +539,7 @@ export default function Services() {
                 onOk={handleModalOk}
                 onCancel={handleModalCancel}
                 okText="Enregistrer"
-                cancelText="Annuler"
+                cancelText="Fermer"
                 maskClosable={false}
                 destroyOnHidden
                 width={1000}
@@ -744,7 +744,7 @@ export default function Services() {
                 onOk={handleNewMainOeuvreSave}
                 onCancel={handleNewMainOeuvreCancel}
                 okText="Enregistrer"
-                cancelText="Annuler"
+                cancelText="Fermer"
                 maskClosable={false}
                 destroyOnHidden
                 width={700}
@@ -788,7 +788,7 @@ export default function Services() {
                 onOk={handleNewProduitSave}
                 onCancel={handleNewProduitCancel}
                 okText="Enregistrer"
-                cancelText="Annuler"
+                cancelText="Fermer"
                 maskClosable={false}
                 destroyOnHidden
                 width={700}

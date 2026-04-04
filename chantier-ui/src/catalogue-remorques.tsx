@@ -117,7 +117,7 @@ const RemorqueCatalogue: React.FC = () => {
         title: "Modifications non enregistrées",
         content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
         okText: "Fermer",
-        cancelText: "Annuler",
+        cancelText: "Fermer",
         onOk: () => {
           setFormDirty(false);
           setModalVisible(false);
@@ -332,7 +332,7 @@ const RemorqueCatalogue: React.FC = () => {
         onCancel={handleModalCancel}
         maskClosable={false}
         okText="Enregistrer"
-        cancelText="Annuler"
+        cancelText="Fermer"
         destroyOnHidden
         width={1024}
       >

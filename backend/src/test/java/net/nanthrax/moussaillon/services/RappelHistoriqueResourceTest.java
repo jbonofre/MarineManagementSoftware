@@ -40,7 +40,7 @@ public class RappelHistoriqueResourceTest {
         // Creer une vente et verifier que le endpoint historique est accessible
         int venteId = given()
             .contentType("application/json")
-            .body("{\"status\":\"EN_ATTENTE\",\"type\":\"DEVIS\",\"prixVenteTTC\":100.0,"
+            .body("{\"status\":\"DEVIS\",\"prixVenteTTC\":100.0,"
                 + "\"rappel1Jours\":999,"
                 + "\"date\":\"2026-04-01T00:00:00\","
                 + "\"client\":{\"id\":100}}")

@@ -142,7 +142,7 @@ public class TechnicienPortalResource {
             if (vente.client != null) {
                 item.clientNom = (vente.client.prenom != null ? vente.client.prenom + " " : "") + vente.client.nom;
             }
-            item.venteType = vente.type != null ? vente.type.name() : null;
+            item.venteType = vente.status != null ? vente.status.name() : null;
             if (vente.bateau != null) {
                 item.bateauNom = vente.bateau.name;
             }
@@ -218,7 +218,7 @@ public class TechnicienPortalResource {
             if (vente.client != null) {
                 item.clientNom = (vente.client.prenom != null ? vente.client.prenom + " " : "") + vente.client.nom;
             }
-            item.venteType = vente.type != null ? vente.type.name() : null;
+            item.venteType = vente.status != null ? vente.status.name() : null;
             if (vente.bateau != null) {
                 item.bateauNom = vente.bateau.name;
             }

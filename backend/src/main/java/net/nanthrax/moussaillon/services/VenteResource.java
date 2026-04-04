@@ -64,7 +64,10 @@ public class VenteResource {
         String dateStr = entity.date != null
                 ? new Timestamp(entity.date.getTime()).toLocalDateTime().toLocalDate().toString()
                 : "-";
-        String typeLabel = entity.type != null ? entity.type.name() : "-";
+        boolean isDevis = entity.status == VenteEntity.Status.DEVIS;
+        boolean isOrdreReparation = isDevis && entity.ordreDeReparation;
+        boolean showPrices = !isOrdreReparation;
+        String typeLabel = isOrdreReparation ? "Ordre de Réparation" : (isDevis ? "Devis" : "Facture");
         String statutLabel = entity.status != null ? entity.status.name() : "-";
         String prixVenteTTC = String.format("%.2f EUR", entity.prixVenteTTC);
         String modePaiement = entity.modePaiement != null ? entity.modePaiement.name() : "-";
@@ -74,10 +77,12 @@ public class VenteResource {
         if (entity.venteForfaits != null) {
             for (VenteForfaitEntity vf : entity.venteForfaits) {
                 String nom = vf.forfait != null ? vf.forfait.nom : "Forfait";
-                double total = vf.forfait != null ? vf.forfait.prixTTC * vf.quantite : 0;
-                lignes.append("- Forfait : ").append(nom)
-                        .append(" x").append(vf.quantite)
-                        .append(" = ").append(String.format("%.2f EUR", total)).append("\n");
+                lignes.append("- Forfait : ").append(nom).append(" x").append(vf.quantite);
+                if (showPrices) {
+                    double total = vf.forfait != null ? vf.forfait.prixTTC * vf.quantite : 0;
+                    lignes.append(" = ").append(String.format("%.2f EUR", total));
+                }
+                lignes.append("\n");
             }
         }
         if (entity.produits != null) {
@@ -95,19 +100,23 @@ public class VenteResource {
                 ProduitCatalogueEntity p = produitMap.get(entry.getKey());
                 String nom = p.nom + (p.marque != null ? " (" + p.marque + ")" : "");
                 int qty = entry.getValue()[0];
-                double total = entry.getValue()[1] / 100.0;
-                lignes.append("- Produit : ").append(nom)
-                        .append(" x").append(qty)
-                        .append(" = ").append(String.format("%.2f EUR", total)).append("\n");
+                lignes.append("- Produit : ").append(nom).append(" x").append(qty);
+                if (showPrices) {
+                    double total = entry.getValue()[1] / 100.0;
+                    lignes.append(" = ").append(String.format("%.2f EUR", total));
+                }
+                lignes.append("\n");
             }
         }
         if (entity.venteServices != null) {
             for (VenteServiceEntity vs : entity.venteServices) {
                 String nom = vs.service != null ? vs.service.nom : "Service";
-                double total = vs.service != null ? vs.service.prixTTC * vs.quantite : 0;
-                lignes.append("- Service : ").append(nom)
-                        .append(" x").append(vs.quantite)
-                        .append(" = ").append(String.format("%.2f EUR", total)).append("\n");
+                lignes.append("- Service : ").append(nom).append(" x").append(vs.quantite);
+                if (showPrices) {
+                    double total = vs.service != null ? vs.service.prixTTC * vs.quantite : 0;
+                    lignes.append(" = ").append(String.format("%.2f EUR", total));
+                }
+                lignes.append("\n");
             }
         }
         if (lignes.length() == 0) {
@@ -140,15 +149,17 @@ public class VenteResource {
                     .replace("{societe}", societeNom);
         } else {
             subject = "Votre " + typeLabel + " #" + entity.id + " - " + societeNom;
-            body = "Bonjour " + clientName + ",\n\n"
-                    + "Veuillez trouver les informations de votre " + typeLabel + " #" + entity.id + ".\n\n"
-                    + "Date             : " + dateStr + "\n"
-                    + "Type             : " + typeLabel + "\n"
-                    + "Statut           : " + statutLabel + "\n"
-                    + "Prix vente TTC   : " + prixVenteTTC + "\n"
-                    + "Mode de paiement : " + modePaiement + "\n\n"
-                    + "Lignes :\n" + lignes + "\n"
-                    + "Cordialement,\n" + societeNom;
+            StringBuilder bodyBuilder = new StringBuilder();
+            bodyBuilder.append("Bonjour ").append(clientName).append(",\n\n")
+                    .append("Veuillez trouver les informations de votre ").append(typeLabel).append(" #").append(entity.id).append(".\n\n")
+                    .append("Date             : ").append(dateStr).append("\n");
+            if (showPrices) {
+                bodyBuilder.append("Prix vente TTC   : ").append(prixVenteTTC).append("\n")
+                        .append("Mode de paiement : ").append(modePaiement).append("\n");
+            }
+            bodyBuilder.append("\nDétails :\n").append(lignes).append("\n")
+                    .append("Cordialement,\n").append(societeNom);
+            body = bodyBuilder.toString();
         }
 
         mailer.send(Mail.withHtml(entity.client.email, subject, body));
@@ -179,32 +190,17 @@ public class VenteResource {
     @Path("/search")
     public List<VenteEntity> search(
             @QueryParam("status") String status,
-            @QueryParam("type") String type,
             @QueryParam("clientId") Long clientId
     ) {
         VenteEntity.Status parsedStatus = parseStatus(status);
-        VenteEntity.Type parsedType = parseType(type);
         boolean hasStatus = parsedStatus != null;
-        boolean hasType = parsedType != null;
         boolean hasClientId = clientId != null;
 
-        if (hasStatus && hasType && hasClientId) {
-            return VenteEntity.list("status = ?1 and type = ?2 and client.id = ?3", parsedStatus, parsedType, clientId);
-        }
-        if (hasStatus && hasType) {
-            return VenteEntity.list("status = ?1 and type = ?2", parsedStatus, parsedType);
-        }
         if (hasStatus && hasClientId) {
             return VenteEntity.list("status = ?1 and client.id = ?2", parsedStatus, clientId);
         }
-        if (hasType && hasClientId) {
-            return VenteEntity.list("type = ?1 and client.id = ?2", parsedType, clientId);
-        }
         if (hasStatus) {
             return VenteEntity.list("status = ?1", parsedStatus);
-        }
-        if (hasType) {
-            return VenteEntity.list("type = ?1", parsedType);
         }
         if (hasClientId) {
             return VenteEntity.list("client.id = ?1", clientId);
@@ -252,6 +248,9 @@ public class VenteResource {
                 }
             }
         }
+        if (vente.dateDevis == null) {
+            vente.dateDevis = new Timestamp(System.currentTimeMillis());
+        }
         vente.persist();
         return Response.status(Response.Status.CREATED).entity(vente).build();
     }
@@ -275,6 +274,12 @@ public class VenteResource {
             throw new WebApplicationException("La vente (" + id + ") n'est pas trouvee", 404);
         }
 
+        if (entity.status == VenteEntity.Status.FACTURE_PAYEE) {
+            throw new WebApplicationException(
+                Response.status(Response.Status.BAD_REQUEST)
+                    .entity(java.util.Map.of("error", "Une vente payée ne peut pas être supprimée"))
+                    .build());
+        }
         entity.delete();
         return Response.status(204).build();
     }
@@ -288,8 +293,39 @@ public class VenteResource {
             throw new WebApplicationException("La vente (" + id + ") n'est pas trouvee", 404);
         }
 
+        if (entity.status == VenteEntity.Status.FACTURE_PAYEE) {
+            throw new WebApplicationException(
+                Response.status(Response.Status.BAD_REQUEST)
+                    .entity(java.util.Map.of("error", "Une vente payée ne peut pas être modifiée"))
+                    .build());
+        }
+
+        // Track step date history on transitions
+        Timestamp now = new Timestamp(System.currentTimeMillis());
+        if (vente.status != entity.status || vente.bonPourAccord != entity.bonPourAccord) {
+            if (vente.status == VenteEntity.Status.DEVIS && !vente.bonPourAccord && entity.dateDevis == null) {
+                entity.dateDevis = now;
+            }
+            if (vente.bonPourAccord && !entity.bonPourAccord && entity.dateBonPourAccord == null) {
+                entity.dateBonPourAccord = now;
+            }
+            if (vente.status == VenteEntity.Status.FACTURE_EN_ATTENTE && entity.status != VenteEntity.Status.FACTURE_EN_ATTENTE && entity.dateFactureEnAttente == null) {
+                entity.dateFactureEnAttente = now;
+            }
+            if (vente.status == VenteEntity.Status.FACTURE_PRETE && entity.status != VenteEntity.Status.FACTURE_PRETE && entity.dateFacturePrete == null) {
+                entity.dateFacturePrete = now;
+            }
+            if (vente.status == VenteEntity.Status.FACTURE_PAYEE && entity.status != VenteEntity.Status.FACTURE_PAYEE && entity.dateFacturePayee == null) {
+                entity.dateFacturePayee = now;
+            }
+        }
         entity.status = vente.status;
-        entity.type = vente.type;
+        entity.bonPourAccord = vente.bonPourAccord;
+        entity.ordreDeReparation = vente.ordreDeReparation;
+        entity.comptoir = vente.comptoir;
+        if (vente.signatureBonPourAccord != null) {
+            entity.signatureBonPourAccord = vente.signatureBonPourAccord;
+        }
         entity.client = vente.client;
         entity.bateau = vente.bateau;
         entity.moteur = vente.moteur;
@@ -415,6 +451,20 @@ public class VenteResource {
             }
         }
 
+        // Validate planification: bonPourAccord required for scheduling
+        if (!entity.bonPourAccord) {
+            for (VenteForfaitEntity vf : entity.venteForfaits) {
+                if (vf.status != null && vf.status != VenteForfaitEntity.Status.EN_ATTENTE) {
+                    throw new WebApplicationException("Le bon pour accord est requis avant de planifier les interventions", 400);
+                }
+            }
+            for (VenteServiceEntity vs : entity.venteServices) {
+                if (vs.status != null && vs.status != VenteServiceEntity.Status.EN_ATTENTE) {
+                    throw new WebApplicationException("Le bon pour accord est requis avant de planifier les interventions", 400);
+                }
+            }
+        }
+
         // Decrement stock when an item transitions to EN_COURS (once per vente)
         if (!entity.stockDecremented) {
             boolean hasEnCours = entity.venteForfaits.stream()
@@ -424,6 +474,45 @@ public class VenteResource {
             if (hasEnCours) {
                 decrementStock(entity);
                 entity.stockDecremented = true;
+            }
+        }
+
+        // Validate manual transition to FACTURE_PRETE: all tasks must be TERMINEE/ANNULEE
+        boolean hasForfaitsOrServices = !entity.venteForfaits.isEmpty() || !entity.venteServices.isEmpty();
+        if (entity.status == VenteEntity.Status.FACTURE_PRETE && hasForfaitsOrServices) {
+            boolean allDone = entity.venteForfaits.stream()
+                    .allMatch(vf -> vf.status == VenteForfaitEntity.Status.TERMINEE || vf.status == VenteForfaitEntity.Status.ANNULEE)
+                    && entity.venteServices.stream()
+                    .allMatch(vs -> vs.status == VenteServiceEntity.Status.TERMINEE || vs.status == VenteServiceEntity.Status.ANNULEE);
+            boolean hasAtLeastOne = entity.venteForfaits.stream()
+                    .anyMatch(vf -> vf.status == VenteForfaitEntity.Status.TERMINEE)
+                    || entity.venteServices.stream()
+                    .anyMatch(vs -> vs.status == VenteServiceEntity.Status.TERMINEE);
+            if (!allDone || !hasAtLeastOne) {
+                throw new WebApplicationException(
+                    "Toutes les prestations doivent être terminées avant de passer en facture complète",
+                    Response.status(Response.Status.BAD_REQUEST)
+                        .entity(java.util.Map.of("error", "Toutes les prestations doivent être terminées avant de passer en facture complète"))
+                        .build());
+            }
+        }
+
+        // Auto-compute status: FACTURE_PRETE when all forfaits/services are TERMINEE
+        if (hasForfaitsOrServices && entity.bonPourAccord
+                && entity.status != VenteEntity.Status.FACTURE_PAYEE) {
+            boolean allTerminee = entity.venteForfaits.stream()
+                    .allMatch(vf -> vf.status == VenteForfaitEntity.Status.TERMINEE || vf.status == VenteForfaitEntity.Status.ANNULEE)
+                    && entity.venteServices.stream()
+                    .allMatch(vs -> vs.status == VenteServiceEntity.Status.TERMINEE || vs.status == VenteServiceEntity.Status.ANNULEE);
+            boolean hasAtLeastOneTerminee = entity.venteForfaits.stream()
+                    .anyMatch(vf -> vf.status == VenteForfaitEntity.Status.TERMINEE)
+                    || entity.venteServices.stream()
+                    .anyMatch(vs -> vs.status == VenteServiceEntity.Status.TERMINEE);
+            if (allTerminee && hasAtLeastOneTerminee) {
+                entity.status = VenteEntity.Status.FACTURE_PRETE;
+                if (entity.dateFacturePrete == null) {
+                    entity.dateFacturePrete = new Timestamp(System.currentTimeMillis());
+                }
             }
         }
 
@@ -534,14 +623,4 @@ public class VenteResource {
         }
     }
 
-    private VenteEntity.Type parseType(String type) {
-        if (type == null || type.trim().isEmpty()) {
-            return null;
-        }
-        try {
-            return VenteEntity.Type.valueOf(type.trim());
-        } catch (IllegalArgumentException ex) {
-            throw new WebApplicationException("Type de vente invalide: " + type, 400);
-        }
-    }
 }

@@ -158,7 +158,7 @@ function Clients() {
         title: "Modifications non enregistrées",
         content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
         okText: "Fermer",
-        cancelText: "Annuler",
+        cancelText: "Fermer",
         onOk: () => {
           setFormDirty(false);
           setModalVisible(false);
@@ -331,7 +331,7 @@ function Clients() {
         onCancel={handleModalCancel}
         onOk={handleModalOk}
         okText="Enregistrer"
-        cancelText="Annuler"
+        cancelText="Fermer"
         destroyOnHidden
         width={1024}
       >

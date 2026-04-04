@@ -4,7 +4,6 @@ import { CalendarOutlined, EditOutlined, EyeOutlined, LeftOutlined, RightOutline
 import api from './api.ts';
 import dayjs from 'dayjs';
 
-type VenteType = 'DEVIS' | 'FACTURE' | 'COMPTOIR';
 type PlanningStatus = 'EN_ATTENTE' | 'PLANIFIEE' | 'EN_COURS' | 'TERMINEE' | 'INCIDENT' | 'ANNULEE';
 
 interface ClientEntity {
@@ -55,7 +54,7 @@ interface VenteServiceEntry {
 interface VenteEntity {
     id?: number;
     status: string;
-    type?: VenteType;
+    bonPourAccord?: boolean;
     client?: ClientEntity;
     bateau?: { id: number; name?: string };
     produits?: ProduitCatalogueEntity[];
@@ -121,11 +120,6 @@ const statusOptions: Array<{ value: PlanningStatus; label: string }> = [
     { value: 'ANNULEE', label: 'Annulee' }
 ];
 
-const typeOptions: Array<{ value: VenteType; label: string }> = [
-    { value: 'DEVIS', label: 'Devis' },
-    { value: 'FACTURE', label: 'Facture' },
-    { value: 'COMPTOIR', label: 'Comptoir' }
-];
 
 const statusColor: Record<PlanningStatus, string> = {
     EN_ATTENTE: 'default',
@@ -320,6 +314,10 @@ export default function Planning() {
     );
 
     const openPlanningModal = (row: PlanningItemRow, forcedDate?: string) => {
+        if (!row.vente.bonPourAccord) {
+            message.warning('Le bon pour accord est requis avant de planifier les interventions');
+            return;
+        }
         setCurrentRow(row);
         form.setFieldsValue({
             date:
@@ -342,7 +340,7 @@ export default function Planning() {
                 title: "Modifications non enregistrées",
                 content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
                 okText: "Fermer",
-                cancelText: "Annuler",
+                cancelText: "Fermer",
                 onOk: () => {
                     setFormDirty(false);
                     setModalVisible(false);
@@ -662,9 +660,11 @@ export default function Planning() {
             key: 'actions',
             render: (_: unknown, record: PlanningItemRow) => (
                 <Space>
-                    <Button type="primary" icon={<CalendarOutlined />} onClick={() => openPlanningModal(record, selectedDate)}>
-                        Planifier
-                    </Button>
+                    <Tooltip title={!record.vente.bonPourAccord ? 'Le bon pour accord est requis' : undefined}>
+                        <Button type="primary" icon={<CalendarOutlined />} disabled={!record.vente.bonPourAccord} onClick={() => openPlanningModal(record, selectedDate)}>
+                            Planifier
+                        </Button>
+                    </Tooltip>
                     {record.vente.id ? (
                         <Button icon={<EyeOutlined />} onClick={() => openPrestationModal(record.vente.id!)}>
                             Voir prestation
@@ -689,9 +689,11 @@ export default function Planning() {
             key: 'actions',
             render: (_: unknown, record: PlanningItemRow) => (
                 <Space>
-                    <Button icon={<EditOutlined />} onClick={() => openPlanningModal(record)}>
-                        Replanifier
-                    </Button>
+                    <Tooltip title={!record.vente.bonPourAccord ? 'Le bon pour accord est requis' : undefined}>
+                        <Button icon={<EditOutlined />} disabled={!record.vente.bonPourAccord} onClick={() => openPlanningModal(record)}>
+                            Replanifier
+                        </Button>
+                    </Tooltip>
                     {record.vente.id && (
                         <Button icon={<EyeOutlined />} onClick={() => openPrestationModal(record.vente.id!)}>
                             Voir prestation
@@ -1053,7 +1055,7 @@ export default function Planning() {
                 onOk={handleSavePlanning}
                 okText="Enregistrer"
                 confirmLoading={saving}
-                cancelText="Annuler"
+                cancelText="Fermer"
                 width={720}
                 onCancel={handleModalCancel}
                 destroyOnHidden
@@ -1123,8 +1125,8 @@ export default function Planning() {
                     <div>
                         <Card size="small" style={{ marginBottom: 12 }}>
                             <Row gutter={16}>
-                                <Col span={8}><strong>Type:</strong> {typeOptions.find((t) => t.value === prestationVente.type)?.label || prestationVente.type || '-'}</Col>
                                 <Col span={8}><strong>Statut:</strong> {prestationVente.status || '-'}</Col>
+                                <Col span={8}><strong>Bon pour accord:</strong> {prestationVente.bonPourAccord ? 'Oui' : 'Non'}</Col>
                                 <Col span={8}><strong>Date:</strong> {prestationVente.date ? dayjs(prestationVente.date).format('DD/MM/YYYY') : '-'}</Col>
                             </Row>
                             <Row gutter={16} style={{ marginTop: 8 }}>

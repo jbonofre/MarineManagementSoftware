@@ -608,8 +608,8 @@ export default function MobileApp({ user, onLogout }: MobileAppProps) {
         bateaux: 'Mes bateaux',
         moteurs: 'Mes moteurs',
         remorques: 'Mes remorques',
-        factures: 'Mes factures',
-        prestations: 'Mes prestations',
+        factures: 'Mes ventes & prestations',
+        prestations: 'Interventions',
         annonces: 'Petites annonces',
         profil: 'Mon profil',
     };

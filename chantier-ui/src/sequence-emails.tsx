@@ -231,7 +231,7 @@ function SequenceTable({ cible, variables }: { cible: string; variables: string 
                 open={editVisible}
                 title={editing && editing.id ? 'Modifier l\'étape' : 'Ajouter une étape'}
                 okText="Enregistrer"
-                cancelText="Annuler"
+                cancelText="Fermer"
                 width={900}
                 onOk={() => form.submit()}
                 onCancel={() => {

@@ -385,7 +385,7 @@ export default function Forfaits() {
                 title: "Modifications non enregistrées",
                 content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
                 okText: "Fermer",
-                cancelText: "Annuler",
+                cancelText: "Fermer",
                 onOk: () => {
                     setFormDirty(false);
                     setModalVisible(false);
@@ -402,7 +402,7 @@ export default function Forfaits() {
                 title: "Modifications non enregistrées",
                 content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
                 okText: "Fermer",
-                cancelText: "Annuler",
+                cancelText: "Fermer",
                 onOk: () => {
                     setNewProduitFormDirty(false);
                     setNewProduitModalVisible(false);
@@ -419,7 +419,7 @@ export default function Forfaits() {
                 title: "Modifications non enregistrées",
                 content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
                 okText: "Fermer",
-                cancelText: "Annuler",
+                cancelText: "Fermer",
                 onOk: () => {
                     setNewMainOeuvreFormDirty(false);
                     setNewMainOeuvreModalVisible(false);
@@ -730,7 +730,7 @@ export default function Forfaits() {
                 onOk={handleSave}
                 onCancel={handleModalCancel}
                 okText="Enregistrer"
-                cancelText="Annuler"
+                cancelText="Fermer"
                 maskClosable={false}
                 destroyOnHidden
                 width={1024}
@@ -1023,7 +1023,7 @@ export default function Forfaits() {
                     maskClosable={false}
                     width={1024}
                     okText="Enregistrer"
-                    cancelText="Annuler"
+                    cancelText="Fermer"
                     destroyOnHidden
                 >
                     <Form form={newProduitForm} layout="vertical" initialValues={defaultNewProduit} onValuesChange={(...args) => { setNewProduitFormDirty(true); onNewProduitValuesChange(...args); }}>
@@ -1109,7 +1109,7 @@ export default function Forfaits() {
                     maskClosable={false}
                     width={900}
                     okText="Enregistrer"
-                    cancelText="Annuler"
+                    cancelText="Fermer"
                     destroyOnHidden
                 >
                     <Form form={newMainOeuvreForm} layout="vertical" initialValues={defaultNewMainOeuvre} onValuesChange={(...args) => { setNewMainOeuvreFormDirty(true); onNewMainOeuvreValuesChange(...args); }}>

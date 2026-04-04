@@ -159,7 +159,7 @@ export default function Annonces() {
                 title: "Modifications non enregistrées",
                 content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
                 okText: "Fermer",
-                cancelText: "Annuler",
+                cancelText: "Fermer",
                 onOk: () => {
                     setFormDirty(false);
                     setModalOpen(false);
@@ -348,7 +348,7 @@ export default function Annonces() {
                 onCancel={handleModalCancel}
                 onOk={handleSave}
                 okText={editing ? 'Mettre a jour' : 'Publier'}
-                cancelText="Annuler"
+                cancelText="Fermer"
                 width={650}
             >
                 <Form form={form} layout="vertical" onValuesChange={() => setFormDirty(true)}>

@@ -171,7 +171,7 @@ function Header(props) {
                 title: "Modifications non enregistrées",
                 content: "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer ?",
                 okText: "Fermer",
-                cancelText: "Annuler",
+                cancelText: "Fermer",
                 onOk: () => {
                     setFormDirty(false);
                     preferencesForm.resetFields();
@@ -227,7 +227,7 @@ function Header(props) {
                 open={preferencesVisible}
                 title="Préférences"
                 okText="Enregistrer"
-                cancelText="Annuler"
+                cancelText="Fermer"
                 confirmLoading={preferencesLoading}
                 onOk={() => preferencesForm.submit()}
                 onCancel={handlePreferencesCancel}

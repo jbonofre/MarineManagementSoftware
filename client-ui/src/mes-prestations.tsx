@@ -56,7 +56,7 @@ type PlanningItem = (VenteForfaitEntity | VenteServiceEntity) & { _type: 'forfai
 interface VenteEntity {
     id: number;
     status: string;
-    type: string;
+    bonPourAccord?: boolean;
     date?: string;
     bateau?: { name?: string; immatriculation?: string };
     moteur?: { numeroSerie?: string; modele?: { nom?: string; marque?: string } };
@@ -103,12 +103,11 @@ const taskStatusIcon: Record<string, React.ReactNode> = {
     ANNULEE: <StopOutlined />,
 };
 
-const typeLabel: Record<string, string> = {
+const statusLabel: Record<string, string> = {
     DEVIS: 'Devis',
-    FACTURE: 'Facture',
-    COMMANDE: 'Commande',
-    LIVRAISON: 'Livraison',
-    COMPTOIR: 'Comptoir',
+    FACTURE_EN_ATTENTE: 'Facture en attente',
+    FACTURE_PRETE: 'Facture prête',
+    FACTURE_PAYEE: 'Facture payée',
 };
 
 const statusOrder = ['EN_ATTENTE', 'PLANIFIEE', 'EN_COURS', 'TERMINEE'];
@@ -213,7 +212,7 @@ export default function MesPrestations({ clientId }: MesPrestationsProps) {
     ];
 
     return (
-        <Card title="Suivi de mes prestations">
+        <Card title="Suivi des interventions">
             <Spin spinning={loading}>
                 {/* Summary cards */}
                 <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
@@ -252,7 +251,7 @@ export default function MesPrestations({ clientId }: MesPrestationsProps) {
                         const items = getPlanningItems(vente);
                         const progress = computeProgress(items);
                         const asset = assetLabel(vente);
-                        const title = `${typeLabel[vente.type] || vente.type} #${vente.id}${asset ? ` - ${asset}` : ''} (${formatDate(vente.date)})`;
+                        const title = `${statusLabel[vente.status] || vente.status} #${vente.id}${asset ? ` - ${asset}` : ''} (${formatDate(vente.date)})`;
 
                         return {
                             key: String(vente.id),
