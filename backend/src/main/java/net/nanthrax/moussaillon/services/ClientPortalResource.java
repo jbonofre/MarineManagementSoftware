@@ -14,6 +14,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.PUT;
 import net.nanthrax.moussaillon.persistence.AnnonceEntity;
 import net.nanthrax.moussaillon.persistence.BateauClientEntity;
 import net.nanthrax.moussaillon.persistence.ClientEntity;
@@ -170,6 +171,28 @@ public class ClientPortalResource {
     @Path("/clients/{id}/ventes")
     public List<VenteEntity> getClientVentes(@PathParam("id") long id) {
         return VenteEntity.list("client.id = ?1", id);
+    }
+
+    @PUT
+    @Path("/ventes/{id}/bon-pour-accord")
+    @Transactional
+    public VenteEntity signerBonPourAccord(@PathParam("id") long id, java.util.Map<String, String> body) {
+        VenteEntity entity = VenteEntity.findById(id);
+        if (entity == null) {
+            throw new WebApplicationException("La vente n'est pas trouvée", 404);
+        }
+        if (entity.status != VenteEntity.Status.DEVIS) {
+            throw new WebApplicationException(
+                Response.status(Response.Status.BAD_REQUEST)
+                    .entity(java.util.Map.of("error", "Le bon pour accord n'est possible qu'au statut Devis"))
+                    .build());
+        }
+        entity.bonPourAccord = true;
+        entity.dateBonPourAccord = new java.sql.Timestamp(System.currentTimeMillis());
+        if (body != null && body.get("signature") != null) {
+            entity.signatureBonPourAccord = body.get("signature");
+        }
+        return entity;
     }
 
     @GET
