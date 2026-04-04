@@ -53,6 +53,21 @@ public class VenteEntity extends PanacheEntity {
     @JsonbTypeAdapter(TimestampJsonbAdapter.class)
     public Timestamp date;
 
+    @JsonbTypeAdapter(TimestampJsonbAdapter.class)
+    public Timestamp dateDevis;
+
+    @JsonbTypeAdapter(TimestampJsonbAdapter.class)
+    public Timestamp dateBonPourAccord;
+
+    @JsonbTypeAdapter(TimestampJsonbAdapter.class)
+    public Timestamp dateFactureEnAttente;
+
+    @JsonbTypeAdapter(TimestampJsonbAdapter.class)
+    public Timestamp dateFacturePrete;
+
+    @JsonbTypeAdapter(TimestampJsonbAdapter.class)
+    public Timestamp dateFacturePayee;
+
     public double montantHT;
 
     public double remise;

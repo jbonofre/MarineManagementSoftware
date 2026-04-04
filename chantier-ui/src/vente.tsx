@@ -14,6 +14,7 @@ import {
     Row,
     Select,
     Space,
+    Steps,
     Tabs,
     Table,
     Tag,
@@ -21,7 +22,7 @@ import {
     Dropdown,
     message
 } from 'antd';
-import { CalendarOutlined, CreditCardOutlined, DeleteOutlined, EditOutlined, MailOutlined, PlusCircleOutlined, PlusOutlined, PrinterOutlined, SendOutlined } from '@ant-design/icons';
+import { CalendarOutlined, CheckCircleOutlined, CreditCardOutlined, DeleteOutlined, EditOutlined, FileDoneOutlined, FileTextOutlined, MailOutlined, PlusCircleOutlined, PlusOutlined, PrinterOutlined, SendOutlined, SolutionOutlined, WalletOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import api from './api.ts';
 import { useReferenceValeurs } from './useReferenceValeurs.ts';
@@ -253,6 +254,11 @@ interface VenteEntity {
     venteServices?: VenteServiceEntity[];
     produits?: ProduitCatalogueEntity[];
     date?: string;
+    dateDevis?: string;
+    dateBonPourAccord?: string;
+    dateFactureEnAttente?: string;
+    dateFacturePrete?: string;
+    dateFacturePayee?: string;
     montantHT?: number;
     remise?: number;
     montantTTC?: number;
@@ -367,6 +373,35 @@ const statusColor: Record<VenteStatus, string> = {
     FACTURE_PAYEE: 'green'
 };
 
+const venteStepIndex = (status: VenteStatus, bonPourAccord?: boolean): number => {
+    switch (status) {
+        case 'DEVIS':
+            return bonPourAccord ? 1 : 0;
+        case 'FACTURE_EN_ATTENTE':
+            return 2;
+        case 'FACTURE_PRETE':
+            return 3;
+        case 'FACTURE_PAYEE':
+            return 4;
+        default:
+            return 0;
+    }
+};
+
+const formatStepDate = (date?: string) => {
+    if (!date) return undefined;
+    const d = dayjs(date);
+    return d.isValid() ? d.format('DD/MM/YYYY HH:mm') : undefined;
+};
+
+const venteStepItems = (vente?: VenteEntity | null) => [
+    { title: 'Devis', icon: <FileTextOutlined />, description: formatStepDate(vente?.dateDevis) },
+    { title: 'Bon pour accord', icon: <SolutionOutlined />, description: formatStepDate(vente?.dateBonPourAccord) },
+    { title: 'Facture en attente', icon: <FileDoneOutlined />, description: formatStepDate(vente?.dateFactureEnAttente) },
+    { title: 'Facture complète', icon: <WalletOutlined />, description: formatStepDate(vente?.dateFacturePrete) },
+    { title: 'Facture payée', icon: <CheckCircleOutlined />, description: formatStepDate(vente?.dateFacturePayee) },
+];
+
 const getTodayDayjs = () => dayjs();
 
 const toDateDayjs = (value?: string) => {
@@ -452,6 +487,8 @@ export default function Vente() {
     const [filters, setFilters] = useState<SearchFilters>({});
     const [searchForm] = Form.useForm<SearchFilters>();
     const [form] = Form.useForm<VenteFormValues>();
+    const watchedStatus = Form.useWatch('status', form) as VenteStatus | undefined;
+    const watchedBonPourAccord = Form.useWatch('bonPourAccord', form) as boolean | undefined;
     const [newProduitModalVisible, setNewProduitModalVisible] = useState(false);
     const [newProduitTargetLine, setNewProduitTargetLine] = useState<number | null>(null);
     const [newProduitForm] = Form.useForm();
@@ -652,7 +689,7 @@ export default function Vente() {
                 const updated = [...currentLines];
                 updated[newProduitTargetLine] = { ...updated[newProduitTargetLine], produitId: created.id };
                 form.setFieldValue('produits', updated);
-                recalculateFromLines('auto');
+                recalculateFromLines('auto', { produits: [...produits, created] });
             }
             setNewProduitModalVisible(false);
         } catch {
@@ -753,7 +790,7 @@ export default function Vente() {
                 const updated = res.data as ServiceEntity;
                 message.success('Service modifié avec succès');
                 setServices((prev) => prev.map((s) => s.id === editServiceId ? updated : s));
-                recalculateFromLines('auto');
+                recalculateFromLines('auto', { services: services.map((s) => s.id === editServiceId ? updated : s) });
             } else {
                 const res = await api.post('/services', payload);
                 const created = res.data as ServiceEntity;
@@ -764,7 +801,7 @@ export default function Vente() {
                     const updatedLines = [...currentLines];
                     updatedLines[newServiceTargetLine] = { ...updatedLines[newServiceTargetLine], serviceId: created.id };
                     form.setFieldValue('venteServices', updatedLines);
-                    recalculateFromLines('auto');
+                    recalculateFromLines('auto', { services: [...services, created] });
                 }
             }
             setNewServiceModalVisible(false);
@@ -904,7 +941,7 @@ export default function Vente() {
                 const updated = [...currentLines];
                 updated[newForfaitTargetLine] = { ...updated[newForfaitTargetLine], forfaitId: created.id };
                 form.setFieldValue('venteForfaits', updated);
-                recalculateFromLines('auto');
+                recalculateFromLines('auto', { forfaits: [...forfaits, created] });
             }
             setNewForfaitModalVisible(false);
         } catch {
@@ -1499,7 +1536,10 @@ export default function Vente() {
         { key: 'payplug', label: 'Payer via PayPlug', onClick: () => handlePayment(vente, 'payplug') },
     ]);
 
-    const recalculateFromLines = (remiseSource: 'amount' | 'percentage' | 'auto' = 'auto') => {
+    const recalculateFromLines = (
+        remiseSource: 'amount' | 'percentage' | 'auto' = 'auto',
+        overrides?: { forfaits?: ForfaitEntity[]; produits?: ProduitCatalogueEntity[]; services?: ServiceEntity[] }
+    ) => {
         const venteForfaitLines = form.getFieldValue('venteForfaits') || [];
         const produitLines = form.getFieldValue('produits') || [];
         const venteServiceLines = form.getFieldValue('venteServices') || [];
@@ -1507,18 +1547,22 @@ export default function Vente() {
         let remisePourcentage = form.getFieldValue('remisePourcentage') || 0;
         const tva = form.getFieldValue('tva') || 0;
 
+        const allForfaits = overrides?.forfaits ?? forfaits;
+        const allProduits = overrides?.produits ?? produits;
+        const allServices = overrides?.services ?? services;
+
         const forfaitsTTC = venteForfaitLines.reduce((sum: number, line: { forfaitId?: number; quantite?: number }) => {
-            const prixUnitaire = forfaits.find((item) => item.id === line.forfaitId)?.prixTTC || 0;
+            const prixUnitaire = allForfaits.find((item) => item.id === line.forfaitId)?.prixTTC || 0;
             const quantite = Math.max(1, Math.floor(line.quantite || 1));
             return sum + (prixUnitaire * quantite);
         }, 0);
         const produitsTTC = produitLines.reduce((sum: number, line: { produitId?: number; quantite?: number }) => {
-            const prixUnitaire = produits.find((item) => item.id === line.produitId)?.prixVenteTTC || 0;
+            const prixUnitaire = allProduits.find((item) => item.id === line.produitId)?.prixVenteTTC || 0;
             const quantite = Math.max(1, Math.floor(line.quantite || 1));
             return sum + (prixUnitaire * quantite);
         }, 0);
         const servicesTTC = venteServiceLines.reduce((sum: number, line: { serviceId?: number; quantite?: number }) => {
-            const prixUnitaire = services.find((item) => item.id === line.serviceId)?.prixTTC || 0;
+            const prixUnitaire = allServices.find((item) => item.id === line.serviceId)?.prixTTC || 0;
             const quantite = Math.max(1, Math.floor(line.quantite || 1));
             return sum + (prixUnitaire * quantite);
         }, 0);
@@ -1673,9 +1717,12 @@ export default function Vente() {
         {
             title: 'Statut',
             dataIndex: 'status',
-            render: (value: VenteStatus) => {
-                const label = statusOptions.find((item) => item.value === value)?.label || value;
-                return <Tag color={statusColor[value] || 'default'}>{label}</Tag>;
+            render: (value: VenteStatus, record: VenteEntity) => {
+                const label = value === 'DEVIS' && record.bonPourAccord
+                    ? 'Bon pour accord'
+                    : statusOptions.find((item) => item.value === value)?.label || value;
+                const color = value === 'DEVIS' && record.bonPourAccord ? 'cyan' : statusColor[value] || 'default';
+                return <Tag color={color}>{label}</Tag>;
             }
         },
         {
@@ -1811,16 +1858,15 @@ export default function Vente() {
                     >
                         Envoyer par email
                     </Button>,
-                    <Dropdown
+                    ...(watchedStatus === 'FACTURE_PAYEE' ? [<Dropdown
                         key="payment"
                         menu={{ items: currentVente ? paymentMenuItems(currentVente) : [] }}
                         placement="topRight"
-                        disabled={!currentVente || currentVente.status !== 'FACTURE_PRETE'}
                     >
-                        <Button icon={<CreditCardOutlined />} disabled={!currentVente || currentVente.status !== 'FACTURE_PRETE'}>
+                        <Button icon={<CreditCardOutlined />}>
                             Lien de paiement
                         </Button>
-                    </Dropdown>,
+                    </Dropdown>] : []),
                     <Button key="cancel" onClick={handleModalCancel}>
                         Annuler
                     </Button>,
@@ -1833,31 +1879,50 @@ export default function Vente() {
                 width={1400}
             >
                 <Form form={form} layout="vertical" initialValues={defaultVente} onValuesChange={onValuesChange}>
+                    <Form.Item noStyle name="status"><input type="hidden" /></Form.Item>
+                    <Form.Item noStyle name="bonPourAccord"><input type="hidden" /></Form.Item>
+                    <Steps
+                        current={venteStepIndex(
+                            watchedStatus || 'DEVIS',
+                            watchedBonPourAccord
+                        )}
+                        size="small"
+                        style={{ marginBottom: 24 }}
+                        items={venteStepItems(currentVente)}
+                        onChange={(step) => {
+                            switch (step) {
+                                case 0:
+                                    form.setFieldsValue({ status: 'DEVIS', bonPourAccord: false });
+                                    break;
+                                case 1:
+                                    form.setFieldsValue({ status: 'DEVIS', bonPourAccord: true });
+                                    break;
+                                case 2:
+                                    form.setFieldsValue({ status: 'FACTURE_EN_ATTENTE', bonPourAccord: true });
+                                    break;
+                                case 3:
+                                    form.setFieldsValue({ status: 'FACTURE_PRETE', bonPourAccord: true });
+                                    break;
+                                case 4:
+                                    form.setFieldsValue({ status: 'FACTURE_PAYEE', bonPourAccord: true });
+                                    break;
+                            }
+                            setFormDirty(true);
+                        }}
+                    />
                     <Row gutter={16}>
-                        <Col span={6}>
-                            <Form.Item
-                                name="status"
-                                label="Statut"
-                                rules={[{ required: true, message: 'Le statut est requis' }]}
-                            >
-                                <Select options={statusOptions} />
-                            </Form.Item>
-                        </Col>
-                        <Col span={4}>
-                            <Form.Item name="bonPourAccord" label="Bon pour accord" valuePropName="checked">
-                                <Checkbox />
-                            </Form.Item>
-                        </Col>
-                        <Col span={6}>
+                        <Col span={8}>
                             <Form.Item name="date" label="Date">
                                 <DatePicker showTime format="DD/MM/YYYY HH:mm" style={{ width: '100%' }} />
                             </Form.Item>
                         </Col>
-                        <Col span={8}>
-                            <Form.Item name="modePaiement" label="Mode de paiement">
-                                <Select allowClear options={modePaiementOptions} />
-                            </Form.Item>
-                        </Col>
+                        {watchedStatus === 'FACTURE_PAYEE' && (
+                            <Col span={8}>
+                                <Form.Item name="modePaiement" label="Mode de paiement">
+                                    <Select allowClear options={modePaiementOptions} />
+                                </Form.Item>
+                            </Col>
+                        )}
                     </Row>
 
                     <Row gutter={16}>

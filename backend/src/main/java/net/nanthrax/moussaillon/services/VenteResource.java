@@ -237,6 +237,9 @@ public class VenteResource {
                 }
             }
         }
+        if (vente.dateDevis == null) {
+            vente.dateDevis = new Timestamp(System.currentTimeMillis());
+        }
         vente.persist();
         return Response.status(Response.Status.CREATED).entity(vente).build();
     }
@@ -273,6 +276,25 @@ public class VenteResource {
             throw new WebApplicationException("La vente (" + id + ") n'est pas trouvee", 404);
         }
 
+        // Track step date history on transitions
+        Timestamp now = new Timestamp(System.currentTimeMillis());
+        if (vente.status != entity.status || vente.bonPourAccord != entity.bonPourAccord) {
+            if (vente.status == VenteEntity.Status.DEVIS && !vente.bonPourAccord && entity.dateDevis == null) {
+                entity.dateDevis = now;
+            }
+            if (vente.bonPourAccord && !entity.bonPourAccord && entity.dateBonPourAccord == null) {
+                entity.dateBonPourAccord = now;
+            }
+            if (vente.status == VenteEntity.Status.FACTURE_EN_ATTENTE && entity.status != VenteEntity.Status.FACTURE_EN_ATTENTE && entity.dateFactureEnAttente == null) {
+                entity.dateFactureEnAttente = now;
+            }
+            if (vente.status == VenteEntity.Status.FACTURE_PRETE && entity.status != VenteEntity.Status.FACTURE_PRETE && entity.dateFacturePrete == null) {
+                entity.dateFacturePrete = now;
+            }
+            if (vente.status == VenteEntity.Status.FACTURE_PAYEE && entity.status != VenteEntity.Status.FACTURE_PAYEE && entity.dateFacturePayee == null) {
+                entity.dateFacturePayee = now;
+            }
+        }
         entity.status = vente.status;
         entity.bonPourAccord = vente.bonPourAccord;
         entity.client = vente.client;
@@ -440,6 +462,9 @@ public class VenteResource {
                     .anyMatch(vs -> vs.status == VenteServiceEntity.Status.TERMINEE);
             if (allTerminee && hasAtLeastOneTerminee) {
                 entity.status = VenteEntity.Status.FACTURE_PRETE;
+                if (entity.dateFacturePrete == null) {
+                    entity.dateFacturePrete = new Timestamp(System.currentTimeMillis());
+                }
             }
         }
 
