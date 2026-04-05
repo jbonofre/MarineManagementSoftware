@@ -123,10 +123,20 @@ export default function App() {
                     onClick={({ key }) => setCurrentPage(key)}
                 />
             </Sider>
-            <Layout>
-                <Header style={{ background: '#fff', padding: '0 24px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
-                    <span style={{ marginRight: 16 }}>
-                        <UserOutlined /> {clientName}
+            <Layout style={{ background: '#f0f2f5' }}>
+                <Header style={{
+                    background: '#fff',
+                    padding: '0 24px',
+                    display: 'flex',
+                    justifyContent: 'flex-end',
+                    alignItems: 'center',
+                    height: 64,
+                    margin: '16px 20px 0',
+                    borderRadius: 14,
+                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
+                }}>
+                    <span style={{ marginRight: 16, fontWeight: 500 }}>
+                        <UserOutlined style={{ marginRight: 6 }} /> {clientName}
                     </span>
                     <Button
                         icon={<LogoutOutlined />}
@@ -135,10 +145,20 @@ export default function App() {
                         Deconnexion
                     </Button>
                 </Header>
-                <Content style={{ margin: '24px 16px', padding: 24, background: '#fff', minHeight: 280 }}>
+                <Content style={{
+                    margin: '20px',
+                    padding: 28,
+                    background: '#fff',
+                    minHeight: 280,
+                    borderRadius: 14,
+                    boxShadow: '0 1px 4px rgba(0, 0, 0, 0.04)',
+                    animation: 'fadeInUp 0.3s ease-out',
+                }}>
                     {renderPage()}
                 </Content>
-                <Footer>moussAIllon - Espace Client</Footer>
+                <Footer style={{ background: 'transparent', padding: '16px 50px' }}>
+                    moussAIllon - Espace Client
+                </Footer>
             </Layout>
         </Layout>
     );

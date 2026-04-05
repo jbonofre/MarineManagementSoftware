@@ -11,6 +11,7 @@ import { ReactComponent as EngineOutlined } from './moteur.svg';
 import { ReactComponent as ParcOutlined } from './parc.svg';
 import { ReactComponent as TailerOutlined } from './remorque.svg';
 import { Result } from 'antd';
+import GlobalSearch from './global-search.tsx';
 import Home from './home.tsx';
 import Clients from './clients.tsx';
 import Produits from './catalogue-produits.tsx';
@@ -158,7 +159,6 @@ function SideMenu(props) {
 
 function Header(props) {
 
-    const { Search } = Input;
     const [ preferencesVisible, setPreferencesVisible ] = useState(false);
     const [ preferencesLoading, setPreferencesLoading ] = useState(false);
     const [ preferencesForm ] = Form.useForm();
@@ -197,16 +197,18 @@ function Header(props) {
 
     return(
         <Layout.Header style={{
-            height: "80px",
+            height: "72px",
+            lineHeight: '72px',
             background: props.theme === 'DARK' ? '#1f1f1f' : '#fff',
             color: props.theme === 'DARK' ? '#f5f5f5' : undefined,
-            padding: "5px",
-            margin: "10px",
-            borderRadius: 8
+            padding: "0 24px",
+            margin: "16px 20px 0",
+            borderRadius: 14,
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
         }}>
-            <Row align="middle" justify="center" wrap={false}>
+            <Row align="middle" justify="center" wrap={false} style={{ height: '100%' }}>
                 <Col span={3}><Image src="/logo.png" preview={false} width={75}/></Col>
-                <Col span={19}><Search /></Col>
+                <Col span={19}><GlobalSearch /></Col>
                 <Col span={2}><Menu items={menuUser} onClick={(e) => {
                     if (e.key === 'deconnexion') {
                         props.setUser(null);
@@ -437,13 +439,24 @@ export default function Workspace(props) {
     const isDarkTheme = theme === 'DARK';
 
     return(
-        <ConfigProvider theme={{ algorithm: isDarkTheme ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm }}>
-            <Layout style={{ height: "105vh", background: isDarkTheme ? '#101010' : '#f5f5f5' }}>
+        <ConfigProvider theme={{
+            algorithm: isDarkTheme ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
+            token: {
+                fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+                borderRadius: 8,
+                colorPrimary: '#1668dc',
+            },
+        }}>
+            <Router>
+            <Layout style={{ minHeight: "100vh", background: isDarkTheme ? '#101010' : '#f0f2f5' }}>
               <Header user={props.user} roles={props.roles} setUser={props.setUser} theme={theme} setTheme={setTheme} />
               <Layout hasSider={true}>
-                <Router>
                 <SideMenu user={props.user} roles={props.roles} theme={theme} />
-                <Layout.Content style={{ margin: "15px", color: isDarkTheme ? '#f5f5f5' : undefined }}>
+                <Layout.Content style={{
+                    margin: "20px",
+                    color: isDarkTheme ? '#f5f5f5' : undefined,
+                    animation: 'fadeInUp 0.3s ease-out',
+                }}>
                     <Switch>
                         <Route path="/" key="home" exact={true}>
                             <Home/>
@@ -525,12 +538,17 @@ export default function Workspace(props) {
                         </Route>
                     </Switch>
                 </Layout.Content>
-                </Router>
               </Layout>
-              <Layout.Footer style={{ background: isDarkTheme ? '#141414' : undefined, color: isDarkTheme ? '#f5f5f5' : undefined }}>
+              <Layout.Footer style={{
+                  background: isDarkTheme ? '#141414' : 'transparent',
+                  color: isDarkTheme ? 'rgba(255,255,255,0.45)' : '#8c8c8c',
+                  fontSize: '0.85em',
+                  padding: '16px 50px',
+              }}>
                   Copyright © 2025-2026 - NOSE Experts - Tous droits réservés
               </Layout.Footer>
             </Layout>
+            </Router>
         </ConfigProvider>
     );
 

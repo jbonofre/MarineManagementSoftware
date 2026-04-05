@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
-import { Modal, Form, Button, Input, Space, Image, message } from 'antd';
+import { Form, Button, Input, Image, message, Typography } from 'antd';
+import { MailOutlined, LockOutlined } from '@ant-design/icons';
 import axios from 'axios';
+
+const { Title, Text } = Typography;
 
 interface Client {
     id: number;
@@ -47,58 +50,94 @@ export default function Login({ setUser }: LoginProps) {
             backgroundPosition: 'center',
             backgroundRepeat: 'no-repeat',
         }}>
+            <div className="login-overlay" />
             <div style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: '100%',
-                backgroundColor: 'rgba(0, 30, 60, 0.5)',
-            }} />
-            <Modal
-                centered
-                mask={false}
-                title={<Space>Espace Client <Image width={50} src="./logo.png" preview={false} /></Space>}
-                open
-                okText="Se connecter"
-                cancelText="Effacer"
-                closable={false}
-                confirmLoading={loading}
-                onOk={() => loginForm.submit()}
-                onCancel={() => loginForm.resetFields()}
-            >
-                <Form
-                    name="login"
-                    form={loginForm}
-                    labelCol={{ span: 8 }}
-                    wrapperCol={{ span: 16 }}
-                    autoComplete="off"
-                    onFinish={handleLogin}
-                    onKeyUp={(event: React.KeyboardEvent) => {
-                        if (event.key === 'Enter') {
-                            loginForm.submit();
-                        }
-                    }}
-                >
-                    <Form.Item
-                        name="email"
-                        label="Email"
-                        rules={[
-                            { required: true, message: "L'email est requis" },
-                            { type: 'email', message: "Format d'email invalide" },
-                        ]}
+                position: 'relative',
+                zIndex: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                height: '100vh',
+            }}>
+                <div style={{
+                    width: 420,
+                    background: 'rgba(255, 255, 255, 0.95)',
+                    backdropFilter: 'blur(20px)',
+                    WebkitBackdropFilter: 'blur(20px)',
+                    borderRadius: 20,
+                    padding: '48px 40px 36px',
+                    boxShadow: '0 25px 70px rgba(0, 0, 0, 0.25)',
+                    animation: 'fadeInUp 0.5s ease-out',
+                }}>
+                    <div style={{ textAlign: 'center', marginBottom: 32 }}>
+                        <Image src="./logo.png" preview={false} width={80} style={{ marginBottom: 16 }} />
+                        <Title level={3} style={{ margin: 0, fontWeight: 700 }}>
+                            Espace Client
+                        </Title>
+                        <Text type="secondary" style={{ fontSize: '0.95em' }}>
+                            mouss<span style={{ color: '#1668dc', fontWeight: 600 }}>AI</span>llon
+                        </Text>
+                    </div>
+                    <Form
+                        name="login"
+                        form={loginForm}
+                        layout="vertical"
+                        autoComplete="off"
+                        onFinish={handleLogin}
+                        onKeyUp={(event: React.KeyboardEvent) => {
+                            if (event.key === 'Enter') {
+                                loginForm.submit();
+                            }
+                        }}
                     >
-                        <Input />
-                    </Form.Item>
-                    <Form.Item
-                        name="password"
-                        label="Mot de passe"
-                        rules={[{ required: true, message: 'Le mot de passe est requis' }]}
-                    >
-                        <Input.Password />
-                    </Form.Item>
-                </Form>
-            </Modal>
+                        <Form.Item
+                            name="email"
+                            rules={[
+                                { required: true, message: "L'email est requis" },
+                                { type: 'email', message: "Format d'email invalide" },
+                            ]}
+                        >
+                            <Input
+                                prefix={<MailOutlined style={{ color: '#bfbfbf' }} />}
+                                placeholder="Email"
+                                size="large"
+                                style={{ borderRadius: 10, height: 48 }}
+                            />
+                        </Form.Item>
+                        <Form.Item
+                            name="password"
+                            rules={[{ required: true, message: 'Le mot de passe est requis' }]}
+                        >
+                            <Input.Password
+                                prefix={<LockOutlined style={{ color: '#bfbfbf' }} />}
+                                placeholder="Mot de passe"
+                                size="large"
+                                style={{ borderRadius: 10, height: 48 }}
+                            />
+                        </Form.Item>
+                        <Form.Item style={{ marginBottom: 0, marginTop: 8 }}>
+                            <Button
+                                type="primary"
+                                htmlType="submit"
+                                block
+                                size="large"
+                                loading={loading}
+                                style={{
+                                    height: 48,
+                                    borderRadius: 10,
+                                    fontWeight: 600,
+                                    fontSize: '1em',
+                                    background: 'linear-gradient(135deg, #1668dc 0%, #4096ff 100%)',
+                                    border: 'none',
+                                    boxShadow: '0 4px 14px rgba(22, 104, 220, 0.35)',
+                                }}
+                            >
+                                Se connecter
+                            </Button>
+                        </Form.Item>
+                    </Form>
+                </div>
+            </div>
         </div>
     );
 }

@@ -281,43 +281,43 @@ export default function Dashboard() {
 
             <Row gutter={[16, 16]}>
                 <Col xs={24} sm={12} lg={6}>
-                    <Card>
+                    <Card style={{ borderTop: '3px solid #52c41a' }}>
                         <Statistic
                             title="CA du mois"
                             value={data.caDuMois}
                             precision={0}
                             suffix="EUR"
-                            valueStyle={{ color: '#3f8600' }}
+                            valueStyle={{ color: '#3f8600', fontWeight: 700 }}
                             prefix={<ArrowUpOutlined />}
                         />
                     </Card>
                 </Col>
                 <Col xs={24} sm={12} lg={6}>
-                    <Card>
+                    <Card style={{ borderTop: '3px solid #1677ff' }}>
                         <Statistic
                             title="Interventions ouvertes"
                             value={data.interventionsOuvertes}
-                            valueStyle={{ color: '#1677ff' }}
+                            valueStyle={{ color: '#1677ff', fontWeight: 700 }}
                             prefix={<ClockCircleOutlined />}
                         />
                     </Card>
                 </Col>
                 <Col xs={24} sm={12} lg={6}>
-                    <Card>
+                    <Card style={{ borderTop: '3px solid #ff4d4f' }}>
                         <Statistic
                             title="Retards > 48h"
                             value={data.retards48h}
-                            valueStyle={{ color: '#cf1322' }}
+                            valueStyle={{ color: '#cf1322', fontWeight: 700 }}
                             prefix={<ArrowDownOutlined />}
                         />
                     </Card>
                 </Col>
                 <Col xs={24} sm={12} lg={6}>
-                    <Card>
+                    <Card style={{ borderTop: '3px solid #faad14' }}>
                         <Statistic
                             title="Alertes stock"
                             value={data.alertesStock}
-                            valueStyle={{ color: '#d48806' }}
+                            valueStyle={{ color: '#d48806', fontWeight: 700 }}
                             prefix={<WarningOutlined />}
                         />
                     </Card>
