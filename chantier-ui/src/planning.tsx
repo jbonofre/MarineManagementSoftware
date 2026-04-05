@@ -23,6 +23,12 @@ interface ProduitCatalogueEntity {
     id: number;
 }
 
+interface TaskEntity {
+    id: number;
+    nom: string;
+    done: boolean;
+}
+
 interface VenteForfaitEntry {
     id?: number;
     forfait?: { id: number; nom: string; dureeEstimee?: number };
@@ -35,6 +41,7 @@ interface VenteForfaitEntry {
     statusDate?: string;
     dureeReelle?: number;
     notes?: string;
+    taches?: TaskEntity[];
 }
 
 interface VenteServiceEntry {
@@ -49,6 +56,7 @@ interface VenteServiceEntry {
     statusDate?: string;
     dureeReelle?: number;
     notes?: string;
+    taches?: TaskEntity[];
 }
 
 interface VenteEntity {
@@ -56,7 +64,7 @@ interface VenteEntity {
     status: string;
     bonPourAccord?: boolean;
     client?: ClientEntity;
-    bateau?: { id: number; name?: string };
+    bateau?: { id: number; name?: string; immatriculation?: string };
     produits?: ProduitCatalogueEntity[];
     venteForfaits?: VenteForfaitEntry[];
     venteServices?: VenteServiceEntry[];
@@ -81,6 +89,8 @@ interface PlanningItem {
     venteId?: number;
     clientNom?: string;
     bateauNom?: string;
+    bateauImmatriculation?: string;
+    taches?: TaskEntity[];
 }
 
 interface PlanningFormValues {
@@ -101,6 +111,12 @@ interface CalendarEvent {
     backgroundColor?: string;
     textColor?: string;
     dureeEstimee?: number;
+    bateauNom?: string;
+    bateauImmatriculation?: string;
+    clientNom?: string;
+    forfaitServiceNom?: string;
+    status?: PlanningStatus;
+    progressPct?: number;
 }
 
 interface PlanningItemRow {
@@ -187,6 +203,7 @@ const buildPlanningItems = (ventes: VenteEntity[]): PlanningItemRow[] => {
     for (const vente of ventes) {
         const clientNom = vente.client ? `${vente.client.prenom || ''} ${vente.client.nom}`.trim() : '';
         const bateauNom = vente.bateau?.name;
+        const bateauImmatriculation = vente.bateau?.immatriculation;
 
         for (let i = 0; i < (vente.venteForfaits || []).length; i++) {
             const vf = vente.venteForfaits![i];
@@ -206,6 +223,8 @@ const buildPlanningItems = (ventes: VenteEntity[]): PlanningItemRow[] => {
                 venteId: vente.id,
                 clientNom,
                 bateauNom,
+                bateauImmatriculation,
+                taches: vf.taches,
             };
             rows.push({
                 key: `vf-${vente.id}-${vf.id || i}-${i}`,
@@ -234,6 +253,8 @@ const buildPlanningItems = (ventes: VenteEntity[]): PlanningItemRow[] => {
                 venteId: vente.id,
                 clientNom,
                 bateauNom,
+                bateauImmatriculation,
+                taches: vs.taches,
             };
             rows.push({
                 key: `vs-${vente.id}-${vs.id || i}-${i}`,
@@ -435,6 +456,10 @@ export default function Planning() {
                     }
 
                     const typeLabel = item.type === 'forfait' ? 'Forfait' : 'Service';
+                    const taches = item.taches || [];
+                    const totalTaches = taches.length;
+                    const doneTaches = taches.filter((t) => t.done).length;
+                    const progressPct = totalTaches > 0 ? Math.round((doneTaches / totalTaches) * 100) : undefined;
 
                     return {
                         eventId: row.key,
@@ -443,6 +468,12 @@ export default function Planning() {
                         backgroundColor: getTechnicienColor(item.techniciens),
                         textColor: '#ffffff',
                         dureeEstimee: item.dureeEstimee,
+                        bateauNom: item.bateauNom,
+                        bateauImmatriculation: item.bateauImmatriculation,
+                        clientNom: item.clientNom,
+                        forfaitServiceNom: item.nom,
+                        status: item.status,
+                        progressPct,
                     } as CalendarEvent;
                 })
                 .filter(Boolean) as CalendarEvent[],
@@ -526,6 +557,7 @@ export default function Planning() {
 
             const clientNom = savedVente.client ? `${savedVente.client.prenom || ''} ${savedVente.client.nom}`.trim() : '';
             const bateauNom = savedVente.bateau?.name;
+            const bateauImmatriculation = savedVente.bateau?.immatriculation;
             const savedItem: PlanningItem = currentRow.itemType === 'forfait'
                 ? {
                     id: (savedEntry as VenteForfaitEntry).id,
@@ -543,6 +575,8 @@ export default function Planning() {
                     venteId: savedVente.id,
                     clientNom,
                     bateauNom,
+                    bateauImmatriculation,
+                    taches: (savedEntry as VenteForfaitEntry).taches,
                 }
                 : {
                     id: (savedEntry as VenteServiceEntry).id,
@@ -560,6 +594,8 @@ export default function Planning() {
                     venteId: savedVente.id,
                     clientNom,
                     bateauNom,
+                    bateauImmatriculation,
+                    taches: (savedEntry as VenteServiceEntry).taches,
                 };
 
             setCurrentRow({ ...currentRow, vente: savedVente, item: savedItem });
@@ -857,9 +893,19 @@ export default function Planning() {
                                                     const duration = ev.dureeEstimee || 1;
                                                     const leftPct = Math.max(0, ((startHour - HOUR_START) / TOTAL_HOURS) * 100);
                                                     const widthPct = Math.min((duration / TOTAL_HOURS) * 100, 100 - leftPct);
+                                                    const statusLabel = ev.status ? statusOptions.find((s) => s.value === ev.status)?.label || ev.status : '';
+                                                    const tooltipContent = (
+                                                        <div style={{ fontSize: 12, lineHeight: '18px' }}>
+                                                            <div><strong>{ev.bateauNom || '-'}</strong>{ev.bateauImmatriculation ? ` (${ev.bateauImmatriculation})` : ''}</div>
+                                                            <div>Client : {ev.clientNom || '-'}</div>
+                                                            <div>{ev.forfaitServiceNom || '-'}</div>
+                                                            <div>Statut : {statusLabel} {ev.progressPct !== undefined ? `— ${ev.progressPct}%` : ''}</div>
+                                                            <div>{start.format('HH:mm')} — {duration}h</div>
+                                                        </div>
+                                                    );
 
                                                     return (
-                                                        <Tooltip key={ev.eventId} title={`${ev.title} (${start.format('HH:mm')} - ${duration}h)`}>
+                                                        <Tooltip key={ev.eventId} title={tooltipContent}>
                                                             <div
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
@@ -886,7 +932,7 @@ export default function Planning() {
                                                                     boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
                                                                 }}
                                                             >
-                                                                {ev.title}
+                                                                {ev.bateauNom || ev.forfaitServiceNom || '-'}{ev.progressPct !== undefined ? ` (${ev.progressPct}%)` : ''}
                                                             </div>
                                                         </Tooltip>
                                                     );
