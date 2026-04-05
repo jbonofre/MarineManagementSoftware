@@ -250,7 +250,8 @@
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: linear-gradient(135deg, #0c1829 0%, #1a3358 40%, #1668dc 100%);
+    background: linear-gradient(135deg, rgba(12, 24, 41, 0.30) 0%, rgba(26, 51, 88, 0.20) 40%, rgba(22, 104, 220, 0.15) 100%),
+                url('../public/background.png') center / cover no-repeat;
     overflow: hidden;
 }
 
