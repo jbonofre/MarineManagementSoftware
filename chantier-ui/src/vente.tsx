@@ -1914,11 +1914,6 @@ export default function Vente() {
             render: (values: ProduitCatalogueEntity[]) => values?.length || 0
         },
         {
-            title: 'Mode paiement',
-            dataIndex: 'modePaiement',
-            render: (value: ModePaiement) => modePaiementOptions.find((item) => item.value === value)?.label || value || '-'
-        },
-        {
             title: 'Prix vente TTC',
             dataIndex: 'prixVenteTTC',
             sorter: (a: VenteEntity, b: VenteEntity) => (a.prixVenteTTC || 0) - (b.prixVenteTTC || 0),
@@ -1964,18 +1959,22 @@ export default function Vente() {
                     fetchVentes(nextFilters);
                 }}
             >
-                <Row gutter={16}>
-                    <Col span={8}>
-                        <Form.Item name="status" label="Statut">
-                            <Select allowClear options={statusOptions} placeholder="Tous les statuts" />
-                        </Form.Item>
+                <Row gutter={16} align="bottom">
+                    <Col flex="auto">
+                        <Row gutter={16}>
+                            <Col span={10}>
+                                <Form.Item name="status" label="Statut" style={{ marginBottom: 0 }}>
+                                    <Select allowClear options={statusOptions} placeholder="Tous les statuts" />
+                                </Form.Item>
+                            </Col>
+                            <Col span={14}>
+                                <Form.Item name="clientId" label="Client" style={{ marginBottom: 0 }}>
+                                    <Select allowClear showSearch options={clientOptions} placeholder="Tous les clients" />
+                                </Form.Item>
+                            </Col>
+                        </Row>
                     </Col>
-                    <Col span={10}>
-                        <Form.Item name="clientId" label="Client">
-                            <Select allowClear showSearch options={clientOptions} placeholder="Tous les clients" />
-                        </Form.Item>
-                    </Col>
-                    <Col span={6} style={{ display: 'flex', alignItems: 'end' }}>
+                    <Col flex="none" style={{ marginBottom: 0 }}>
                         <Space>
                             <Button type="primary" htmlType="submit">Rechercher</Button>
                             <Button
