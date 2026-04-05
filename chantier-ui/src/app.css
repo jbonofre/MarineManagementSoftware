@@ -33,6 +33,9 @@
 
 .ant-layout-footer {
     text-align: center !important;
+    font-size: 0.85em;
+    color: #8c8c8c;
+    letter-spacing: 0.3px;
 }
 
 .ant-breadcrumb {
@@ -158,4 +161,150 @@
 /* ── Sidebar shared ──────────────────────────────── */
 .ant-layout-sider-children > svg {
     margin: auto;
+}
+
+/* ── Cards ───────────────────────────────────────── */
+.ant-card {
+    border-radius: 12px !important;
+    border: 1px solid rgba(0, 0, 0, 0.06) !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06) !important;
+    transition: box-shadow 0.3s ease, transform 0.3s ease !important;
+}
+
+.ant-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.06) !important;
+}
+
+.ant-card .ant-card-head {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.04) !important;
+    font-weight: 600 !important;
+}
+
+/* ── Tables ──────────────────────────────────────── */
+.ant-table {
+    border-radius: 10px !important;
+    overflow: hidden;
+}
+
+.ant-table-thead > tr > th {
+    font-weight: 600 !important;
+    font-size: 0.85em !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    color: #595959 !important;
+}
+
+/* ── Tags ────────────────────────────────────────── */
+.ant-tag {
+    border-radius: 6px !important;
+    font-weight: 500 !important;
+    padding: 2px 10px !important;
+}
+
+/* ── Buttons ─────────────────────────────────────── */
+.ant-btn {
+    border-radius: 8px !important;
+    font-weight: 500 !important;
+    transition: all 0.25s ease !important;
+}
+
+.ant-btn-primary {
+    box-shadow: 0 2px 8px rgba(22, 104, 220, 0.25) !important;
+}
+
+.ant-btn-primary:hover {
+    box-shadow: 0 4px 14px rgba(22, 104, 220, 0.35) !important;
+    transform: translateY(-1px);
+}
+
+/* ── Statistics ──────────────────────────────────── */
+.ant-statistic-title {
+    font-weight: 500 !important;
+    font-size: 0.9em !important;
+    letter-spacing: 0.2px !important;
+}
+
+/* ── Modal ───────────────────────────────────────── */
+.ant-modal-content {
+    border-radius: 16px !important;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15), 0 8px 20px rgba(0, 0, 0, 0.1) !important;
+}
+
+.ant-modal-header {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.04) !important;
+}
+
+/* ── Inputs ──────────────────────────────────────── */
+.ant-input,
+.ant-input-affix-wrapper,
+.ant-select-selector,
+.ant-picker {
+    border-radius: 8px !important;
+}
+
+/* ── Login ───────────────────────────────────────── */
+.login-background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: linear-gradient(135deg, #0c1829 0%, #1a3358 40%, #1668dc 100%);
+    overflow: hidden;
+}
+
+.login-background::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle at 30% 50%, rgba(64, 150, 255, 0.12) 0%, transparent 50%),
+                radial-gradient(circle at 70% 30%, rgba(22, 104, 220, 0.08) 0%, transparent 40%);
+    animation: loginPulse 15s ease-in-out infinite alternate;
+}
+
+@keyframes loginPulse {
+    0% { transform: scale(1) rotate(0deg); }
+    100% { transform: scale(1.1) rotate(5deg); }
+}
+
+.login-card {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+}
+
+.login-card .ant-modal {
+    background: rgba(255, 255, 255, 0.95) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border-radius: 20px !important;
+    box-shadow: 0 25px 70px rgba(0, 0, 0, 0.25) !important;
+}
+
+/* ── Progress bars ───────────────────────────────── */
+.ant-progress-inner {
+    border-radius: 10px !important;
+}
+
+/* ── Fade-in animation ───────────────────────────── */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in-up {
+    animation: fadeInUp 0.4s ease-out;
 }
