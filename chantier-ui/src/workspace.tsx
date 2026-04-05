@@ -132,8 +132,8 @@ function SideMenu(props) {
     return(
         <div style={{ display: 'flex', position: 'relative' }}>
             <Layout.Sider
+                className={props.theme === 'DARK' ? 'sidebar-dark' : 'sidebar-light'}
                 theme={props.theme === 'DARK' ? 'dark' : 'light'}
-                style={props.theme === 'DARK' ? { background: '#141414' } : { background: '#fff' }}
                 collapsible={true}
                 collapsed={collapsed}
                 onCollapse={newValue => setCollapsed(newValue)}
