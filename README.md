@@ -407,26 +407,26 @@ server {
     listen 80;
     server_name _;
 
-    location /api/ {
+    location ^~ /api/ {
         rewrite ^/api/(.*) /$1 break;
         proxy_pass http://localhost:8080;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
     }
 
-    location / {
-        root /home/ec2-user/moussAIllon/chantier-ui/build;
-        try_files $uri $uri/ /index.html;
-    }
-
-    location /client/ {
+    location ^~ /client/ {
         alias /home/ec2-user/moussAIllon/client-ui/build/;
         try_files $uri $uri/ /client/index.html;
     }
 
-    location /technicien/ {
+    location ^~ /technicien/ {
         alias /home/ec2-user/moussAIllon/technicien-ui/build/;
         try_files $uri $uri/ /technicien/index.html;
+    }
+
+    location / {
+        root /home/ec2-user/moussAIllon/chantier-ui/build;
+        try_files $uri $uri/ /index.html;
     }
 }
 ```
