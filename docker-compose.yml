@@ -25,8 +25,6 @@ services:
   chantier-ui:
     build:
       context: chantier-ui
-    ports:
-      - "3000:80"
     depends_on:
       backend:
         condition: service_healthy
@@ -34,8 +32,6 @@ services:
   client-ui:
     build:
       context: client-ui
-    ports:
-      - "3001:80"
     depends_on:
       backend:
         condition: service_healthy
@@ -43,11 +39,20 @@ services:
   technicien-ui:
     build:
       context: technicien-ui
-    ports:
-      - "3002:80"
     depends_on:
       backend:
         condition: service_healthy
+
+  gateway:
+    image: nginx:stable-alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./gateway/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - chantier-ui
+      - client-ui
+      - technicien-ui
 
 volumes:
   backend-data:

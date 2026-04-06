@@ -114,7 +114,7 @@ Chaque composant dispose d'un `Dockerfile` multi-stage :
 | `client-ui/Dockerfile` | `node:20-alpine` | `nginx:stable-alpine` | 80 |
 | `technicien-ui/Dockerfile` | `node:20-alpine` | `nginx:stable-alpine` | 80 |
 
-Les frontends utilisent nginx pour servir le SPA et proxifier `/api/` vers le backend (le préfixe `/api` est strippé avant transmission).
+Les frontends utilisent nginx pour servir le SPA et proxifier `/api/` vers le backend (le préfixe `/api` est strippé avant transmission). Un service `gateway` (nginx) unifie les 3 UIs sur le port 80 (`/`, `/client/`, `/technicien/`).
 
 ### Docker Compose
 
@@ -127,9 +127,9 @@ docker compose up --build
 | Service | URL |
 |---|---|
 | Backend API | `http://localhost:8080` |
-| Chantier UI | `http://localhost:3000` |
-| Client UI | `http://localhost:3001` |
-| Technicien UI | `http://localhost:3002` |
+| Chantier UI | `http://localhost/` |
+| Client UI | `http://localhost/client/` |
+| Technicien UI | `http://localhost/technicien/` |
 
 Les variables d'environnement peuvent etre definies dans un fichier `.env` a la racine du projet.
 
