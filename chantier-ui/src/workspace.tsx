@@ -91,9 +91,9 @@ function SideMenu(props) {
       { key: 'Vente', label: 'Vente', icon: <StockOutlined/>, requiredRole: 'vendeur', children: [
         { key: '/comptoir', label: 'Comptoir', icon: <DesktopOutlined/> },
         { key: '/prestations', label: 'Prestations', icon: <CheckSquareOutlined/> },
+        { key: '/clients', label: 'Clients', icon: <TeamOutlined /> },
       ]},
       { key: 'parc', label: 'Parc', icon: <Icon component={ ParcOutlined } />, requiredRole: 'manager', children: [
-        { key: '/clients', label: 'Clients', icon: <TeamOutlined /> },
         { key: '/clients/bateaux', label: 'Bateaux', icon: <Icon component={ BoatOutlined } />},
         { key: '/clients/moteurs', label: 'Moteurs', icon: <Icon component={ EngineOutlined } /> },
         { key: '/clients/remorques', label: 'Remorques', icon: <Icon component={ TailerOutlined } /> }
