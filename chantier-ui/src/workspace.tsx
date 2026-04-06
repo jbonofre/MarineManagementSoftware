@@ -202,7 +202,7 @@ function Header(props) {
             background: props.theme === 'DARK' ? '#1f1f1f' : '#fff',
             color: props.theme === 'DARK' ? '#f5f5f5' : undefined,
             padding: "0 24px",
-            margin: "16px 20px 0",
+            margin: "16px 20px 8px",
             borderRadius: 14,
             boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
         }}>
