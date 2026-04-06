@@ -171,10 +171,6 @@ interface VenteFormValues {
     modePaiement?: ModePaiement;
 }
 
-interface SearchFilters {
-    clientId?: number;
-}
-
 const modePaiementOptions: Array<{ value: ModePaiement; label: string }> = [
     { value: 'CHEQUE', label: 'Cheque' },
     { value: 'VIREMENT', label: 'Virement' },
@@ -270,8 +266,7 @@ export default function Comptoir() {
     const [modalVisible, setModalVisible] = useState(false);
     const [isEdit, setIsEdit] = useState(false);
     const [currentVente, setCurrentVente] = useState<VenteEntity | null>(null);
-    const [filters, setFilters] = useState<SearchFilters>({});
-    const [searchForm] = Form.useForm<SearchFilters>();
+    const [searchQuery, setSearchQuery] = useState('');
     const [form] = Form.useForm<VenteFormValues>();
     const watchedStatus = Form.useWatch('status', form) as VenteStatus | undefined;
     const isReadOnly = watchedStatus === 'FACTURE_PAYEE';
@@ -319,15 +314,22 @@ export default function Comptoir() {
         [services]
     );
 
-    const fetchVentes = async (nextFilters?: SearchFilters) => {
+    const filteredVentes = useMemo(() => {
+        if (!searchQuery.trim()) return ventes;
+        const q = searchQuery.toLowerCase();
+        return ventes.filter((v) => {
+            const clientLabel = getClientLabel(v.client).toLowerCase();
+            const date = (v.date || '').toLowerCase();
+            const paiement = (modePaiementOptions.find((o) => o.value === v.modePaiement)?.label || v.modePaiement || '').toLowerCase();
+            return clientLabel.includes(q) || date.includes(q) || paiement.includes(q);
+        });
+    }, [ventes, searchQuery]);
+
+    const fetchVentes = async () => {
         setLoading(true);
         try {
-            const activeFilters = nextFilters || {};
             const response = await api.get('/ventes/search', {
-                params: {
-                    status: 'FACTURE_PAYEE',
-                    ...(activeFilters.clientId !== undefined ? { clientId: activeFilters.clientId } : {})
-                }
+                params: { status: 'FACTURE_PAYEE' }
             });
             setVentes(response.data || []);
         } catch {
@@ -968,43 +970,26 @@ export default function Comptoir() {
 
     return (
         <Card title="Comptoir">
-            <Form
-                form={searchForm}
-                layout="vertical"
-                initialValues={{ clientId: undefined }}
-                onFinish={(values) => {
-                    const nextFilters: SearchFilters = { clientId: values.clientId };
-                    setFilters(nextFilters);
-                    fetchVentes(nextFilters);
-                }}
-            >
-                <Row gutter={16}>
-                    <Col span={10}>
-                        <Form.Item name="clientId" label="Client">
-                            <Select allowClear showSearch options={clientOptions} placeholder="Tous les clients" />
-                        </Form.Item>
-                    </Col>
-                    <Col span={6} style={{ display: 'flex', alignItems: 'end' }}>
-                        <Space>
-                            <Button type="primary" htmlType="submit">Rechercher</Button>
-                            <Button
-                                onClick={() => {
-                                    searchForm.resetFields();
-                                    setFilters({});
-                                    fetchVentes();
-                                }}
-                            >
-                                Reinitialiser
-                            </Button>
-                            <Button type="primary" icon={<PlusCircleOutlined />} onClick={() => openModal()} />
-                        </Space>
-                    </Col>
-                </Row>
-            </Form>
+            <Row gutter={16} align="middle">
+                <Col flex="auto">
+                    <Input.Search
+                        placeholder="Rechercher par client, date, mode de paiement..."
+                        allowClear
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onSearch={(value) => setSearchQuery(value)}
+                    />
+                </Col>
+                <Col>
+                    <Button type="primary" icon={<PlusCircleOutlined />} onClick={() => openModal()} />
+                </Col>
+            </Row>
+
+            <div style={{ marginTop: 16 }} />
 
             <Table
                 rowKey="id"
-                dataSource={ventes}
+                dataSource={filteredVentes}
                 columns={columns}
                 loading={loading}
                 pagination={{ pageSize: 10 }}

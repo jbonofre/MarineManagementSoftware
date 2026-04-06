@@ -88,6 +88,10 @@ function SideMenu(props) {
     const allMenuItems = [
       { key: '/', label: 'Accueil', icon: <HomeOutlined/> },
       { key: '/dashboard', label: 'Tableau de Bord', icon: <DashboardOutlined/> },
+      { key: 'Vente', label: 'Vente', icon: <StockOutlined/>, requiredRole: 'vendeur', children: [
+        { key: '/comptoir', label: 'Comptoir', icon: <DesktopOutlined/> },
+        { key: '/prestations', label: 'Prestations', icon: <CheckSquareOutlined/> },
+      ]},
       { key: 'parc', label: 'Parc', icon: <Icon component={ ParcOutlined } />, requiredRole: 'manager', children: [
         { key: '/clients', label: 'Clients', icon: <TeamOutlined /> },
         { key: '/clients/bateaux', label: 'Bateaux', icon: <Icon component={ BoatOutlined } />},
@@ -102,10 +106,6 @@ function SideMenu(props) {
         { key: '/catalogue/remorques', label: 'Remorques', icon: <Icon component={ TailerOutlined } /> },
         { key: '/catalogue/fournisseurs', label: 'Fournisseurs', icon: <FileProtectOutlined/> },
         { key: '/commandes-fournisseur', label: 'Commandes Fournisseur', icon: <ShoppingCartOutlined/> },
-      ]},
-      { key: 'Vente', label: 'Vente', icon: <StockOutlined/>, requiredRole: 'vendeur', children: [
-        { key: '/comptoir', label: 'Comptoir', icon: <DesktopOutlined/> },
-        { key: '/prestations', label: 'Prestations', icon: <CheckSquareOutlined/> },
       ]},
       { key: 'atelier', label: 'Atelier', icon: <ToolOutlined/>, requiredRole: 'admin', children: [
         { key: '/main-oeuvres', label: "Main d'Oeuvres", icon: <RedoOutlined/> },
