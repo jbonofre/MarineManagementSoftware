@@ -34,7 +34,7 @@ import ImageUpload from './ImageUpload.tsx';
 import DocumentUpload from './DocumentUpload.tsx';
 import dayjs from "dayjs";
 import LocationPicker from "./LocationPicker.tsx";
-import { useHistory } from "react-router-dom";
+import { useNavigation } from './navigation-context.tsx';
 
 const { Option } = Select;
 const { Search } = Input;
@@ -104,7 +104,7 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
   const [annonceImageModalVisible, setAnnonceImageModalVisible] = useState(false);
   const [annonceImageBateau, setAnnonceImageBateau] = useState<BateauClient | null>(null);
   const [annonceSelectedImages, setAnnonceSelectedImages] = useState<Set<string>>(new Set());
-  const history = useHistory();
+  const { navigate } = useNavigation();
 
   const openAnnonceImageModal = (bateau: BateauClient) => {
     setAnnonceImageBateau(bateau);
@@ -127,7 +127,7 @@ function BateauxClients({ clientId }: BateauxClientsProps) {
       return;
     }
     setAnnonceImageModalVisible(false);
-    history.push("/annonces", {
+    navigate("/annonces", {
       photos: Array.from(annonceSelectedImages),
       bateauId: annonceImageBateau?.id,
       clientId: annonceImageBateau?.proprietaires?.[0]?.id,

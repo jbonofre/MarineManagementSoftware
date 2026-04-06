@@ -1,10 +1,8 @@
 import { fetchWithAuth } from './api.ts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Layout, Input, Col, Row, Image, Menu, Form, Modal, message, ConfigProvider, theme as antdTheme, Switch as AntSwitch } from 'antd';
-import { Route, Switch } from 'react-router';
-import { BrowserRouter as Router } from 'react-router-dom';
-import { Link } from 'react-router-dom';
 import { UserOutlined, TeamOutlined, HomeOutlined, AmazonOutlined, SettingOutlined, ToolOutlined, StockOutlined, FileOutlined, FileProtectOutlined, ReadOutlined, DesktopOutlined, DeploymentUnitOutlined, DisconnectOutlined, DashboardOutlined, CalendarOutlined, FileDoneOutlined, CheckSquareOutlined, RedoOutlined, ShoppingCartOutlined, MailOutlined, SendOutlined } from '@ant-design/icons';
+import { NavigationContext } from './navigation-context.tsx';
 import Icon from '@ant-design/icons';
 import { ReactComponent as BoatOutlined } from './boat.svg';
 import { ReactComponent as EngineOutlined } from './moteur.svg';
@@ -88,43 +86,43 @@ function SideMenu(props) {
     const roles = props.roles || '';
 
     const allMenuItems = [
-      { key: 'home', label: <Link to="/">Accueil</Link>, icon: <HomeOutlined/> },
-      { key: 'dashboard', label: <Link to="/dashboard">Tableau de Bord</Link>, icon: <DashboardOutlined/> },
+      { key: '/', label: 'Accueil', icon: <HomeOutlined/> },
+      { key: '/dashboard', label: 'Tableau de Bord', icon: <DashboardOutlined/> },
       { key: 'parc', label: 'Parc', icon: <Icon component={ ParcOutlined } />, requiredRole: 'manager', children: [
-        { key: 'clients', label: <Link to="/clients">Clients</Link>, icon: <TeamOutlined /> },
-        { key: 'bateaux', label: <Link to="/clients/bateaux">Bateaux</Link>, icon: <Icon component={ BoatOutlined } />},
-        { key: 'moteurs', label: <Link to="/clients/moteurs">Moteurs</Link>, icon: <Icon component={ EngineOutlined } /> },
-        { key: 'remorques', label: <Link to="/clients/remorques">Remorques</Link>, icon: <Icon component={ TailerOutlined } /> }
+        { key: '/clients', label: 'Clients', icon: <TeamOutlined /> },
+        { key: '/clients/bateaux', label: 'Bateaux', icon: <Icon component={ BoatOutlined } />},
+        { key: '/clients/moteurs', label: 'Moteurs', icon: <Icon component={ EngineOutlined } /> },
+        { key: '/clients/remorques', label: 'Remorques', icon: <Icon component={ TailerOutlined } /> }
       ] },
       { key: 'catalogue', label: 'Catalogue', icon: <ReadOutlined/>, requiredRole: 'magasinier', children: [
-        { key: 'produits', label: <Link to="/catalogue/produits">Produits</Link>, icon: <StockOutlined /> },
-        { key: 'bateaux', label: <Link to="/catalogue/bateaux">Bateaux</Link>, icon: <Icon component={ BoatOutlined } /> },
-        { key: 'moteurs', label: <Link to="/catalogue/moteurs">Moteurs</Link>, icon: <Icon component={ EngineOutlined } /> },
-        { key: 'helices', label: <Link to="/catalogue/helices">Hélices</Link>, icon: <DeploymentUnitOutlined /> },
-        { key: 'remorques', label: <Link to="/catalogue/remorques">Remorques</Link>, icon: <Icon component={ TailerOutlined } /> },
-        { key: 'fournisseurs', label: <Link to="/catalogue/fournisseurs">Fournisseurs</Link>, icon: <FileProtectOutlined/> },
-        { key: 'commandes-fournisseur', label: <Link to="/commandes-fournisseur">Commandes Fournisseur</Link>, icon: <ShoppingCartOutlined/> },
+        { key: '/catalogue/produits', label: 'Produits', icon: <StockOutlined /> },
+        { key: '/catalogue/bateaux', label: 'Bateaux', icon: <Icon component={ BoatOutlined } /> },
+        { key: '/catalogue/moteurs', label: 'Moteurs', icon: <Icon component={ EngineOutlined } /> },
+        { key: '/catalogue/helices', label: 'Hélices', icon: <DeploymentUnitOutlined /> },
+        { key: '/catalogue/remorques', label: 'Remorques', icon: <Icon component={ TailerOutlined } /> },
+        { key: '/catalogue/fournisseurs', label: 'Fournisseurs', icon: <FileProtectOutlined/> },
+        { key: '/commandes-fournisseur', label: 'Commandes Fournisseur', icon: <ShoppingCartOutlined/> },
       ]},
       { key: 'Vente', label: 'Vente', icon: <StockOutlined/>, requiredRole: 'vendeur', children: [
-        { key: 'comptoir', label: <Link to="/comptoir">Comptoir</Link>, icon: <DesktopOutlined/> },
-        { key: 'prestations', label: <Link to="/prestations">Prestations</Link>, icon: <CheckSquareOutlined/> },
+        { key: '/comptoir', label: 'Comptoir', icon: <DesktopOutlined/> },
+        { key: '/prestations', label: 'Prestations', icon: <CheckSquareOutlined/> },
       ]},
       { key: 'atelier', label: 'Atelier', icon: <ToolOutlined/>, requiredRole: 'admin', children: [
-        { key: 'main-oeuvres', label: <Link to="/main-oeuvres">Main d'Oeuvres</Link>, icon: <RedoOutlined/> },
-        { key: 'forfaits', label: <Link to="/forfaits">Forfaits</Link>, icon: <FileDoneOutlined/> },
-        { key: 'equipe', label: <Link to="/techniciens">Equipe</Link>, icon: <TeamOutlined/> },
-        { key: 'planning', label: <Link to="/planning">Planning</Link>, icon: <CalendarOutlined/> },
+        { key: '/main-oeuvres', label: "Main d'Oeuvres", icon: <RedoOutlined/> },
+        { key: '/forfaits', label: 'Forfaits', icon: <FileDoneOutlined/> },
+        { key: '/techniciens', label: 'Equipe', icon: <TeamOutlined/> },
+        { key: '/planning', label: 'Planning', icon: <CalendarOutlined/> },
       ] },
       { key: 'market', label: 'Marketing', icon: <AmazonOutlined/>, requiredRole: 'admin', children: [
-        { key: 'annonces', label: <Link to="/annonces">Petites annonces</Link>, icon: <FileOutlined/> },
-        { key: 'campagnes', label: <Link to="/campagnes">Campagnes</Link>, icon: <SendOutlined/> }
+        { key: '/annonces', label: 'Petites annonces', icon: <FileOutlined/> },
+        { key: '/campagnes', label: 'Campagnes', icon: <SendOutlined/> }
       ] },
       { key: 'parametrage', label: 'Paramétrage', icon: <SettingOutlined/>, requiredRole: 'admin', children: [
-        { key: 'societe', label: <Link to="/societe">Société</Link>, icon: <DeploymentUnitOutlined/> },
-        { key: 'utilisateurs', label: <Link to="/utilisateurs">Utilisateurs</Link>, icon: <UserOutlined/> },
-        { key: 'emails', label: <Link to="/emails">Emails</Link>, icon: <MailOutlined/> },
-        { key: 'sequence-emails', label: <Link to="/sequence-emails">Séquence emails</Link>, icon: <SendOutlined/> },
-        { key: 'reference-valeurs', label: <Link to="/reference-valeurs">Valeurs de Référence</Link>, icon: <SettingOutlined/> }
+        { key: '/societe', label: 'Société', icon: <DeploymentUnitOutlined/> },
+        { key: '/utilisateurs', label: 'Utilisateurs', icon: <UserOutlined/> },
+        { key: '/emails', label: 'Emails', icon: <MailOutlined/> },
+        { key: '/sequence-emails', label: 'Séquence emails', icon: <SendOutlined/> },
+        { key: '/reference-valeurs', label: 'Valeurs de Référence', icon: <SettingOutlined/> }
       ] }
     ];
 
@@ -143,7 +141,9 @@ function SideMenu(props) {
                 <Menu
                     theme={props.theme === 'DARK' ? 'dark' : 'light'}
                     items={menuItems}
+                    selectedKeys={[props.currentPage]}
                     mode="inline"
+                    onClick={({ key }) => { if (key.startsWith('/')) props.onNavigate(key); }}
                 />
             </Layout.Sider>
             {!collapsed && (
@@ -415,6 +415,13 @@ function ProtectedRoute({ roles, requiredRole, children }) {
 
 export default function Workspace(props) {
     const [ theme, setTheme ] = useState<UserTheme>('LIGHT');
+    const [ currentPage, setCurrentPage ] = useState('/');
+    const [ pageState, setPageState ] = useState<any>(null);
+
+    const navigate = useCallback((page: string, state?: any) => {
+        setPageState(state || null);
+        setCurrentPage(page);
+    }, []);
 
     useEffect(() => {
         fetchWithAuth(`/users/${encodeURIComponent(props.user)}`)
@@ -438,6 +445,63 @@ export default function Workspace(props) {
 
     const isDarkTheme = theme === 'DARK';
 
+    const renderPage = () => {
+        switch (currentPage) {
+            case '/dashboard':
+                return <Dashboard />;
+            case '/clients':
+                return <ProtectedRoute roles={props.roles} requiredRole="manager"><Clients /></ProtectedRoute>;
+            case '/clients/bateaux':
+                return <ProtectedRoute roles={props.roles} requiredRole="manager"><BateauxClients /></ProtectedRoute>;
+            case '/clients/moteurs':
+                return <ProtectedRoute roles={props.roles} requiredRole="manager"><ClientsMoteurs /></ProtectedRoute>;
+            case '/clients/remorques':
+                return <ProtectedRoute roles={props.roles} requiredRole="manager"><RemorquesClients /></ProtectedRoute>;
+            case '/catalogue/produits':
+                return <ProtectedRoute roles={props.roles} requiredRole="magasinier"><Produits /></ProtectedRoute>;
+            case '/catalogue/bateaux':
+                return <ProtectedRoute roles={props.roles} requiredRole="magasinier"><CatalogueBateaux /></ProtectedRoute>;
+            case '/catalogue/moteurs':
+                return <ProtectedRoute roles={props.roles} requiredRole="magasinier"><CatalogueMoteurs /></ProtectedRoute>;
+            case '/catalogue/helices':
+                return <ProtectedRoute roles={props.roles} requiredRole="magasinier"><CatalogueHelices /></ProtectedRoute>;
+            case '/catalogue/remorques':
+                return <ProtectedRoute roles={props.roles} requiredRole="magasinier"><CatalogueRemorques /></ProtectedRoute>;
+            case '/catalogue/fournisseurs':
+                return <ProtectedRoute roles={props.roles} requiredRole="magasinier"><Fournisseurs /></ProtectedRoute>;
+            case '/commandes-fournisseur':
+                return <ProtectedRoute roles={props.roles} requiredRole="magasinier"><CommandesFournisseur /></ProtectedRoute>;
+            case '/societe':
+                return <ProtectedRoute roles={props.roles} requiredRole="admin"><Societe /></ProtectedRoute>;
+            case '/utilisateurs':
+                return <ProtectedRoute roles={props.roles} requiredRole="admin"><Utilisateurs /></ProtectedRoute>;
+            case '/emails':
+                return <ProtectedRoute roles={props.roles} requiredRole="admin"><Emails /></ProtectedRoute>;
+            case '/sequence-emails':
+                return <ProtectedRoute roles={props.roles} requiredRole="admin"><SequenceEmails /></ProtectedRoute>;
+            case '/prestations':
+                return <ProtectedRoute roles={props.roles} requiredRole="vendeur"><Vente /></ProtectedRoute>;
+            case '/comptoir':
+                return <ProtectedRoute roles={props.roles} requiredRole="vendeur"><Comptoir /></ProtectedRoute>;
+            case '/forfaits':
+                return <ProtectedRoute roles={props.roles} requiredRole="admin"><Forfaits /></ProtectedRoute>;
+            case '/techniciens':
+                return <ProtectedRoute roles={props.roles} requiredRole="admin"><Techniciens /></ProtectedRoute>;
+            case '/main-oeuvres':
+                return <ProtectedRoute roles={props.roles} requiredRole="admin"><MainOeuvres /></ProtectedRoute>;
+            case '/planning':
+                return <ProtectedRoute roles={props.roles} requiredRole="admin"><Planning /></ProtectedRoute>;
+            case '/annonces':
+                return <ProtectedRoute roles={props.roles} requiredRole="admin"><Annonces /></ProtectedRoute>;
+            case '/campagnes':
+                return <ProtectedRoute roles={props.roles} requiredRole="admin"><Campagnes /></ProtectedRoute>;
+            case '/reference-valeurs':
+                return <ProtectedRoute roles={props.roles} requiredRole="admin"><ReferenceValeurs /></ProtectedRoute>;
+            default:
+                return <Home />;
+        }
+    };
+
     return(
         <ConfigProvider theme={{
             algorithm: isDarkTheme ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
@@ -447,96 +511,17 @@ export default function Workspace(props) {
                 colorPrimary: '#1668dc',
             },
         }}>
-            <Router>
+            <NavigationContext.Provider value={{ navigate, pageState }}>
             <Layout style={{ minHeight: "100vh", background: isDarkTheme ? '#101010' : '#f0f2f5' }}>
               <Header user={props.user} roles={props.roles} setUser={props.setUser} theme={theme} setTheme={setTheme} />
               <Layout hasSider={true}>
-                <SideMenu user={props.user} roles={props.roles} theme={theme} />
+                <SideMenu user={props.user} roles={props.roles} theme={theme} currentPage={currentPage} onNavigate={navigate} />
                 <Layout.Content style={{
                     margin: "20px",
                     color: isDarkTheme ? '#f5f5f5' : undefined,
                     animation: 'fadeInUp 0.3s ease-out',
                 }}>
-                    <Switch>
-                        <Route path="/" key="home" exact={true}>
-                            <Home/>
-                        </Route>
-                        <Route path="/dashboard" key="dashboard" exact={true}>
-                            <Dashboard />
-                        </Route>
-                        <Route path="/clients" key="clients" exact={true}>
-                            <ProtectedRoute roles={props.roles} requiredRole="manager"><Clients /></ProtectedRoute>
-                        </Route>
-                        <Route path="/clients/bateaux" key="clients-bateaux">
-                            <ProtectedRoute roles={props.roles} requiredRole="manager"><BateauxClients /></ProtectedRoute>
-                        </Route>
-                        <Route path="/clients/moteurs" key="clients-moteurs">
-                            <ProtectedRoute roles={props.roles} requiredRole="manager"><ClientsMoteurs /></ProtectedRoute>
-                        </Route>
-                        <Route path="/clients/remorques" key="clients-remorques">
-                            <ProtectedRoute roles={props.roles} requiredRole="manager"><RemorquesClients /></ProtectedRoute>
-                        </Route>
-                        <Route path="/catalogue/produits" key="produits">
-                            <ProtectedRoute roles={props.roles} requiredRole="magasinier"><Produits /></ProtectedRoute>
-                        </Route>
-                        <Route path="/catalogue/bateaux" key="catalogue-bateaux">
-                            <ProtectedRoute roles={props.roles} requiredRole="magasinier"><CatalogueBateaux /></ProtectedRoute>
-                        </Route>
-                        <Route path="/catalogue/moteurs" key="catalogue-moteurs">
-                            <ProtectedRoute roles={props.roles} requiredRole="magasinier"><CatalogueMoteurs /></ProtectedRoute>
-                        </Route>
-                        <Route path="/catalogue/helices" key="helices">
-                            <ProtectedRoute roles={props.roles} requiredRole="magasinier"><CatalogueHelices /></ProtectedRoute>
-                        </Route>
-                        <Route path="/catalogue/remorques" key="catalogue-remorques">
-                            <ProtectedRoute roles={props.roles} requiredRole="magasinier"><CatalogueRemorques /></ProtectedRoute>
-                        </Route>
-                        <Route path="/catalogue/fournisseurs" key="fournisseurs">
-                            <ProtectedRoute roles={props.roles} requiredRole="magasinier"><Fournisseurs /></ProtectedRoute>
-                        </Route>
-                        <Route path="/commandes-fournisseur" key="commandes-fournisseur">
-                            <ProtectedRoute roles={props.roles} requiredRole="magasinier"><CommandesFournisseur /></ProtectedRoute>
-                        </Route>
-                        <Route path="/societe" key="societe">
-                            <ProtectedRoute roles={props.roles} requiredRole="admin"><Societe /></ProtectedRoute>
-                        </Route>
-                        <Route path="/utilisateurs" key="utilisateurs">
-                            <ProtectedRoute roles={props.roles} requiredRole="admin"><Utilisateurs /></ProtectedRoute>
-                        </Route>
-                        <Route path="/emails" key="emails">
-                            <ProtectedRoute roles={props.roles} requiredRole="admin"><Emails /></ProtectedRoute>
-                        </Route>
-                        <Route path="/sequence-emails" key="sequence-emails">
-                            <ProtectedRoute roles={props.roles} requiredRole="admin"><SequenceEmails /></ProtectedRoute>
-                        </Route>
-                        <Route path="/prestations" key="prestations">
-                            <ProtectedRoute roles={props.roles} requiredRole="vendeur"><Vente /></ProtectedRoute>
-                        </Route>
-                        <Route path="/comptoir" key="comptoir">
-                            <ProtectedRoute roles={props.roles} requiredRole="vendeur"><Comptoir /></ProtectedRoute>
-                        </Route>
-                        <Route path="/forfaits" key="forfaits">
-                            <ProtectedRoute roles={props.roles} requiredRole="admin"><Forfaits /></ProtectedRoute>
-                        </Route>
-                        <Route path="/techniciens" key="techniciens">
-                            <ProtectedRoute roles={props.roles} requiredRole="admin"><Techniciens /></ProtectedRoute>
-                        </Route>
-                        <Route path="/main-oeuvres" key="main-oeuvres">
-                            <ProtectedRoute roles={props.roles} requiredRole="admin"><MainOeuvres /></ProtectedRoute>
-                        </Route>
-                        <Route path="/planning" key="planning">
-                            <ProtectedRoute roles={props.roles} requiredRole="admin"><Planning /></ProtectedRoute>
-                        </Route>
-                        <Route path="/annonces" key="annonces">
-                            <ProtectedRoute roles={props.roles} requiredRole="admin"><Annonces /></ProtectedRoute>
-                        </Route>
-                        <Route path="/campagnes" key="campagnes">
-                            <ProtectedRoute roles={props.roles} requiredRole="admin"><Campagnes /></ProtectedRoute>
-                        </Route>
-                        <Route path="/reference-valeurs" key="reference-valeurs">
-                            <ProtectedRoute roles={props.roles} requiredRole="admin"><ReferenceValeurs /></ProtectedRoute>
-                        </Route>
-                    </Switch>
+                    {renderPage()}
                 </Layout.Content>
               </Layout>
               <Layout.Footer style={{
@@ -548,7 +533,7 @@ export default function Workspace(props) {
                   Copyright © 2025-2026 - NOSE Experts - Tous droits réservés
               </Layout.Footer>
             </Layout>
-            </Router>
+            </NavigationContext.Provider>
         </ConfigProvider>
     );
 

@@ -32,7 +32,7 @@ import { useReferenceValeurs } from './useReferenceValeurs.ts';
 import ImageUpload from './ImageUpload.tsx';
 import DocumentUpload from './DocumentUpload.tsx';
 import dayjs from "dayjs";
-import { useHistory } from "react-router-dom";
+import { useNavigation } from './navigation-context.tsx';
 
 const { Option } = Select;
 const { Search } = Input;
@@ -83,7 +83,7 @@ const ClientsMoteurs: React.FC<ClientsMoteursProps> = ({ clientId }) => {
   const [annonceImageModalVisible, setAnnonceImageModalVisible] = useState(false);
   const [annonceImageMoteur, setAnnonceImageMoteur] = useState<MoteurClient | null>(null);
   const [annonceSelectedImages, setAnnonceSelectedImages] = useState<Set<string>>(new Set());
-  const history = useHistory();
+  const { navigate } = useNavigation();
 
   const openAnnonceImageModal = (moteur: MoteurClient) => {
     setAnnonceImageMoteur(moteur);
@@ -106,7 +106,7 @@ const ClientsMoteurs: React.FC<ClientsMoteursProps> = ({ clientId }) => {
       return;
     }
     setAnnonceImageModalVisible(false);
-    history.push("/annonces", {
+    navigate("/annonces", {
       photos: Array.from(annonceSelectedImages),
       clientId: annonceImageMoteur?.proprietaire?.id,
     });

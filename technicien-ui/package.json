@@ -1,6 +1,7 @@
 {
   "name": "moussaillon-technicien-ui",
   "version": "0.9-SNAPSHOT",
+  "homepage": "/technicien",
   "main": "/index.tsx",
   "dependencies": {
     "@ant-design/icons": "^6.0.0",

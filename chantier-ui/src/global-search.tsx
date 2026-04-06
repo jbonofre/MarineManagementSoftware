@@ -9,7 +9,7 @@ import { ReactComponent as BoatOutlined } from './boat.svg';
 import { ReactComponent as EngineOutlined } from './moteur.svg';
 import { ReactComponent as TailerOutlined } from './remorque.svg';
 import api from './api.ts';
-import { useHistory } from 'react-router-dom';
+import { useNavigation } from './navigation-context.tsx';
 
 const { Text } = Typography;
 
@@ -101,7 +101,7 @@ export default function GlobalSearch() {
     const [open, setOpen] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
     const debounceRef = useRef<ReturnType<typeof setTimeout>>();
-    const history = useHistory();
+    const { navigate } = useNavigation();
 
     const doSearch = useCallback(async (q: string) => {
         if (!q || q.trim().length < 2) {
@@ -138,7 +138,7 @@ export default function GlobalSearch() {
         setOpen(false);
         setQuery('');
         setResults([]);
-        history.push(route);
+        navigate(route);
     };
 
     useEffect(() => {

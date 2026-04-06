@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigation } from './navigation-context.tsx';
 import { Breadcrumb, Space, Button, Row, Col, AutoComplete, Table, Card, Form, Input, Image, Select, InputNumber, Collapse, DatePicker } from 'antd';
 import { HomeOutlined, EditOutlined, DeleteOutlined, PlusCircleOutlined, LinkOutlined, LeftCircleOutlined, PauseCircleOutlined } from '@ant-design/icons';
 import { demo } from './workspace.tsx';
@@ -123,13 +123,13 @@ function Helice(props) {
 }
 
 function Moteur(props) {
-
+    const { navigate } = useNavigation();
     const moteurDetail = props.moteurs.filter(record => record.numeroserie === props.moteur)[0];
 
     return(
       <>
         <Breadcrumb items={[
-            { title: <Link to="/"><HomeOutlined/></Link> },
+            { title: <a onClick={() => navigate('/')}><HomeOutlined/></a> },
             { title: <Button type="text" size="small" onClick={() => props.setMoteur(null) }>Moteurs</Button> }
         ]} />
         <Card title={<Space><img width='60px' src={moteurDetail.imageUrl} /> {moteurDetail.denomination}</Space>} style={{ width: '100%' }}>
