@@ -2061,9 +2061,14 @@ export default function Vente() {
                     <Button key="cancel" onClick={handleModalCancel}>
                         Fermer
                     </Button>,
-                    ...(!isReadOnly ? [<Button key="save" type="primary" onClick={handleSave}>
-                        Enregistrer
-                    </Button>] : [])
+                    ...(!isReadOnly ? [
+                        <Button key="discard" onClick={() => { setFormDirty(false); setModalVisible(false); }}>
+                            Annuler
+                        </Button>,
+                        <Button key="save" type="primary" onClick={handleSave}>
+                            Enregistrer
+                        </Button>
+                    ] : [])
                 ]}
                 maskClosable={false}
                 destroyOnHidden
