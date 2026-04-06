@@ -9,7 +9,7 @@ import {
 import Icon from '@ant-design/icons';
 import { ReactComponent as BoatOutlined } from './boat.svg';
 import { ReactComponent as ParcOutlined } from './parc.svg';
-import { useHistory } from 'react-router-dom';
+import { useNavigation } from './navigation-context.tsx';
 
 const { Title, Paragraph } = Typography;
 const { TextArea } = Input;
@@ -141,7 +141,7 @@ const renderJsonNode = (
 };
 
 export default function Home() {
-    const history = useHistory();
+    const { navigate } = useNavigation();
     const { token } = theme.useToken();
     const initialAssistantMessage =
         "Bonjour, je suis moussAIllon, votre assistant de gestion de chantier naval.\n\n" +
@@ -570,14 +570,14 @@ export default function Home() {
             appendAssistantMessage(firstContent);
             const destination = resolveUiRouteFromApiPath(instruction.path);
             if (destination) {
-                history.push(destination);
+                navigate(destination);
             }
             return;
         }
         appendAssistantMessage(JSON.stringify(toolResult || {}, null, 2));
         const destination = resolveUiRouteFromApiPath(instruction.path);
         if (destination) {
-            history.push(destination);
+            navigate(destination);
         }
     };
 
@@ -796,7 +796,7 @@ export default function Home() {
                     <Col xs={24} sm={12} md={8} key={item.title}>
                         <Card
                             hoverable
-                            onClick={() => history.push(item.route)}
+                            onClick={() => navigate(item.route)}
                             style={{
                                 borderRadius: 12,
                                 border: `1px solid ${token.colorBorderSecondary}`,

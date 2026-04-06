@@ -31,7 +31,7 @@ import api from "./api.ts";
 import ImageUpload from './ImageUpload.tsx';
 import DocumentUpload from './DocumentUpload.tsx';
 import dayjs from "dayjs";
-import { useHistory } from "react-router-dom";
+import { useNavigation } from './navigation-context.tsx';
 
 const { Option } = Select;
 const { Search } = Input;
@@ -79,7 +79,7 @@ function RemorquesClients({ clientId }: RemorquesClientsProps) {
   const [annonceImageModalVisible, setAnnonceImageModalVisible] = useState(false);
   const [annonceImageRemorque, setAnnonceImageRemorque] = useState<RemorqueClient | null>(null);
   const [annonceSelectedImages, setAnnonceSelectedImages] = useState<Set<string>>(new Set());
-  const history = useHistory();
+  const { navigate } = useNavigation();
 
   const openAnnonceImageModal = (remorque: RemorqueClient) => {
     setAnnonceImageRemorque(remorque);
@@ -102,7 +102,7 @@ function RemorquesClients({ clientId }: RemorquesClientsProps) {
       return;
     }
     setAnnonceImageModalVisible(false);
-    history.push("/annonces", {
+    navigate("/annonces", {
       photos: Array.from(annonceSelectedImages),
       clientId: annonceImageRemorque?.proprietaire?.id,
     });

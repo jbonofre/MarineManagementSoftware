@@ -26,7 +26,7 @@ import { CalendarOutlined, CheckCircleOutlined, CreditCardOutlined, DeleteOutlin
 import dayjs from 'dayjs';
 import api from './api.ts';
 import { useReferenceValeurs } from './useReferenceValeurs.ts';
-import { useHistory } from 'react-router-dom';
+import { useNavigation } from './navigation-context.tsx';
 import ImageUpload from './ImageUpload.tsx';
 import DocumentUpload from './DocumentUpload.tsx';
 
@@ -468,7 +468,7 @@ const getClientLabel = (client?: ClientEntity) => {
 
 export default function Vente() {
     const PRODUIT_CATEGORIES = useReferenceValeurs('CATEGORIE_PRODUIT');
-    const history = useHistory();
+    const { navigate } = useNavigation();
     const [ventes, setVentes] = useState<VenteEntity[]>([]);
     const [clients, setClients] = useState<ClientEntity[]>([]);
     const [bateaux, setBateaux] = useState<BateauClientEntity[]>([]);
@@ -2251,7 +2251,7 @@ export default function Vente() {
                                                                 {isEmptyLine ? (
                                                                     <Button icon={<PlusOutlined />} title="Créer un forfait" onClick={() => openNewForfaitModal(field.name)} />
                                                                 ) : (
-                                                                    <Button icon={<CalendarOutlined />} title="Planifier" disabled={!watchedBonPourAccord} onClick={() => { setModalVisible(false); history.push('/planning'); }} />
+                                                                    <Button icon={<CalendarOutlined />} title="Planifier" disabled={!watchedBonPourAccord} onClick={() => { setModalVisible(false); navigate('/planning'); }} />
                                                                 )}
                                                                 <Button danger icon={<DeleteOutlined />} onClick={() => remove(field.name)} />
                                                             </Space>
@@ -2346,7 +2346,7 @@ export default function Vente() {
                                                                 ) : (
                                                                     <>
                                                                         <Button icon={<EditOutlined />} title="Modifier le service" onClick={() => openEditServiceModal(serviceId)} />
-                                                                        <Button icon={<CalendarOutlined />} title="Planifier" disabled={!watchedBonPourAccord} onClick={() => { setModalVisible(false); history.push('/planning'); }} />
+                                                                        <Button icon={<CalendarOutlined />} title="Planifier" disabled={!watchedBonPourAccord} onClick={() => { setModalVisible(false); navigate('/planning'); }} />
                                                                     </>
                                                                 )}
                                                                 <Button danger icon={<DeleteOutlined />} onClick={() => remove(field.name)} />
@@ -3330,7 +3330,7 @@ export default function Vente() {
                                 onChange={(value) => newBateauForm.setFieldValue('modele', value ? { id: value } : undefined)}
                                 style={{ width: '100%' }}
                             />
-                            <Button icon={<PlusOutlined />} title="Créer un modèle" onClick={() => history.push('/catalogue/bateaux')} />
+                            <Button icon={<PlusOutlined />} title="Créer un modèle" onClick={() => navigate('/catalogue/bateaux')} />
                         </Space.Compact>
                     </Form.Item>
                     <Form.Item label="Propriétaires">
@@ -3360,7 +3360,7 @@ export default function Vente() {
                                 onChange={(values) => newBateauForm.setFieldValue('moteurs', (values || []).map((id: number) => ({ id })))}
                                 style={{ width: '100%' }}
                             />
-                            <Button icon={<PlusOutlined />} title="Créer un moteur" onClick={() => history.push('/catalogue/moteurs')} />
+                            <Button icon={<PlusOutlined />} title="Créer un moteur" onClick={() => navigate('/catalogue/moteurs')} />
                         </Space.Compact>
                     </Form.Item>
                     <Form.Item name="images" label="Images">
@@ -3424,7 +3424,7 @@ export default function Vente() {
                                 onChange={(value) => newMoteurForm.setFieldValue('modele', value ? { id: value } : undefined)}
                                 style={{ width: '100%' }}
                             />
-                            <Button icon={<PlusOutlined />} title="Créer un modèle" onClick={() => history.push('/catalogue/moteurs')} />
+                            <Button icon={<PlusOutlined />} title="Créer un modèle" onClick={() => navigate('/catalogue/moteurs')} />
                         </Space.Compact>
                     </Form.Item>
                     <Form.Item label="Propriétaire">
@@ -3497,7 +3497,7 @@ export default function Vente() {
                                 onChange={(value) => newRemorqueForm.setFieldValue('modele', value ? { id: value } : undefined)}
                                 style={{ width: '100%' }}
                             />
-                            <Button icon={<PlusOutlined />} title="Créer un modèle" onClick={() => history.push('/catalogue/remorques')} />
+                            <Button icon={<PlusOutlined />} title="Créer un modèle" onClick={() => navigate('/catalogue/remorques')} />
                         </Space.Compact>
                     </Form.Item>
                     <Form.Item label="Propriétaire">
